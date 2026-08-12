@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Enterprise - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Kanit', 'sans-serif'] } } }
+        }
+    </script>
+    <style>
+        .project-card { transition: all 0.2s ease-in-out; }
+        .project-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden">
+
+    <!-- 1. Sidebar Navigation -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col hidden md:flex shrink-0 shadow-xl z-20">
+        <div class="h-16 flex items-center px-6 border-b border-slate-800 bg-slate-950">
+            <div class="bg-blue-600 text-white p-1.5 rounded mr-3 shadow-lg shadow-blue-900/50">
+                <i class="fa-solid fa-solar-panel text-sm"></i>
+            </div>
+            <span class="font-bold text-lg text-white tracking-wide">ASC<span class="text-blue-500 font-medium"> Cloud</span></span>
+        </div>
+        
+        <nav class="flex-1 py-6 px-4 space-y-2">
+            <a href="#" class="flex items-center px-4 py-3 bg-blue-600 text-white rounded-lg shadow-md shadow-blue-900/20">
+                <i class="fa-solid fa-table-cells-large w-6"></i>
+                <span class="font-medium">Projects</span>
+            </a>
+            <a href="#" class="flex items-center px-4 py-3 hover:bg-slate-800 hover:text-white rounded-lg transition">
+                <i class="fa-solid fa-chart-pie w-6"></i>
+                <span class="font-medium">Analytics</span>
+            </a>
+            <a href="#" class="flex items-center px-4 py-3 hover:bg-slate-800 hover:text-white rounded-lg transition">
+                <i class="fa-solid fa-users w-6"></i>
+                <span class="font-medium">Team Members</span>
+            </a>
+            <a href="#" class="flex items-center px-4 py-3 hover:bg-slate-800 hover:text-white rounded-lg transition">
+                <i class="fa-solid fa-gear w-6"></i>
+                <span class="font-medium">Settings</span>
+            </a>
+        </nav>
+        
+        <div class="p-4 border-t border-slate-800 bg-slate-950">
+            <div class="flex items-center space-x-3 cursor-pointer hover:text-white transition">
+                <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center border-2 border-slate-600">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div>
+                    <div class="text-sm font-bold text-white" id="user-name">Engineer_01</div>
+                    <div class="text-xs text-slate-500">Pro Plan</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 2. Main Content Area -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        
+        <!-- Header -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0 z-10">
+            <div class="flex items-center w-1/2">
+                <h1 class="text-xl font-bold text-slate-800 mr-6">Dashboard</h1>
+                <!-- Search Bar -->
+                <div class="relative w-full max-w-md hidden sm:block">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" placeholder="ค้นหาโปรเจกต์..." class="w-full bg-slate-100 border-none rounded-full py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition outline-none">
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <button class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition flex items-center justify-center relative">
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-slate-100"></span>
+                </button>
+                <button onclick="openNewProjectModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm shadow-md shadow-blue-500/30 transition flex items-center">
+                    <i class="fa-solid fa-plus mr-2"></i> สร้างโปรเจกต์ใหม่
+                </button>
+            </div>
+        </header>
+
+        <!-- Content Scroll Area -->
+        <div class="flex-1 overflow-y-auto p-8">
+            
+            <!-- Welcome & Stats -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-slate-800 mb-1">สวัสดี, <span class="text-blue-600">คุณวิศวกร</span> 👋</h2>
+                <p class="text-sm text-slate-500">นี่คือภาพรวมโครงการโซลาร์เซลล์ของคุณในระบบ</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-500 mb-1">โปรเจกต์ทั้งหมด</p>
+                        <h3 class="text-3xl font-bold text-slate-800" id="stat-total">0</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-xl"><i class="fa-solid fa-folder-open"></i></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-500 mb-1">กำลังผลิตรวม (Design)</p>
+                        <h3 class="text-3xl font-bold text-slate-800"><span id="stat-kwp">0.00</span> <span class="text-lg font-medium text-slate-500">kWp</span></h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600 text-xl"><i class="fa-solid fa-bolt"></i></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-500 mb-1">รอการนำเสนอ (Proposal)</p>
+                        <h3 class="text-3xl font-bold text-slate-800" id="stat-completed">0</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 text-xl"><i class="fa-solid fa-file-contract"></i></div>
+                </div>
+            </div>
+
+            <!-- Projects Grid -->
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-slate-800">Recent Projects</h3>
+                <div class="flex space-x-2">
+                    <button class="p-2 text-slate-400 hover:text-blue-600 bg-white rounded border border-slate-200 shadow-sm"><i class="fa-solid fa-border-all"></i></button>
+                    <button class="p-2 text-slate-400 hover:text-blue-600 bg-white rounded border border-slate-200 shadow-sm"><i class="fa-solid fa-list"></i></button>
+                </div>
+            </div>
+
+            <div id="project-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-10">
+                <!-- Project Cards will be generated here by JavaScript -->
+            </div>
+
+            <!-- Empty State (Hidden by default) -->
+            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-center">
+                <img src="https://cdn-icons-png.flaticon.com/512/7486/7486747.png" alt="Empty" class="w-32 h-32 opacity-20 mb-6 grayscale">
+                <h3 class="text-xl font-bold text-slate-700 mb-2">ยังไม่มีโปรเจกต์ในระบบ</h3>
+                <p class="text-slate-500 mb-6">เริ่มต้นออกแบบและจำลองระบบโซลาร์เซลล์โปรเจกต์แรกของคุณ</p>
+                <button onclick="openNewProjectModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold shadow-md transition">
+                    <i class="fa-solid fa-plus mr-2"></i> สร้างโปรเจกต์ใหม่
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- 3. New Project Modal -->
+    <div id="new-project-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300" id="modal-content">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                <h3 class="text-lg font-bold text-slate-800">สร้างโปรเจกต์ใหม่</h3>
+                <button onclick="closeNewProjectModal()" class="text-slate-400 hover:text-red-500 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">ชื่อโปรเจกต์ <span class="text-red-500">*</span></label>
+                    <input type="text" id="new-proj-name" placeholder="เช่น: โรงงาน ABC เฟส 1" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">สถานที่ตั้ง (Location)</label>
+                    <input type="text" id="new-proj-loc" placeholder="เช่น: อ.เมือง จ.สมุทรปราการ" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">รายละเอียดเพิ่มเติม (Note)</label>
+                    <textarea id="new-proj-note" rows="2" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"></textarea>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-slate-200 flex justify-end space-x-3 bg-slate-50 rounded-b-xl">
+                <button onclick="closeNewProjectModal()" class="px-5 py-2.5 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-200 transition">ยกเลิก</button>
+                <button onclick="createNewProject()" class="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition flex items-center">
+                    <i class="fa-solid fa-rocket mr-2"></i> สร้างและเริ่มออกแบบ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- ⚙️ DASHBOARD LOGIC (READ FROM LOCALSTORAGE)-->
+    <!-- ========================================== -->
+    <script>
+        const DB_KEY = 'proinventive_enterprise_db';
+
+        // 1. ฟังก์ชันโหลดข้อมูลโปรเจกต์มาแสดง
+        function renderDashboard() {
+            let db = JSON.parse(localStorage.getItem(DB_KEY));
+            
+            const grid = document.getElementById('project-grid');
+            const emptyState = document.getElementById('empty-state');
+            
+            // กรณีไม่มี Database หรือโปรเจกต์เป็นศูนย์
+            if (!db || !db.projects || Object.keys(db.projects).length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                updateStats(0, 0, 0);
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            let html = '';
+            let totalKwp = 0;
+            let completedCount = 0;
+
+            // ดึง Project ID ทั้งหมดมาเรียงลำดับจากแก้ไขล่าสุด -> เก่าสุด
+            const projectIds = Object.keys(db.projects).sort((a, b) => {
+                let dateA = new Date(db.projects[a].meta.lastModified || 0);
+                let dateB = new Date(db.projects[b].meta.lastModified || 0);
+                return dateB - dateA;
+            });
+
+            projectIds.forEach(id => {
+                const proj = db.projects[id];
+                const meta = proj.meta;
+                const data = proj.data;
+
+                // ตรวจสอบขนาด kWp จาก DB1 (ถ้ามี)
+                let kwp = 0;
+                let hasReport = false;
+                if (data.db1 && data.db1.step4_validation_results) {
+                    kwp = parseFloat(data.db1.step4_validation_results.totalDcCapacity_kWp) || 0;
+                    totalKwp += kwp;
+                }
+                // สถานะ (มีรายงาน DB3 หรือยัง?)
+                if (data.db3) { hasReport = true; completedCount++; }
+
+                // แปลงเวลาให้น่าอ่าน
+                const lastMod = new Date(meta.lastModified).toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+
+                html += `
+                <div class="project-card bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                    <div class="h-2 w-full ${hasReport ? 'bg-green-500' : 'bg-blue-500'}"></div>
+                    <div class="p-5 flex-1 cursor-pointer" onclick="openProject('${id}')">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="inline-block px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${hasReport ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
+                                ${hasReport ? 'Completed' : 'Drafting'}
+                            </span>
+                            <button onclick="event.stopPropagation(); deleteProject('${id}')" class="text-slate-300 hover:text-red-500 transition" title="ลบโปรเจกต์">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-1 truncate" title="${meta.name}">${meta.name}</h3>
+                        <p class="text-xs text-slate-500 mb-4 flex items-center"><i class="fa-solid fa-location-dot mr-1.5 text-slate-400"></i> ${meta.location || 'ไม่ระบุสถานที่'}</p>
+                        
+                        <div class="bg-slate-50 rounded-lg p-3 border border-slate-100 mb-2">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-slate-500">System Size:</span>
+                                <span class="font-bold text-slate-800">${kwp > 0 ? kwp.toFixed(2) + ' kWp' : '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 px-5 py-3 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                        <span><i class="fa-regular fa-clock mr-1"></i> ${lastMod}</span>
+                        <button onclick="openProject('${id}')" class="text-blue-600 font-bold hover:text-blue-800 transition">เปิด <i class="fa-solid fa-arrow-right ml-1"></i></button>
+                    </div>
+                </div>`;
+            });
+
+            grid.innerHTML = html;
+            updateStats(projectIds.length, totalKwp, completedCount);
+        }
+
+        function updateStats(total, kwp, completed) {
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-kwp').innerText = kwp.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('stat-completed').innerText = completed;
+        }
+
+        // 2. ระบบ Modal สร้างโปรเจกต์
+        function openNewProjectModal() {
+            const modal = document.getElementById('new-project-modal');
+            const content = document.getElementById('modal-content');
+            modal.classList.remove('hidden');
+            // Timeout เล็กน้อยเพื่อให้ display block ทำงานก่อนเริ่ม transition opacity
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            }, 10);
+            document.getElementById('new-proj-name').focus();
+        }
+
+        function closeNewProjectModal() {
+            const modal = document.getElementById('new-project-modal');
+            const content = document.getElementById('modal-content');
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.getElementById('new-proj-name').value = '';
+                document.getElementById('new-proj-loc').value = '';
+            }, 300); // รอจังหวะ CSS transition
+        }
+
+        // 3. ฟังก์ชันสร้างโปรเจกต์และ Redirect
+        function createNewProject() {
+            const name = document.getElementById('new-proj-name').value.trim();
+            const loc = document.getElementById('new-proj-loc').value.trim();
+            
+            if (!name) { alert('กรุณาระบุชื่อโปรเจกต์'); return; }
+
+            // ดึง DB เดิมมา
+            let db = JSON.parse(localStorage.getItem(DB_KEY));
+            if (!db) db = { user_profile: { uid: 'u001', name: 'Engineer_01', role: 'System Admin' }, projects: {} };
+
+            // สร้าง ID อัตโนมัติ (เช่น proj_1690000000)
+            const newId = 'proj_' + new Date().getTime();
+
+            // กำหนดโครงสร้างเริ่มต้นลง Database
+            db.projects[newId] = {
+                meta: {
+                    name: name,
+                    location: loc,
+                    createdAt: new Date().toISOString(),
+                    lastModified: new Date().toISOString()
+                },
+                data: { db0: null, db1: null, db2: null, db3: null }
+            };
+
+            // บันทึกกลับลง LocalStorage
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+
+            // พาวิ่งไปที่ Master Shell พร้อมแนบ ID
+            window.location.href = `master_shell.html?id=${newId}`;
+        }
+
+        // 4. เปิดโปรเจกต์เดิม
+        function openProject(id) {
+            window.location.href = `master_shell.html?id=${id}`;
+        }
+
+        // 5. ลบโปรเจกต์
+        function deleteProject(id) {
+            if (confirm('คุณต้องการลบโปรเจกต์นี้ทิ้งอย่างถาวรหรือไม่? ข้อมูลทั้งหมดจะหายไป')) {
+                let db = JSON.parse(localStorage.getItem(DB_KEY));
+                if (db && db.projects[id]) {
+                    delete db.projects[id];
+                    localStorage.setItem(DB_KEY, JSON.stringify(db));
+                    renderDashboard(); // โหลดกราฟิกใหม่
+                }
+            }
+        }
+
+        // โหลดข้อมูลเมื่อเปิดหน้า
+        document.addEventListener('DOMContentLoaded', renderDashboard);
+
+    </script>
+</body>
+</html>
