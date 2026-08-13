@@ -126,8 +126,8 @@
 
 <div class="calc-container">
     <div class="pea-title" style="display: flex; justify-content: space-between; align-items: center;">
-        <span>วิเคราะห์ค่าไฟฟ้าเพื่อการประเมินกำลังการผลิตสูงสุด PV-kWp สำหรับ ส่ง DB0 ไปนำเข้า ASC Design</span>
-        <button id="btnExitSystem" onclick="if(confirm('คุณต้องการออกจากระบบ ใช่หรือไม่?')) window.close();" style="background-color: #ef4444; color: white; border: none; padding: 6px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2); display: flex; align-items: center; gap: 5px;">
+        <span>วิเคราะห์ค่าไฟฟ้าเพื่อการประเมินกำลังการผลิตสูงสุด</span>
+        <button id="btnExitSystem" onclick="if(confirm('ออกจากระบบและกลับไปหน้ารายการโปรเจกต์ใช่หรือไม่?')){ try{ (window.top||window).location.href='index.html'; }catch(e){ window.location.href='index.html'; } }" style="background-color: #ef4444; color: white; border: none; padding: 6px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2); display: flex; align-items: center; gap: 5px;">
             🚪 ออกจากระบบ (Exit)
         </button>
     </div>

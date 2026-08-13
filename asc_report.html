@@ -230,7 +230,7 @@
             <button onclick="clearState()" class="w-full text-red-600 hover:bg-red-50 py-2 rounded text-sm font-bold border border-red-200">ล้างข้อมูลทั้งหมด</button>
             
             <!-- 🌟 ปุ่ม Exit ที่เพิ่มใหม่ -->
-            <button onclick="if(confirm('คุณต้องการออกจากโปรแกรมและปิดหน้าต่างนี้ใช่หรือไม่?')) window.close();" class="w-full text-gray-700 hover:bg-gray-100 py-2 rounded text-sm font-bold border border-gray-300 shadow-sm transition-all">
+            <button onclick="if(confirm('ออกจากระบบและกลับไปหน้ารายการโปรเจกต์ใช่หรือไม่?')){ try{ (window.top||window).location.href='index.html'; }catch(e){ window.location.href='index.html'; } }" class="w-full text-gray-700 hover:bg-gray-100 py-2 rounded text-sm font-bold border border-gray-300 shadow-sm transition-all">
                 🚪 ออกจากระบบ (Exit)
             </button>
         </div>
