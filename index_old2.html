@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASC Cloud — เข้าสู่ระบบ</title>
+    <link rel="icon" href="img/pilogo.png?v=2" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- ฐานข้อมูลผู้ใช้ (แหล่งเดียว) — ถ้าไฟล์นี้หาย ระบบจะพยายามอ่านจาก user.html ให้อัตโนมัติ -->
+    <script src="user.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Kanit', 'sans-serif'] } } }
+        }
+    </script>
+    <style>
+        .project-card { transition: all 0.2s ease-in-out; }
+        .project-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.1); }
+        .login-art { background:
+            radial-gradient(900px 500px at 15% 10%, rgba(59,130,246,.35), transparent 60%),
+            radial-gradient(700px 500px at 85% 90%, rgba(16,185,129,.28), transparent 60%),
+            #0b1220; }
+        .grid-lines { background-image:
+            linear-gradient(rgba(148,163,184,.09) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(148,163,184,.09) 1px, transparent 1px);
+            background-size: 42px 42px; }
+        .fade-in { animation: fadeIn .35s ease both; }
+        @keyframes fadeIn { from { opacity:0; transform: translateY(8px);} to { opacity:1; transform:none;} }
+        .list-mode #project-grid { grid-template-columns: 1fr !important; }
+        .list-mode .project-card { flex-direction: row; align-items: stretch; }
+        .list-mode .card-accent { width: 6px; height: auto !important; }
+        .list-mode .card-body { display: flex; align-items: center; gap: 24px; }
+        .list-mode .card-body h3 { margin-bottom: 0; }
+        .list-mode .card-size { min-width: 170px; }
+        input:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen overflow-hidden">
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- 1. หน้าเข้าสู่ระบบ (Login)                                     -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="login-screen" class="fixed inset-0 z-[100] flex">
+
+    <!-- ฝั่งซ้าย: แบรนด์ -->
+    <div class="login-art hidden lg:flex w-1/2 relative overflow-hidden flex-col justify-between p-12 text-white">
+        <div class="absolute inset-0 grid-lines"></div>
+
+        <div class="relative flex items-center gap-3">
+            <img src="img/pilogo.png" alt="ProInventive" class="h-11 w-11 object-contain rounded-lg bg-white/10 p-1"
+                 onerror="this.outerHTML='<div class=&quot;h-11 w-11 rounded-lg bg-blue-600 flex items-center justify-center&quot;><i class=&quot;fa-solid fa-solar-panel&quot;></i></div>'">
+            <div>
+                <div class="font-bold text-lg leading-tight tracking-wide">PRO<span class="text-blue-400">INVENTIVE</span></div>
+                <div class="text-[11px] text-slate-400 tracking-[0.2em] uppercase">Solar Suite</div>
+            </div>
+        </div>
+
+        <div class="relative">
+            <p class="text-blue-400 text-xs font-semibold tracking-[0.25em] uppercase mb-4">ออกแบบ · จำลอง · นำเสนอ</p>
+            <h1 class="text-4xl font-semibold leading-snug mb-5">
+                ระบบออกแบบโซลาร์เซลล์<br>ครบวงจรในที่เดียว
+            </h1>
+            <p class="text-slate-400 text-sm max-w-md leading-relaxed">
+                วิเคราะห์โหลดไฟฟ้า วางผังแผงบนแผนที่จริง ถอดแบบ BOM ตามมาตรฐาน วสท.
+                และออกรายงานนำเสนอลูกค้า จบในเวิร์กโฟลว์เดียว
+            </p>
+
+            <div class="grid grid-cols-3 gap-3 mt-9 max-w-md">
+                <div class="bg-white/5 border border-white/10 rounded-lg px-3 py-3">
+                    <i class="fa-solid fa-chart-line text-blue-400 mb-2"></i>
+                    <div class="text-[11px] text-slate-300 leading-tight">วิเคราะห์<br>ค่าไฟฟ้า</div>
+                </div>
+                <div class="bg-white/5 border border-white/10 rounded-lg px-3 py-3">
+                    <i class="fa-solid fa-draw-polygon text-blue-400 mb-2"></i>
+                    <div class="text-[11px] text-slate-300 leading-tight">วางผัง<br>บนแผนที่</div>
+                </div>
+                <div class="bg-white/5 border border-white/10 rounded-lg px-3 py-3">
+                    <i class="fa-solid fa-file-contract text-blue-400 mb-2"></i>
+                    <div class="text-[11px] text-slate-300 leading-tight">รายงาน<br>นำเสนอ</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative text-[11px] text-slate-500">© ProInventive Solar Suite · ใช้งานภายในองค์กร</div>
+    </div>
+
+    <!-- ฝั่งขวา: ฟอร์ม -->
+    <div class="w-full lg:w-1/2 bg-white flex items-center justify-center px-6 py-10 overflow-y-auto">
+        <div class="w-full max-w-sm fade-in">
+
+            <div class="lg:hidden flex items-center gap-3 mb-8">
+                <img src="img/pilogo.png" alt="" class="h-10 w-10 object-contain"
+                     onerror="this.outerHTML='<div class=&quot;h-10 w-10 rounded-lg bg-blue-600 text-white flex items-center justify-center&quot;><i class=&quot;fa-solid fa-solar-panel&quot;></i></div>'">
+                <span class="font-bold text-lg">PRO<span class="text-blue-600">INVENTIVE</span></span>
+            </div>
+
+            <h2 class="text-2xl font-bold text-slate-900 mb-1">เข้าสู่ระบบ</h2>
+            <p class="text-sm text-slate-500 mb-8">ใช้บัญชีที่ได้รับจากผู้ดูแลระบบ</p>
+
+            <form id="login-form" autocomplete="on" novalidate>
+                <div class="mb-4">
+                    <label for="login-user" class="block text-sm font-semibold text-slate-700 mb-1.5">ชื่อผู้ใช้ / อีเมล</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input id="login-user" name="username" type="text" autocomplete="username" spellcheck="false"
+                               class="w-full border border-slate-300 rounded-lg py-3 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                               placeholder="เช่น name@gmail.com">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="login-pass" class="block text-sm font-semibold text-slate-700 mb-1.5">รหัสผ่าน</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input id="login-pass" name="password" type="password" autocomplete="current-password"
+                               class="w-full border border-slate-300 rounded-lg py-3 pl-10 pr-11 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                               placeholder="••••••••">
+                        <button type="button" id="toggle-pass" title="แสดง/ซ่อนรหัสผ่าน"
+                                class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">
+                            <i class="fa-regular fa-eye text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <label class="flex items-center gap-2 mb-6 cursor-pointer select-none">
+                    <input type="checkbox" id="login-remember" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                    <span class="text-sm text-slate-600">จำชื่อผู้ใช้ไว้ในเครื่องนี้</span>
+                </label>
+
+                <div id="login-error" class="hidden mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                    <i class="fa-solid fa-circle-exclamation mr-1.5"></i><span id="login-error-text"></span>
+                </div>
+
+                <button type="submit" id="login-submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-bold py-3 rounded-lg shadow-md shadow-blue-500/25 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> เข้าสู่ระบบ
+                </button>
+            </form>
+
+            <div id="userdb-warning" class="hidden mt-6 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-800 leading-relaxed"></div>
+
+            <p class="text-xs text-slate-400 mt-8 text-center">ลืมรหัสผ่าน? ติดต่อผู้ดูแลระบบเพื่อออกรหัสใหม่</p>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- 2. หน้าหลัก (แสดงหลังเข้าสู่ระบบสำเร็จ)                        -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="app-shell" class="hidden h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex-col hidden md:flex shrink-0 shadow-xl z-20">
+        <div class="h-16 flex items-center px-6 border-b border-slate-800 bg-slate-950">
+            <img src="img/pilogo.png" alt="" class="w-8 h-8 object-contain mr-3"
+                 onerror="this.outerHTML='<div class=&quot;bg-blue-600 text-white p-1.5 rounded mr-3&quot;><i class=&quot;fa-solid fa-solar-panel text-sm&quot;></i></div>'">
+            <span class="font-bold text-lg text-white tracking-wide">ASC<span class="text-blue-500 font-medium"> Cloud</span></span>
+        </div>
+
+        <nav class="flex-1 py-6 px-4 space-y-2">
+            <button data-view="projects" class="nav-link w-full flex items-center px-4 py-3 rounded-lg transition text-left">
+                <i class="fa-solid fa-table-cells-large w-6"></i><span class="font-medium">Projects</span>
+            </button>
+            <button data-view="analytics" class="nav-link w-full flex items-center px-4 py-3 rounded-lg transition text-left">
+                <i class="fa-solid fa-chart-pie w-6"></i><span class="font-medium">Analytics</span>
+            </button>
+            <button data-view="team" class="nav-link w-full flex items-center px-4 py-3 rounded-lg transition text-left">
+                <i class="fa-solid fa-users w-6"></i><span class="font-medium">Team Members</span>
+                <span class="ml-auto text-[9px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">SOON</span>
+            </button>
+            <button data-view="settings" class="nav-link w-full flex items-center px-4 py-3 rounded-lg transition text-left">
+                <i class="fa-solid fa-gear w-6"></i><span class="font-medium">Settings</span>
+                <span class="ml-auto text-[9px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">SOON</span>
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800 bg-slate-950 relative">
+            <button id="user-menu-btn" class="w-full flex items-center space-x-3 hover:text-white transition text-left">
+                <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center border-2 border-slate-600 shrink-0">
+                    <span id="user-initial" class="font-bold text-white text-sm">E</span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="text-sm font-bold text-white truncate" id="user-name">Engineer_01</div>
+                    <div class="text-xs text-slate-500" id="user-plan">Pro Plan</div>
+                </div>
+                <i class="fa-solid fa-chevron-up text-xs text-slate-500"></i>
+            </button>
+
+            <div id="user-menu" class="hidden absolute bottom-[70px] left-4 right-4 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl overflow-hidden">
+                <div class="px-4 py-3 border-b border-slate-700">
+                    <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-0.5">บัญชีที่ใช้งาน</div>
+                    <div class="text-xs text-slate-300 truncate" id="user-fullid">-</div>
+                </div>
+                <button onclick="switchView('settings')" class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-700 transition"><i class="fa-solid fa-gear w-5 text-slate-400"></i> ตั้งค่าบัญชี</button>
+                <button onclick="logout()" class="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-slate-700 transition"><i class="fa-solid fa-right-from-bracket w-5"></i> ออกจากระบบ</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-8 shrink-0 z-10">
+            <div class="flex items-center w-1/2 min-w-0">
+                <h1 class="text-xl font-bold text-slate-800 mr-6 shrink-0" id="page-title">Dashboard</h1>
+                <div class="relative w-full max-w-md hidden sm:block">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="search-input" placeholder="ค้นหาชื่อโปรเจกต์ หรือสถานที่..."
+                           class="w-full bg-slate-100 border-none rounded-full py-2 pl-10 pr-9 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition outline-none">
+                    <button id="search-clear" class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition" title="ล้างคำค้นหา">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <button id="bell-btn" class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition flex items-center justify-center relative" title="ความเคลื่อนไหวล่าสุด">
+                        <i class="fa-regular fa-bell"></i>
+                        <span id="bell-dot" class="hidden absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-slate-100"></span>
+                    </button>
+                    <div id="bell-panel" class="hidden absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden z-50">
+                        <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                            <span class="font-bold text-sm text-slate-800">ความเคลื่อนไหวล่าสุด</span>
+                            <button onclick="closeBell()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-sm"></i></button>
+                        </div>
+                        <div id="bell-list" class="max-h-80 overflow-y-auto"></div>
+                    </div>
+                </div>
+
+                <button onclick="openNewProjectModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm shadow-md shadow-blue-500/30 transition flex items-center">
+                    <i class="fa-solid fa-plus sm:mr-2"></i> <span class="hidden sm:inline">สร้างโปรเจกต์ใหม่</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 sm:p-8">
+
+            <!-- ─────────── VIEW: PROJECTS ─────────── -->
+            <section id="view-projects">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-1">สวัสดี, <span class="text-blue-600" id="greet-name">คุณวิศวกร</span> 👋</h2>
+                    <p class="text-sm text-slate-500" id="greet-sub">นี่คือภาพรวมโครงการโซลาร์เซลล์ของคุณในระบบ</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-500 mb-1">โปรเจกต์ทั้งหมด</p>
+                            <h3 class="text-3xl font-bold text-slate-800" id="stat-total">0</h3>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-xl"><i class="fa-solid fa-folder-open"></i></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-500 mb-1">กำลังผลิตรวม (Design)</p>
+                            <h3 class="text-3xl font-bold text-slate-800"><span id="stat-kwp">0.00</span> <span class="text-lg font-medium text-slate-500">kWp</span></h3>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600 text-xl"><i class="fa-solid fa-bolt"></i></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-500 mb-1">รอการนำเสนอ (Proposal)</p>
+                            <h3 class="text-3xl font-bold text-slate-800" id="stat-completed">0</h3>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 text-xl"><i class="fa-solid fa-file-contract"></i></div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
+                    <div class="flex items-center gap-3">
+                        <h3 class="text-lg font-bold text-slate-800">Recent Projects</h3>
+                        <span id="result-count" class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full"></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <!-- ตัวกรองเจ้าของ: แสดงเฉพาะผู้ดูแลระบบ -->
+                        <select id="owner-filter" class="hidden text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white shadow-sm outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="__all__">ผู้ใช้ทั้งหมด</option>
+                        </select>
+                        <select id="sort-select" class="text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white shadow-sm outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="recent">แก้ไขล่าสุด</option>
+                            <option value="created">สร้างล่าสุด</option>
+                            <option value="name">ชื่อ ก-ฮ</option>
+                            <option value="kwp">ขนาด kWp มาก-น้อย</option>
+                        </select>
+                        <button id="btn-view-grid" class="p-2 w-9 h-9 rounded border shadow-sm transition" title="มุมมองการ์ด"><i class="fa-solid fa-border-all"></i></button>
+                        <button id="btn-view-list" class="p-2 w-9 h-9 rounded border shadow-sm transition" title="มุมมองรายการ"><i class="fa-solid fa-list"></i></button>
+                    </div>
+                </div>
+
+                <div id="project-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-10"></div>
+
+                <div id="empty-state" class="hidden flex-col items-center justify-center py-20 text-center">
+                    <div class="w-24 h-24 rounded-2xl bg-slate-100 flex items-center justify-center mb-6">
+                        <i class="fa-solid fa-folder-open text-4xl text-slate-300"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-700 mb-2" id="empty-title">ยังไม่มีโปรเจกต์ในระบบ</h3>
+                    <p class="text-slate-500 mb-6" id="empty-sub">เริ่มต้นออกแบบและจำลองระบบโซลาร์เซลล์โปรเจกต์แรกของคุณ</p>
+                    <button onclick="openNewProjectModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold shadow-md transition">
+                        <i class="fa-solid fa-plus mr-2"></i> สร้างโปรเจกต์ใหม่
+                    </button>
+                </div>
+            </section>
+
+            <!-- ─────────── VIEW: ANALYTICS ─────────── -->
+            <section id="view-analytics" class="hidden">
+                <div class="mb-8 flex items-end justify-between flex-wrap gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800 mb-1">Analytics</h2>
+                        <p class="text-sm text-slate-500" id="analytics-scope">สถิติการทำงานของคุณในระบบ</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select id="analytics-range" class="text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white shadow-sm outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="0">ทุกช่วงเวลา</option>
+                            <option value="30">30 วันล่าสุด</option>
+                            <option value="90">90 วันล่าสุด</option>
+                            <option value="365">1 ปีล่าสุด</option>
+                        </select>
+                        <button onclick="renderAnalytics()" class="text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm hover:bg-slate-50 transition">
+                            <i class="fa-solid fa-rotate mr-1"></i> รีเฟรช
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI -->
+                <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <p class="text-xs font-semibold text-slate-500 mb-2">โปรเจกต์ทั้งหมด</p>
+                        <h3 class="text-2xl font-bold text-slate-800" id="an-total">0</h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <p class="text-xs font-semibold text-slate-500 mb-2">กำลังผลิตรวม</p>
+                        <h3 class="text-2xl font-bold text-blue-600" id="an-kwp">0.00 <span class="text-sm font-medium text-slate-400">kWp</span></h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <p class="text-xs font-semibold text-slate-500 mb-2">ขนาดเฉลี่ย/โครงการ</p>
+                        <h3 class="text-2xl font-bold text-slate-800" id="an-avg">0.00 <span class="text-sm font-medium text-slate-400">kWp</span></h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <p class="text-xs font-semibold text-slate-500 mb-2">ออกรายงานแล้ว</p>
+                        <h3 class="text-2xl font-bold text-green-600" id="an-done">0</h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm col-span-2 lg:col-span-1">
+                        <p class="text-xs font-semibold text-slate-500 mb-2">อัตราปิดงาน</p>
+                        <h3 class="text-2xl font-bold text-amber-600" id="an-rate">0%</h3>
+                    </div>
+                </div>
+
+                <!-- แถวกราฟ 1 -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm lg:col-span-2">
+                        <div class="flex items-baseline justify-between mb-1">
+                            <h4 class="font-bold text-slate-800">โปรเจกต์ที่สร้างรายเดือน</h4>
+                            <span class="text-xs text-slate-400">12 เดือนล่าสุด</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-4">ดูจังหวะงานเข้า ว่าเดือนไหนงานหนาแน่นกว่าปกติ</p>
+                        <div class="h-64"><canvas id="chart-monthly"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-1">สถานะโครงการ</h4>
+                        <p class="text-xs text-slate-500 mb-4">แต่ละงานค้างอยู่ที่ขั้นตอนไหน</p>
+                        <div class="h-64"><canvas id="chart-status"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- แถวกราฟ 2 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-1">10 โครงการที่ใหญ่ที่สุด</h4>
+                        <p class="text-xs text-slate-500 mb-4">เรียงตามกำลังผลิตติดตั้ง (kWp)</p>
+                        <div class="h-72"><canvas id="chart-top"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-1">ความคืบหน้าตามเวิร์กโฟลว์</h4>
+                        <p class="text-xs text-slate-500 mb-4">จำนวนโครงการที่ผ่านแต่ละขั้น — ช่วงที่ตัวเลขตกมากคือคอขวด</p>
+                        <div class="h-72"><canvas id="chart-funnel"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- แถวกราฟ 3: เฉพาะผู้ดูแลระบบ -->
+                <div id="admin-analytics" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-1">ปริมาณงานรายผู้ใช้ <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded ml-1 align-middle">ADMIN</span></h4>
+                        <p class="text-xs text-slate-500 mb-4">จำนวนโครงการที่แต่ละคนถือครองอยู่</p>
+                        <div class="h-72"><canvas id="chart-byuser"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-1">กำลังผลิตรวมรายผู้ใช้ <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded ml-1 align-middle">ADMIN</span></h4>
+                        <p class="text-xs text-slate-500 mb-4">kWp รวมที่แต่ละคนออกแบบไว้</p>
+                        <div class="h-72"><canvas id="chart-kwpuser"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- ตารางสรุป -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-10">
+                    <div class="px-6 py-4 border-b border-slate-100">
+                        <h4 class="font-bold text-slate-800">รายละเอียดรายโครงการ</h4>
+                        <p class="text-xs text-slate-500 mt-0.5">ตรวจสอบว่าโครงการไหนยังขาดข้อมูลขั้นตอนใด</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                                <tr>
+                                    <th class="px-6 py-3 text-left font-semibold">โครงการ</th>
+                                    <th class="px-4 py-3 text-left font-semibold admin-col hidden">เจ้าของ</th>
+                                    <th class="px-4 py-3 text-right font-semibold">kWp</th>
+                                    <th class="px-4 py-3 text-center font-semibold">โหลดไฟฟ้า</th>
+                                    <th class="px-4 py-3 text-center font-semibold">ผังแผง</th>
+                                    <th class="px-4 py-3 text-center font-semibold">พารามิเตอร์</th>
+                                    <th class="px-4 py-3 text-center font-semibold">รายงาน</th>
+                                    <th class="px-6 py-3 text-left font-semibold">แก้ไขล่าสุด</th>
+                                </tr>
+                            </thead>
+                            <tbody id="an-table" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─────────── VIEW: TEAM MEMBERS ─────────── -->
+            <section id="view-team" class="hidden">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-1">Team Members</h2>
+                    <p class="text-sm text-slate-500">จัดการสมาชิกและสิทธิ์การเข้าถึงโครงการ</p>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-10 text-center max-w-3xl">
+                    <div class="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-5 text-2xl">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">อยู่ระหว่างพัฒนา</h3>
+                    <p class="text-sm text-slate-500 mb-8 max-w-md mx-auto leading-relaxed">
+                        ตอนนี้ระบบยังทำงานแบบบัญชีเดี่ยว ข้อมูลเก็บอยู่ในเครื่องของแต่ละคน
+                        เมื่อย้ายฐานข้อมูลขึ้นคลาวด์แล้ว หน้านี้จะเปิดใช้งาน
+                    </p>
+                    <div class="grid sm:grid-cols-3 gap-3 text-left">
+                        <div class="border border-slate-200 rounded-lg p-4">
+                            <i class="fa-solid fa-user-plus text-slate-400 mb-2"></i>
+                            <div class="text-sm font-bold text-slate-700 mb-1">เชิญสมาชิก</div>
+                            <div class="text-xs text-slate-500">ส่งคำเชิญทางอีเมลเข้าทีม</div>
+                        </div>
+                        <div class="border border-slate-200 rounded-lg p-4">
+                            <i class="fa-solid fa-user-shield text-slate-400 mb-2"></i>
+                            <div class="text-sm font-bold text-slate-700 mb-1">กำหนดสิทธิ์</div>
+                            <div class="text-xs text-slate-500">แยกสิทธิ์ดูอย่างเดียว / แก้ไข / ผู้ดูแล</div>
+                        </div>
+                        <div class="border border-slate-200 rounded-lg p-4">
+                            <i class="fa-solid fa-share-nodes text-slate-400 mb-2"></i>
+                            <div class="text-sm font-bold text-slate-700 mb-1">แชร์โครงการ</div>
+                            <div class="text-xs text-slate-500">ส่งต่องานให้เพื่อนร่วมทีมทำต่อ</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─────────── VIEW: SETTINGS ─────────── -->
+            <section id="view-settings" class="hidden">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-1">Settings</h2>
+                    <p class="text-sm text-slate-500">ตั้งค่าบัญชีและข้อมูลในเครื่อง</p>
+                </div>
+
+                <div class="max-w-3xl space-y-6">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                        <h3 class="font-bold text-slate-800 mb-4">บัญชีที่ใช้งาน</h3>
+                        <dl class="grid sm:grid-cols-2 gap-4 text-sm">
+                            <div><dt class="text-slate-500 text-xs mb-1">ชื่อผู้ใช้</dt><dd class="font-semibold text-slate-800" id="set-user">-</dd></div>
+                            <div><dt class="text-slate-500 text-xs mb-1">สิทธิ์การใช้งาน</dt><dd class="font-semibold text-slate-800" id="set-role">-</dd></div>
+                            <div><dt class="text-slate-500 text-xs mb-1">เข้าสู่ระบบเมื่อ</dt><dd class="font-semibold text-slate-800" id="set-login">-</dd></div>
+                            <div><dt class="text-slate-500 text-xs mb-1">โปรเจกต์ที่ถือครอง</dt><dd class="font-semibold text-slate-800" id="set-count">-</dd></div>
+                        </dl>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                        <h3 class="font-bold text-slate-800 mb-1">ข้อมูลในเครื่องนี้</h3>
+                        <p class="text-xs text-slate-500 mb-5">โครงการทั้งหมดถูกเก็บใน LocalStorage ของเบราว์เซอร์ ควรสำรองไฟล์ไว้เป็นระยะ</p>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="exportBackup()" class="px-4 py-2.5 rounded-lg text-sm font-bold bg-slate-800 text-white hover:bg-slate-900 transition">
+                                <i class="fa-solid fa-download mr-1.5"></i> ดาวน์โหลดไฟล์สำรอง
+                            </button>
+                            <button onclick="document.getElementById('restore-file').click()" class="px-4 py-2.5 rounded-lg text-sm font-bold border border-slate-300 hover:bg-slate-50 transition">
+                                <i class="fa-solid fa-upload mr-1.5"></i> กู้คืนจากไฟล์สำรอง
+                            </button>
+                            <input type="file" id="restore-file" accept=".json" class="hidden">
+                            <button onclick="wipeMyProjects()" class="px-4 py-2.5 rounded-lg text-sm font-bold text-red-600 border border-red-200 hover:bg-red-50 transition">
+                                <i class="fa-solid fa-trash-can mr-1.5"></i> ลบโปรเจกต์ของฉันทั้งหมด
+                            </button>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-4" id="set-storage"></p>
+                    </div>
+
+                    <!-- ═══ จัดการผู้ใช้ (เห็นเฉพาะผู้ดูแลระบบ) ═══ -->
+                    <div id="admin-users-card" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="px-6 py-5 border-b border-slate-100">
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold text-slate-800">จัดการผู้ใช้</h3>
+                                <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded">ADMIN</span>
+                            </div>
+                            <p class="text-xs text-slate-500 leading-relaxed">
+                                เพิ่ม แก้รหัสผ่าน หรือระงับบัญชีได้จากที่นี่ ผู้ใช้ที่เพิ่มจะ<b>ใช้ล็อกอินได้ทันทีบนเครื่องนี้</b>
+                                แต่จะยังไม่มีผลกับเครื่องอื่น จนกว่าจะกดสร้างไฟล์ <code class="bg-slate-100 px-1 rounded">user.js</code> ฉบับใหม่แล้วอัปโหลดขึ้น GitHub
+                            </p>
+                        </div>
+
+                        <!-- ฟอร์มเพิ่ม/แก้ไข -->
+                        <div class="px-6 py-5 bg-slate-50 border-b border-slate-100">
+                            <div class="grid sm:grid-cols-12 gap-3 items-end">
+                                <div class="sm:col-span-5">
+                                    <label class="block text-xs font-bold text-slate-600 mb-1" for="nu-name">ชื่อผู้ใช้ / อีเมล</label>
+                                    <input id="nu-name" type="text" spellcheck="false" placeholder="name@company.com"
+                                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div class="sm:col-span-4">
+                                    <label class="block text-xs font-bold text-slate-600 mb-1" for="nu-pass">รหัสผ่าน</label>
+                                    <div class="flex gap-2">
+                                        <input id="nu-pass" type="text" spellcheck="false" placeholder="อย่างน้อย 4 ตัวอักษร"
+                                               class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                                        <button type="button" onclick="genPassword()" title="สุ่มรหัสผ่านให้"
+                                                class="shrink-0 w-11 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-500 transition">
+                                            <i class="fa-solid fa-dice text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-xs font-bold text-slate-600 mb-1" for="nu-role">สิทธิ์</label>
+                                    <select id="nu-role" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="user">ผู้ใช้ทั่วไป</option>
+                                        <option value="admin">ผู้ดูแลระบบ</option>
+                                    </select>
+                                </div>
+                                <div class="sm:col-span-1">
+                                    <button onclick="saveUserEntry()" id="nu-save"
+                                            class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 text-sm font-bold transition" title="บันทึกผู้ใช้">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="nu-msg" class="hidden mt-3 rounded-lg px-3 py-2 text-xs"></div>
+                        </div>
+
+                        <!-- ตารางผู้ใช้ -->
+                        <div class="px-6 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
+                            <input id="nu-search" type="text" placeholder="ค้นหาผู้ใช้..."
+                                   class="text-xs bg-slate-100 border-none rounded-full px-4 py-2 w-56 outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                            <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none">
+                                <input type="checkbox" id="nu-showpass" class="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                แสดงรหัสผ่าน
+                            </label>
+                        </div>
+                        <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider sticky top-0">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left font-semibold">ชื่อผู้ใช้</th>
+                                        <th class="px-4 py-3 text-left font-semibold">รหัสผ่าน</th>
+                                        <th class="px-4 py-3 text-left font-semibold">สิทธิ์</th>
+                                        <th class="px-4 py-3 text-left font-semibold">ที่มา</th>
+                                        <th class="px-6 py-3 text-right font-semibold">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="nu-table" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- แถบเผยแพร่ -->
+                        <div class="px-6 py-5 bg-slate-50 border-t border-slate-100">
+                            <div class="flex items-start gap-3 mb-4">
+                                <i class="fa-solid fa-circle-info text-blue-500 mt-0.5"></i>
+                                <p class="text-xs text-slate-600 leading-relaxed">
+                                    ทำให้มีผลกับทุกเครื่อง: กดปุ่มด้านล่างเพื่อดาวน์โหลด <code class="bg-slate-200 px-1 rounded">user.js</code> ฉบับรวมผู้ใช้ล่าสุด
+                                    แล้วนำไปวางทับไฟล์เดิมใน repo <code class="bg-slate-200 px-1 rounded">asc</code> บน GitHub แล้ว commit
+                                    <span id="nu-pending" class="hidden text-amber-700 font-semibold"></span>
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap gap-3">
+                                <button onclick="downloadUserJs()" class="px-4 py-2.5 rounded-lg text-sm font-bold bg-slate-800 text-white hover:bg-slate-900 transition">
+                                    <i class="fa-solid fa-file-arrow-down mr-1.5"></i> สร้างไฟล์ user.js ฉบับใหม่
+                                </button>
+                                <button onclick="copyUserJs()" class="px-4 py-2.5 rounded-lg text-sm font-bold border border-slate-300 bg-white hover:bg-slate-100 transition">
+                                    <i class="fa-regular fa-copy mr-1.5"></i> คัดลอกเนื้อไฟล์
+                                </button>
+                                <button onclick="clearLocalUsers()" class="px-4 py-2.5 rounded-lg text-sm font-bold text-red-600 border border-red-200 hover:bg-red-50 transition">
+                                    <i class="fa-solid fa-rotate-left mr-1.5"></i> ล้างการแก้ไขในเครื่อง
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 opacity-70">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="font-bold text-slate-800">การตั้งค่าอื่น</h3>
+                            <span class="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded">รอพัฒนา</span>
+                        </div>
+                        <ul class="text-sm text-slate-500 space-y-2 mt-3">
+                            <li><i class="fa-regular fa-square text-slate-300 mr-2"></i>เปลี่ยนรหัสผ่านด้วยตนเอง</li>
+                            <li><i class="fa-regular fa-square text-slate-300 mr-2"></i>ค่ามาตรฐานโครงการ (ยี่ห้อแผง อินเวอร์เตอร์ ค่าไฟฟ้าต่อหน่วย)</li>
+                            <li><i class="fa-regular fa-square text-slate-300 mr-2"></i>โลโก้และหัวกระดาษบนรายงาน</li>
+                            <li><i class="fa-regular fa-square text-slate-300 mr-2"></i>ซิงก์ข้อมูลขึ้นคลาวด์อัตโนมัติ</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- 3. Modal สร้างโปรเจกต์ใหม่                                     -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="new-project-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 transform scale-95 transition-transform duration-300" id="modal-content">
+        <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
+            <h3 class="text-lg font-bold text-slate-800">สร้างโปรเจกต์ใหม่</h3>
+            <button onclick="closeNewProjectModal()" class="text-slate-400 hover:text-red-500 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <div class="p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-1" for="new-proj-name">ชื่อโปรเจกต์ <span class="text-red-500">*</span></label>
+                <input type="text" id="new-proj-name" placeholder="เช่น: โรงงาน ABC เฟส 1" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-1" for="new-proj-loc">สถานที่ตั้ง (Location)</label>
+                <input type="text" id="new-proj-loc" placeholder="เช่น: อ.เมือง จ.สมุทรปราการ" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-1" for="new-proj-note">รายละเอียดเพิ่มเติม (Note)</label>
+                <textarea id="new-proj-note" rows="2" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"></textarea>
+            </div>
+            <div id="modal-error" class="hidden rounded-lg bg-red-50 border border-red-200 px-4 py-2.5 text-sm text-red-700"></div>
+        </div>
+
+        <div class="px-6 py-4 border-t border-slate-200 flex justify-end space-x-3 bg-slate-50 rounded-b-xl">
+            <button onclick="closeNewProjectModal()" class="px-5 py-2.5 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-200 transition">ยกเลิก</button>
+            <button onclick="createNewProject()" class="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition flex items-center">
+                <i class="fa-solid fa-rocket mr-2"></i> สร้างและเริ่มออกแบบ
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- ⚙️ LOGIC                                                       -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<script>
+/* ─────────────────────────────────────────────
+   0. ค่าคงที่และสถานะกลาง
+   ───────────────────────────────────────────── */
+const DB_KEY      = 'proinventive_enterprise_db';
+const SESSION_KEY = 'proinventive_session';
+const REMEMBER_KEY= 'proinventive_remember_user';
+
+let SESSION   = null;    // { username, display, isAdmin, loginAt }
+let viewMode  = 'grid';  // grid | list
+let currentView = 'projects';
+const charts  = {};      // เก็บ instance ของ Chart.js ไว้ทำลายก่อนวาดใหม่
+
+/* ─────────────────────────────────────────────
+   1. โหลดฐานข้อมูลผู้ใช้ (user.js → user.html)
+   ───────────────────────────────────────────── */
+async function ensureUserDatabase() {
+    // ทางที่ 1: user.js ถูกโหลดมาแล้วจาก <script src="user.js">
+    if (typeof window.validateUser === 'function' && window.users) return true;
+
+    // ทางที่ 2: ดึง user.html มาแล้วดึงเฉพาะสคริปต์ข้างในมารัน (สำรอง)
+    try {
+        const res  = await fetch('user.html', { cache: 'no-store' });
+        const text = await res.text();
+        const doc  = new DOMParser().parseFromString(text, 'text/html');
+        let code = '';
+        doc.querySelectorAll('script').forEach(s => { if (!s.src) code += s.textContent + '\n'; });
+        if (code.trim()) {
+            // eslint-disable-next-line no-new-func
+            new Function(code + '\nwindow.users = typeof users !== "undefined" ? users : window.users;' +
+                                '\nwindow.validateUser = typeof validateUser !== "undefined" ? validateUser : window.validateUser;')();
+        }
+        if (typeof window.validateUser === 'function') return true;
+    } catch (e) {
+        console.warn('อ่าน user.html ไม่สำเร็จ:', e.message);
+    }
+    return false;
+}
+
+/* กันกรณี user.js เป็นเวอร์ชันเก่าที่ยังไม่มีฟังก์ชันเสริม */
+function isAdmin(u)      { return typeof window.isAdminUser === 'function' ? window.isAdminUser(u) : String(u||'').toLowerCase() === 'lpee'; }
+function prettyName(u)   { return typeof window.displayNameOf === 'function' ? window.displayNameOf(u) : String(u||'').split('@')[0]; }
+
+/* ─────────────────────────────────────────────
+   2. หน้าเข้าสู่ระบบ
+   ───────────────────────────────────────────── */
+function showLoginError(msg) {
+    const box = document.getElementById('login-error');
+    document.getElementById('login-error-text').innerText = msg;
+    box.classList.remove('hidden');
+}
+function hideLoginError() { document.getElementById('login-error').classList.add('hidden'); }
+
+async function initLogin() {
+    const ok = await ensureUserDatabase();
+    if (!ok) {
+        const warn = document.getElementById('userdb-warning');
+        warn.classList.remove('hidden');
+        warn.innerHTML = '<b>อ่านรายชื่อผู้ใช้ไม่ได้</b><br>' +
+            'ตรวจว่ามีไฟล์ <code class="bg-amber-100 px-1 rounded">user.js</code> อยู่โฟลเดอร์เดียวกับ index.html ' +
+            'และถ้าเปิดไฟล์ตรงๆ ด้วย <code class="bg-amber-100 px-1 rounded">file://</code> ให้เปลี่ยนไปเปิดผ่านเว็บเซิร์ฟเวอร์แทน ' +
+            '(เช่น Live Server ของ VS Code หรือคำสั่ง <code class="bg-amber-100 px-1 rounded">python -m http.server</code>)';
+        document.getElementById('login-submit').disabled = true;
+    }
+
+    // เติมชื่อผู้ใช้ที่เคยจำไว้
+    const remembered = localStorage.getItem(REMEMBER_KEY);
+    if (remembered) {
+        document.getElementById('login-user').value = remembered;
+        document.getElementById('login-remember').checked = true;
+        document.getElementById('login-pass').focus();
+    } else {
+        document.getElementById('login-user').focus();
+    }
+}
+
+function doLogin(e) {
+    if (e) e.preventDefault();
+    hideLoginError();
+
+    const u = document.getElementById('login-user').value.trim();
+    const p = document.getElementById('login-pass').value;
+
+    if (!u) { showLoginError('กรอกชื่อผู้ใช้ก่อนเข้าสู่ระบบ'); document.getElementById('login-user').focus(); return; }
+    if (!p) { showLoginError('กรอกรหัสผ่านก่อนเข้าสู่ระบบ'); document.getElementById('login-pass').focus(); return; }
+
+    if (typeof window.validateUser !== 'function' && Object.keys(loadUserOverrides()).length === 0) {
+        showLoginError('ระบบยังอ่านรายชื่อผู้ใช้ไม่ได้ ดูคำแนะนำด้านล่าง');
+        return;
+    }
+
+    if (!authenticate(u, p)) {
+        showLoginError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+        document.getElementById('login-pass').value = '';
+        document.getElementById('login-pass').focus();
+        return;
+    }
+
+    // จำชื่อผู้ใช้ตามที่เลือก
+    if (document.getElementById('login-remember').checked) localStorage.setItem(REMEMBER_KEY, u);
+    else localStorage.removeItem(REMEMBER_KEY);
+
+    SESSION = {
+        username: u.trim(),
+        display : prettyName(u),
+        isAdmin : roleOf(u) === 'admin',
+        loginAt : new Date().toISOString()
+    };
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(SESSION));
+
+    enterApp();
+}
+
+function logout() {
+    if (!confirm('ต้องการออกจากระบบใช่หรือไม่?')) return;
+    sessionStorage.removeItem(SESSION_KEY);
+    location.reload();
+}
+
+/* ─────────────────────────────────────────────
+   3. เข้าสู่หน้าหลัก
+   ───────────────────────────────────────────── */
+function enterApp() {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app-shell').classList.remove('hidden');
+    document.title = 'ASC Cloud — Dashboard';
+
+    // แสดงชื่อผู้ใช้ทุกจุด
+    document.getElementById('user-name').innerText   = SESSION.display;
+    document.getElementById('user-initial').innerText= SESSION.display.charAt(0).toUpperCase();
+    document.getElementById('user-fullid').innerText = SESSION.username;
+    document.getElementById('user-plan').innerText   = SESSION.isAdmin ? 'Administrator' : 'Pro Plan';
+    document.getElementById('greet-name').innerText  = SESSION.display;
+
+    if (SESSION.isAdmin) {
+        document.getElementById('greet-sub').innerText = 'คุณเข้าใช้งานในสิทธิ์ผู้ดูแลระบบ จึงเห็นโครงการของผู้ใช้ทุกคน';
+        document.getElementById('analytics-scope').innerText = 'สถิติรวมของผู้ใช้ทุกคนในระบบ';
+        document.getElementById('owner-filter').classList.remove('hidden');
+        document.querySelectorAll('.admin-col').forEach(el => el.classList.remove('hidden'));
+        document.getElementById('admin-analytics').classList.remove('hidden');
+    }
+
+    migrateLegacyProjects();
+    renderDashboard();
+    renderNotifications();
+}
+
+/* ─────────────────────────────────────────────
+   4. ฐานข้อมูลโปรเจกต์
+   ───────────────────────────────────────────── */
+function loadDB() {
+    let db = null;
+    try { db = JSON.parse(localStorage.getItem(DB_KEY)); } catch (e) { db = null; }
+    if (!db || typeof db !== 'object') db = { user_profile: {}, projects: {} };
+    if (!db.projects) db.projects = {};
+    return db;
+}
+function saveDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+
+/* โครงการเดิมที่สร้างก่อนมีระบบ Login จะยังไม่มีเจ้าของ
+   ยกให้ผู้ใช้คนแรกที่ล็อกอินในเครื่องนี้ (ยกเว้นผู้ดูแลระบบ จะไม่ยึดของใคร) */
+function migrateLegacyProjects() {
+    if (SESSION.isAdmin) return;
+    const db = loadDB();
+    let changed = false;
+    Object.values(db.projects).forEach(p => {
+        if (p.meta && !p.meta.owner) { p.meta.owner = SESSION.username; changed = true; }
+    });
+    if (changed) saveDB(db);
+}
+
+function ownerOf(proj) { return (proj.meta && proj.meta.owner) || 'ไม่ระบุเจ้าของ'; }
+
+/* คืนรายการโปรเจกต์ที่ผู้ใช้ปัจจุบันมีสิทธิ์เห็น */
+function visibleProjects() {
+    const db = loadDB();
+    return Object.keys(db.projects)
+        .filter(id => {
+            const p = db.projects[id];
+            if (!p || !p.meta) return false;
+            if (SESSION.isAdmin) return true;                    // lpee เห็นทุกคน
+            return (p.meta.owner || SESSION.username) === SESSION.username;
+        })
+        .map(id => ({ id, ...db.projects[id] }));
+}
+
+function kwpOf(proj) {
+    const d = proj.data || {};
+    if (d.db1 && d.db1.step4_validation_results) {
+        return parseFloat(d.db1.step4_validation_results.totalDcCapacity_kWp) || 0;
+    }
+    return 0;
+}
+
+/* ─────────────────────────────────────────────
+   5. หน้า Projects
+   ───────────────────────────────────────────── */
+function renderDashboard() {
+    const grid  = document.getElementById('project-grid');
+    const empty = document.getElementById('empty-state');
+    const term  = document.getElementById('search-input').value.trim().toLowerCase();
+    const sort  = document.getElementById('sort-select').value;
+    const ownerPick = document.getElementById('owner-filter').value;
+
+    let list = visibleProjects();
+
+    // สถิติด้านบนใช้ข้อมูลทั้งหมด ไม่ผูกกับคำค้นหา
+    const allKwp   = list.reduce((s, p) => s + kwpOf(p), 0);
+    const allDone  = list.filter(p => p.data && p.data.db3).length;
+    document.getElementById('stat-total').innerText     = list.length;
+    document.getElementById('stat-kwp').innerText       = allKwp.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+    document.getElementById('stat-completed').innerText = allDone;
+
+    // เติมตัวเลือกเจ้าของ (โหมดผู้ดูแลระบบ)
+    if (SESSION.isAdmin) refreshOwnerFilter(list);
+
+    // กรอง
+    if (SESSION.isAdmin && ownerPick && ownerPick !== '__all__') {
+        list = list.filter(p => ownerOf(p) === ownerPick);
+    }
+    if (term) {
+        list = list.filter(p =>
+            (p.meta.name || '').toLowerCase().includes(term) ||
+            (p.meta.location || '').toLowerCase().includes(term) ||
+            (p.meta.note || '').toLowerCase().includes(term) ||
+            ownerOf(p).toLowerCase().includes(term)
+        );
+    }
+
+    // เรียงลำดับ
+    list.sort((a, b) => {
+        if (sort === 'name')    return (a.meta.name || '').localeCompare(b.meta.name || '', 'th');
+        if (sort === 'kwp')     return kwpOf(b) - kwpOf(a);
+        if (sort === 'created') return new Date(b.meta.createdAt || 0) - new Date(a.meta.createdAt || 0);
+        return new Date(b.meta.lastModified || 0) - new Date(a.meta.lastModified || 0);
+    });
+
+    document.getElementById('result-count').innerText = term || (ownerPick && ownerPick !== '__all__')
+        ? `พบ ${list.length} รายการ` : `${list.length} รายการ`;
+
+    if (list.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        empty.classList.add('flex');
+        if (term) {
+            document.getElementById('empty-title').innerText = 'ไม่พบโปรเจกต์ที่ตรงกับคำค้นหา';
+            document.getElementById('empty-sub').innerText   = `ลองใช้คำอื่น หรือล้างคำค้นหา "${term}" ออก`;
+        } else {
+            document.getElementById('empty-title').innerText = 'ยังไม่มีโปรเจกต์ในระบบ';
+            document.getElementById('empty-sub').innerText   = 'เริ่มต้นออกแบบและจำลองระบบโซลาร์เซลล์โปรเจกต์แรกของคุณ';
+        }
+        return;
+    }
+
+    empty.classList.add('hidden');
+    empty.classList.remove('flex');
+
+    grid.innerHTML = list.map(p => {
+        const kwp     = kwpOf(p);
+        const hasRep  = !!(p.data && p.data.db3);
+        const stage   = stageOf(p);
+        const lastMod = p.meta.lastModified
+            ? new Date(p.meta.lastModified).toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })
+            : '-';
+        const ownerBadge = SESSION.isAdmin
+            ? `<span class="inline-flex items-center text-[10px] bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded mb-2"><i class="fa-solid fa-user text-[9px] mr-1"></i>${esc(prettyName(ownerOf(p)))}</span>`
+            : '';
+
+        return `
+        <div class="project-card bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            <div class="card-accent h-2 w-full ${hasRep ? 'bg-green-500' : 'bg-blue-500'}"></div>
+            <div class="card-body p-5 flex-1 cursor-pointer" onclick="openProject('${p.id}')">
+                <div class="flex-1 min-w-0">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="inline-block px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${stage.cls}">${stage.label}</span>
+                        <button onclick="event.stopPropagation(); deleteProject('${p.id}')" class="text-slate-300 hover:text-red-500 transition" title="ลบโปรเจกต์">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                    ${ownerBadge}
+                    <h3 class="text-lg font-bold text-slate-800 mb-1 truncate" title="${esc(p.meta.name)}">${esc(p.meta.name)}</h3>
+                    <p class="text-xs text-slate-500 mb-4 flex items-center truncate"><i class="fa-solid fa-location-dot mr-1.5 text-slate-400"></i> ${esc(p.meta.location || 'ไม่ระบุสถานที่')}</p>
+                </div>
+                <div class="card-size bg-slate-50 rounded-lg p-3 border border-slate-100 mb-2">
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-slate-500">System Size:</span>
+                        <span class="font-bold text-slate-800">${kwp > 0 ? kwp.toFixed(2) + ' kWp' : '-'}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-5 py-3 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                <span><i class="fa-regular fa-clock mr-1"></i> ${lastMod}</span>
+                <button onclick="openProject('${p.id}')" class="text-blue-600 font-bold hover:text-blue-800 transition">เปิด <i class="fa-solid fa-arrow-right ml-1"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function refreshOwnerFilter(list) {
+    const sel  = document.getElementById('owner-filter');
+    const keep = sel.value;
+    const owners = [...new Set(list.map(ownerOf))].sort();
+    sel.innerHTML = '<option value="__all__">ผู้ใช้ทั้งหมด</option>' +
+        owners.map(o => `<option value="${esc(o)}">${esc(prettyName(o))}</option>`).join('');
+    if (owners.includes(keep)) sel.value = keep;
+}
+
+/* จัดสถานะตามขั้นตอนที่ทำไปแล้ว */
+function stageOf(p) {
+    const d = p.data || {};
+    if (d.db3) return { key:'report',  label:'Completed', cls:'bg-green-100 text-green-700' };
+    if (d.db2) return { key:'param',   label:'Simulated', cls:'bg-indigo-100 text-indigo-700' };
+    if (d.db1) return { key:'design',  label:'Designed',  cls:'bg-blue-100 text-blue-700' };
+    if (d.db0) return { key:'load',    label:'Load Data', cls:'bg-amber-100 text-amber-700' };
+    return       { key:'new',     label:'Drafting',  cls:'bg-slate-100 text-slate-600' };
+}
+
+function esc(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ─────────────────────────────────────────────
+   6. Modal สร้างโปรเจกต์
+   ───────────────────────────────────────────── */
+function openNewProjectModal() {
+    const modal   = document.getElementById('new-project-modal');
+    const content = document.getElementById('modal-content');
+    document.getElementById('modal-error').classList.add('hidden');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+    setTimeout(() => document.getElementById('new-proj-name').focus(), 60);
+}
+
+function closeNewProjectModal() {
+    const modal   = document.getElementById('new-project-modal');
+    const content = document.getElementById('modal-content');
+    modal.classList.add('opacity-0');
+    content.classList.add('scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.getElementById('new-proj-name').value = '';
+        document.getElementById('new-proj-loc').value  = '';
+        document.getElementById('new-proj-note').value = '';
+    }, 300);
+}
+
+function createNewProject() {
+    const name = document.getElementById('new-proj-name').value.trim();
+    const loc  = document.getElementById('new-proj-loc').value.trim();
+    const note = document.getElementById('new-proj-note').value.trim();
+    const err  = document.getElementById('modal-error');
+
+    if (!name) {
+        err.innerText = 'ระบุชื่อโปรเจกต์ก่อนสร้าง';
+        err.classList.remove('hidden');
+        document.getElementById('new-proj-name').focus();
+        return;
+    }
+
+    const db = loadDB();
+    if (!db.user_profile || !db.user_profile.uid) {
+        db.user_profile = { uid: SESSION.username, name: SESSION.display, role: SESSION.isAdmin ? 'System Admin' : 'Engineer' };
+    }
+
+    const newId = 'proj_' + Date.now();
+    db.projects[newId] = {
+        meta: {
+            name, location: loc, note,
+            owner: SESSION.username,
+            ownerName: SESSION.display,
+            createdAt: new Date().toISOString(),
+            lastModified: new Date().toISOString()
+        },
+        data: { db0: null, db1: null, db2: null, db3: null }
+    };
+    saveDB(db);
+
+    window.location.href = `master_shell.html?id=${newId}`;
+}
+
+function openProject(id) { window.location.href = `master_shell.html?id=${id}`; }
+
+function deleteProject(id) {
+    const db = loadDB();
+    const p  = db.projects[id];
+    if (!p) return;
+    if (!SESSION.isAdmin && (p.meta.owner || SESSION.username) !== SESSION.username) {
+        alert('ลบไม่ได้ โปรเจกต์นี้เป็นของผู้ใช้อื่น');
+        return;
+    }
+    if (!confirm(`ลบโปรเจกต์ "${p.meta.name}" อย่างถาวรหรือไม่? ข้อมูลทั้งหมดจะหายไปและกู้คืนไม่ได้`)) return;
+    delete db.projects[id];
+    saveDB(db);
+    renderDashboard();
+    renderNotifications();
+    if (currentView === 'analytics') renderAnalytics();
+}
+
+/* ─────────────────────────────────────────────
+   7. สลับหน้า / ปุ่มต่างๆ
+   ───────────────────────────────────────────── */
+const VIEW_TITLES = { projects:'Dashboard', analytics:'Analytics', team:'Team Members', settings:'Settings' };
+
+function switchView(view) {
+    currentView = view;
+    document.getElementById('user-menu').classList.add('hidden');
+
+    ['projects','analytics','team','settings'].forEach(v => {
+        document.getElementById('view-' + v).classList.toggle('hidden', v !== view);
+    });
+
+    document.querySelectorAll('.nav-link').forEach(btn => {
+        const on = btn.dataset.view === view;
+        btn.classList.toggle('bg-blue-600', on);
+        btn.classList.toggle('text-white', on);
+        btn.classList.toggle('shadow-md', on);
+        btn.classList.toggle('hover:bg-slate-800', !on);
+        btn.classList.toggle('hover:text-white', !on);
+    });
+
+    document.getElementById('page-title').innerText = VIEW_TITLES[view];
+    document.getElementById('search-input').parentElement.style.visibility = (view === 'projects') ? 'visible' : 'hidden';
+
+    if (view === 'analytics') renderAnalytics();
+    if (view === 'settings')  renderSettings();
+}
+
+function setViewMode(mode) {
+    viewMode = mode;
+    document.getElementById('app-shell').classList.toggle('list-mode', mode === 'list');
+    const on  = 'bg-blue-600 text-white border-blue-600';
+    const off = 'bg-white text-slate-400 border-slate-200 hover:text-blue-600';
+    document.getElementById('btn-view-grid').className = `p-2 w-9 h-9 rounded border shadow-sm transition ${mode==='grid'?on:off}`;
+    document.getElementById('btn-view-list').className = `p-2 w-9 h-9 rounded border shadow-sm transition ${mode==='list'?on:off}`;
+    localStorage.setItem('proinventive_viewmode', mode);
+}
+
+/* กระดิ่งแจ้งเตือน: ใช้ข้อมูลจริงจากโปรเจกต์ที่แก้ไขล่าสุด */
+function renderNotifications() {
+    const list = visibleProjects()
+        .sort((a,b) => new Date(b.meta.lastModified||0) - new Date(a.meta.lastModified||0))
+        .slice(0, 6);
+
+    const box = document.getElementById('bell-list');
+    if (list.length === 0) {
+        box.innerHTML = '<div class="px-4 py-8 text-center text-sm text-slate-400">ยังไม่มีความเคลื่อนไหว</div>';
+        document.getElementById('bell-dot').classList.add('hidden');
+        return;
+    }
+
+    // จุดแดงขึ้นเมื่อมีงานที่แก้ไขภายใน 24 ชม.
+    const recent = list.filter(p => (Date.now() - new Date(p.meta.lastModified||0)) < 864e5);
+    document.getElementById('bell-dot').classList.toggle('hidden', recent.length === 0);
+
+    box.innerHTML = list.map(p => {
+        const st = stageOf(p);
+        return `
+        <button onclick="openProject('${p.id}')" class="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-50 transition flex gap-3">
+            <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 text-slate-500 text-xs"><i class="fa-solid fa-folder"></i></div>
+            <div class="min-w-0">
+                <div class="text-sm font-semibold text-slate-800 truncate">${esc(p.meta.name)}</div>
+                <div class="text-xs text-slate-500">${st.label} · ${timeAgo(p.meta.lastModified)}</div>
+            </div>
+        </button>`;
+    }).join('');
+}
+
+function timeAgo(iso) {
+    if (!iso) return '-';
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff/6e4), h = Math.floor(diff/36e5), d = Math.floor(diff/864e5);
+    if (m < 1)  return 'เมื่อครู่';
+    if (m < 60) return `${m} นาทีที่แล้ว`;
+    if (h < 24) return `${h} ชั่วโมงที่แล้ว`;
+    if (d < 30) return `${d} วันที่แล้ว`;
+    return new Date(iso).toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function closeBell() { document.getElementById('bell-panel').classList.add('hidden'); }
+
+/* ─────────────────────────────────────────────
+   8. หน้า Analytics
+   ───────────────────────────────────────────── */
+function renderAnalytics() {
+    const days = parseInt(document.getElementById('analytics-range').value) || 0;
+    let list = visibleProjects();
+    if (days > 0) {
+        const cut = Date.now() - days * 864e5;
+        list = list.filter(p => new Date(p.meta.createdAt || p.meta.lastModified || 0).getTime() >= cut);
+    }
+
+    // ── KPI
+    const total = list.length;
+    const kwp   = list.reduce((s,p) => s + kwpOf(p), 0);
+    const done  = list.filter(p => p.data && p.data.db3).length;
+    const sized = list.filter(p => kwpOf(p) > 0).length;
+
+    document.getElementById('an-total').innerText = total;
+    document.getElementById('an-kwp').innerHTML   = kwp.toFixed(2) + ' <span class="text-sm font-medium text-slate-400">kWp</span>';
+    document.getElementById('an-avg').innerHTML   = (sized ? kwp/sized : 0).toFixed(2) + ' <span class="text-sm font-medium text-slate-400">kWp</span>';
+    document.getElementById('an-done').innerText  = done;
+    document.getElementById('an-rate').innerText  = (total ? Math.round(done/total*100) : 0) + '%';
+
+    // ── กราฟ 1: จำนวนโปรเจกต์รายเดือน (12 เดือนล่าสุด)
+    const months = [], counts = [], kwpPerMonth = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        months.push(d.toLocaleDateString('th-TH', { month:'short', year:'2-digit' }));
+        const inMonth = list.filter(p => {
+            const c = new Date(p.meta.createdAt || p.meta.lastModified || 0);
+            return `${c.getFullYear()}-${c.getMonth()}` === key;
+        });
+        counts.push(inMonth.length);
+        kwpPerMonth.push(+inMonth.reduce((s,p)=>s+kwpOf(p),0).toFixed(2));
+    }
+    drawChart('chart-monthly', {
+        type: 'bar',
+        data: { labels: months, datasets: [
+            { label:'จำนวนโปรเจกต์', data:counts, backgroundColor:'rgba(59,130,246,.8)', borderRadius:6, yAxisID:'y' },
+            { label:'kWp รวม', data:kwpPerMonth, type:'line', borderColor:'#10b981', backgroundColor:'#10b981',
+              tension:.35, pointRadius:3, borderWidth:2, yAxisID:'y1' }
+        ]},
+        options: baseOpts({
+            scales: {
+                y:  { beginAtZero:true, ticks:{ precision:0 }, title:{ display:true, text:'โปรเจกต์', font:{size:10} } },
+                y1: { beginAtZero:true, position:'right', grid:{ drawOnChartArea:false }, title:{ display:true, text:'kWp', font:{size:10} } }
+            }
+        })
+    });
+
+    // ── กราฟ 2: สถานะโครงการ
+    const stageKeys = [
+        { key:'new',    label:'ยังไม่เริ่ม',        color:'#94a3b8' },
+        { key:'load',   label:'วิเคราะห์โหลดแล้ว',  color:'#f59e0b' },
+        { key:'design', label:'ออกแบบผังแล้ว',     color:'#3b82f6' },
+        { key:'param',  label:'ตั้งพารามิเตอร์แล้ว', color:'#6366f1' },
+        { key:'report', label:'ออกรายงานแล้ว',     color:'#22c55e' }
+    ];
+    const stageCounts = stageKeys.map(s => list.filter(p => stageOf(p).key === s.key).length);
+    drawChart('chart-status', {
+        type: 'doughnut',
+        data: { labels: stageKeys.map(s=>s.label),
+                datasets: [{ data: stageCounts, backgroundColor: stageKeys.map(s=>s.color), borderWidth:2, borderColor:'#fff' }] },
+        options: baseOpts({ cutout:'62%', plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{ size:11 } } } }, scales:{} })
+    });
+
+    // ── กราฟ 3: 10 โครงการใหญ่สุด
+    const top = [...list].filter(p=>kwpOf(p)>0).sort((a,b)=>kwpOf(b)-kwpOf(a)).slice(0,10);
+    drawChart('chart-top', {
+        type: 'bar',
+        data: { labels: top.map(p => trim(p.meta.name, 22)),
+                datasets: [{ label:'kWp', data: top.map(kwpOf), backgroundColor:'rgba(37,99,235,.85)', borderRadius:5 }] },
+        options: baseOpts({ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ beginAtZero:true, title:{display:true, text:'kWp', font:{size:10}} } } })
+    });
+
+    // ── กราฟ 4: ความคืบหน้าตามเวิร์กโฟลว์
+    const funnel = [
+        list.length,
+        list.filter(p=>p.data && p.data.db0).length,
+        list.filter(p=>p.data && p.data.db1).length,
+        list.filter(p=>p.data && p.data.db2).length,
+        list.filter(p=>p.data && p.data.db3).length
+    ];
+    drawChart('chart-funnel', {
+        type: 'bar',
+        data: { labels:['สร้างโครงการ','วิเคราะห์โหลด','วางผังแผง','ตั้งพารามิเตอร์','ออกรายงาน'],
+                datasets: [{ label:'จำนวนโครงการ', data:funnel,
+                             backgroundColor:['#cbd5e1','#fbbf24','#60a5fa','#818cf8','#4ade80'], borderRadius:5 }] },
+        options: baseOpts({ plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } })
+    });
+
+    // ── กราฟผู้ดูแลระบบ
+    if (SESSION.isAdmin) {
+        const byUser = {};
+        list.forEach(p => {
+            const o = ownerOf(p);
+            if (!byUser[o]) byUser[o] = { n:0, kwp:0 };
+            byUser[o].n++; byUser[o].kwp += kwpOf(p);
+        });
+        const owners = Object.keys(byUser).sort((a,b)=>byUser[b].n-byUser[a].n).slice(0,12);
+
+        drawChart('chart-byuser', {
+            type:'bar',
+            data:{ labels: owners.map(o=>trim(prettyName(o),16)),
+                   datasets:[{ label:'จำนวนโปรเจกต์', data: owners.map(o=>byUser[o].n), backgroundColor:'rgba(139,92,246,.85)', borderRadius:5 }] },
+            options: baseOpts({ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ beginAtZero:true, ticks:{ precision:0 } } } })
+        });
+
+        drawChart('chart-kwpuser', {
+            type:'bar',
+            data:{ labels: owners.map(o=>trim(prettyName(o),16)),
+                   datasets:[{ label:'kWp รวม', data: owners.map(o=>+byUser[o].kwp.toFixed(2)), backgroundColor:'rgba(16,185,129,.85)', borderRadius:5 }] },
+            options: baseOpts({ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ beginAtZero:true } } })
+        });
+    }
+
+    // ── ตาราง
+    const tick = ok => ok
+        ? '<i class="fa-solid fa-circle-check text-green-500"></i>'
+        : '<i class="fa-regular fa-circle text-slate-300"></i>';
+    const rows = [...list].sort((a,b)=>new Date(b.meta.lastModified||0)-new Date(a.meta.lastModified||0));
+    document.getElementById('an-table').innerHTML = rows.length === 0
+        ? `<tr><td colspan="8" class="px-6 py-10 text-center text-slate-400">ยังไม่มีข้อมูลในช่วงเวลาที่เลือก</td></tr>`
+        : rows.map(p => `
+            <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="openProject('${p.id}')">
+                <td class="px-6 py-3">
+                    <div class="font-semibold text-slate-800">${esc(p.meta.name)}</div>
+                    <div class="text-xs text-slate-400">${esc(p.meta.location || 'ไม่ระบุสถานที่')}</div>
+                </td>
+                <td class="px-4 py-3 admin-col ${SESSION.isAdmin ? '' : 'hidden'} text-slate-600 text-xs">${esc(prettyName(ownerOf(p)))}</td>
+                <td class="px-4 py-3 text-right font-bold text-slate-800">${kwpOf(p) > 0 ? kwpOf(p).toFixed(2) : '-'}</td>
+                <td class="px-4 py-3 text-center">${tick(p.data && p.data.db0)}</td>
+                <td class="px-4 py-3 text-center">${tick(p.data && p.data.db1)}</td>
+                <td class="px-4 py-3 text-center">${tick(p.data && p.data.db2)}</td>
+                <td class="px-4 py-3 text-center">${tick(p.data && p.data.db3)}</td>
+                <td class="px-6 py-3 text-xs text-slate-500">${timeAgo(p.meta.lastModified)}</td>
+            </tr>`).join('');
+}
+
+function trim(s, n) { s = String(s||''); return s.length > n ? s.slice(0, n-1) + '…' : s; }
+
+function baseOpts(extra) {
+    return Object.assign({
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { font: { family:'Kanit', size:11 }, boxWidth:12 } },
+                   tooltip: { bodyFont:{ family:'Kanit' }, titleFont:{ family:'Kanit' } } },
+        scales: { y: { beginAtZero:true } }
+    }, extra);
+}
+
+function drawChart(canvasId, config) {
+    const el = document.getElementById(canvasId);
+    if (!el || typeof Chart === 'undefined') return;
+    if (charts[canvasId]) charts[canvasId].destroy();
+    Chart.defaults.font.family = 'Kanit';
+    Chart.defaults.color = '#64748b';
+    charts[canvasId] = new Chart(el, config);
+}
+
+/* ─────────────────────────────────────────────
+   9. หน้า Settings
+   ───────────────────────────────────────────── */
+function renderSettings() {
+    document.getElementById('set-user').innerText  = SESSION.username;
+    document.getElementById('set-role').innerText  = SESSION.isAdmin ? 'ผู้ดูแลระบบ (เห็นโครงการทุกคน)' : 'ผู้ใช้งานทั่วไป';
+    document.getElementById('set-login').innerText = new Date(SESSION.loginAt).toLocaleString('th-TH');
+    document.getElementById('set-count').innerText = visibleProjects().length + ' โครงการ';
+
+    const raw = localStorage.getItem(DB_KEY) || '';
+    const kb  = (new Blob([raw]).size / 1024).toFixed(1);
+    document.getElementById('set-storage').innerText = `ขนาดข้อมูลที่เก็บอยู่ตอนนี้ประมาณ ${kb} KB (เบราว์เซอร์จำกัดไว้ราว 5,000 KB ต่อโดเมน)`;
+
+    renderUserTable();
+}
+
+function exportBackup() {
+    const db   = loadDB();
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type:'application/json' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `asc_backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+function wipeMyProjects() {
+    if (!confirm('ลบโปรเจกต์ของคุณทั้งหมดอย่างถาวรหรือไม่? แนะนำให้ดาวน์โหลดไฟล์สำรองไว้ก่อน')) return;
+    const db = loadDB();
+    Object.keys(db.projects).forEach(id => {
+        const p = db.projects[id];
+        const own = (p.meta && p.meta.owner) || SESSION.username;
+        if (SESSION.isAdmin || own === SESSION.username) delete db.projects[id];
+    });
+    saveDB(db);
+    renderDashboard(); renderNotifications(); renderSettings();
+    alert('ลบโปรเจกต์เรียบร้อยแล้ว');
+}
+
+/* ─────────────────────────────────────────────
+   9.5 จัดการผู้ใช้ (เฉพาะผู้ดูแลระบบ)
+   --------------------------------------------
+   user.js  = รายชื่อ "ฐาน" ที่อยู่บนเซิร์ฟเวอร์ ทุกเครื่องเห็นเหมือนกัน
+   overrides= รายการที่ผู้ดูแลเพิ่ม/แก้/ระงับ เก็บใน LocalStorage ของเครื่องนี้เท่านั้น
+   ผลลัพธ์ที่ใช้จริง = ฐาน แล้วทับด้วย overrides
+   ───────────────────────────────────────────── */
+const USERS_OVERRIDE_KEY = 'proinventive_users_override';
+
+function loadUserOverrides() {
+    try { return JSON.parse(localStorage.getItem(USERS_OVERRIDE_KEY)) || {}; }
+    catch (e) { return {}; }
+}
+function saveUserOverrides(ov) { localStorage.setItem(USERS_OVERRIDE_KEY, JSON.stringify(ov)); }
+
+/* รวมรายชื่อฐาน + รายการแก้ไขในเครื่อง → คีย์เป็นตัวพิมพ์เล็กเสมอ */
+function effectiveUsers() {
+    const base  = window.users || {};
+    const admins= (window.UserDB && window.UserDB.ADMIN_USERS) || ['lpee'];
+    const map   = {};
+
+    Object.keys(base).forEach(k => {
+        map[k.toLowerCase()] = {
+            username: k,
+            password: base[k],
+            role    : admins.includes(k.toLowerCase()) ? 'admin' : 'user',
+            origin  : 'file',
+            disabled: false
+        };
+    });
+
+    const ov = loadUserOverrides();
+    Object.keys(ov).forEach(k => {
+        const e = ov[k], cur = map[k];
+        map[k] = {
+            username: e.username || (cur ? cur.username : k),
+            password: e.password != null ? e.password : (cur ? cur.password : ''),
+            role    : e.role     || (cur ? cur.role : 'user'),
+            origin  : cur ? 'edited' : 'local',
+            disabled: !!e.disabled
+        };
+    });
+    return map;
+}
+
+/* ตรวจสอบล็อกอินจากรายชื่อที่รวมแล้ว */
+function authenticate(username, password) {
+    const key = String(username || '').trim().toLowerCase();
+    const rec = effectiveUsers()[key];
+    if (!rec || rec.disabled) return false;
+    return rec.password === password;
+}
+
+function roleOf(username) {
+    const rec = effectiveUsers()[String(username || '').trim().toLowerCase()];
+    return rec ? rec.role : 'user';
+}
+
+/* ── ตารางผู้ใช้ ── */
+function renderUserTable() {
+    const card = document.getElementById('admin-users-card');
+    if (!SESSION || !SESSION.isAdmin) { card.classList.add('hidden'); return; }
+    card.classList.remove('hidden');
+
+    const term  = (document.getElementById('nu-search').value || '').trim().toLowerCase();
+    const show  = document.getElementById('nu-showpass').checked;
+    const map   = effectiveUsers();
+    const keys  = Object.keys(map).filter(k => !term || k.includes(term)).sort();
+
+    const ovCount = Object.keys(loadUserOverrides()).length;
+    const pending = document.getElementById('nu-pending');
+    pending.classList.toggle('hidden', ovCount === 0);
+    if (ovCount > 0) pending.innerText = ` — ตอนนี้มี ${ovCount} รายการที่ยังไม่ได้เผยแพร่`;
+
+    const originTag = {
+        file  : '<span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded">จาก user.js</span>',
+        local : '<span class="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded">เพิ่มในเครื่อง</span>',
+        edited: '<span class="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded">แก้ในเครื่อง</span>'
+    };
+
+    document.getElementById('nu-table').innerHTML = keys.length === 0
+        ? '<tr><td colspan="5" class="px-6 py-10 text-center text-slate-400">ไม่พบผู้ใช้ที่ตรงกับคำค้นหา</td></tr>'
+        : keys.map(k => {
+            const u = map[k];
+            const isMe = SESSION.username.toLowerCase() === k;
+            return `
+            <tr class="hover:bg-slate-50 transition ${u.disabled ? 'opacity-45' : ''}">
+                <td class="px-6 py-3">
+                    <div class="font-semibold text-slate-800 break-all">${esc(u.username)}</div>
+                    ${isMe ? '<div class="text-[10px] text-blue-600">บัญชีที่กำลังใช้งาน</div>' : ''}
+                    ${u.disabled ? '<div class="text-[10px] text-red-600">ถูกระงับการใช้งาน</div>' : ''}
+                </td>
+                <td class="px-4 py-3 font-mono text-xs text-slate-600 break-all">${show ? esc(u.password) : '••••••••'}</td>
+                <td class="px-4 py-3">${u.role === 'admin'
+                    ? '<span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">ผู้ดูแลระบบ</span>'
+                    : '<span class="text-xs text-slate-500">ผู้ใช้ทั่วไป</span>'}</td>
+                <td class="px-4 py-3">${originTag[u.origin]}</td>
+                <td class="px-6 py-3 text-right whitespace-nowrap">
+                    <button onclick="editUserEntry('${esc(k)}')" class="w-8 h-8 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition" title="แก้ไข">
+                        <i class="fa-solid fa-pen text-xs"></i>
+                    </button>
+                    <button onclick="toggleUserDisabled('${esc(k)}')" class="w-8 h-8 rounded text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition" title="${u.disabled ? 'เปิดใช้งาน' : 'ระงับการใช้งาน'}" ${isMe ? 'disabled' : ''}>
+                        <i class="fa-solid ${u.disabled ? 'fa-lock-open' : 'fa-ban'} text-xs"></i>
+                    </button>
+                    <button onclick="removeUserEntry('${esc(k)}')" class="w-8 h-8 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition" title="ลบ" ${isMe ? 'disabled' : ''}>
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+}
+
+function nuMsg(text, type) {
+    const box = document.getElementById('nu-msg');
+    const cls = { ok:'bg-green-50 border border-green-200 text-green-700',
+                  err:'bg-red-50 border border-red-200 text-red-700' }[type] || 'bg-slate-100 text-slate-600';
+    box.className = 'mt-3 rounded-lg px-3 py-2 text-xs ' + cls;
+    box.innerText = text;
+    box.classList.remove('hidden');
+    clearTimeout(nuMsg._t);
+    nuMsg._t = setTimeout(() => box.classList.add('hidden'), 4000);
+}
+
+function genPassword() {
+    const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789@#$%&*';
+    let out = '';
+    const buf = new Uint32Array(10);
+    (window.crypto || window.msCrypto).getRandomValues(buf);
+    buf.forEach(n => out += chars[n % chars.length]);
+    document.getElementById('nu-pass').value = out;
+    document.getElementById('nu-showpass').checked = true;
+    renderUserTable();
+}
+
+function saveUserEntry() {
+    const nameEl = document.getElementById('nu-name');
+    const passEl = document.getElementById('nu-pass');
+    const name = nameEl.value.trim();
+    const pass = passEl.value;
+    const role = document.getElementById('nu-role').value;
+
+    if (!name)            { nuMsg('กรอกชื่อผู้ใช้ก่อนบันทึก', 'err'); nameEl.focus(); return; }
+    if (/\s/.test(name))  { nuMsg('ชื่อผู้ใช้ต้องไม่มีช่องว่าง', 'err'); nameEl.focus(); return; }
+    if (pass.length < 4)  { nuMsg('รหัสผ่านต้องยาวอย่างน้อย 4 ตัวอักษร', 'err'); passEl.focus(); return; }
+
+    const key = name.toLowerCase();
+    const ov  = loadUserOverrides();
+    const existed = !!effectiveUsers()[key];
+
+    ov[key] = { username: name, password: pass, role: role, disabled: false };
+    saveUserOverrides(ov);
+
+    nameEl.value = ''; passEl.value = '';
+    document.getElementById('nu-role').value = 'user';
+    nuMsg(existed ? `อัปเดตบัญชี ${name} แล้ว` : `เพิ่มบัญชี ${name} แล้ว ใช้ล็อกอินได้ทันทีบนเครื่องนี้`, 'ok');
+    renderUserTable();
+    nameEl.focus();
+}
+
+function editUserEntry(key) {
+    const u = effectiveUsers()[key];
+    if (!u) return;
+    document.getElementById('nu-name').value = u.username;
+    document.getElementById('nu-pass').value = u.password;
+    document.getElementById('nu-role').value = u.role;
+    document.getElementById('nu-showpass').checked = true;
+    renderUserTable();
+    document.getElementById('nu-name').focus();
+    nuMsg(`กำลังแก้ไข ${u.username} — แก้แล้วกดปุ่มเครื่องหมายถูกเพื่อบันทึก`, 'info');
+}
+
+function toggleUserDisabled(key) {
+    const map = effectiveUsers(), u = map[key];
+    if (!u) return;
+    if (SESSION.username.toLowerCase() === key) { nuMsg('ระงับบัญชีที่กำลังใช้งานอยู่ไม่ได้', 'err'); return; }
+    const ov = loadUserOverrides();
+    ov[key] = { username:u.username, password:u.password, role:u.role, disabled: !u.disabled };
+    saveUserOverrides(ov);
+    nuMsg(u.disabled ? `เปิดใช้งาน ${u.username} แล้ว` : `ระงับ ${u.username} แล้ว บัญชีนี้จะล็อกอินไม่ได้`, 'ok');
+    renderUserTable();
+}
+
+function removeUserEntry(key) {
+    const map = effectiveUsers(), u = map[key];
+    if (!u) return;
+    if (SESSION.username.toLowerCase() === key) { nuMsg('ลบบัญชีที่กำลังใช้งานอยู่ไม่ได้', 'err'); return; }
+
+    if (u.origin === 'local') {
+        if (!confirm(`ลบบัญชี ${u.username} ออกจากเครื่องนี้ใช่หรือไม่?`)) return;
+        const ov = loadUserOverrides();
+        delete ov[key];
+        saveUserOverrides(ov);
+        nuMsg(`ลบ ${u.username} แล้ว`, 'ok');
+    } else {
+        if (!confirm(`บัญชี ${u.username} มาจากไฟล์ user.js บนเซิร์ฟเวอร์ ลบออกจากไฟล์ตรงนี้ไม่ได้\n\nจะทำเครื่องหมายว่า "ระงับ" ไว้แทน แล้วบัญชีนี้จะหายไปจากไฟล์ user.js ฉบับใหม่ที่สร้าง — ดำเนินการต่อหรือไม่?`)) return;
+        const ov = loadUserOverrides();
+        ov[key] = { username:u.username, password:u.password, role:u.role, disabled:true };
+        saveUserOverrides(ov);
+        nuMsg(`ระงับ ${u.username} แล้ว จะไม่ถูกใส่ในไฟล์ฉบับใหม่`, 'ok');
+    }
+    renderUserTable();
+}
+
+function clearLocalUsers() {
+    const n = Object.keys(loadUserOverrides()).length;
+    if (n === 0) { nuMsg('ไม่มีการแก้ไขในเครื่องให้ล้าง', 'info'); return; }
+    if (!confirm(`ล้างการแก้ไขผู้ใช้ทั้ง ${n} รายการในเครื่องนี้ใช่หรือไม่?\nรายชื่อจะกลับไปตรงกับไฟล์ user.js ทั้งหมด`)) return;
+    localStorage.removeItem(USERS_OVERRIDE_KEY);
+    nuMsg('ล้างเรียบร้อย รายชื่อกลับไปตรงกับ user.js แล้ว', 'ok');
+    renderUserTable();
+}
+
+/* ── สร้างเนื้อไฟล์ user.js ฉบับใหม่ ── */
+function buildUserJs() {
+    const map = effectiveUsers();
+    const live = Object.keys(map).filter(k => !map[k].disabled).map(k => map[k]);
+    live.sort((a, b) => a.username.localeCompare(b.username));
+
+    const q = v => JSON.stringify(String(v));
+    const rows   = live.map(u => `    ${q(u.username)}: ${q(u.password)}`).join(',\n');
+    const admins = live.filter(u => u.role === 'admin').map(u => q(u.username.toLowerCase())).join(', ');
+    const stamp  = new Date().toLocaleString('th-TH');
+
+    return `/* ==========================================================================
+   user.js  —  ฐานข้อมูลผู้ใช้งาน (แหล่งข้อมูลจริงเพียงที่เดียว)
+   --------------------------------------------------------------------------
+   สร้างจากหน้า Settings > จัดการผู้ใช้
+   โดย ${SESSION.username}  เมื่อ ${stamp}
+   จำนวนผู้ใช้ทั้งหมด ${live.length} บัญชี
+
+   วิธีนำไปใช้: วางไฟล์นี้ทับ user.js เดิมใน repo แล้ว commit + push
+   ========================================================================== */
+
+const users = {
+${rows}
+};
+
+/* รายชื่อผู้ดูแลระบบ — เห็น Recent Projects ของผู้ใช้ทุกคน */
+const ADMIN_USERS = [${admins}];
+
+function findUserKey(username) {
+    if (!username) return null;
+    const target = String(username).trim().toLowerCase();
+    return Object.keys(users).find(k => k.toLowerCase() === target) || null;
+}
+
+function validateUser(username, password) {
+    const key = findUserKey(username);
+    if (!key) return false;
+    return users[key] === password;
+}
+
+function isAdminUser(username) {
+    if (!username) return false;
+    return ADMIN_USERS.includes(String(username).trim().toLowerCase());
+}
+
+function displayNameOf(username) {
+    const key = findUserKey(username) || username || '';
+    return key.includes('@') ? key.split('@')[0] : key;
+}
+
+if (typeof window !== 'undefined') {
+    window.users = users;
+    window.validateUser = validateUser;
+    window.isAdminUser = isAdminUser;
+    window.displayNameOf = displayNameOf;
+    window.UserDB = { users, validateUser, isAdminUser, displayNameOf, ADMIN_USERS };
+}
+`;
+}
+
+function downloadUserJs() {
+    const blob = new Blob([buildUserJs()], { type: 'text/javascript;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'user.js';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    nuMsg('ดาวน์โหลดแล้ว นำไฟล์ไปวางทับ user.js ใน repo แล้ว commit เพื่อให้มีผลกับทุกเครื่อง', 'ok');
+}
+
+async function copyUserJs() {
+    const text = buildUserJs();
+    try {
+        await navigator.clipboard.writeText(text);
+        nuMsg('คัดลอกเนื้อไฟล์แล้ว วางทับใน user.js บน GitHub ได้เลย', 'ok');
+    } catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); ta.remove();
+        nuMsg('คัดลอกเนื้อไฟล์แล้ว', 'ok');
+    }
+}
+
+/* ─────────────────────────────────────────────
+   10. ผูก Event ทั้งหมด
+   ───────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+
+    // ── Login
+    document.getElementById('login-form').addEventListener('submit', doLogin);
+    document.getElementById('toggle-pass').addEventListener('click', function () {
+        const inp = document.getElementById('login-pass');
+        const on  = inp.type === 'password';
+        inp.type  = on ? 'text' : 'password';
+        this.innerHTML = `<i class="fa-regular ${on ? 'fa-eye-slash' : 'fa-eye'} text-sm"></i>`;
+        inp.focus();
+    });
+    document.getElementById('login-user').addEventListener('input', hideLoginError);
+    document.getElementById('login-pass').addEventListener('input', hideLoginError);
+
+    // ── เมนูซ้าย
+    document.querySelectorAll('.nav-link').forEach(btn =>
+        btn.addEventListener('click', () => switchView(btn.dataset.view)));
+
+    // ── ค้นหา
+    const search = document.getElementById('search-input');
+    search.addEventListener('input', () => {
+        document.getElementById('search-clear').classList.toggle('hidden', !search.value);
+        renderDashboard();
+    });
+    search.addEventListener('keydown', e => { if (e.key === 'Escape') { search.value=''; search.dispatchEvent(new Event('input')); } });
+    document.getElementById('search-clear').addEventListener('click', () => {
+        search.value = ''; search.dispatchEvent(new Event('input')); search.focus();
+    });
+
+    // ── เรียง / กรอง / มุมมอง
+    document.getElementById('sort-select').addEventListener('change', renderDashboard);
+    document.getElementById('owner-filter').addEventListener('change', renderDashboard);
+    document.getElementById('btn-view-grid').addEventListener('click', () => setViewMode('grid'));
+    document.getElementById('btn-view-list').addEventListener('click', () => setViewMode('list'));
+    document.getElementById('analytics-range').addEventListener('change', renderAnalytics);
+
+    // ── กระดิ่ง
+    document.getElementById('bell-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        renderNotifications();
+        document.getElementById('bell-panel').classList.toggle('hidden');
+    });
+
+    // ── เมนูผู้ใช้
+    document.getElementById('user-menu-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        document.getElementById('user-menu').classList.toggle('hidden');
+    });
+
+    // ── คลิกที่ว่างเพื่อปิดเมนูลอย
+    document.addEventListener('click', () => {
+        document.getElementById('bell-panel').classList.add('hidden');
+        document.getElementById('user-menu').classList.add('hidden');
+    });
+    document.getElementById('bell-panel').addEventListener('click', e => e.stopPropagation());
+    document.getElementById('user-menu').addEventListener('click', e => e.stopPropagation());
+
+    // ── Modal
+    document.getElementById('new-project-modal').addEventListener('click', e => {
+        if (e.target.id === 'new-project-modal') closeNewProjectModal();
+    });
+    document.getElementById('new-proj-name').addEventListener('keydown', e => { if (e.key === 'Enter') createNewProject(); });
+    document.getElementById('new-proj-loc').addEventListener('keydown',  e => { if (e.key === 'Enter') createNewProject(); });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && !document.getElementById('new-project-modal').classList.contains('hidden')) closeNewProjectModal();
+    });
+
+    // ── กู้คืนไฟล์สำรอง
+    document.getElementById('restore-file').addEventListener('change', function (e) {
+        const f = e.target.files[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = ev => {
+            try {
+                const data = JSON.parse(ev.target.result);
+                if (!data || !data.projects) throw new Error('โครงสร้างไฟล์ไม่ถูกต้อง');
+                if (!confirm('การกู้คืนจะเขียนทับข้อมูลเดิมทั้งหมดในเครื่องนี้ ยืนยันหรือไม่?')) return;
+                saveDB(data);
+                migrateLegacyProjects();
+                renderDashboard(); renderNotifications(); renderSettings();
+                alert('กู้คืนข้อมูลเรียบร้อยแล้ว');
+            } catch (err) {
+                alert('กู้คืนไม่สำเร็จ: ' + err.message + '\nเลือกไฟล์ .json ที่ดาวน์โหลดจากปุ่มสำรองข้อมูล');
+            }
+        };
+        r.readAsText(f);
+        e.target.value = '';
+    });
+
+    // ── จัดการผู้ใช้ (ผู้ดูแลระบบ)
+    document.getElementById('nu-search').addEventListener('input', renderUserTable);
+    document.getElementById('nu-showpass').addEventListener('change', renderUserTable);
+    document.getElementById('nu-pass').addEventListener('keydown', e => { if (e.key === 'Enter') saveUserEntry(); });
+    document.getElementById('nu-name').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('nu-pass').focus(); });
+
+    // ── เริ่มระบบ
+    setViewMode(localStorage.getItem('proinventive_viewmode') || 'grid');
+    switchView('projects');
+
+    const saved = sessionStorage.getItem(SESSION_KEY);
+    if (saved) {
+        try { SESSION = JSON.parse(saved); } catch (e) { SESSION = null; }
+    }
+    if (SESSION && SESSION.username) {
+        enterApp();
+    } else {
+        initLogin();
+    }
+});
+</script>
+</body>
+</html>
