@@ -497,103 +497,6 @@
                         <p class="text-xs text-slate-500 mt-4" id="set-storage"></p>
                     </div>
 
-                    <!-- ═══ จัดการผู้ใช้ (เห็นเฉพาะผู้ดูแลระบบ) ═══ -->
-                    <div id="admin-users-card" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="px-6 py-5 border-b border-slate-100">
-                            <div class="flex items-center gap-2 mb-1">
-                                <h3 class="font-bold text-slate-800">จัดการผู้ใช้</h3>
-                                <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded">ADMIN</span>
-                            </div>
-                            <p class="text-xs text-slate-500 leading-relaxed">
-                                เพิ่ม แก้รหัสผ่าน หรือระงับบัญชีได้จากที่นี่ ผู้ใช้ที่เพิ่มจะ<b>ใช้ล็อกอินได้ทันทีบนเครื่องนี้</b>
-                                แต่จะยังไม่มีผลกับเครื่องอื่น จนกว่าจะกดสร้างไฟล์ <code class="bg-slate-100 px-1 rounded">user.js</code> ฉบับใหม่แล้วอัปโหลดขึ้น GitHub
-                            </p>
-                        </div>
-
-                        <!-- ฟอร์มเพิ่ม/แก้ไข -->
-                        <div class="px-6 py-5 bg-slate-50 border-b border-slate-100">
-                            <div class="grid sm:grid-cols-12 gap-3 items-end">
-                                <div class="sm:col-span-5">
-                                    <label class="block text-xs font-bold text-slate-600 mb-1" for="nu-name">ชื่อผู้ใช้ / อีเมล</label>
-                                    <input id="nu-name" type="text" spellcheck="false" placeholder="name@company.com"
-                                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                                </div>
-                                <div class="sm:col-span-4">
-                                    <label class="block text-xs font-bold text-slate-600 mb-1" for="nu-pass">รหัสผ่าน</label>
-                                    <div class="flex gap-2">
-                                        <input id="nu-pass" type="text" spellcheck="false" placeholder="อย่างน้อย 4 ตัวอักษร"
-                                               class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                                        <button type="button" onclick="genPassword()" title="สุ่มรหัสผ่านให้"
-                                                class="shrink-0 w-11 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-500 transition">
-                                            <i class="fa-solid fa-dice text-sm"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="sm:col-span-2">
-                                    <label class="block text-xs font-bold text-slate-600 mb-1" for="nu-role">สิทธิ์</label>
-                                    <select id="nu-role" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
-                                        <option value="user">ผู้ใช้ทั่วไป</option>
-                                        <option value="admin">ผู้ดูแลระบบ</option>
-                                    </select>
-                                </div>
-                                <div class="sm:col-span-1">
-                                    <button onclick="saveUserEntry()" id="nu-save"
-                                            class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 text-sm font-bold transition" title="บันทึกผู้ใช้">
-                                        <i class="fa-solid fa-check"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="nu-msg" class="hidden mt-3 rounded-lg px-3 py-2 text-xs"></div>
-                        </div>
-
-                        <!-- ตารางผู้ใช้ -->
-                        <div class="px-6 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
-                            <input id="nu-search" type="text" placeholder="ค้นหาผู้ใช้..."
-                                   class="text-xs bg-slate-100 border-none rounded-full px-4 py-2 w-56 outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
-                            <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none">
-                                <input type="checkbox" id="nu-showpass" class="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                                แสดงรหัสผ่าน
-                            </label>
-                        </div>
-                        <div class="overflow-x-auto max-h-96 overflow-y-auto">
-                            <table class="w-full text-sm">
-                                <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider sticky top-0">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left font-semibold">ชื่อผู้ใช้</th>
-                                        <th class="px-4 py-3 text-left font-semibold">รหัสผ่าน</th>
-                                        <th class="px-4 py-3 text-left font-semibold">สิทธิ์</th>
-                                        <th class="px-4 py-3 text-left font-semibold">ที่มา</th>
-                                        <th class="px-6 py-3 text-right font-semibold">จัดการ</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="nu-table" class="divide-y divide-slate-100"></tbody>
-                            </table>
-                        </div>
-
-                        <!-- แถบเผยแพร่ -->
-                        <div class="px-6 py-5 bg-slate-50 border-t border-slate-100">
-                            <div class="flex items-start gap-3 mb-4">
-                                <i class="fa-solid fa-circle-info text-blue-500 mt-0.5"></i>
-                                <p class="text-xs text-slate-600 leading-relaxed">
-                                    ทำให้มีผลกับทุกเครื่อง: กดปุ่มด้านล่างเพื่อดาวน์โหลด <code class="bg-slate-200 px-1 rounded">user.js</code> ฉบับรวมผู้ใช้ล่าสุด
-                                    แล้วนำไปวางทับไฟล์เดิมใน repo <code class="bg-slate-200 px-1 rounded">asc</code> บน GitHub แล้ว commit
-                                    <span id="nu-pending" class="hidden text-amber-700 font-semibold"></span>
-                                </p>
-                            </div>
-                            <div class="flex flex-wrap gap-3">
-                                <button onclick="downloadUserJs()" class="px-4 py-2.5 rounded-lg text-sm font-bold bg-slate-800 text-white hover:bg-slate-900 transition">
-                                    <i class="fa-solid fa-file-arrow-down mr-1.5"></i> สร้างไฟล์ user.js ฉบับใหม่
-                                </button>
-                                <button onclick="copyUserJs()" class="px-4 py-2.5 rounded-lg text-sm font-bold border border-slate-300 bg-white hover:bg-slate-100 transition">
-                                    <i class="fa-regular fa-copy mr-1.5"></i> คัดลอกเนื้อไฟล์
-                                </button>
-                                <button onclick="clearLocalUsers()" class="px-4 py-2.5 rounded-lg text-sm font-bold text-red-600 border border-red-200 hover:bg-red-50 transition">
-                                    <i class="fa-solid fa-rotate-left mr-1.5"></i> ล้างการแก้ไขในเครื่อง
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 opacity-70">
                         <div class="flex items-center gap-2 mb-2">
                             <h3 class="font-bold text-slate-800">การตั้งค่าอื่น</h3>
@@ -739,12 +642,12 @@ function doLogin(e) {
     if (!u) { showLoginError('กรอกชื่อผู้ใช้ก่อนเข้าสู่ระบบ'); document.getElementById('login-user').focus(); return; }
     if (!p) { showLoginError('กรอกรหัสผ่านก่อนเข้าสู่ระบบ'); document.getElementById('login-pass').focus(); return; }
 
-    if (typeof window.validateUser !== 'function' && Object.keys(loadUserOverrides()).length === 0) {
+    if (typeof window.validateUser !== 'function') {
         showLoginError('ระบบยังอ่านรายชื่อผู้ใช้ไม่ได้ ดูคำแนะนำด้านล่าง');
         return;
     }
 
-    if (!authenticate(u, p)) {
+    if (!window.validateUser(u, p)) {
         showLoginError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
         document.getElementById('login-pass').value = '';
         document.getElementById('login-pass').focus();
@@ -758,7 +661,7 @@ function doLogin(e) {
     SESSION = {
         username: u.trim(),
         display : prettyName(u),
-        isAdmin : roleOf(u) === 'admin',
+        isAdmin : isAdmin(u),
         loginAt : new Date().toISOString()
     };
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(SESSION));
@@ -776,6 +679,13 @@ function logout() {
    3. เข้าสู่หน้าหลัก
    ───────────────────────────────────────────── */
 function enterApp() {
+    // เข้ามาด้วยลิงก์ตรง .../asc/?id=proj_xxx  → ส่งต่อไปหน้า workspace ทันที
+    const deepId = new URLSearchParams(location.search).get('id');
+    if (deepId) {
+        window.location.replace('master_shell.html?id=' + encodeURIComponent(deepId));
+        return;
+    }
+
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-shell').classList.remove('hidden');
     document.title = 'ASC Cloud — Dashboard';
@@ -1311,8 +1221,6 @@ function renderSettings() {
     const raw = localStorage.getItem(DB_KEY) || '';
     const kb  = (new Blob([raw]).size / 1024).toFixed(1);
     document.getElementById('set-storage').innerText = `ขนาดข้อมูลที่เก็บอยู่ตอนนี้ประมาณ ${kb} KB (เบราว์เซอร์จำกัดไว้ราว 5,000 KB ต่อโดเมน)`;
-
-    renderUserTable();
 }
 
 function exportBackup() {
@@ -1336,301 +1244,6 @@ function wipeMyProjects() {
     saveDB(db);
     renderDashboard(); renderNotifications(); renderSettings();
     alert('ลบโปรเจกต์เรียบร้อยแล้ว');
-}
-
-/* ─────────────────────────────────────────────
-   9.5 จัดการผู้ใช้ (เฉพาะผู้ดูแลระบบ)
-   --------------------------------------------
-   user.js  = รายชื่อ "ฐาน" ที่อยู่บนเซิร์ฟเวอร์ ทุกเครื่องเห็นเหมือนกัน
-   overrides= รายการที่ผู้ดูแลเพิ่ม/แก้/ระงับ เก็บใน LocalStorage ของเครื่องนี้เท่านั้น
-   ผลลัพธ์ที่ใช้จริง = ฐาน แล้วทับด้วย overrides
-   ───────────────────────────────────────────── */
-const USERS_OVERRIDE_KEY = 'proinventive_users_override';
-
-function loadUserOverrides() {
-    try { return JSON.parse(localStorage.getItem(USERS_OVERRIDE_KEY)) || {}; }
-    catch (e) { return {}; }
-}
-function saveUserOverrides(ov) { localStorage.setItem(USERS_OVERRIDE_KEY, JSON.stringify(ov)); }
-
-/* รวมรายชื่อฐาน + รายการแก้ไขในเครื่อง → คีย์เป็นตัวพิมพ์เล็กเสมอ */
-function effectiveUsers() {
-    const base  = window.users || {};
-    const admins= (window.UserDB && window.UserDB.ADMIN_USERS) || ['lpee'];
-    const map   = {};
-
-    Object.keys(base).forEach(k => {
-        map[k.toLowerCase()] = {
-            username: k,
-            password: base[k],
-            role    : admins.includes(k.toLowerCase()) ? 'admin' : 'user',
-            origin  : 'file',
-            disabled: false
-        };
-    });
-
-    const ov = loadUserOverrides();
-    Object.keys(ov).forEach(k => {
-        const e = ov[k], cur = map[k];
-        map[k] = {
-            username: e.username || (cur ? cur.username : k),
-            password: e.password != null ? e.password : (cur ? cur.password : ''),
-            role    : e.role     || (cur ? cur.role : 'user'),
-            origin  : cur ? 'edited' : 'local',
-            disabled: !!e.disabled
-        };
-    });
-    return map;
-}
-
-/* ตรวจสอบล็อกอินจากรายชื่อที่รวมแล้ว */
-function authenticate(username, password) {
-    const key = String(username || '').trim().toLowerCase();
-    const rec = effectiveUsers()[key];
-    if (!rec || rec.disabled) return false;
-    return rec.password === password;
-}
-
-function roleOf(username) {
-    const rec = effectiveUsers()[String(username || '').trim().toLowerCase()];
-    return rec ? rec.role : 'user';
-}
-
-/* ── ตารางผู้ใช้ ── */
-function renderUserTable() {
-    const card = document.getElementById('admin-users-card');
-    if (!SESSION || !SESSION.isAdmin) { card.classList.add('hidden'); return; }
-    card.classList.remove('hidden');
-
-    const term  = (document.getElementById('nu-search').value || '').trim().toLowerCase();
-    const show  = document.getElementById('nu-showpass').checked;
-    const map   = effectiveUsers();
-    const keys  = Object.keys(map).filter(k => !term || k.includes(term)).sort();
-
-    const ovCount = Object.keys(loadUserOverrides()).length;
-    const pending = document.getElementById('nu-pending');
-    pending.classList.toggle('hidden', ovCount === 0);
-    if (ovCount > 0) pending.innerText = ` — ตอนนี้มี ${ovCount} รายการที่ยังไม่ได้เผยแพร่`;
-
-    const originTag = {
-        file  : '<span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded">จาก user.js</span>',
-        local : '<span class="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded">เพิ่มในเครื่อง</span>',
-        edited: '<span class="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded">แก้ในเครื่อง</span>'
-    };
-
-    document.getElementById('nu-table').innerHTML = keys.length === 0
-        ? '<tr><td colspan="5" class="px-6 py-10 text-center text-slate-400">ไม่พบผู้ใช้ที่ตรงกับคำค้นหา</td></tr>'
-        : keys.map(k => {
-            const u = map[k];
-            const isMe = SESSION.username.toLowerCase() === k;
-            return `
-            <tr class="hover:bg-slate-50 transition ${u.disabled ? 'opacity-45' : ''}">
-                <td class="px-6 py-3">
-                    <div class="font-semibold text-slate-800 break-all">${esc(u.username)}</div>
-                    ${isMe ? '<div class="text-[10px] text-blue-600">บัญชีที่กำลังใช้งาน</div>' : ''}
-                    ${u.disabled ? '<div class="text-[10px] text-red-600">ถูกระงับการใช้งาน</div>' : ''}
-                </td>
-                <td class="px-4 py-3 font-mono text-xs text-slate-600 break-all">${show ? esc(u.password) : '••••••••'}</td>
-                <td class="px-4 py-3">${u.role === 'admin'
-                    ? '<span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">ผู้ดูแลระบบ</span>'
-                    : '<span class="text-xs text-slate-500">ผู้ใช้ทั่วไป</span>'}</td>
-                <td class="px-4 py-3">${originTag[u.origin]}</td>
-                <td class="px-6 py-3 text-right whitespace-nowrap">
-                    <button onclick="editUserEntry('${esc(k)}')" class="w-8 h-8 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition" title="แก้ไข">
-                        <i class="fa-solid fa-pen text-xs"></i>
-                    </button>
-                    <button onclick="toggleUserDisabled('${esc(k)}')" class="w-8 h-8 rounded text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition" title="${u.disabled ? 'เปิดใช้งาน' : 'ระงับการใช้งาน'}" ${isMe ? 'disabled' : ''}>
-                        <i class="fa-solid ${u.disabled ? 'fa-lock-open' : 'fa-ban'} text-xs"></i>
-                    </button>
-                    <button onclick="removeUserEntry('${esc(k)}')" class="w-8 h-8 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition" title="ลบ" ${isMe ? 'disabled' : ''}>
-                        <i class="fa-solid fa-trash-can text-xs"></i>
-                    </button>
-                </td>
-            </tr>`;
-        }).join('');
-}
-
-function nuMsg(text, type) {
-    const box = document.getElementById('nu-msg');
-    const cls = { ok:'bg-green-50 border border-green-200 text-green-700',
-                  err:'bg-red-50 border border-red-200 text-red-700' }[type] || 'bg-slate-100 text-slate-600';
-    box.className = 'mt-3 rounded-lg px-3 py-2 text-xs ' + cls;
-    box.innerText = text;
-    box.classList.remove('hidden');
-    clearTimeout(nuMsg._t);
-    nuMsg._t = setTimeout(() => box.classList.add('hidden'), 4000);
-}
-
-function genPassword() {
-    const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789@#$%&*';
-    let out = '';
-    const buf = new Uint32Array(10);
-    (window.crypto || window.msCrypto).getRandomValues(buf);
-    buf.forEach(n => out += chars[n % chars.length]);
-    document.getElementById('nu-pass').value = out;
-    document.getElementById('nu-showpass').checked = true;
-    renderUserTable();
-}
-
-function saveUserEntry() {
-    const nameEl = document.getElementById('nu-name');
-    const passEl = document.getElementById('nu-pass');
-    const name = nameEl.value.trim();
-    const pass = passEl.value;
-    const role = document.getElementById('nu-role').value;
-
-    if (!name)            { nuMsg('กรอกชื่อผู้ใช้ก่อนบันทึก', 'err'); nameEl.focus(); return; }
-    if (/\s/.test(name))  { nuMsg('ชื่อผู้ใช้ต้องไม่มีช่องว่าง', 'err'); nameEl.focus(); return; }
-    if (pass.length < 4)  { nuMsg('รหัสผ่านต้องยาวอย่างน้อย 4 ตัวอักษร', 'err'); passEl.focus(); return; }
-
-    const key = name.toLowerCase();
-    const ov  = loadUserOverrides();
-    const existed = !!effectiveUsers()[key];
-
-    ov[key] = { username: name, password: pass, role: role, disabled: false };
-    saveUserOverrides(ov);
-
-    nameEl.value = ''; passEl.value = '';
-    document.getElementById('nu-role').value = 'user';
-    nuMsg(existed ? `อัปเดตบัญชี ${name} แล้ว` : `เพิ่มบัญชี ${name} แล้ว ใช้ล็อกอินได้ทันทีบนเครื่องนี้`, 'ok');
-    renderUserTable();
-    nameEl.focus();
-}
-
-function editUserEntry(key) {
-    const u = effectiveUsers()[key];
-    if (!u) return;
-    document.getElementById('nu-name').value = u.username;
-    document.getElementById('nu-pass').value = u.password;
-    document.getElementById('nu-role').value = u.role;
-    document.getElementById('nu-showpass').checked = true;
-    renderUserTable();
-    document.getElementById('nu-name').focus();
-    nuMsg(`กำลังแก้ไข ${u.username} — แก้แล้วกดปุ่มเครื่องหมายถูกเพื่อบันทึก`, 'info');
-}
-
-function toggleUserDisabled(key) {
-    const map = effectiveUsers(), u = map[key];
-    if (!u) return;
-    if (SESSION.username.toLowerCase() === key) { nuMsg('ระงับบัญชีที่กำลังใช้งานอยู่ไม่ได้', 'err'); return; }
-    const ov = loadUserOverrides();
-    ov[key] = { username:u.username, password:u.password, role:u.role, disabled: !u.disabled };
-    saveUserOverrides(ov);
-    nuMsg(u.disabled ? `เปิดใช้งาน ${u.username} แล้ว` : `ระงับ ${u.username} แล้ว บัญชีนี้จะล็อกอินไม่ได้`, 'ok');
-    renderUserTable();
-}
-
-function removeUserEntry(key) {
-    const map = effectiveUsers(), u = map[key];
-    if (!u) return;
-    if (SESSION.username.toLowerCase() === key) { nuMsg('ลบบัญชีที่กำลังใช้งานอยู่ไม่ได้', 'err'); return; }
-
-    if (u.origin === 'local') {
-        if (!confirm(`ลบบัญชี ${u.username} ออกจากเครื่องนี้ใช่หรือไม่?`)) return;
-        const ov = loadUserOverrides();
-        delete ov[key];
-        saveUserOverrides(ov);
-        nuMsg(`ลบ ${u.username} แล้ว`, 'ok');
-    } else {
-        if (!confirm(`บัญชี ${u.username} มาจากไฟล์ user.js บนเซิร์ฟเวอร์ ลบออกจากไฟล์ตรงนี้ไม่ได้\n\nจะทำเครื่องหมายว่า "ระงับ" ไว้แทน แล้วบัญชีนี้จะหายไปจากไฟล์ user.js ฉบับใหม่ที่สร้าง — ดำเนินการต่อหรือไม่?`)) return;
-        const ov = loadUserOverrides();
-        ov[key] = { username:u.username, password:u.password, role:u.role, disabled:true };
-        saveUserOverrides(ov);
-        nuMsg(`ระงับ ${u.username} แล้ว จะไม่ถูกใส่ในไฟล์ฉบับใหม่`, 'ok');
-    }
-    renderUserTable();
-}
-
-function clearLocalUsers() {
-    const n = Object.keys(loadUserOverrides()).length;
-    if (n === 0) { nuMsg('ไม่มีการแก้ไขในเครื่องให้ล้าง', 'info'); return; }
-    if (!confirm(`ล้างการแก้ไขผู้ใช้ทั้ง ${n} รายการในเครื่องนี้ใช่หรือไม่?\nรายชื่อจะกลับไปตรงกับไฟล์ user.js ทั้งหมด`)) return;
-    localStorage.removeItem(USERS_OVERRIDE_KEY);
-    nuMsg('ล้างเรียบร้อย รายชื่อกลับไปตรงกับ user.js แล้ว', 'ok');
-    renderUserTable();
-}
-
-/* ── สร้างเนื้อไฟล์ user.js ฉบับใหม่ ── */
-function buildUserJs() {
-    const map = effectiveUsers();
-    const live = Object.keys(map).filter(k => !map[k].disabled).map(k => map[k]);
-    live.sort((a, b) => a.username.localeCompare(b.username));
-
-    const q = v => JSON.stringify(String(v));
-    const rows   = live.map(u => `    ${q(u.username)}: ${q(u.password)}`).join(',\n');
-    const admins = live.filter(u => u.role === 'admin').map(u => q(u.username.toLowerCase())).join(', ');
-    const stamp  = new Date().toLocaleString('th-TH');
-
-    return `/* ==========================================================================
-   user.js  —  ฐานข้อมูลผู้ใช้งาน (แหล่งข้อมูลจริงเพียงที่เดียว)
-   --------------------------------------------------------------------------
-   สร้างจากหน้า Settings > จัดการผู้ใช้
-   โดย ${SESSION.username}  เมื่อ ${stamp}
-   จำนวนผู้ใช้ทั้งหมด ${live.length} บัญชี
-
-   วิธีนำไปใช้: วางไฟล์นี้ทับ user.js เดิมใน repo แล้ว commit + push
-   ========================================================================== */
-
-const users = {
-${rows}
-};
-
-/* รายชื่อผู้ดูแลระบบ — เห็น Recent Projects ของผู้ใช้ทุกคน */
-const ADMIN_USERS = [${admins}];
-
-function findUserKey(username) {
-    if (!username) return null;
-    const target = String(username).trim().toLowerCase();
-    return Object.keys(users).find(k => k.toLowerCase() === target) || null;
-}
-
-function validateUser(username, password) {
-    const key = findUserKey(username);
-    if (!key) return false;
-    return users[key] === password;
-}
-
-function isAdminUser(username) {
-    if (!username) return false;
-    return ADMIN_USERS.includes(String(username).trim().toLowerCase());
-}
-
-function displayNameOf(username) {
-    const key = findUserKey(username) || username || '';
-    return key.includes('@') ? key.split('@')[0] : key;
-}
-
-if (typeof window !== 'undefined') {
-    window.users = users;
-    window.validateUser = validateUser;
-    window.isAdminUser = isAdminUser;
-    window.displayNameOf = displayNameOf;
-    window.UserDB = { users, validateUser, isAdminUser, displayNameOf, ADMIN_USERS };
-}
-`;
-}
-
-function downloadUserJs() {
-    const blob = new Blob([buildUserJs()], { type: 'text/javascript;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'user.js';
-    a.click();
-    URL.revokeObjectURL(a.href);
-    nuMsg('ดาวน์โหลดแล้ว นำไฟล์ไปวางทับ user.js ใน repo แล้ว commit เพื่อให้มีผลกับทุกเครื่อง', 'ok');
-}
-
-async function copyUserJs() {
-    const text = buildUserJs();
-    try {
-        await navigator.clipboard.writeText(text);
-        nuMsg('คัดลอกเนื้อไฟล์แล้ว วางทับใน user.js บน GitHub ได้เลย', 'ok');
-    } catch (e) {
-        const ta = document.createElement('textarea');
-        ta.value = text; document.body.appendChild(ta); ta.select();
-        document.execCommand('copy'); ta.remove();
-        nuMsg('คัดลอกเนื้อไฟล์แล้ว', 'ok');
-    }
 }
 
 /* ─────────────────────────────────────────────
@@ -1724,12 +1337,6 @@ document.addEventListener('DOMContentLoaded', () => {
         r.readAsText(f);
         e.target.value = '';
     });
-
-    // ── จัดการผู้ใช้ (ผู้ดูแลระบบ)
-    document.getElementById('nu-search').addEventListener('input', renderUserTable);
-    document.getElementById('nu-showpass').addEventListener('change', renderUserTable);
-    document.getElementById('nu-pass').addEventListener('keydown', e => { if (e.key === 'Enter') saveUserEntry(); });
-    document.getElementById('nu-name').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('nu-pass').focus(); });
 
     // ── เริ่มระบบ
     setViewMode(localStorage.getItem('proinventive_viewmode') || 'grid');
