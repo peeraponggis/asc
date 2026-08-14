@@ -98,16 +98,7 @@
         <iframe id="frame-report" src="asc_report.html" class="workspace-iframe bg-white"></iframe>
     </main>
 
-    <!-- 4. Floating Live Metrics Bar -->
-    <div id="floating-metrics" class="floating-metrics hidden absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white/95 border border-slate-200 shadow-xl rounded-full px-6 py-2 flex items-center space-x-6 z-40">
-        <div class="flex items-center">
-            <div class="bg-blue-100 text-blue-600 p-1.5 rounded-full mr-2"><i class="fa-solid fa-solar-panel text-xs"></i></div>
-            <div class="flex flex-col">
-                <span class="text-[10px] text-slate-500 font-bold uppercase leading-none">System Size</span>
-                <span class="text-sm font-bold text-slate-800 leading-tight" id="live-kwp">0.00 <span class="text-xs font-normal">kWp</span></span>
-            </div>
-        </div>
-    </div>
+    <!-- 4. Floating Live Metrics Bar — ถอดออกแล้ว เพราะทับแถบสถานะของหน้าออกแบบ -->
 
     <!-- ========================================== -->
     <!-- ⚙️ MASTER SHELL LOGIC (ENGINE) ⚙️         -->
@@ -224,9 +215,12 @@
                 new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' }) + ' น.');
         }
 
-        function updateLiveKwp(kwp) {
+       function updateLiveKwp(kwp) {
+            // ป้ายลอยถูกถอดออกแล้ว เก็บฟังก์ชันไว้เฉยๆ เผื่อในอนาคตอยากเอากลับมา
+            const el = document.getElementById('live-kwp');
+            if (!el) return;
             const v = parseFloat(kwp) || 0;
-            document.getElementById('live-kwp').innerHTML = `${v.toFixed(2)} <span class="text-xs font-normal">kWp</span>`;
+            el.innerHTML = `${v.toFixed(2)} <span class="text-xs font-normal">kWp</span>`;
         }
 
         /* --- 4. สื่อสารกับ Iframe (Workflow Data Flow) ------------------ */
@@ -296,13 +290,7 @@
             const activeFrame = document.getElementById(`frame-${tabId}`);
             activeFrame.classList.add('active');
 
-            const floatingBar = document.getElementById('floating-metrics');
-            if (tabId === 'asc') {
-                floatingBar.classList.remove('hidden');
-                floatingBar.style.animation = 'none'; floatingBar.offsetHeight; floatingBar.style.animation = null;
-            } else {
-                floatingBar.classList.add('hidden');
-            }
+           // (ถอดแถบ Floating Metrics ออกแล้ว — ตัวเลข kWp ดูได้จากแถบสถานะในหน้าออกแบบ)
 
             try {
                 activeFrame.contentWindow.postMessage({
