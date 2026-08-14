@@ -148,9 +148,15 @@
 
             // ไม่มี ID แนบมา แปลว่าเข้ามาผิดทาง ส่งกลับไปเลือกโปรเจกต์ที่หน้าแรก
             if (!currentProjectId) {
-                window.location.replace('index.html');
+                window.location.replace('./');
                 return;
             }
+
+            // ย่อ URL บนแถบที่อยู่ให้เหลือ .../asc/?id=proj_xxx
+            // (เปลี่ยนแค่ข้อความที่แสดง ไม่ได้โหลดหน้าใหม่ ปุ่ม Back ยังใช้ได้ปกติ)
+            try {
+                history.replaceState(null, '', './?id=' + encodeURIComponent(currentProjectId));
+            } catch (e) { /* บางเบราว์เซอร์เก่าไม่รองรับ ข้ามไปได้ ไม่กระทบการทำงาน */ }
 
             loadProjectFromDB();
         }
@@ -315,7 +321,7 @@
         /* --- 6. ปุ่มกลับหน้าแรก: ออกไปที่ index.html เสมอ -------------- */
         function goToDashboard(skipConfirm) {
             if (!skipConfirm && !confirm('กลับไปหน้ารายการโปรเจกต์ใช่หรือไม่?\nข้อมูลที่กดบันทึกไว้แล้วจะถูกเก็บไว้ตามปกติ')) return;
-            window.location.href = 'index.html';
+             window.location.href = './';
         }
 
         /* --- 7. เริ่มระบบ ---------------------------------------------- */

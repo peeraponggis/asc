@@ -679,6 +679,13 @@ function logout() {
    3. เข้าสู่หน้าหลัก
    ───────────────────────────────────────────── */
 function enterApp() {
+    // เข้ามาด้วยลิงก์ตรง .../asc/?id=proj_xxx  → ส่งต่อไปหน้า workspace ทันที
+    const deepId = new URLSearchParams(location.search).get('id');
+    if (deepId) {
+        window.location.replace('master_shell.html?id=' + encodeURIComponent(deepId));
+        return;
+    }
+
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-shell').classList.remove('hidden');
     document.title = 'ASC Cloud — Dashboard';
