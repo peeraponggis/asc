@@ -26,8 +26,6 @@
         .workspace-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; opacity: 0; visibility: hidden; transition: opacity 0.3s ease-in-out; }
         .workspace-iframe.active { opacity: 1; visibility: visible; z-index: 10; }
 
-        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .floating-metrics { animation: slideUp 0.5s ease-out; backdrop-filter: blur(8px); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
     </style>
@@ -72,6 +70,12 @@
     <!-- 2. Workflow Stepper -->
     <nav class="bg-white h-14 shadow-sm flex items-center justify-between px-4 shrink-0 z-20">
         <div class="flex h-full space-x-1 overflow-x-auto no-scrollbar w-full">
+            <button onclick="switchTab('manual')" id="tab-manual" class="nav-step flex-1 sm:flex-none flex items-center px-4 h-full text-slate-500 hover:bg-slate-50 min-w-max" title="วิธีการใช้งานโปรแกรม">
+                <div class="w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-[10px] mr-2"><i class="fa-solid fa-book"></i></div>
+                <span class="text-sm">วิธีการใช้งาน</span>
+            </button>
+            <div class="flex items-center px-1"><div class="h-6 w-px bg-slate-200"></div></div>
+
             <button onclick="switchTab('pea')" id="tab-pea" class="nav-step active flex-1 sm:flex-none flex items-center px-4 h-full text-slate-500 hover:bg-slate-50 min-w-max">
                 <div class="step-num w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs font-bold mr-2">1</div>
                 <span class="text-sm">Load Energy Profiling</span>
@@ -93,6 +97,7 @@
 
     <!-- 3. Main Workspace -->
     <main class="flex-grow relative bg-slate-200">
+        <iframe id="frame-manual" src="manual.html" class="workspace-iframe bg-white"></iframe>
         <iframe id="frame-pea" src="asc_e_analysis.html" class="workspace-iframe active bg-white"></iframe>
         <iframe id="frame-asc" src="asc_design.html" class="workspace-iframe bg-white"></iframe>
         <iframe id="frame-report" src="asc_report.html" class="workspace-iframe bg-white"></iframe>
@@ -139,15 +144,9 @@
 
             // ไม่มี ID แนบมา แปลว่าเข้ามาผิดทาง ส่งกลับไปเลือกโปรเจกต์ที่หน้าแรก
             if (!currentProjectId) {
-                window.location.replace('./');
+                window.location.replace('index.html');
                 return;
             }
-
-            // ย่อ URL บนแถบที่อยู่ให้เหลือ .../asc/?id=proj_xxx
-            // (เปลี่ยนแค่ข้อความที่แสดง ไม่ได้โหลดหน้าใหม่ ปุ่ม Back ยังใช้ได้ปกติ)
-            try {
-                history.replaceState(null, '', './?id=' + encodeURIComponent(currentProjectId));
-            } catch (e) { /* บางเบราว์เซอร์เก่าไม่รองรับ ข้ามไปได้ ไม่กระทบการทำงาน */ }
 
             loadProjectFromDB();
         }
@@ -215,8 +214,8 @@
                 new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' }) + ' น.');
         }
 
-       function updateLiveKwp(kwp) {
-            // ป้ายลอยถูกถอดออกแล้ว เก็บฟังก์ชันไว้เฉยๆ เผื่อในอนาคตอยากเอากลับมา
+        function updateLiveKwp(kwp) {
+            // ป้ายลอยถูกถอดออกแล้ว เก็บฟังก์ชันไว้เผื่ออนาคตอยากเอากลับมา
             const el = document.getElementById('live-kwp');
             if (!el) return;
             const v = parseFloat(kwp) || 0;
@@ -250,6 +249,11 @@
                 needSave = true;
                 console.log('📥 รับ DB3 เรียบร้อย');
             }
+            // หน้าคู่มือขอสลับไปแท็บอื่น
+            else if (data.type === 'SWITCH_TAB') {
+                if (['manual','pea','asc','report'].includes(data.tab)) switchTab(data.tab);
+                return;
+            }
             // หน้าลูกขอออกจากระบบ
             else if (data.type === 'REQUEST_EXIT') {
                 goToDashboard(true);
@@ -275,7 +279,7 @@
                 projectId: currentProjectId,
                 payload: currentProjectData
             };
-            ['frame-pea','frame-asc','frame-report'].forEach(id => {
+            ['frame-manual','frame-pea','frame-asc','frame-report'].forEach(id => {
                 const f = document.getElementById(id);
                 if (f && f.contentWindow) { try { f.contentWindow.postMessage(payload, '*'); } catch (e) {} }
             });
@@ -290,7 +294,7 @@
             const activeFrame = document.getElementById(`frame-${tabId}`);
             activeFrame.classList.add('active');
 
-           // (ถอดแถบ Floating Metrics ออกแล้ว — ตัวเลข kWp ดูได้จากแถบสถานะในหน้าออกแบบ)
+            // (ถอดแถบ Floating Metrics ออกแล้ว — ตัวเลข kWp ดูได้จากแถบสถานะในหน้าออกแบบ)
 
             try {
                 activeFrame.contentWindow.postMessage({
@@ -309,14 +313,14 @@
         /* --- 6. ปุ่มกลับหน้าแรก: ออกไปที่ index.html เสมอ -------------- */
         function goToDashboard(skipConfirm) {
             if (!skipConfirm && !confirm('กลับไปหน้ารายการโปรเจกต์ใช่หรือไม่?\nข้อมูลที่กดบันทึกไว้แล้วจะถูกเก็บไว้ตามปกติ')) return;
-             window.location.href = './';
+            window.location.href = 'index.html';
         }
 
         /* --- 7. เริ่มระบบ ---------------------------------------------- */
         document.addEventListener('DOMContentLoaded', initApp);
 
         // ส่ง Session ให้หน้าลูกทันทีที่แต่ละ iframe โหลดเสร็จ
-        ['frame-pea','frame-asc','frame-report'].forEach(id => {
+        ['frame-manual','frame-pea','frame-asc','frame-report'].forEach(id => {
             const f = document.getElementById(id);
             if (!f) return;
             f.addEventListener('load', function () {
