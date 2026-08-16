@@ -975,6 +975,7 @@
                     <div class="form-group" style="padding: 2px 0 6px;">
                         <div class="setting-group">
                             <div class="setting-row"><span class="sr-label">ความยาวราง Rail:</span><span class="sr-ctrl"><input type="number" id="bom-rail-length" value="4.2" step="0.1" min="2.1"> ม.</span></div>
+                            <div id="rail-fit-advice" style="display:none; font-size: 0.78em; line-height: 1.55; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 7px 10px; margin: 4px 0 6px 0; color: #166534;"></div>
                             <div class="setting-row"><span class="sr-label">ระยะยึด Span:</span><span class="sr-ctrl"><input type="number" id="bom-span-dist" value="1.2" step="0.1" min="0.5"> ม.</span></div>
                             <div class="setting-row"><span class="sr-label">ระยะห่างแผง:</span><span class="sr-ctrl"><input type="number" id="bom-panel-gap" value="2" step="0.5" min="1"> ซม.</span></div>
                         </div>
@@ -1002,9 +1003,14 @@
                     <!-- จบ: บันไดเซอร์วิส -->
 
 
-                    <!-- ── ส่วนย่อยที่ 3.2: Engineering Diagram (เดิมคือขั้นตอนที่ 6) ── -->
-                    <div class="sub-step-header"><i class="fa-solid fa-diagram-project"></i> Engineering Diagram (SLD / Wiring / I-V Curve)</div>
-                    
+                    <!-- ── ส่วนย่อยที่ 3.2: (ลบหัวข้อ Engineering Diagram ออกตามคำขอ) ── -->
+                    <!-- 🌟 ย้ายปุ่ม Generate BOM ขึ้นมาไว้บนสุดของกลุ่มปุ่ม -->
+                    <div style="margin-top: 10px;">
+                        <button class="btn-save" id="btnCalculateBOM" style="background: linear-gradient(135deg, #6366f1, #4f46e5); box-shadow: 0 4px 6px rgba(79,70,229,0.25);">
+                            <i class="fa-solid fa-calculator"></i> คำนวณตารางวัสดุอุปกรณ์ (Generate BOM)
+                        </button>
+                    </div>
+
                     <!-- 🌟 เฟส 16: ปุ่ม 3 ปุ่มเรียงต่อกัน ระยะเท่ากัน (ไม่มีกล่องห่อ) -->
                     <button onclick="openIVModal()" class="btn-search" style="width: 100%; margin-top: 8px; background: rgba(99, 102, 241, 0.13); color: #4338ca; border: 1px solid rgba(99, 102, 241, 0.45); box-shadow: none; font-weight: 700;">
                             ตรวจสอบ I-V Curve & ประสิทธิภาพแผง
@@ -1020,13 +1026,6 @@
                             [พื้นที่สำหรับแสดงผล Single Line Diagram อัตโนมัติในอนาคต]
                         </div>
 
-
-                    <!-- 🌟 เฟส 8: ย้ายปุ่ม Generate BOM มาต่อท้ายหัวข้อไดอะแกรม (ก่อนพารามิเตอร์จำลอง) -->
-                    <div style="margin-top: 15px;">
-                        <button class="btn-save" id="btnCalculateBOM" style="background: linear-gradient(135deg, #6366f1, #4f46e5); box-shadow: 0 4px 6px rgba(79,70,229,0.25);">
-                            <i class="fa-solid fa-calculator"></i> คำนวณตารางวัสดุอุปกรณ์ (Generate BOM)
-                        </button>
-                    </div>
 
                     <!-- ── ส่วนย่อยที่ 3.3: พารามิเตอร์จำลอง (เดิมคือเมนู 4 / ขั้นตอนที่ 7) ── -->
                     <div class="sub-step-header" id="simParamsSection"><i class="fa-solid fa-sliders"></i> พารามิเตอร์จำลอง (Simulation Params)</div>
@@ -1052,8 +1051,8 @@
 
                     <div class="section-header">Thermal Parameters (ค่าสัมประสิทธิ์อุณหภูมิ)</div>
                     <div class="setting-group">
-                        <div class="setting-row"><span class="sr-label">Temp Coeff Pmax:</span><span class="sr-ctrl"><input type="number" id="tempCoeffPmax" step="0.01" value="-0.35"> %/°C</span></div>
-                        <div class="setting-row"><span class="sr-label">Temp Coeff Voc:</span><span class="sr-ctrl"><input type="number" id="tempCoeffVoc" step="0.01" value="-0.27"> %/°C</span></div>
+                        <div class="setting-row"><span class="sr-label">Temp Coeff Pmax:</span><span class="sr-ctrl"><input type="number" id="tempCoeffPmax" step="0.01" value="-0.35" style="width: 78px;"> %/°C</span></div>
+                        <div class="setting-row"><span class="sr-label">Temp Coeff Voc:</span><span class="sr-ctrl"><input type="number" id="tempCoeffVoc" step="0.01" value="-0.27" style="width: 78px;"> %/°C</span></div>
                     </div>
 
                     <div class="section-header">Loss Parameters (เงื่อนไขความสูญเสีย)</div>
@@ -1392,7 +1391,7 @@ const INDUSTRIAL_SOLAR_CONFIG = {
             }
         });
         // วสท. Constants สำหรับคำนวณ String
-        const T_MIN_COLD = 15; // อุณหภูมิคาดว่าต่ำสุดของไทย (องศา C)
+        const T_MIN_COLD = 10; // อุณหภูมิต่ำสุดออกแบบ (กทม.เคยต่ำสุด ~9.9°C; ภาคเหนือ/อีสานควรลดลงอีกตามสถิติพื้นที่)
         const T_MAX_HOT = 70;  // อุณหภูมิแผงสูงสุดในหน้าร้อน (องศา C)
         const T_STC = 25;
 
@@ -3131,7 +3130,8 @@ processPolygonsAndPanels = function() {
                     // Voc_cold = Voc_stc * (1 + (TempCoeffVoc/100) * (T_min - T_stc))
                     let vocCold = state.pvVoc * (1 + (state.pvTempVoc / 100) * (T_MIN_COLD - T_STC));
                     // Vmp_hot = Vmp_stc * (1 + (TempCoeffVoc/100) * (T_max_hot - T_stc))
-                    let vmpHot = state.pvVmp * (1 + (state.pvTempVoc / 100) * (T_MAX_HOT - T_STC));
+                    // 🌟 แก้ตามหลักวิชาการ: Vmp เสื่อมตามอุณหภูมิด้วยอัตราใกล้ Pmax coefficient ไม่ใช่ Voc
+                    let vmpHot = state.pvVmp * (1 + (state.pvTempPmax / 100) * (T_MAX_HOT - T_STC));
 
                     maxStr = Math.floor(effectiveMaxDC / vocCold);
                     minStr = Math.ceil(minMPPT / vmpHot);
@@ -3552,6 +3552,31 @@ function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM,
             return curved;
         }
 
+        // 🌟 ASC FIX: เส้นทางสั้นที่สุดบนขอบวงปิด (Walkway ring)
+        // turf.lineSlice เดินตาม "ลำดับพิกัด" ของวงเสมอ → ถ้าจุดเข้า/ออกคร่อมจุดเริ่มวง เส้นจะวนอ้อมไกล
+        // ฟังก์ชันนี้เดินขอบทั้ง 2 ทิศ (ตามเข็ม/ทวนเข็ม) แล้วคืนเส้นทางที่สั้นกว่า — ตรงกับการเดินสายหน้างานจริง
+        function ascShortestRingPath(ringFeature, snapA, snapB) {
+            let coords = ringFeature.geometry.coordinates.slice();
+            if (coords.length > 2 && coords[0][0] === coords[coords.length - 1][0] && coords[0][1] === coords[coords.length - 1][1]) {
+                coords = coords.slice(0, -1); // ตัดจุดปิดวงซ้ำออก เพื่อเดินแบบ cyclic
+            }
+            const n = coords.length;
+            const iA = snapA.properties.index % n, iB = snapB.properties.index % n;
+            const A = snapA.geometry.coordinates, B = snapB.geometry.coordinates;
+            if (n < 3 || iA === iB) return [A, B]; // จุดเข้า-ออกอยู่บน segment เดียวกัน → ตรงได้เลย
+            // ทิศที่ 1: เดินตามลำดับพิกัด (A → ปลาย segment ของ A → ... → ต้น segment ของ B → B)
+            let fwd = [A], guard = 0;
+            for (let i = (iA + 1) % n; guard++ <= n; i = (i + 1) % n) { fwd.push(coords[i]); if (i === iB) break; }
+            fwd.push(B);
+            // ทิศที่ 2: เดินย้อนลำดับพิกัด
+            let bwd = [A]; guard = 0;
+            for (let i = iA; guard++ <= n; i = (i - 1 + n) % n) { bwd.push(coords[i]); if (i === (iB + 1) % n) break; }
+            bwd.push(B);
+            const lenF = turf.length(turf.lineString(fwd), { units: 'meters' });
+            const lenB = turf.length(turf.lineString(bwd), { units: 'meters' });
+            return lenF <= lenB ? fwd : bwd;
+        }
+
         // 🌟 เฟส 19: เส้นเชื่อมระยะไกล (ข้ามสตริง/ข้ามกลุ่มแผง) ห้ามลากทแยงทับแผง —
         // ให้ "ตัดฉากไปหาแนวทางเดิน (กึ่งกลางระหว่างสองจุด) แล้วเลาะไปอีกฝั่ง" แบบงานติดตั้งจริง
         function drawWiringPath(pts, renderer, group, style) {
@@ -3865,19 +3890,10 @@ function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM,
                                 homeRunPts.push([snapStart.geometry.coordinates[1], snapStart.geometry.coordinates[0]]);
                                 
                                 try {
-                                    // 2. สร้างเส้นทางเลาะขอบ Walkway โดยใช้ turf.lineSlice 
-                                    let sliced = turf.lineSlice(snapStart, snapEnd, bestWalkwayEdge);
-                                    let sliceCoords = sliced.geometry.coordinates;
-                                    
-                                    // 3. ตรวจสอบทิศทางการเรียงลำดับของพิกัดให้ถูกต้อง (เดินจาก แผง -> ไปยัง MDB)
-                                    let d1 = turf.distance(turf.point(sliceCoords[0]), snapStart);
-                                    let d2 = turf.distance(turf.point(sliceCoords[sliceCoords.length-1]), snapStart);
-                                    if (d2 < d1) {
-                                        sliceCoords.reverse();
-                                    }
-
-                                    // ดันเส้นทางที่เลาะขอบได้ เข้าไปในอาร์เรย์สายไฟ
-                                    for(let i = 1; i < sliceCoords.length; i++) {
+                                    // 2.-3. 🌟 [แก้บั๊กวนอ้อม] เลาะขอบ Walkway ด้วยเส้นทางที่ "สั้นที่สุด" ระหว่าง 2 ทิศ
+                                    // (เดิม turf.lineSlice เดินตามลำดับพิกัดวง อาจอ้อมท้ายทางเดินแล้วย้อนกลับ → สาย DC เกินจริงมาก)
+                                    let sliceCoords = ascShortestRingPath(bestWalkwayEdge, snapStart, snapEnd);
+                                    for (let i = 1; i < sliceCoords.length; i++) {
                                         homeRunPts.push([sliceCoords[i][1], sliceCoords[i][0]]);
                                     }
                                 } catch(e) {
@@ -3992,6 +4008,60 @@ function updateFinalDcLength() {
 
         // ให้กล่องระยะ MDB เรียกใช้อัปเดตอัตโนมัติ
         document.getElementById('distToMdbMap').addEventListener('input', updateFinalDcLength);
+
+        /* ==================== 🌟 RAIL-FIT ADVISOR ==================== */
+        // แนะนำจำนวนแผง/แถว ให้ความยาวรางลงตัวกับรางมาตรฐาน (ตัดทิ้งน้อยสุด) — เป็นคำแนะนำ ไม่ใช่ข้อห้าม
+        function computeRailFitAdvice(railL, panelDim, gapM, marginPerSide, maxN) {
+            if (!(railL > 0) || !(panelDim > 0)) return null;
+            const margin2 = (marginPerSide || 0.20) * 2;
+            const runLen = n => n * panelDim + Math.max(0, n - 1) * gapM + margin2;
+            let list = [];
+            for (let n = 2; n <= (maxN || 40); n++) {
+                const len = runLen(n);
+                const rails = Math.ceil(len / railL);
+                const leftover = rails * railL - len;                  // เศษตัดทิ้งต่อเส้นทางราง 1 เส้น
+                list.push({ n, len, rails, leftover, wastePct: leftover / (rails * railL) * 100 });
+            }
+            list.sort((a, b) => a.leftover - b.leftover || b.n - a.n);
+            return { runLen, best: list.slice(0, 3), all: list };
+        }
+
+        function updateRailFitAdvice() {
+            const box = document.getElementById('rail-fit-advice');
+            if (!box) return;
+            try {
+                const railL = parseFloat(document.getElementById('bom-rail-length').value) || 4.2;
+                const gapM = (parseFloat(document.getElementById('bom-panel-gap').value) || 2) / 100;
+                const oriEl = document.querySelector('input[name="panelOrientation"]:checked');
+                const ori = oriEl ? oriEl.value : 'P';
+                const panelDim = ori === 'P' ? (state.pvWid / 1000) : (state.pvLen / 1000);
+                if (!(panelDim > 0)) { box.style.display = 'none'; return; }
+
+                const adv = computeRailFitAdvice(railL, panelDim, gapM, 0.20, 40);
+                const colsNow = parseInt(document.getElementById('colsPerGroup').value) || 0;
+                let nowTxt = '';
+                if (colsNow >= 2) {
+                    const lenNow = adv.runLen(colsNow);
+                    const railsNow = Math.ceil(lenNow / railL);
+                    const leftNow = railsNow * railL - lenNow;
+                    nowTxt = `ปัจจุบันวาง <b>${colsNow} แผง/แถว</b> → ราง ${fmtNum(lenNow)} ม. ใช้ ${railsNow} เส้น/แนวราง เหลือเศษตัด <b>${fmtNum(leftNow * 100, 0)} ซม.</b>`;
+                }
+                const opts = adv.best.map(o =>
+                    `<b>${o.n} แผง/แถว</b> → ${fmtNum(o.len)} ม. = ${o.rails} เส้นพอดี (เศษเพียง ${fmtNum(o.leftover * 100, 0)} ซม.)`
+                ).join(' &nbsp;|&nbsp; ');
+                box.innerHTML = `💡 <b>คำแนะนำจัดแถวให้ลงตัวกับราง ${fmtNum(railL, 1)} ม.</b> (เผื่อหัวราง 20 ซม./ด้าน · ปรับหรือไม่ก็ได้):<br>
+                    ${nowTxt ? nowTxt + '<br>' : ''}ทางเลือกที่ตัดรางน้อยที่สุด: ${opts}`;
+                box.style.display = 'block';
+            } catch (e) { box.style.display = 'none'; }
+        }
+        // อัปเดตคำแนะนำอัตโนมัติเมื่อค่าที่เกี่ยวข้องเปลี่ยน
+        ['bom-rail-length', 'bom-panel-gap', 'colsPerGroup'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', updateRailFitAdvice);
+        });
+        document.querySelectorAll('input[name="panelOrientation"]').forEach(r => r.addEventListener('change', updateRailFitAdvice));
+
+
 
 
         function toggleMountSelect() { document.getElementById('mountOptions').classList.toggle('show'); }
@@ -4866,10 +4936,20 @@ function generateDB2() {
             let dcCableSize = 4;
             let dcCableOdArea = 23;
 
-            if (minDcArea <= 4 && actualVDropPct <= 1.0) { 
-                dcCableSize = 4; dcCableOdArea = 23; 
-            } else { 
-                dcCableSize = 6; dcCableOdArea = 28; 
+            // 🌟 [แก้บั๊ก] เดิมอนุมัติสาย 4 ตร.มม. จาก V-Drop ที่คำนวณบนสาย 6 ตร.มม. → ต้องคำนวณซ้ำที่ขนาดจริง
+            let vdAt4 = actualVDropPct * (6 / 4); // V-Drop แปรผกผันกับพื้นที่หน้าตัด
+            if (minDcArea <= 4 && vdAt4 <= 1.5) {
+                dcCableSize = 4; dcCableOdArea = 23;
+                actualVDropPct = vdAt4; // รายงานค่าจริงของสายที่เลือก
+            } else {
+                dcCableSize = 6; dcCableOdArea = 28;
+            }
+            // อัปเดตค่า Wiring Loss อีกครั้งตามขนาดสายที่เลือกจริง
+            if (wiringLossInput) {
+                wiringLossInput.value = actualVDropPct.toFixed(2);
+                wiringLossInput.style.backgroundColor = actualVDropPct > 1.5 ? "#fef2f2" : "#f0fdf4";
+                wiringLossInput.style.borderColor = actualVDropPct > 1.5 ? "#ef4444" : "#10b981";
+                wiringLossInput.style.color = actualVDropPct > 1.5 ? "#dc2626" : "#16a34a";
             }
             
             // 🌟 เพิ่มตัวแปรคำนวณขนาดเบรกเกอร์ DC/Fuse ตรงนี้ (ป้องกันบั๊กเงียบ) 🌟
@@ -4882,10 +4962,25 @@ function generateDB2() {
             let acVolts = acPhase === 3 ? 400 : 230;
             let acFactor = acPhase === 3 ? 1.732 : 2;
             
-            // สาย AC สูงสุดที่ยอมให้ใช้ทั่วไปในตู้ Combiner บ้านคือ 16 sq.mm
-            let maxAcLengthAllowed = Math.floor((16 * (0.03 * acVolts)) / (acFactor * maxAcCurrent * 0.0216));
+
+            let acBreakerAmp = Math.ceil((maxAcCurrent * 1.25) / 5) * 5;
+            if (acBreakerAmp < 10) acBreakerAmp = 10;
+            // 🌟 [ยืนยันมาตรฐาน] ตารางที่ 5-20 วสท.022001-22 (หน้า 5-35): สายทองแดง PVC 70°C
+            // เดินในท่อร้อยสายในอากาศ (กลุ่ม 1) 3 ตัวนำแกนเดียว อุณหภูมิโดยรอบ 40°C
+            const EIT_TABLE_5_20 = [[2.5,16],[4,21],[6,27],[10,37],[16,49],[25,64],[35,77],[50,94],[70,118],[95,143],[120,164],[150,188],[185,213],[240,249],[300,285]];
+            let acEntry = EIT_TABLE_5_20.find(e => e[1] >= acBreakerAmp);
+            let acCableParallel = 1;
+            if (!acEntry) { // เกิน 300 ตร.มม. → เดินสายควบ (ขนานหลายชุด)
+                acCableParallel = Math.ceil(acBreakerAmp / 285);
+                acEntry = EIT_TABLE_5_20.find(e => e[1] >= acBreakerAmp / acCableParallel) || [300, 285];
+            }
+            let acCableSize = acEntry[0];
+
+            // 🌟 คุมแรงดันตก AC ≤ 3% ด้วยขนาดสายที่เลือกจริงจากตาราง 5-20 (มาตรฐานรวมทั้งระบบ ≤5% ตามข้อ 3.6)
+            let maxAcLengthAllowed = 0; // จะคำนวณหลังทราบ acCableSize (ดูด้านล่าง)
+            maxAcLengthAllowed = Math.floor(((acCableSize * acCableParallel) * (0.03 * acVolts)) / (acFactor * maxAcCurrent * 0.0216));
             if (acLength > maxAcLengthAllowed && maxAcLengthAllowed > 0 && maxAcCurrent > 0) {
-                alert(`⚠️ [มาตรฐาน วสท.] ระยะสายไฟ AC ยาวเกินไป (${acLength} ม.)\nระบบบังคับลดความยาวสาย AC ลงเหลือ ${maxAcLengthAllowed} เมตร เพื่อคุม Voltage Drop ไม่ให้เกิน 3% (จำกัดสาย 16 sq.mm)`);
+                alert(`⚠️ [วสท.022001-22 ข้อ 3.6] ระยะสายไฟ AC ยาวเกินไป (${acLength} ม.)\nระบบบังคับลดความยาวสาย AC ลงเหลือ ${maxAcLengthAllowed} เมตร เพื่อคุม Voltage Drop ไม่เกิน 3% (สาย ${acCableSize} sq.mm${acCableParallel>1 ? ' × '+acCableParallel+' ชุดขนาน' : ''})`);
                 acLength = maxAcLengthAllowed;
                 document.getElementById('bom-ac-length').value = acLength;
                 document.getElementById('bom-ac-length').style.borderColor = "#ef4444";
@@ -4893,12 +4988,13 @@ function generateDB2() {
                 document.getElementById('bom-ac-length').style.borderColor = "#93c5fd";
             }
 
-            let acBreakerAmp = Math.ceil((maxAcCurrent * 1.25) / 5) * 5;
-            if (acBreakerAmp < 10) acBreakerAmp = 10;
-            let acCableSize = acBreakerAmp <= 20 ? 4 : (acBreakerAmp <= 32 ? 6 : (acBreakerAmp <= 50 ? 10 : 16));
 
-            let gndCableSize = mainBreaker <= 50 ? 10 : (mainBreaker <= 100 ? 16 : 25);
-            let gndCableOdArea = gndCableSize === 10 ? 28 : (gndCableSize === 16 ? 39 : 55);
+            // 🌟 [ยืนยันมาตรฐาน] ตารางที่ 4-2 วสท.022001-22 (หน้า 4-13): ขนาดต่ำสุดของสายดินของบริภัณฑ์ตามพิกัดเครื่องป้องกัน
+            const EIT_TABLE_4_2 = [[20,2.5],[40,4],[70,6],[100,10],[200,16],[400,25],[500,35],[800,50],[1000,70],[1250,95],[2000,120]];
+            let gndEntry = EIT_TABLE_4_2.find(e => mainBreaker <= e[0]) || [2000,120];
+            let gndCableSize = gndEntry[1];
+            const GND_OD = {2.5:12, 4:15, 6:20, 10:28, 16:39, 25:55, 35:70, 50:90, 70:120, 95:150, 120:180};
+            let gndCableOdArea = GND_OD[gndCableSize] || 55;
 
             let totalDcWireArea = (numStrings * 2 * dcCableOdArea) + gndCableOdArea; 
             let conduitResult = "";
@@ -4935,6 +5031,9 @@ function generateDB2() {
             
             // 1. ประเมินจำนวนแถว (รอยตัด) ทั้งหมดในระบบ
             const totalSegments = Math.ceil(totalPanels / colsLimit) || 1;
+
+            // 🌟 อัปเดตคำแนะนำ Rail-Fit ทุกครั้งที่คำนวณ BOM
+            try { updateRailFitAdvice(); } catch (e) {}
             
             // 2. End-Clamp: 1 แถวมี 4 ตัว (หัว-ท้าย รางบน-ล่าง)
             const endClampQty = totalSegments * 4; 
@@ -4945,11 +5044,14 @@ function generateDB2() {
                 midClampQty = (totalPanels - totalSegments) * 2;
             }
 
-            // 4. ความยาวรางรวมทั้งหมด: (กว้างแผง*แผง) + (ช่องไฟ) + เผื่อหัวท้าย
-            const totalRailLengthM = ((totalPanels * panelDimensionM) + (midClampQty/2 * panelGapM) + (totalSegments * 0.1)) * 2;
+            // 4. ความยาวรางรวมทั้งหมด: (กว้างแผง*แผง) + (ช่องไฟ) + เผื่อหัวราง 20 ซม./ด้าน
+            const RAIL_END_MARGIN_M = 0.20; // 🌟 ระยะเผื่อหัวรางต่อด้าน (ยัง ≤ span/3 = 0.40 ม. ตามหลัก cantilever)
+            const totalRailLengthM = ((totalPanels * panelDimensionM) + (midClampQty/2 * panelGapM) + (totalSegments * RAIL_END_MARGIN_M * 2)) * 2;
 
             // 5. จำนวน Rail (ราง): หารความยาวมาตรฐานแล้วปัดเศษขึ้น
-            const railQty = Math.ceil(totalRailLengthM / stdRailLength);
+            // 🌟 [Audit] วิธีหารความยาวรวมสมมติว่าเศษตัดจากแถวหนึ่งนำไปต่อแถวอื่นได้หมด (zero-waste)
+            // หน้างานจริงมีเศษเหลือทิ้ง → เผื่อ Waste Factor 3% ตามแนวปฏิบัติจัดซื้อ
+            const railQty = Math.ceil((totalRailLengthM * 1.03) / stdRailLength);
 
             // 6. จำนวน Rail Splice (ข้อต่อราง)
             // สูตรปกติ: จำนวนรางทั้งหมด ลบด้วย จำนวนหัวแถวที่ต้องเปิด (totalSegments * 2)
@@ -4962,10 +5064,14 @@ function generateDB2() {
             }
 
             // 7. จำนวน L-Feet / Roof Hook: ความยาวรางรวม หาร ระยะ Span
-            const lFeetQty = Math.ceil(totalRailLengthM / spanDist);
+            // 🌟 [แก้บั๊ก Fencepost] จุดจับยึดต่อราง = ceil(len/span) + 1 (หัวรางต้องมีขายึดเสมอ)
+            // สูตรหารรวมแบบเดิมขาดตัวจับหัวรางไป 1 ตัว/เส้นราง → บวกเพิ่ม 2 ราง × จำนวนแถว
+            const lFeetQty = Math.ceil(totalRailLengthM / spanDist) + (totalSegments * 2);
 
             // 8. Ground Plate: 1 แผ่นต่อการเชื่อม 2 แผง (คู่กับ Mid-clamp)
-            const groundPlateQty = Math.ceil(midClampQty / 2);
+            // 🌟 [Audit] แถวที่มีแผงเดียวไม่มี Mid-clamp → ไม่มีแผ่นบอนด์เลย ผิดหลัก UL2703
+            // บังคับขั้นต่ำ 1 แผ่น/แถว เพื่อให้ทุกแผงมีเส้นทางลงดินครบ
+            const groundPlateQty = Math.max(Math.ceil(midClampQty / 2), totalSegments);
 
             // 9. Ground Lug: 2 ตัวต่อ 1 แถวแผง (หัวรางบน-ล่าง อย่างละฝั่ง)
             const groundLugQty = totalSegments * 2;
