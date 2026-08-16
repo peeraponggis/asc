@@ -181,6 +181,32 @@
 
         .google-visualization-tooltip { display: none !important; opacity: 0 !important; visibility: hidden !important; }
     </style>
+    <!-- 🌟 ASC COMPACT PRINT: ลดช่องว่าง/ขนาดตัวอักษรเฉพาะตอนพิมพ์ PDF เพื่อประหยัดหน้ากระดาษ -->
+    <style id="asc-compact-print">
+        @media print {
+            /* ตารางทุกตารางในเอกสาร: ลด padding และขนาดอักษร */
+            .pdf-page table td, .pdf-page table th, .pdf-page-landscape table td, .pdf-page-landscape table th {
+                padding: 3px 6px !important; font-size: 10.5px !important; line-height: 1.3 !important;
+            }
+            /* หัวข้อ: ลด margin */
+            .pdf-heading { margin: 2px 0 6px 0 !important; padding: 4px 8px !important; font-size: 15px !important; }
+            /* บทสรุปผู้บริหาร: บรรทัดกระชับ */
+            #prt-exec-summary p, #prt-exec-summary li { line-height: 1.5 !important; margin-bottom: 3px !important; }
+            #prt-exec-summary h4 { margin-top: 6px !important; margin-bottom: 3px !important; }
+            /* KPI Card: ย่อขนาดในเอกสาร */
+            #prt-asc-kpi .text-xl { font-size: 15px !important; }
+            #prt-asc-kpi [class*="p-3"] { padding: 5px 8px !important; }
+            #prt-asc-kpi .grid { gap: 6px !important; margin-bottom: 6px !important; }
+            #prt-asc-kpi .text-\[10px\] { font-size: 8.5px !important; }
+            /* ระยะห่างระหว่างบล็อกทั่วไปในหน้า PDF */
+            .pdf-page [class*="space-y-4"] > * + *, .pdf-page [class*="space-y-3"] > * + * { margin-top: 5px !important; }
+            .pdf-page [class*="mb-6"] { margin-bottom: 8px !important; }
+            .pdf-page [class*="mt-4"] { margin-top: 6px !important; }
+            .pdf-page [class*="leading-relaxed"] { line-height: 1.45 !important; }
+            /* กล่องคำอธิบาย (Pee Analysis) ใน PDF */
+            .pdf-page [id^="prt-desc-"] { padding: 6px 10px !important; margin-top: 6px !important; font-size: 10.5px !important; }
+        }
+    </style>
 </head>
 <body class="flex h-screen overflow-hidden">
 
@@ -518,7 +544,12 @@
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                             <label><input type="checkbox" id="chk-sec-env" checked class="form-checkbox text-blue-600" onchange="toggleSections()"> Environmental Impact</label>
                             <label><input type="checkbox" id="chk-sec-loss" checked class="form-checkbox text-blue-600" onchange="toggleSections()"> PV System Loss Diagram</label>
-                            <label><input type="checkbox" id="chk-sec-sunpath" class="form-checkbox text-blue-600" onchange="toggleSections()"> Sun Path Diagram</label>
+                            <!-- 🌟 PHASE 2: Checkbox ควบคุม Shading Dashboard -->
+                            <label><input type="checkbox" id="chk-sec-shading-dash" checked class="form-checkbox text-blue-600" onchange="toggleSections()"> ASC Shading Analysis Dashboard</label>
+                            <!-- 🌟 PHASE 5 -->
+                            <label><input type="checkbox" id="chk-sec-overview" checked class="form-checkbox text-blue-600" onchange="toggleSections()"> ASC Energy Overview (KPI+Flow)</label>
+                            <label><input type="checkbox" id="chk-sec-powercurve" checked class="form-checkbox text-blue-600" onchange="toggleSections()"> ASC Power Curve (12 เดือน)</label>
+                            <label><input type="checkbox" id="chk-sec-electable" class="form-checkbox text-blue-600" onchange="toggleSections()"> ASC Electrical Connection</label>
                             <label><input type="checkbox" id="chk-sec-balances" class="form-checkbox text-blue-600" onchange="toggleSections()"> Balances & Main Results</label>
                             <label><input type="checkbox" id="chk-sec-aging" class="form-checkbox text-blue-600" onchange="toggleSections()"> Degradation & Aging</label>
                             <label><input type="checkbox" id="chk-sec-daily" checked class="form-checkbox text-blue-600" onchange="toggleSections()"> Daily Battery & PV</label>
@@ -535,8 +566,18 @@
 						</div>
                     </div>
 
-					<div class="chart-container avoid-break" id="env-container">
-                        <h3 class="font-bold text-lg mb-4 text-green-700"><i class="fa-solid fa-leaf"></i></i> 1. Environmental Impact (แบบจำลองด้านสิ่งแวดล้อม)</h3><div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-green-50 p-4 rounded border border-green-200 text-center">
+					<!-- 🌟 PHASE 5: ASC Energy Overview (KPI + Energy Flow) -->
+                    <div class="chart-container avoid-break" id="asc-overview-container">
+                        <h3 class="font-bold text-lg mb-4 text-blue-800"><i class="fa-solid fa-gauge-high mr-2"></i>1. ASC Energy Overview (ภาพรวมพลังงานรายปี)</h3>
+                        <div id="asc-kpi-wrapper"></div>
+                        <div class="mt-4 border border-gray-200 rounded-lg overflow-hidden bg-white">
+                            <canvas id="asc-flow-canvas" style="width:100%; height:auto; display:block;"></canvas>
+                        </div>
+                        <div class="explanation-box" id="desc-asc-overview"></div>
+                    </div>
+
+                    <div class="chart-container avoid-break" id="env-container">
+                        <h3 class="font-bold text-lg mb-4 text-green-700"><i class="fa-solid fa-leaf"></i></i> 2. Environmental Impact (แบบจำลองด้านสิ่งแวดล้อม)</h3><div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-green-50 p-4 rounded border border-green-200 text-center">
                             <div><p class="text-xs text-gray-500">ลดการปล่อย CO2 (ตัน/ปี)</p><p class="text-2xl font-bold text-gray-700" id="env-co2">-</p></div>
                             <div><p class="text-xs text-gray-500">เทียบเท่าปลูกต้นไม้ (ต้น/ปี)</p><p class="text-2xl font-bold text-green-600" id="env-tree">-</p></div>
                             <div><p class="text-xs text-gray-500">ลดการใช้ถ่านหิน (ตัน/ปี)</p><p class="text-2xl font-bold text-gray-700" id="env-coal">-</p></div>
@@ -547,21 +588,58 @@
 
                     <!-- 🌟 ย้ายมาลำดับที่ 2 -->
                     <div class="chart-container avoid-break">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">2. PV System Loss Diagram</h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">3. ASC PV System Loss Diagram</h3>
                         <div id="custom-loss-diagram"></div>
                         <div class="explanation-box" id="desc-waterfall"></div>
                     </div>
 
-                    <!-- 🌟 ย้ายมาลำดับที่ 3 -->
-                    <div class="chart-container avoid-break" id="sunpath-container">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800"><i class="fa-solid fa-sun mr-2"></i>3. Sun Path & Iso-Shadings Diagram (วิถีโคจรและพื้นที่เงาบัง)</h3>
-                        <!-- 🌟 เปลี่ยนเป็น Wrapper เพื่อรองรับการสร้างกราฟแยกตามระนาบหลังคาอัตโนมัติ -->
-                        <div id="dynamic-sunpath-wrapper" class="space-y-8 w-full"></div>
-                        <div class="explanation-box" id="desc-sunpath"></div>
+                    <!-- 🌟 PHASE 2: Solar Shading Analysis Dashboard (Heatmap / Polar + Selector) -->
+                    <div class="chart-container avoid-break" id="shading-dash-container">
+                        <h3 class="font-bold text-lg mb-1 text-blue-800"><i class="fa-solid fa-table-cells mr-2"></i>4. ASC Solar Shading Analysis Dashboard (ระบบวิเคราะห์การบังแดดอัจฉริยะ ASC)</h3>
+                        <div id="sdash-sysinfo" class="text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-1.5 mb-3"></div>
+                        <div id="sdash-msg" class="p-4 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded text-sm font-bold mb-3" style="display:none;"></div>
+                        <div class="flex flex-col lg:flex-row gap-4">
+                            <div class="w-full lg:w-64 flex-shrink-0 no-print">
+                                <div class="font-bold text-sm mb-2 text-gray-700">Main display type (เลือกรูปแบบแสดงผลหลัก)</div>
+                                <button id="sdash-btn-heatmap" onclick="setShadingDashView('heatmap')" class="w-full text-left text-xs font-bold p-2.5 rounded border-2 border-green-600 bg-green-50 text-green-800 mb-2 transition">กราฟที่ 1: แผนภูมิความร้อน<br><span class="font-normal">(Simplified Heatmap)</span></button>
+                                <button id="sdash-btn-polar" onclick="setShadingDashView('polar')" class="w-full text-left text-xs font-bold p-2.5 rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 mb-2 transition">กราฟที่ 2: กราฟวงกลม<br><span class="font-normal">(Polar Obscuration View)</span></button>
+                                <button id="sdash-btn-iso3d" onclick="setShadingDashView('iso3d')" class="w-full text-left text-xs font-bold p-2.5 rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 mb-2 transition">กราฟที่ 3: โมเดล 3 มิติ<br><span class="font-normal">(3D Site Modeling & Shading)</span></button>
+                                <div class="mt-3">
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">เลือกกลุ่มการวางแผง (Orientation Group)</label>
+                                    <select id="sdash-group-sel" onchange="window.ShadingDashState.group=this.value; renderShadingDashboard();" class="w-full border rounded p-2 text-xs"></select>
+                                    <div class="text-[10px] text-gray-500 mt-1.5 leading-snug">💡 ระบบจัดกลุ่มหลังคาที่มุมเอียง/มุมทิศต่างกันไม่เกิน ±5° เป็นกลุ่มเดียวกันอัตโนมัติ และมุมมอง "ทั้งหมด" ถ่วงน้ำหนักตามขนาด kWp ของแต่ละกลุ่ม</div>
+                                    <!-- 🌟 PHASE 4: ตัวเลือกเดือน/เวลา สำหรับโมเดล 3 มิติ -->
+                                    <div id="sdash-3d-controls" style="display:none;" class="mt-3 pt-3 border-t border-gray-200">
+                                        <label class="block text-xs font-bold text-gray-700 mb-1">Select Month (เลือกเดือนจำลอง)</label>
+                                        <select id="sdash-3d-month" onchange="renderShadingDashboard()" class="w-full border rounded p-2 text-xs mb-2">
+                                            <option value="0">มกราคม</option><option value="1">กุมภาพันธ์</option><option value="2">มีนาคม</option>
+                                            <option value="3">เมษายน</option><option value="4">พฤษภาคม</option><option value="5">มิถุนายน</option>
+                                            <option value="6">กรกฎาคม</option><option value="7">สิงหาคม</option><option value="8">กันยายน</option>
+                                            <option value="9">ตุลาคม</option><option value="10">พฤศจิกายน</option><option value="11" selected>ธันวาคม</option>
+                                        </select>
+                                        <label class="block text-xs font-bold text-gray-700 mb-1">Select Time (เลือกเวลาจำลอง)</label>
+                                        <select id="sdash-3d-hour" onchange="renderShadingDashboard()" class="w-full border rounded p-2 text-xs">
+                                            <option value="6">06:00</option><option value="7">07:00</option><option value="8">08:00</option>
+                                            <option value="9">09:00</option><option value="10" selected>10:00</option><option value="11">11:00</option>
+                                            <option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option>
+                                            <option value="15">15:00</option><option value="16">16:00</option><option value="17">17:00</option>
+                                            <option value="18">18:00</option>
+                                        </select>
+                                        <div class="text-[10px] text-gray-500 mt-1.5 leading-snug">💡 สีของแผงบนหลังคาแสดงระดับ Shading Loss ณ เดือน/เวลาที่เลือก (เขียว=ไม่ถูกบัง → แดง=ถูกบังรุนแรง)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div style="border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background-color: white;">
+                                    <canvas id="sdash-canvas" style="width: 100%; height: auto; display: block;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="explanation-box" id="desc-shading-dash"></div>
                     </div>
 
 					<div class="chart-container avoid-break">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">4. Balances and Main Results</h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">5. ASC Balances and Main Results</h3>
                         <div class="overflow-x-auto border border-gray-200 mb-4 rounded">
                             <table class="w-full text-center border text-sm relative">
                                 <thead class="bg-gray-200 sticky top-0 z-10">
@@ -583,7 +661,7 @@
 
                     <!-- 🌟 ย้ายมาลำดับที่ 5 -->
                     <div class="chart-container avoid-break" id="aging-container">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">5. Long-term Energy Yield & Aging Degradation</h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">6. ASC Long-term Energy Yield & Aging Degradation</h3>
                         <div class="overflow-x-auto border border-gray-200 mb-4 rounded">
                             <table class="w-full text-center border text-sm relative">
                                 <thead class="bg-gray-200 sticky top-0 z-10">
@@ -603,7 +681,7 @@
 
                     <div class="chart-container avoid-break">
                         <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-2 gap-2">
-                            <h3 class="font-bold text-lg text-blue-800">6. Daily Battery & PV Operation</h3>
+                            <h3 class="font-bold text-lg text-blue-800">7. ASC Daily Battery & PV Operation</h3>
                             <div class="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded border border-blue-200 flex flex-wrap gap-3 items-center">
                                 <span>Discharge แบตเตอรี่ (ถึง 25%):</span>
                                 <label><input type="checkbox" id="chk-b-before" checked onchange="updateChartjsDailyInteractive()"> ก่อน PSH (00:00-09:00)</label>
@@ -617,15 +695,24 @@
                     </div>
 
                     <div class="chart-container avoid-break">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">7. Monthly Energy Production & Performance Ratio (PR)</h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">8. ASC Monthly Energy Production & Performance Ratio (PR)</h3>
                         <div style="position: relative; height:450px; width:100%;">
                             <canvas id="chart-monthly-chartjs"></canvas>
                         </div>
                         <div class="explanation-box" id="desc-monthly"></div>
                     </div>
 
+                    <!-- 🌟 PHASE 5: ASC Power Curve 12 เดือน -->
+                    <div class="chart-container avoid-break" id="asc-powercurve-container">
+                        <h3 class="font-bold text-lg mb-4 text-blue-800"><i class="fa-solid fa-chart-area mr-2"></i>9. ASC Power Curve — โปรไฟล์รายวัน 12 เดือน</h3>
+                        <div class="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                            <canvas id="asc-powercurve-canvas" style="width:100%; height:auto; display:block;"></canvas>
+                        </div>
+                        <div class="explanation-box" id="desc-asc-powercurve"></div>
+                    </div>
+
                     <div class="chart-container avoid-break">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">8. Daily Input/Output Diagram (Scatter with Trendline)</h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">10. ASC Daily Input/Output Diagram (Scatter with Trendline)</h3>
                         <div style="position: relative; height:450px; width:100%;">
                             <canvas id="chart-scatter-chartjs"></canvas>
                         </div>
@@ -633,7 +720,7 @@
                     </div>
 
                     <div class="chart-container avoid-break">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">9. System Output Power Distribution</h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">11. ASC System Output Power Distribution</h3>
                         <div style="position: relative; height:450px; width:100%;">
                             <canvas id="chart-hist-chartjs"></canvas>
                         </div>
@@ -641,7 +728,7 @@
                     </div>
 
                     <div class="chart-container avoid-break">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">10. Probability Distribution (P50/P75/P90/P95)</h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">12. ASC Probability Distribution (P50/P75/P90/P95)</h3>
                         <div style="position: relative; height:450px; width:100%;">
                             <canvas id="chart-bell-chartjs"></canvas>
                         </div>
@@ -650,7 +737,7 @@
 
                     <!-- 🌟 ย้ายมาลำดับนี้ -->
                     <div class="chart-container avoid-break" id="bankability-container">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">11. Bankability & Uncertainty Evaluation </h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">13. ASC Bankability & Uncertainty Evaluation </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="overflow-x-auto border border-gray-200 rounded">
                                 <table class="w-full text-sm text-left border">
@@ -669,7 +756,7 @@
                     </div>
 
                     <div class="chart-container avoid-break">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">12. Cumulative Cash Flow</h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">14. ASC Cumulative Cash Flow</h3>
                         <div id="eng-warn-cashflow" class="hidden text-center text-red-600 font-bold p-10 border border-red-200 bg-red-50 rounded">⚠️ เป็นการจำลองทางวิศวกรรม (Engineering Simulation)</div>
                         <div id="content-cashflow">
                             <div id="chart-cashflow-apex" style="height: 450px; width:100%;"></div>
@@ -678,7 +765,7 @@
                     </div>
 
                     <div class="chart-container avoid-break">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">13. Financial Evaluation Table</h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">15. ASC Financial Evaluation Table</h3>
                         <div id="eng-warn-finance" class="hidden text-center text-red-600 font-bold p-10 border border-red-200 bg-red-50 rounded">⚠️ เป็นการจำลองทางวิศวกรรม (Engineering Simulation)</div>
                         <div id="content-finance">
                             <div class="flex space-x-6 mb-4 bg-gray-50 p-4 rounded border">
@@ -697,7 +784,7 @@
                     </div>
 
                     <div class="chart-container avoid-break" id="bom-container" style="display: none;">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">14. Engineering & Bill of Materials (BOM)</h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">16. ASC Engineering & Bill of Materials (BOM)</h3>
                         <div class="overflow-x-auto border border-gray-200 mb-4 rounded">
                             <table class="w-full text-sm text-left border">
                                 <thead class="bg-gray-100">
@@ -714,7 +801,7 @@
                         </div>
                     </div>
 					<div class="chart-container avoid-break" id="iv-eit-container" style="display: none;">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">15. I-V Curve & EIT Standard Validation </h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">17. ASC I-V Curve & EIT Standard Validation </h3>
                         <div style="position: relative; height:450px; width:100%;">
                             <canvas id="chart-iv-eit-chartjs"></canvas>
                         </div>
@@ -722,26 +809,32 @@
                     </div>
 
                     <div class="chart-container avoid-break" id="iv-irr-container" style="display: none;">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">16. P-V & I-V Curve @ Irradiance </h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">18. ASC P-V & I-V Curve @ Irradiance </h3>
                         <div style="position: relative; height:450px; width:100%;">
                             <canvas id="chart-iv-irr-chartjs"></canvas>
                         </div>
                         <div class="explanation-box" id="desc-iv-irr"></div>
                     </div>
 					
+                    <!-- 🌟 PHASE 5: ตาราง Electrical Connection -->
+                    <div class="chart-container avoid-break" id="asc-elec-container">
+                        <h3 class="font-bold text-lg mb-4 text-blue-800"><i class="fa-solid fa-plug mr-2"></i>19. ASC Electrical Connection Summary (สรุปการเชื่อมต่อระบบไฟฟ้า)</h3>
+                        <div id="asc-elec-wrapper"></div>
+                    </div>
+
                     <div class="chart-container avoid-break" id="wiring-container" style="display: none;">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">17. AC/DC Combiner Box (Wiring Diagram)</h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">20. ASC AC/DC Combiner Box (Wiring Diagram)</h3>
                         <div id="diagram-wiring" class="svg-container w-full bg-gray-50 border border-gray-200 rounded p-2 overflow-x-auto"></div>
                     </div>
 
                     <div class="chart-container avoid-break" id="sld-container" style="display: none;">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">18. Single Line Diagram (SLD)</h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">21. ASC Single Line Diagram (SLD)</h3>
                         <div id="diagram-sld" class="svg-container w-full bg-gray-50 border border-gray-200 rounded p-2 overflow-x-auto"></div>
                     </div>
                     
                     <!-- 🌟 18. กล่องรองรับภาพ CAD Layout -->
                     <div class="chart-container avoid-break" id="cad-container" style="display: none;">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">19. PV Module Layout Plan </h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">22. ASC PV Module Layout Plan </h3>
                         <div id="dynamic-cad-wrapper" class="w-full flex flex-col items-center gap-6"></div>
                     </div>
 
@@ -848,7 +941,7 @@
                 </table>
 
                 <div id="prt-sec-env">
-                    <h2 class="pdf-heading" style="margin-top: 6px !important;">Environmental Impact</h2>
+                    <h2 class="pdf-heading" style="margin-top: 6px !important;">ASC Environmental Impact</h2>
                     <div class="flex space-x-4 text-center border p-2 bg-green-50 rounded mt-1">
                         <div class="w-1/4 border-r border-green-200"><p class="text-[9px] text-gray-500 leading-none mb-1">ลด CO2 (ตัน/ปี)</p><p class="text-[13px] font-bold text-gray-700 leading-none" id="prt-env-co2">-</p></div>
                         <div class="w-1/4 border-r border-green-200"><p class="text-[9px] text-gray-500 leading-none mb-1">ปลูกต้นไม้ (ต้น)</p><p class="text-[13px] font-bold text-green-600 leading-none" id="prt-env-tree">-</p></div>
@@ -862,7 +955,7 @@
         <!-- 🌟 หน้า 4: Balances -->
         <div class="pdf-page force-block" style="page-break-before: always;">
             <div id="prt-sec-balances">
-                <h2 class="pdf-heading" style="margin-top: 0px !important;">Balances and Main Results</h2>
+                <h2 class="pdf-heading" style="margin-top: 0px !important;">ASC Balances and Main Results</h2>
                 <table class="w-full text-right border mt-1">
                     <thead class="bg-gray-100"><tr><th class="text-center p-1 border">Month</th><th class="border">GlobHor<br>(kWh/m²)</th><th class="border">GlobInc<br>(kWh/m²)</th><th class="border">T_Amb<br>(°C)</th><th class="border">EArray<br>(kWh)</th><th class="border">E_Grid<br>(kWh)</th><th class="border">PR (%)</th></tr></thead>
                     <tbody id="prt-tbl-balances"></tbody>
@@ -874,7 +967,7 @@
         <!-- 🌟 หน้า 5: Aging (ขยับหัวตารางและตารางมาอยู่ด้วยกัน) -->
         <div class="pdf-page force-block" style="page-break-before: always;">
             <div id="prt-sec-aging">
-                <h2 class="pdf-heading" style="margin-top: 0px !important;">Long-term Energy Yield & Aging (25 Years)</h2>
+                <h2 class="pdf-heading" style="margin-top: 0px !important;">ASC Long-term Energy Yield & Aging (25 Years)</h2>
                 <table class="w-full text-center border mt-1 text-[10px]">
                     <thead class="bg-gray-100"><tr><th class="border">Year</th><th class="border">Degradation Factor</th><th class="border text-red-600">Mismatch Loss (%)</th><th class="border text-blue-600">E_Grid (kWh)</th><th class="border text-green-600">PR (%)</th></tr></thead>
                     <tbody id="prt-tbl-aging"></tbody>
@@ -889,35 +982,63 @@
 
         <div class="pdf-page" style="page-break-before: always;">
             <div id="prt-sec-loss">
-                <h2 class="pdf-heading" style="margin-top: 0px !important;"><i class="fa-solid fa-chart-pie mr-2"></i>PV System Loss Diagram</h2>
+                <h2 class="pdf-heading" style="margin-top: 0px !important;"><i class="fa-solid fa-chart-pie mr-2"></i>ASC PV System Loss Diagram</h2>
                 <div id="prt-sankey" style="width: 100%; height: 140mm; max-height: 140mm; display: flex; justify-content: center; align-items: center; overflow: hidden; margin-top: 10px; margin-bottom: 15px;"></div>
                 <div id="prt-desc-waterfall" class="text-[10px] text-gray-600 bg-gray-50 p-1.5 border-l-2 border-blue-500 mb-3 leading-tight"></div>        
             </div>
         </div>
 
         <!-- 🌟 ใช้คลาส force-block เพื่อแทนที่ inline style ป้องกันหน้ากระดาษพัง -->
+
+        <!-- 🌟 PHASE 3: Shading Analysis Dashboard ในเอกสาร PDF (กราฟ + คำอธิบายใต้กราฟ) -->
         <div class="pdf-page force-block" style="page-break-before: always;">
-            <div id="prt-sec-sunpath1">
-                <h2 class="pdf-heading" style="margin-top: 0px !important; page-break-after: avoid !important;"><i class="fa-solid fa-sun mr-2"></i>Sun Path & Iso-Shadings Diagram</h2>
-                <div id="prt-dynamic-sunpath" class="w-full mt-3 text-center" style="display: block;"></div>
+            <div id="prt-sec-shading-dash1">
+                <h2 class="pdf-heading" style="margin-top: 0px !important; page-break-after: avoid !important;"><i class="fa-solid fa-table-cells mr-2"></i>ASC Solar Shading Analysis Dashboard</h2>
+                <div id="prt-sdash-subtitle" class="text-[11px] text-gray-600 mt-1 mb-2"></div>
+                <div id="prt-sdash-images" class="w-full mt-2 text-center" style="display: block;"></div>
             </div>
         </div>
 
         <div class="pdf-page force-block" style="page-break-before: always;">
-            <div id="prt-sec-sunpath2">
-                <h2 class="pdf-heading" style="margin-top: 0px !important; page-break-after: avoid !important;"><i class="fa-solid fa-book-open mr-2"></i>คำอธิบายเพิ่มเติม: Sun Path & Iso-Shadings Diagram</h2>
-                <div id="prt-desc-sunpath" class="text-[12px] text-gray-700 bg-gray-50 p-4 border-l-4 border-blue-500 mt-4 leading-relaxed shadow-sm rounded"></div>
+            <div id="prt-sec-shading-dash2">
+                <h2 class="pdf-heading" style="margin-top: 0px !important; page-break-after: avoid !important;"><i class="fa-solid fa-book-open mr-2"></i>คำอธิบายเพิ่มเติม: ASC Solar Shading Analysis Dashboard</h2>
+                <div id="prt-desc-shading-dash" class="text-[12px] text-gray-700 bg-gray-50 p-4 border-l-4 border-blue-500 mt-4 leading-relaxed shadow-sm rounded"></div>
+            </div>
+        </div>
+
+        <!-- 🌟 PHASE 5: หน้า PDF ของ ASC Energy Views -->
+        <div class="pdf-page force-block" style="page-break-before: always;">
+            <div id="prt-sec-asc-overview">
+                <h2 class="pdf-heading" style="margin-top: 0px !important; page-break-after: avoid !important;"><i class="fa-solid fa-gauge-high mr-2"></i>ASC Energy Overview (ภาพรวมพลังงานรายปี)</h2>
+                <div id="prt-asc-kpi" class="w-full mt-2"></div>
+                <div id="prt-asc-flow" class="w-full mt-2 text-center"></div>
+                <div id="prt-desc-asc-overview" class="text-[11px] text-gray-700 bg-gray-50 p-3 border-l-4 border-blue-500 mt-3 leading-relaxed rounded"></div>
+            </div>
+        </div>
+
+        <div class="pdf-page force-block" style="page-break-before: always;">
+            <div id="prt-sec-asc-powercurve">
+                <h2 class="pdf-heading" style="margin-top: 0px !important; page-break-after: avoid !important;"><i class="fa-solid fa-chart-area mr-2"></i>ASC Power Curve — โปรไฟล์รายวัน 12 เดือน</h2>
+                <div id="prt-asc-powercurve" class="w-full mt-2 text-center"></div>
+                <div id="prt-desc-asc-powercurve" class="text-[11px] text-gray-700 bg-gray-50 p-3 border-l-4 border-blue-500 mt-3 leading-relaxed rounded"></div>
+            </div>
+        </div>
+
+        <div class="pdf-page force-block" style="page-break-before: always;">
+            <div id="prt-sec-asc-elec">
+                <h2 class="pdf-heading" style="margin-top: 0px !important; page-break-after: avoid !important;"><i class="fa-solid fa-plug mr-2"></i>ASC Electrical Connection Summary</h2>
+                <div id="prt-asc-elec" class="w-full mt-2"></div>
             </div>
         </div>
 
         <div class="pdf-page" style="page-break-before: always;">
             <div id="prt-sec-daily">
-                <h2 class="pdf-heading">Daily Battery & PV Operation</h2>
+                <h2 class="pdf-heading">ASC Daily Battery & PV Operation</h2>
                 <img id="prt-img-daily" class="chart-img" style="max-height: 250px !important; margin-bottom: 5px;">
                 <div id="prt-desc-daily" class="text-[10px] text-gray-600 bg-gray-50 p-1.5 border-l-2 border-blue-500 mb-6 leading-tight"></div>
             </div>
             <div id="prt-sec-monthly">
-                <h2 class="pdf-heading">Monthly Energy Production & Performance Ratio (PR)</h2>
+                <h2 class="pdf-heading">ASC Monthly Energy Production & Performance Ratio (PR)</h2>
                 <img id="prt-img-monthly" class="chart-img" style="max-height: 250px !important; margin-bottom: 5px;">
                 <div id="prt-desc-monthly" class="text-[10px] text-gray-600 bg-gray-50 p-2 border-l-2 border-blue-500 mb-6 leading-relaxed"></div>
             </div>
@@ -925,12 +1046,12 @@
 
         <div class="pdf-page" style="page-break-before: always;">
             <div id="prt-sec-scatter">
-                <h2 class="pdf-heading">Daily Input/Output Diagram (Scatter with Trendline)</h2>
+                <h2 class="pdf-heading">ASC Daily Input/Output Diagram (Scatter with Trendline)</h2>
                 <img id="prt-img-scatter" class="chart-img" style="max-height: 250px !important; margin-bottom: 5px;">
                 <div id="prt-desc-scatter" class="text-[10px] text-gray-600 bg-gray-50 p-2 border-l-2 border-blue-500 mb-6 leading-relaxed"></div>
             </div>
             <div id="prt-sec-hist">
-                <h2 class="pdf-heading">System Output Power Distribution</h2>
+                <h2 class="pdf-heading">ASC System Output Power Distribution</h2>
                 <img id="prt-img-hist" class="chart-img" style="max-height: 250px !important; margin-bottom: 5px;">
                 <div id="prt-desc-hist" class="text-[10px] text-gray-600 bg-gray-50 p-2 border-l-2 border-blue-500 mb-6 leading-relaxed"></div>
             </div>
@@ -938,12 +1059,12 @@
 
         <div class="pdf-page" style="page-break-before: always;">
             <div id="prt-sec-bell">
-                <h2 class="pdf-heading">Probability Distribution (P50/P75/P90/P95)</h2>
+                <h2 class="pdf-heading">ASC Probability Distribution (P50/P75/P90/P95)</h2>
                 <img id="prt-img-bell" class="chart-img" style="max-height: 250px !important; margin-bottom: 5px;">
                 <div id="prt-desc-bell" class="text-[10px] text-gray-600 bg-gray-50 p-2 border-l-2 border-blue-500 mb-6 leading-relaxed"></div>			
             </div>
             <div id="prt-sec-bankability">
-                <h2 class="pdf-heading">Bankability & Uncertainty Evaluation</h2>
+                <h2 class="pdf-heading">ASC Bankability & Uncertainty Evaluation</h2>
                 <div class="flex space-x-4 mb-4 text-xs">
                     <table class="w-1/2 text-left border"><tbody id="prt-tbl-uncertainty"></tbody></table>
                     <div class="w-1/2 bg-gray-50 p-2 border" id="prt-uncert-summary"></div>
@@ -954,7 +1075,7 @@
 
         <div class="pdf-page force-block" style="page-break-before: always;" id="pdf-page-cashflow">
             <div id="prt-sec-cashflow">
-                <h2 class="pdf-heading" style="margin-top: 0px !important;">Cumulative Cash Flow</h2>
+                <h2 class="pdf-heading" style="margin-top: 0px !important;">ASC Cumulative Cash Flow</h2>
                 <div id="prt-eng-warn-cashflow" class="hidden text-center text-red-600 font-bold p-4 border border-red-200 bg-red-50 rounded mt-4 mb-4">⚠️ เป็นการจำลองทางวิศวกรรม (Engineering Simulation)</div>
                 <div id="prt-content-cashflow">
                     <div id="prt-cashflow" class="svg-container w-full" style="margin-bottom: 2px;"></div>
@@ -965,7 +1086,7 @@
 
         <div class="pdf-page force-block" style="page-break-before: always;" id="pdf-page-finance">
             <div id="prt-sec-finance">
-                <h2 class="pdf-heading" style="margin-bottom: 2px !important; margin-top: 0px !important;"><i class="fa-solid fa-wallet mr-2"></i>Financial Evaluation Table</h2>
+                <h2 class="pdf-heading" style="margin-bottom: 2px !important; margin-top: 0px !important;"><i class="fa-solid fa-wallet mr-2"></i>ASC Financial Evaluation Table</h2>
                 <div id="prt-eng-warn-finance" class="hidden text-center text-red-600 font-bold p-4 border border-red-200 bg-red-50 rounded mt-4 mb-4">⚠️ เป็นการจำลองทางวิศวกรรม (Engineering Simulation)</div>
                 <div id="prt-content-finance">
                     <div class="flex space-x-6 bg-gray-50 rounded border" style="padding: 4px 10px; margin-bottom: 2px !important; margin-top: 0 !important;">
@@ -984,7 +1105,7 @@
 
         <div class="pdf-page force-block" style="page-break-before: always;">
             <div id="prt-sec-bom">
-                <h2 class="pdf-heading" style="margin-top: 0px !important;">Engineering & Bill of Materials (BOM)</h2>
+                <h2 class="pdf-heading" style="margin-top: 0px !important;">ASC Engineering & Bill of Materials (BOM)</h2>
                 <!-- 🌟 เพิ่ม ID ให้ตารางเพื่ออนุญาตให้มันสามารถสับครึ่งตารางข้ามหน้าได้เมื่อยาวเกิน -->
                 <table id="prt-bom-table" class="w-full text-left border mt-1">
                     <thead class="bg-gray-100"><tr><th class="p-2 border text-center w-24">หมวด</th><th class="p-2 border w-1/4">รายการอุปกรณ์</th><th class="p-2 border text-left">สเปก / ขนาดอ้างอิง วสท.</th><th class="p-2 border text-center w-32">จำนวน</th></tr></thead>
@@ -996,12 +1117,12 @@
 
 		<div class="pdf-page" style="page-break-before: always;">
             <div id="prt-sec-iv-eit">
-                <h2 class="pdf-heading">I-V Curve & EIT Standard Validation</h2>
+                <h2 class="pdf-heading">ASC I-V Curve & EIT Standard Validation</h2>
                 <img id="prt-img-iv-eit" class="chart-img" style="margin-bottom: 5px;">
                 <div id="prt-desc-iv-eit" class="text-xs text-gray-600 bg-gray-50 p-2 border-l-2 border-blue-500 mb-6 leading-relaxed"></div>
             </div>
             <div id="prt-sec-iv-irr">
-                <h2 class="pdf-heading">P-V & I-V Curve @ Irradiance</h2>
+                <h2 class="pdf-heading">ASC P-V & I-V Curve @ Irradiance</h2>
                 <img id="prt-img-iv-irr" class="chart-img" style="margin-bottom: 5px;">
                 <div id="prt-desc-iv-irr" class="text-xs text-gray-600 bg-gray-50 p-2 border-l-2 border-blue-500 mb-6 leading-relaxed"></div>
             </div>
@@ -1009,7 +1130,7 @@
 		
         <div class="pdf-page-landscape">
             <div id="prt-sec-diagram-wiring" class="h-full flex flex-col">
-                <h2 class="pdf-heading">AC/DC Combiner Box (Wiring Diagram)</h2>
+                <h2 class="pdf-heading">ASC AC/DC Combiner Box (Wiring Diagram)</h2>
                 <div id="prt-diagram-wiring" class="svg-container w-full flex-1"></div>
                 <div id="prt-desc-wiring" class="text-[10px] text-gray-600 bg-gray-50 p-2 border-l-2 border-blue-500 mt-2 mb-2 leading-relaxed"></div>		
                 <div class="mt-auto w-full text-center text-xs text-gray-400 font-medium pb-2 pt-6">Assessed by Pro Inventive Co., Ltd</div>
@@ -1018,7 +1139,7 @@
         
         <div class="pdf-page-landscape">
             <div id="prt-sec-diagram-sld" class="h-full flex flex-col">
-                <h2 class="pdf-heading">Single Line Diagram (SLD)</h2>
+                <h2 class="pdf-heading">ASC Single Line Diagram (SLD)</h2>
                 <div id="prt-diagram-sld" class="svg-container w-full flex-1"></div>
                 <div id="prt-desc-sld" class="text-[10px] text-gray-600 bg-gray-50 p-2 border-l-2 border-blue-500 mt-2 mb-2 leading-relaxed"></div>
                 <div class="mt-auto w-full text-center text-xs text-gray-400 font-medium pb-2 pt-6">Assessed by Pro Inventive Co., Ltd</div>
@@ -1181,7 +1302,7 @@
             if(document.getElementById('sim-mppt-breakdown')) document.getElementById('sim-mppt-breakdown').innerHTML = ""; 
             
             // 🌟 ฟีเจอร์ใหม่: รีเซ็ต Checkbox เลือกข้อมูล PDF/Dashboard กลับเป็นค่าเริ่มต้น (5 รายการ)
-            const defaultChecked = ['chk-sec-env', 'chk-sec-loss', 'chk-sec-daily', 'chk-sec-monthly', 'chk-sec-exec'];
+            const defaultChecked = ['chk-sec-exec', 'chk-sec-overview', 'chk-sec-env', 'chk-sec-shading-dash', 'chk-sec-daily', 'chk-sec-monthly', 'chk-sec-powercurve', 'chk-sec-finance']; // 🌟 ค่าแนะนำ ASC
             document.querySelectorAll('input[type="checkbox"][id^="chk-sec-"]').forEach(chk => {
                 chk.checked = defaultChecked.includes(chk.id);
             });
@@ -1287,7 +1408,7 @@
                             AppState.db0Data = jsonData.app_state.db0Data || {hasData:false};
                             AppState.equipData = jsonData.app_state.equipData || {};
                             AppState.bomData = jsonData.app_state.bomData || null;
-                            AppState.sysPolygons = jsonData.app_state.sysPolygons || [];
+                            AppState.sysPolygons = ascSanitizePolygons(jsonData.app_state.sysPolygons || []); // 🌟 ASC DATA GUARD
                             AppState.pipeLength = jsonData.app_state.pipeLength || 0;
                             AppState.ivParams = jsonData.app_state.ivParams || null;
                             AppState.uncertainties = jsonData.app_state.uncertainties || { meteoVariability_pct: 2, equipmentTolerance_pct: 1 };
@@ -1386,10 +1507,11 @@
                 }
             }
                     
-                    AppState.sysPolygons = step3.roofPolygons || [];
+                    AppState.sysPolygons = ascSanitizePolygons(step3.roofPolygons || []); // 🌟 ASC DATA GUARD
                     AppState.sysMountType = step3.mountType || "1";
                     
                     let strConfig = step4.stringConfiguration_EIT_Standard || {};
+                    AppState.stringConfig = strConfig; // 🌟 เก็บฉบับเต็มไว้ให้ตาราง Electrical Connection
                     let totalStringsText = strConfig.totalStringsUsed || "1";
                     
                     AppState.equipData = {
@@ -1777,6 +1899,15 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 let loss_Wiring = getVal('inp-loss-wire') + getVal('inp-loss-lid'); 
                 let invEff = getVal('inp-inv-eff');
                 let invLoss = invEff > 0 ? (100 - invEff) : 2.0; 
+
+                // 🌟 ASC PR CALIBRATION: เพิ่มความสูญเสียภาคสนามที่แบบจำลองเดิมไม่ได้คิด
+                // (สาเหตุที่ PR เดิมสูงเกินจริง 83-88% เทียบค่าติดตั้งจริง 75-80%)
+                const ASC_LOSS_MISMATCH = 1.5;     // Module/String Mismatch (%)
+                const ASC_LOSS_AVAILABILITY = 0.5; // Availability/Downtime (%)
+                const ASC_LOSS_SPECTRAL = 1.0;     // Spectral + Low-light efficiency (%)
+                const ASC_LOSS_TRANSFORMER = 1.0;  // Transformer/MV loss — มิเตอร์ PEA วัดฝั่งแรงสูง (%)
+                let loss_SystemExtra = ASC_LOSS_MISMATCH + ASC_LOSS_AVAILABILITY + ASC_LOSS_SPECTRAL + ASC_LOSS_TRANSFORMER;
+                let iam_b0 = AppState.iam_b0 || 0.05; // สัมประสิทธิ์ IAM (ASHRAE) จากสเปกแผง
                 
                 let tc_pmax = getVal('inp-pv-tc-pmax');
                 let GHI_annual = getVal('inp-ghi'); 
@@ -1787,6 +1918,14 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 let polygons = AppState.sysPolygons;
                 if (!polygons || polygons.length === 0) { polygons = [{ area: 1, slope: parseFloat(getStr('inp-tilt', "15").split(',')[0]), azimuth: parseFloat(getStr('inp-azi', "0").split(',')[0]) }]; }
                 let totalArea = polygons.reduce((sum, p) => sum + p.area, 0);
+
+                // 🌟 ASC: เชื่อมหลังคาแต่ละหลังเข้ากับกลุ่ม ShadingEngine เพื่อคิด Shading Loss รายชั่วโมง
+                let sdPolyGroup = [];
+                try {
+                    let sdGroups = ShadingEngine.buildOrientationGroups(polygons, { panelWp: getVal('inp-pv-wp') || 0, globalHorizon: AppState.horizonProfile || '' });
+                    polygons.forEach((p, i) => { sdPolyGroup[i] = sdGroups.find(g => g.members.some(mm => mm.index === i)) || sdGroups[0]; });
+                } catch (e) { console.error('ASC Shading link failed', e); }
+                let iamLossWSum = 0, shadeLossWSum = 0, beamWSum = 0;
 
                 let invKw = getVal('inp-invKw') || pnom;
                 let batKwh = getVal('inp-bat-kwh'); 
@@ -1844,6 +1983,19 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                             if (altitude > 0) { db3.aoiEffSum += aoiEff; db3.aoiEffCount++; }
 
                             let poaBeam = DNI * cosAOI;
+
+                            // 🌟 ASC: IAM Loss (ASHRAE model) — การสะท้อนที่ผิวกระจกเมื่อแสงตกกระทบมุมเฉียง
+                            let iamF = cosAOI > 0.017 ? Math.max(0, 1 - iam_b0 * (1 / cosAOI - 1)) : 0;
+                            // 🌟 ASC: Near/Far Shading Loss รายชั่วโมง (horizon ชุดเดียวกับ ASC Shading Dashboard)
+                            let shadeF = 1;
+                            if (sdPolyGroup[idx] && altitude > 0) {
+                                let sl = ShadingEngine.shadingLossAt((sunAzi - Math.PI) * 180 / Math.PI, altitude * 180 / Math.PI, sdPolyGroup[idx]);
+                                if (sl !== null && sl > 0) shadeF = Math.max(0, 1 - sl);
+                            }
+                            beamWSum += poaBeam;
+                            iamLossWSum += poaBeam * (1 - iamF);
+                            shadeLossWSum += poaBeam * iamF * (1 - shadeF);
+                            poaBeam = poaBeam * iamF * shadeF;
                             let poaDiff = DHI * (1 + Math.cos(pTilt))/2;
                             let poaRef = GHI * 0.2 * (1 - Math.cos(pTilt))/2; 
                             let poaTotal = poaBeam + poaDiff + poaRef;
@@ -1854,7 +2006,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
 
                             let tCell = Tamb + (poaTotal * Math.exp(-3.56 + -0.075 * 1.5)); 
                             let tempLoss = (tCell > 25) ? (tCell - 25) * Math.abs(tc_pmax/100) : 0;
-                            let dc = polyCap * (poaTotal/1000) * (1 - tempLoss) * (1 - (loss_Wiring+loss_Env)/100);
+                            let dc = polyCap * (poaTotal/1000) * (1 - tempLoss) * (1 - (loss_Wiring+loss_Env+loss_SystemExtra)/100); // 🌟 ASC: รวม mismatch/availability/spectral
                             
                             hourDC += dc;
                             if(db3.mpptDcSum[idx] === undefined) db3.mpptDcSum[idx] = 0;
@@ -1934,7 +2086,10 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 AppState.daily8760 = aggregatedDaily;
                 AppState.monthlyBalances = monthlyData;
                 let averagePR = totalEGrid / (globInc_annual * pnom);
-                AppState.results = { pnom, effPR: averagePR, totalEGrid, totalTarget: globInc_annual*pnom, globInc_annual, loss_Env, loss_Temp: 6.0, loss_Wiring: loss_Wiring + 3.5, invLoss };
+                AppState.results = { pnom, effPR: averagePR, totalEGrid, totalTarget: globInc_annual*pnom, globInc_annual, loss_Env, loss_Temp: 6.0, loss_Wiring: loss_Wiring + 3.5, invLoss,
+                    loss_Mismatch: ASC_LOSS_MISMATCH, loss_Avail: ASC_LOSS_AVAILABILITY, loss_Spectral: ASC_LOSS_SPECTRAL, loss_Transformer: ASC_LOSS_TRANSFORMER,
+                    loss_IAM: beamWSum > 0 ? (iamLossWSum / beamWSum) * 100 : 0,
+                    loss_Shading: beamWSum > 0 ? (shadeLossWSum / beamWSum) * 100 : 0 };
 
                 document.getElementById('sim-zenith').innerText = formatNum(db3.zenithMax, 2) + " °";
                 document.getElementById('sim-sun-azi').innerText = formatNum(db3.sunAziMax, 2) + " °";
@@ -2341,7 +2496,9 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
             try { renderApexCashflow(); } catch(e) { console.error("Cashflow Failed", e); }
             try { renderIVCharts(); } catch(e) { console.error("IV Charts Failed", e); }		
             // 🌟 สั่งเรนเดอร์กราฟใหม่และแบบจำลอง CAD
-            try { renderSunPathDiagram(); } catch(e) { console.error("Sun Path Failed", e); }
+            try { renderShadingDashboard(); } catch(e) { console.error("Shading Dashboard Failed", e); }
+            try { renderASCEnergyViews(); } catch(e) { console.error("ASC Energy Views Failed", e); }
+            setTimeout(() => { try { ascApplyWatermarks(); } catch(e) {} }, 600);
             try { renderAgingTable(); } catch(e) { console.error("Aging Table Failed", e); }
             try { renderChartjsAging(); } catch(e) { console.error("Aging Chart Failed", e); } // 🌟 [เพิ่มใหม่] สั่งวาดกราฟ Combo
             try { renderBankabilitySummary(r); } catch(e) { console.error("Bankability Failed", e); }
@@ -2427,30 +2584,6 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 descWaterfall.innerHTML = getDescHtml("waterfall", "PV System Loss Diagram (แผนภาพการสูญเสียพลังงานของระบบ)", "ลำดับการลดทอนพลังงานตั้งแต่รังสีตกกระทบแผง จนกลายเป็นกระแสไฟฟ้า AC โดยแจกแจงปัจจัยความสูญเสียทีละขั้น", `ระบบมีการสูญเสียรวม <b>${formatNum(100 - ((r.effPR || 0) * 100), 2)}%</b> ช่วยให้วิศวกรวิเคราะห์เพื่อปรับปรุงการจัดการพลังงานได้ตรงจุด`, "<li><b>Soiling Loss:</b> ความสูญเสียจากคราบสกปรกหรือฝุ่นละอองที่เกาะบนหน้าแผง</li><li><b>IAM Loss (Incidence Angle Modifier):</b> ความสูญเสียจากการสะท้อนของแสงที่ตกกระทบกระจกแผงในมุมเฉียง</li><li><b>Thermal Loss:</b> ความสูญเสียจากอุณหภูมิ (แผงร้อนขึ้น ประสิทธิภาพแปลงไฟจะลดลง)</li><li><b>Ohmic Wiring Loss:</b> ความสูญเสียในรูปของความร้อนตามสายไฟจากความต้านทานของสายตัวนำ</li>", dtlWF);
             }
 
-            let descSunpath = document.getElementById('desc-sunpath');
-            let lat = parseFloat((getStr('inp-coords')||"13.75,100.5").split(',')[0]) || 13.75; 
-            let tiltVal = getStr('inp-tilt', '15'); let aziVal = getStr('inp-azi', '0');
-            let dtlSun = `
-                <p><b>Isoshadings diagram (การประเมิน “การบังเงา” ต่อการรับรังสีและพลังงาน)</b></p>
-                <p><b>1) Isoshadings diagram (แผนภาพเส้นเท่าการบังเงา)</b><br>
-                ใช้เพื่อประเมินว่า เมื่อดวงอาทิตย์อยู่ตำแหน่งต่าง ๆ (ทั้งมุมทิศและความสูง) รังสีจะถูก “บัง” โดยโครงสร้าง/อาคาร/บังแสง (เช่น กันสาด, ระนาบ, สิ่งกีดขวาง) จุดสำคัญคือแสดงผลในรูปของ แถบ/เส้นที่มีค่า shading loss คงที่ ทำให้คุณอ่านได้ว่า “ช่วงเวลา/ฤดูนั้น ๆ โดนบังมากน้อยแค่ไหน”</p>
-                <p><b>2) คำอธิบายแกนกราฟ (อ่านกราฟอย่างเป็นระบบ)</b><br>
-                <b>- แกน X: Azimuth [°]:</b> คือมุมทิศของดวงอาทิตย์ในเชิงรังสี (ทิศที่แสงมา) ช่วงค่ามาก/น้อยแสดงทิศที่ดวงอาทิตย์เคลื่อนผ่านจากซ้ายไปขวาในกราฟ<br>
-                <b>- แกน Y: Sun height [°]:</b> คือ ความสูงของดวงอาทิตย์เหนือขอบฟ้า ยิ่งสูง = ดวงอาทิตย์อยู่สูงในฟ้า → มุมตกกระทบโดยทั่วไปเปลี่ยนไป<br>
-                <b>- ส่วนหัวกราฟ: Tilts / Azimuths:</b> ข้อความด้านบนระบุสภาวะตั้งต้นของ “ระนาบ/ทิศทางที่พิจารณา” ในแบบจำลอง <b>Tilts = ${tiltVal}°, Azimuth = ${aziVal}° (พิกัดละติจูด ${formatNum(lat, 2)})</b> หมายถึงระนาบอ้างอิงถูกตั้งค่าเอียงและหันทิศตามค่านั้น เพื่อให้คำนวณการบังเงาได้ถูกต้อง</p>
-                <p><b>3) ชุดเส้น/พื้นที่สีดำและตัวเลข “Shading loss”</b><br>
-                ด้านซ้ายมี “Shading loss: 1% / 5% / 10% / 20% / 40%” <b>ความหมายเชิงวิศวกรรม:</b> เปอร์เซ็นต์การสูญเสียพลังงาน/รังสีที่เกิดจาก การบังเงา ถ้าอยู่บนเส้นที่ระบุ Shading loss น้อย → แปลว่า “โดนบังน้อย” ถ้าอยู่บนเส้น Shading loss สูง → “โดนบังมาก” (รังสีเข้าถึงพื้นที่รับรังสีได้น้อยลง) กราฟนี้ทำหน้าที่เป็น “ตารางเชิงภาพ” ที่แม็พตำแหน่งดวงอาทิตย์ ↔ ระดับการบังเงา</p>
-                <p><b>4) คำว่า “Diffuse” และ “Attenuation for diffuse”</b><br>
-                <b>ความหมายเชิงพลังงาน:</b> ในการประเมินพลังงานจาก PV เราไม่ได้มีแต่รังสีตรง (beam) แต่มีรังสีแบบกระจาย (diffuse) ด้วย การบังเงาอาจทำให้รังสีตรงลดลงมาก และรังสีกระจายลดลงน้อย/แตกต่าง ดังนั้นกราฟนี้พยายามแยกผลต่อ diffuse ด้วย</p>
-                <p><b>5) เส้นโค้งสีดำ (ตัวอย่างเส้นทางดวงอาทิตย์)</b><br>
-                ในภาพมีเส้นที่เป็น “curves” และมีรายการวันที่/ช่วงเวลากำกับ (เช่น 21 June, 22 Dec ฯลฯ) <b>ความหมาย:</b> วงกลมกำกับคือตัวอย่างสภาวะของดวงอาทิตย์ที่เลือกมาหลายช่วงในปี เมื่อเส้นทางดวงอาทิตย์ (curve) ตัดผ่านบริเวณที่เป็น “Shading loss level” ใด ก็หมายความว่าช่วงเวลานั้นมีการบังเงาในระดับนั้น ส่งผลต่อพลังงานที่จะได้รับลดลงตามสัดส่วน</p>
-                <p><b>6) “Behind the plane”</b><br>
-                <b>ความหมายเชิงวิศวกรรม:</b> ในการคำนวณ shading มีแนวคิดว่า “รังสี” อาจตกที่ด้านที่ไม่เกี่ยวข้องต่อการรับ หรืออยู่นอกเงาที่เราสนใจ ส่วน “behind” มักหมายถึงกรณีที่รังสีไม่ส่งผลต่อการรับรังสีจากระนาบนั้นโดยตรง หรือไม่เข้าข่ายที่คำนวณเป็นการ shading ตามโมเดล</p>
-                <p><b>7) สรุปจากกราฟนี้</b><br>
-                1. กราฟนี้ใช้เพื่อประเมิน การบังเงาเป็นระดับ (shading loss %) สำหรับ Orientation/tilt/azimuth ที่กำหนด<br>
-                2. คุณอ่านได้ว่า: สำหรับฤดูกาล/ช่วงวันและช่วงมุมทิศ ดวงอาทิตย์จะเดินทางผ่านบริเวณที่มี shading loss 1–40% ตามตำแหน่ง<br>
-                3. ค่าที่เป็น “shading loss” เป็นตัวชี้สำคัญต่อ Energy yield ของระบบ PV เพราะการลดรังสีจากการบังเงาจะสะท้อนเป็นลดพลังงานสุทธิ (kWh) ได้</p>`;
-            if (descSunpath) descSunpath.innerHTML = getDescHtml("sunpath", "Sun Path & Iso-Shadings Diagram", "ระบบแยกกราฟวิเคราะห์มุมเอียง (Orientation) โดยแสดงพิกัดดวงอาทิตย์ทาบทับกับขอบเขตสิ่งกีดขวาง", "เพื่อความแม่นยำสูงสุดในการวิเคราะห์เงาบังเชิงลึก (Detailed Shading Analysis)", "<li><b>Azimuth Angle:</b> มุมทิศแนวนอน</li><li><b>Solar Elevation Angle:</b> มุมเงย</li><li><b>7 Declination Lines:</b> เส้นโคจรฤดูกาล</li>", dtlSun);
             
             let descBalances = document.getElementById('desc-balances');
             if(descBalances && d) {
@@ -2478,7 +2611,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 <b>2.1 ช่วงพลังงานรังสีสูงสุด:</b> GlobalHor และ GlobalInc เพิ่มสูงสุดในช่วงกลางปี โดยค่าเฉลี่ยรายเดือนจึงนำไปสู่การผลิตพลังงานมากที่สุดในช่วงเดียวกัน<br>
                 <b>2.2 ผลของอุณหภูมิอากาศต่อประสิทธิภาพ:</b> T_Amb สูงสุดช่วงกลางปี แนวโน้มที่สังเกตได้คือ PR ยังอยู่ในระดับสูง แต่โดยทั่วไปการเพิ่มอุณหภูมิจะมีแนวโน้มทำให้ประสิทธิภาพโมดูลลดลง อย่างไรก็ตาม ในช่วงพลังงานรังสีสูง ผลประโยชน์จาก irradiance ที่มากกว่าอาจชดเชยผลจากอุณหภูมิ ทำให้ E_Grid ยังสูง<br>
                 <b>2.3 พลังงานส่งเข้ากริด (E_Grid):</b> E_Grid สูงสุดอยู่ในช่วงกลางปี โดยเดือนที่โดดเด่นคือ <b>${maxEnergy.month || '-'}</b> (E_Grid = <b>${formatNum(maxEnergy.eGrid || 0, 2)} kWh</b>, PR = <b>${formatNum((maxEnergy.pr || 0)*100, 2)}%</b>)<br>
-                <b>2.4 PR (%): ความเสถียรเชิงระบบ:</b> PR อยู่ช่วงประมาณ 83% ถึง 88%<br>
+                <b>2.4 PR (%): ความเสถียรเชิงระบบ:</b> PR อยู่ช่วงประมาณ ${formatNum((minPRItem.pr||0)*100,1)}% ถึง ${formatNum((maxPRItem.pr||0)*100,1)}%<br>
                 - ค่า PR สูงสุดในตารางอยู่ที่ <b>${maxPRItem.month || '-'}</b> (PR = <b>${formatNum((maxPRItem.pr || 0)*100, 2)}%</b>)<br>
                 - ค่า PR ต่ำสุดในตารางอยู่ที่ <b>${minPRItem.month || '-'}</b> (PR = <b>${formatNum((minPRItem.pr || 0)*100, 2)}%</b>)<br>
                 <b>การตีความ:</b> PR ที่สูงขึ้นในฤดูหนาว/เดือนที่อุณหภูมิต่ำ มักบ่งชี้ว่าระบบมีประสิทธิภาพการแปลงพลังงานดีกว่า PR ที่ลดลงในช่วงกลางปี สอดคล้องกับผลทางอุณหภูมิและปัจจัยด้าน operational ที่อาจเพิ่ม losses</p>
@@ -2737,35 +2870,71 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 let exec_saveY1 = (f && f.length > 1) ? f[1].savings : 0;
                 let exec_savePct = (exec_origBill * 12) > 0 ? Math.min((exec_saveY1 / (exec_origBill * 12)) * 100, 100) : 0;
                 
+                // 🌟 ASC: ดึงตัวเลขเสริมจากระบบใหม่ (สมดุลพลังงาน + เงาบัง + ความไม่แน่นอนจริง)
+                let exec_eb = (typeof ascComputeEnergyBalance === 'function') ? ascComputeEnergyBalance() : null;
+                let exec_shade = (r.loss_Shading !== undefined && r.loss_Shading !== null) ? r.loss_Shading : null;
+                let exec_unc = AppState.uncertainties ? Math.sqrt(Math.pow(AppState.uncertainties.meteoVariability_pct||4,2) + Math.pow(AppState.uncertainties.equipmentTolerance_pct||2,2)) : 5;
+                exec_p90 = exec_p50 * (1 - 1.282 * exec_unc / 100);
+                let exec_sy = r.pnom > 0 ? exec_p50 / r.pnom : 0;
+                let exec_agingPR = (AppState.aging25 && AppState.aging25.length > 0) ? AppState.aging25[AppState.aging25.length-1].pr : 0;
+                let exec_advice = [];
+                if (exec_shade !== null && exec_shade > 3) exec_advice.push('ควรพิจารณาติดตั้ง Power Optimizer หรือปรับผังแผงในโซนเงา เนื่องจากความสูญเสียจากเงาบัง (' + formatNum(exec_shade,1) + '%) สูงกว่าเกณฑ์ทั่วไป');
+                if (exec_eb && exec_eb.pctSelfConsumption < 50) exec_advice.push('พลังงานส่วนเกินไหลเข้ากริดมาก (ใช้เองเพียง ' + formatNum(exec_eb.pctSelfConsumption,0) + '%) ควรศึกษาแบตเตอรี่หรือการเลื่อนโหลดมาช่วงกลางวันเพื่อเพิ่มมูลค่าพลังงาน');
+                if (exec_irrPct > exec_drRate) exec_advice.push('ผลตอบแทน (IRR ' + formatNum(exec_irrPct,1) + '%) สูงกว่าอัตราคิดลด (' + exec_drRate + '%) โครงการมีความคุ้มค่าเชิงการเงิน แนะนำให้ดำเนินการต่อในขั้นออกแบบรายละเอียดและยื่นขออนุญาต');
+                else exec_advice.push('ผลตอบแทนยังต่ำกว่าต้นทุนทางการเงิน ควรทบทวนขนาดระบบ ราคา CAPEX หรือโครงสร้างอัตราค่าไฟก่อนตัดสินใจลงทุน');
+
                 let execHtml = `
-                <h3 class="font-bold text-[18px] mb-4 text-blue-900 border-b-2 border-blue-500 pb-2"><i class="fa-solid fa-clipboard-list mr-2"></i>บทสรุปผู้บริหาร (Executive Summary)</h3>
-                <div class="text-[13px] text-gray-800 space-y-4 leading-relaxed text-justify">
-                    <p style="text-indent: 2.5em;">รายงานฉบับนี้ประเมินศักยภาพระบบผลิตไฟฟ้าพลังงานแสงอาทิตย์ (Solar Power System) โดยนำข้อมูลจากตารางและกราฟวิเคราะห์ทั้งหมดสรุปเป็นสาระสำคัญดังนี้:</p>
+                <h3 class="font-bold text-[18px] mb-3 text-blue-900 border-b-2 border-blue-500 pb-2"><i class="fa-solid fa-clipboard-list mr-2"></i>บทสรุปผู้บริหาร (Executive Summary)</h3>
+
+                <!-- 🌟 กล่องตัวเลขตัดสินใจ: ผู้บริหารเห็นคำตอบใน 5 วินาที -->
+                <div class="grid grid-cols-3 md:grid-cols-7 gap-2 mb-3 text-center">
+                    ${[
+                        ['กำลังติดตั้ง', formatNum(r.pnom,1) + ' kWp'],
+                        ['ผลิตไฟ/ปี', formatNum(exec_p50/1000,1) + ' MWh'],
+                        ['PR ปีแรก', formatNum(r.effPR*100,1) + '%'],
+                        ['เงินลงทุน', formatNum(exec_initialInvest/1e6,2) + ' ล้านบาท'],
+                        ['คืนทุน', 'ปีที่ ' + exec_payback],
+                        ['IRR 25 ปี', formatNum(exec_irrPct,1) + '%'],
+                        ['NPV', formatNum(exec_npv/1e6,2) + ' ล้านบาท']
+                    ].map(x => '<div class="bg-blue-50 border border-blue-100 rounded p-1.5"><div class="text-[9px] text-gray-500 font-bold">' + x[0] + '</div><div class="text-[13px] font-bold text-blue-900">' + x[1] + '</div></div>').join('')}
                 </div>
-                <div class="text-[13px] text-gray-800 space-y-3 leading-relaxed mt-4 text-justify">
-                    <h4 class="font-bold text-blue-800 text-[14px]">1. สมรรถนะวิศวกรรม, การจัดการพลังงาน และความเข้ากันได้ของอุปกรณ์</h4>
-                    <p style="text-indent: 2.5em;">ระบบพิกัด <b>${formatNum(r.pnom, 2)} kWp</b> ผลิตไฟสุทธิ <b>${formatNum(exec_p50, 2)} kWh/ปี</b> (PR <b>${formatNum(r.effPR * 100, 2)}%</b>) <span class="text-blue-600">(อ้างอิงตาราง Balances and Main Results)</span></p>
+
+                <div class="text-[13px] text-gray-800 space-y-2.5 leading-relaxed text-justify">
+                    <p style="text-indent: 2.5em;">รายงานฉบับนี้ประเมินศักยภาพระบบผลิตไฟฟ้าพลังงานแสงอาทิตย์ขนาด <b>${formatNum(r.pnom, 2)} kWp</b>
+                    ผลการวิเคราะห์สรุปว่า <b>โครงการมีความเป็นไปได้${exec_irrPct > exec_drRate ? 'และคุ้มค่าต่อการลงทุน' : ' แต่ควรทบทวนเงื่อนไขการเงินเพิ่มเติม'}</b>
+                    ด้วยเงินลงทุน <b>${formatNum(exec_initialInvest, 0)} บาท</b> คาดว่าคืนทุนในปีที่ <b>${exec_payback}</b>
+                    และสร้างมูลค่าปัจจุบันสุทธิ <b>${formatNum(exec_npv, 0)} บาท</b> ตลอดอายุโครงการ 25 ปี โดยมีรายละเอียดสนับสนุน 4 ด้านดังนี้</p>
+
+                    <h4 class="font-bold text-blue-800 text-[14px]">1. สมรรถนะทางวิศวกรรม</h4>
+                    <p style="text-indent: 2.5em;">ระบบผลิตพลังงานสุทธิ <b>${formatNum(exec_p50, 0)} kWh/ปี</b> คิดเป็นผลผลิตจำเพาะ <b>${formatNum(exec_sy, 0)} kWh/kWp</b>
+                    ที่ค่าดัชนีสมรรถนะ (PR) <b>${formatNum(r.effPR * 100, 1)}%</b> ซึ่งอยู่ในเกณฑ์มาตรฐานของระบบติดตั้งใหม่ในประเทศไทย (76–82%)
+                    ${exec_shade !== null ? 'ความสูญเสียจากเงาบังตลอดปีอยู่ที่ <b>' + formatNum(exec_shade,1) + '%</b> (วิเคราะห์รายชั่วโมงจากขอบเขตสิ่งกีดขวางจริงใน ASC Shading Dashboard)' : ''}
+                    ${exec_eb ? ' พลังงานที่ผลิตถูกใช้ภายในโครงการโดยตรง <b>' + formatNum(exec_eb.pctSelfConsumption,0) + '%</b> และตอบสนองความต้องการใช้ไฟรวมได้ <b>' + formatNum(exec_eb.pctFromSolar,0) + '%</b>' : ''}
+                    แรงดันสตริงผ่านเกณฑ์ วสท. และรายการวัสดุ (BOM), Wiring, SLD จัดทำครบถ้วนพร้อมยื่นขออนุญาตการไฟฟ้า</p>
+
+                    <h4 class="font-bold text-blue-800 text-[14px]">2. ความเชื่อมั่นของประมาณการ และสมรรถนะระยะยาว</h4>
+                    <p style="text-indent: 2.5em;">ภายใต้ความไม่แน่นอนรวม ±${formatNum(exec_unc,1)}% (สภาพอากาศและสเปกอุปกรณ์)
+                    ระบบยืนยันพลังงานขั้นต่ำที่ความเชื่อมั่น 90% (P90) ได้ <b>${formatNum(exec_p90, 0)} kWh/ปี</b>
+                    เพียงพอสำหรับสถาบันการเงินใช้ประเมินความสามารถชำระหนี้
+                    และเมื่อรวมการเสื่อมสภาพแผงถึงปีที่ 25 ระบบยังคงรักษา PR ได้ที่ <b>${formatNum(exec_agingPR, 1)}%</b></p>
+
+                    <h4 class="font-bold text-blue-800 text-[14px]">3. ความคุ้มค่าทางการเงิน</h4>
+                    <p style="text-indent: 2.5em;">อัตราผลตอบแทนภายใน (IRR) <b>${formatNum(exec_irrPct, 2)}%</b> ${exec_irrStr}
+                    ประหยัดค่าไฟปีแรกประมาณ <b>${formatNum(exec_saveY1, 0)} บาท</b>${exec_savePct > 0 ? ' (ลดค่าไฟเดิมได้ราว ' + formatNum(exec_savePct,0) + '%)' : ''}
+                    โดยกระแสเงินสดสะสมพลิกเป็นบวกตั้งแต่ปีที่ ${exec_payback} เป็นต้นไป</p>
+
+                    <h4 class="font-bold text-blue-800 text-[14px]">4. ผลกระทบต่อสิ่งแวดล้อม</h4>
+                    <p style="text-indent: 2.5em;">ลดการปล่อยก๊าซคาร์บอนไดออกไซด์ <b>${formatNum(exec_co2, 1)} ตัน/ปี</b>
+                    เทียบเท่าการปลูกต้นไม้ <b>${formatNum(exec_tree, 0)} ต้น</b> สนับสนุนเป้าหมาย ESG และความยั่งยืนขององค์กร</p>
+
+                    <h4 class="font-bold text-blue-800 text-[14px]">5. ข้อเสนอแนะ</h4>
                     <ul class="list-disc pl-6 space-y-1 text-gray-700">
-                        <li><b>วิถีโคจรและเงาบัง (Sun Path):</b> การจัดวางแผงตอบสนองแสงได้ดี</li>
-                        <li><b>อัตราตอบสนอง (Scatter & Histogram):</b> เครื่องแปลงไฟมีภาระโหลดกระจายตัวสมดุล ไม่เกิดคอขวด (Clipping) รุนแรง (การสูญเสียพลังงานไฟฟ้าที่เกิดขึ้นเมื่อแผงโซล่าร์เซลล์ผลิตกำลังไฟฟ้าออกมาเกินกว่าขีดจำกัดสูงสุดที่อินเวอร์เตอร์ (Inverter) จะรับและแปลงกระแสไฟได้ ทำให้กราฟการผลิตไฟช่วงที่แดดจัดถูกตัดยอดให้แบนลง)</li>
-                        <li><b>จัดการพลังงาน (Daily/Monthly):</b> ช่วยให้พึ่งพาตนเองได้ ลดค่าไฟพีคและหลีกเลี่ยงกระแสไฟไหลย้อนกริดได้อย่างมีนัยสำคัญ</li>
-                        <li><b>มาตรฐานและจัดซื้อ (I-V Curve, BOM, Wiring, SLD):</b> แรงดันสตริงอยู่ในการรับรองของ วสท. รายการวัสดุและวงจร SLD ครบถ้วนพร้อมสู่การยื่นขออนุญาตการไฟฟ้า</li>
+                        ${exec_advice.map(a => '<li>' + a + '</li>').join('')}
                     </ul>
 
-                    <h4 class="font-bold text-blue-800 text-[14px] mt-4">2. การวิเคราะห์ความสูญเสีย และการเสื่อมสภาพระยะยาว</h4>
-                    <ul class="list-disc pl-6 space-y-1 text-gray-700">
-                        <li><b>การสูญเสีย (Waterfall Loss):</b> ระบุจุดความสูญเสียพลังงาน เพื่อนำไปปรับแผนบำรุงรักษาเชิงป้องกัน (Preventive O&M) </li>
-                        <li><b>ความเสื่อม 25 ปี (Aging):</b> คำนวณความเสื่อมวัสดุและ Mismatch Loss มั่นใจได้ว่าพลังงานในปีท้ายๆ จะยังคงมีเสถียรภาพ</li>
-                    </ul>
-
-                    <h4 class="font-bold text-blue-800 text-[14px] mt-4">3. ความเสี่ยงทางสถิติ (Bankability) และความคุ้มค่าทางการเงิน</h4>
-                    <p style="text-indent: 2.5em;">ด้วยงบลงทุน <b>${formatNum(exec_initialInvest, 2)} บาท</b> โครงการคืนทุนในปีที่ <b>${exec_payback}</b> สร้างกำไรสุทธิ (NPV) <b>${formatNum(exec_npv, 2)} บาท</b> ตลอด 25 ปี (IRR <b>${formatNum(exec_irrPct, 2)}%</b>) <span class="text-blue-600">(อ้างอิงกราฟ Cash Flow และตาราง Finance)</span></p>
-                    <ul class="list-disc pl-6 space-y-1 text-gray-700">
-                        <li><b>การประกันความเสี่ยง (Bell Curve & Bankability):</b> ระบบประเมิน P90 ที่ <b>${formatNum(exec_p90, 2)} kWh/ปี</b> ยืนยันกระแสเงินสดขั้นต่ำเพื่อช่วยสถาบันการเงินประเมินอัตราส่วนชำระหนี้ (DSCR) อย่างมั่นใจ Debt Service Coverage Ratio คืออัตราส่วนทางการเงินที่ใช้วัดความสามารถของธุรกิจในการนำรายได้หรือกระแสเงินสดมาจ่ายชำระหนี้ ทั้งเงินต้นและดอกเบี้ย โดยธนาคารและนักลงทุนใช้ตัวเลขนี้เพื่อประเมินความเสี่ยงในการปล่อยกู้)</li>
-                    </ul>
-
-                    <h4 class="font-bold text-blue-800 text-[14px] mt-4">4. ผลกระทบต่อสิ่งแวดล้อม (Environmental Impact)</h4>
-                    <p style="text-indent: 2.5em;">โครงการช่วยลดก๊าซคาร์บอนฯ ได้ <b>${formatNum(exec_co2, 2)} ตัน/ปี</b> เทียบเท่าปลูกป่า <b>${formatNum(exec_tree, 0)} ต้น</b> ตอบโจทย์ยุทธศาสตร์ ESG ขององค์กร (คือ กรอบแนวคิดในการบริหารธุรกิจเพื่อความยั่งยืน โดยครอบคลุม 3 ด้านหลัก ได้แก่ สิ่งแวดล้อม (Environment) สังคม (Social) และการกำกับดูแลกิจการที่ดี (Governance) ซึ่งช่วยให้องค์กรเติบโตอย่างมั่นคง พร้อมรับผิดชอบต่อโลกและผู้มีส่วนได้ส่วนเสียในระยะยาว)<span class="text-blue-600">(อ้างอิงตาราง Environment)</span></p>
+                    <p class="text-[10px] text-gray-500 mt-2 pt-2 border-t border-gray-200"><b>อภิธานศัพท์:</b>
+                    PR (Performance Ratio) = ดัชนีสมรรถนะเทียบพลังงานจริงกับทฤษฎี | P90 = พลังงานขั้นต่ำที่มั่นใจได้ 90% |
+                    IRR = อัตราผลตอบแทนภายในโครงการ | NPV = มูลค่าปัจจุบันสุทธิ | DSCR = อัตราส่วนความสามารถชำระหนี้</p>
                 </div>`;
 
                 let dashExec = document.getElementById('dashboard-exec-summary');
@@ -2780,7 +2949,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 const allDescriptions = [
                     'balances', 'waterfall', 'daily', 'monthly', 'scatter', 
                     'hist', 'bell', 'cashflow', 'tbl-finance', 'iv-eit', 'iv-irr',
-                    'sunpath', 'aging', 'bankability', 'bom', 'wiring', 'sld' // 🌟 เพิ่ม 3 ตัวใหม่เข้า PDF ตรงนี้
+                    'aging', 'bankability', 'bom', 'wiring', 'sld' // 🌟 เพิ่ม 3 ตัวใหม่เข้า PDF ตรงนี้
                 ];
                 
                 allDescriptions.forEach(name => {
@@ -2945,8 +3114,8 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 });
 
                 datasetsConfig = [
-                    { label: 'PV Generation (ผลิตไฟฟ้า)', data: dData.map(d=>d.pv), fill: true, backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: '#3b82f6', tension: 0.4, pointRadius: 0, borderWidth: 2, datalabels: { display: false } },
-                    { label: 'BESS Profile (การชาร์จ/ดิสชาร์จ)', data: dData.map(d=>d.bat), borderColor: '#f97316', backgroundColor: '#f97316', borderDash: [5, 5], tension: 0, fill: false, pointRadius: 0, stepped: true, borderWidth: 2, datalabels: { display: false } }
+                    { label: 'PV Generation (ผลิตไฟฟ้า)', data: dData.map(d=>d.pv), fill: true, backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: '#10b981', tension: 0.4, pointRadius: 0, pointHoverRadius: 5, borderWidth: 2.5, datalabels: { display: false } },
+                    { label: 'BESS Profile (การชาร์จ/ดิสชาร์จ)', data: dData.map(d=>d.bat), borderColor: '#6366f1', backgroundColor: '#6366f1', borderDash: [6, 4], tension: 0, fill: false, pointRadius: 0, stepped: true, borderWidth: 2, datalabels: { display: false } }
                 ];
 
             } else {
@@ -2966,11 +3135,12 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                     }
                 });
 
+                // 🌟 ธีม ASC: โทนสีนุ่มอ่านง่าย PV=เขียวมรกต / Load=ส้มอำพัน / Battery=คราม
                 datasetsConfig = [
-                    { label: 'PV (ผลิต)', data: dData.map(d=>d.pv), fill: false, borderColor: '#3b82f6', tension: 0.4, pointRadius: 0, borderWidth: 2, datalabels: { display: false } },
-                    { label: 'PV to Load', data: dData.map(d=>d.pvToLoad), fill: true, backgroundColor: 'rgba(34, 197, 94, 0.4)', borderColor: 'transparent', tension: 0.4, pointRadius: 0, datalabels: { display: false } },
-                    { label: 'Load (ความต้องการ)', data: dData.map(d=>d.load), borderColor: '#ef4444', tension: 0.4, fill: false, pointRadius: 0, borderWidth: 2, datalabels: { display: false } },
-                    { label: 'Battery', data: dData.map(d=>d.bat), borderColor: '#f97316', backgroundColor: '#f97316', borderDash: [5, 5], tension: 0, fill: false, pointRadius: 0, stepped: true, borderWidth: 2, datalabels: { display: false } }
+                    { label: 'PV Generation (กำลังผลิต)', data: dData.map(d=>d.pv), fill: true, backgroundColor: 'rgba(16, 185, 129, 0.08)', borderColor: '#10b981', tension: 0.4, pointRadius: 0, pointHoverRadius: 5, borderWidth: 2.5, datalabels: { display: false } },
+                    { label: 'PV → Load (ใช้เองโดยตรง)', data: dData.map(d=>d.pvToLoad), fill: true, backgroundColor: 'rgba(52, 211, 153, 0.45)', borderColor: 'transparent', tension: 0.4, pointRadius: 0, datalabels: { display: false } },
+                    { label: 'Load (ความต้องการใช้ไฟ)', data: dData.map(d=>d.load), borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.06)', tension: 0.4, fill: true, pointRadius: 0, pointHoverRadius: 5, borderWidth: 2.5, datalabels: { display: false } },
+                    { label: 'Battery (ชาร์จ +/คาย −)', data: dData.map(d=>d.bat), borderColor: '#6366f1', backgroundColor: '#6366f1', borderDash: [6, 4], tension: 0, fill: false, pointRadius: 0, stepped: true, borderWidth: 2, datalabels: { display: false } }
                 ];
             }
 
@@ -2984,8 +3154,8 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-                    scales: { y: { type: 'linear', display: true, position: 'left', title: {display: true, text: 'Energy (kWh)'}, ticks: {callback: (v) => formatNum(v, 2)} }, y2: { type: 'linear', display: false, position: 'right', title: {display: false, text: 'PR (%)'}, min: 60, max: 100, grid: {drawOnChartArea: false}, ticks: {callback: (v) => formatNum(v, 2)} } },
-                    plugins: { tooltip: { bodyFont: {family: 'Kanit'}, titleFont: {family: 'Kanit'} }, legend: { labels: {font: {family:'Kanit'}} } }
+                    scales: { x: { grid: { color: '#f8fafc' }, ticks: { font: { size: 10 }, color: '#94a3b8', maxRotation: 0 } }, y: { type: 'linear', display: true, position: 'left', title: {display: true, text: 'Energy (kWh)', color: '#64748b', font: { size: 11 }}, grid: { color: '#f1f5f9' }, border: { display: false }, ticks: {callback: (v) => formatNum(v, 2), color: '#94a3b8', font: { size: 10 }} }, y2: { type: 'linear', display: false, position: 'right', title: {display: false, text: 'PR (%)'}, min: 60, max: 100, grid: {drawOnChartArea: false}, ticks: {callback: (v) => formatNum(v, 2)} } },
+                    plugins: { tooltip: { backgroundColor: 'rgba(30, 41, 59, 0.92)', padding: 10, cornerRadius: 8, bodyFont: {family: 'Kanit'}, titleFont: {family: 'Kanit'} }, legend: { labels: {font: {family:'Kanit', size: 11}, usePointStyle: true, pointStyle: 'rectRounded', boxWidth: 10, padding: 14} } }
                 }               
             });
         }
@@ -3078,284 +3248,1612 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
             });
         }
 
-        // 🌟 2.1 Engine วาดเส้นโคจรและเงาบัง (Iso-shadings PVsyst Style - Multi Array & Clean Background)
-        function renderSunPathDiagram() {
-            const wrapper = document.getElementById('dynamic-sunpath-wrapper');
-            if(!wrapper) return;
-            
-            // ล้างกราฟเก่าออกให้หมด
-            if(window.myChartjsSunpaths && window.myChartjsSunpaths.length > 0) {
-                window.myChartjsSunpaths.forEach(c => c.destroy());
-            }
-            window.myChartjsSunpaths = [];
-            wrapper.innerHTML = '';
-
-            let lat = parseFloat((getStr('inp-coords')||"13.75,100.5").split(',')[0]) || 13.75;
-            let lon = parseFloat((getStr('inp-coords')||"13.75,100.5").split(',')[1]) || 100.50;
-            
-            // 🌟 1. ดึงข้อมูลระนาบแผง และพารามิเตอร์ Bifacial จาก DB3
-            let planes = [];
-            if (AppState.sysPolygons && AppState.sysPolygons.length > 0) {
-                planes = AppState.sysPolygons.map(p => ({ tilt: p.slope, azi: p.azimuth }));
-            } else {
-                let tilts = getStr('inp-tilt', "15").split(',').map(v => parseFloat(v) || 0);
-                let azis = getStr('inp-azi', "0").split(',').map(v => parseFloat(v) || 0);
-                let maxLen = Math.max(tilts.length, azis.length);
-                for(let i=0; i<maxLen; i++) {
-                    planes.push({ tilt: tilts[i] !== undefined ? tilts[i] : tilts[0], azi: azis[i] !== undefined ? azis[i] : azis[0] });
-                }
-            }
-            let albedoVal = AppState.bifacialParams?.albedo || 0.200;
-
-            const dates = [
-                new Date(2025, 5, 21), // 1: 22 Jun
-                new Date(2025, 4, 22), // 2: 22 May / 23 Jul
-                new Date(2025, 3, 20), // 3: 20 Apr / 23 Aug
-                new Date(2025, 2, 21), // 4: 20 Mar / 23 Sep
-                new Date(2025, 1, 21), // 5: 21 Feb / 23 Oct
-                new Date(2025, 0, 19), // 6: 19 Jan / 22 Nov
-                new Date(2025, 11, 22) // 7: 22 Dec
-            ];
-
-            // 🌟 2. คำนวณเส้นโครงสร้างดวงอาทิตย์
-            let baseDatasets = [];
-
-            // 2.1 วาดเส้น Analemma (ชั่วโมง 6h - 18h)
-            for(let h=6; h<=18; h++) {
-                let data = [];
-                for(let day=0; day<=365; day+=7) {
-                    let d = new Date(2025, 0, day, h, 0, 0);
-                    let pos = SunCalc.getPosition(d, lat, lon);
-                    let azi = pos.azimuth * 180 / Math.PI;
-                    let alt = pos.altitude * 180 / Math.PI;
-                    if(alt >= -2) {
-                        if (data.length > 0) {
-                            let prevAzi = data[data.length-1].x;
-                            if (!isNaN(prevAzi) && Math.abs(prevAzi - azi) > 180) { data.push({x: NaN, y: NaN}); }
-                        }
-                        data.push({x: azi, y: alt});
-                    }
-                }
-                if(data.length > 0) {
-                    baseDatasets.push({ type: 'line', label: `Hour ${h}`, data: data, borderColor: '#333333', borderWidth: 0.8, tension: 0.4, pointRadius: 0, spanGaps: false, datalabels: { display: false } });
-                }
-            }
-
-            // 2.2 วาดเส้น Declination 7 ฤดูกาล (เส้นโค้งคว่ำ)
-            dates.forEach((date, i) => {
-                let data = [];
-                for(let h=0; h<24; h+=0.1) {
-                    let d = new Date(date);
-                    d.setHours(Math.floor(h), (h%1)*60, 0);
-                    let pos = SunCalc.getPosition(d, lat, lon);
-                    let azi = pos.azimuth * 180 / Math.PI;
-                    let alt = pos.altitude * 180 / Math.PI;
-                    if(alt >= -2) { data.push({x: azi, y: alt}); }
-                }
-                data.sort((a,b) => a.x - b.x); 
-                
-                // 🌟 เตรียมชุดตั้งค่ากราฟเส้น (เส้นขอบขาวสะอาด ไม่มีระบายสีท้องฟ้า)
-                let datasetConfig = { 
-                    type: 'line', 
-                    label: `Season ${i+1}`, 
-                    data: data, 
-                    borderColor: '#111111', 
-                    borderWidth: 1.0, 
-                    tension: 0.4, 
-                    pointRadius: 0, 
-                    fill: false, // 🌟 บังคับไม่ให้ระบายสีใดๆ เพื่อให้กราฟขาวสะอาด 100%
-                    datalabels: { display: false } 
-                };
-
-                baseDatasets.push(datasetConfig);
-            });
-
-            // 2.3 วาดเส้นขอบฟ้า (Horizon)
-            let baseHorizon = AppState.horizonProfile ? AppState.horizonProfile.split('\n').map(line => {
-                let parts = line.split(','); return parts.length===2 ? {x: parseFloat(parts[0]), y: parseFloat(parts[1])} : null;
-            }).filter(Boolean) : [];
-            if (baseHorizon.length === 0) baseHorizon = [ {x: -180, y: 15}, {x: -90, y: 25}, {x: 0, y: 10}, {x: 90, y: 20}, {x: 180, y: 15} ];
-            if (baseHorizon[0].x > -180) baseHorizon.unshift({x: -180, y: baseHorizon[0].y});
-            if (baseHorizon[baseHorizon.length-1].x < 180) baseHorizon.push({x: 180, y: baseHorizon[baseHorizon.length-1].y});
-
-            // 🌟 3. ลูปสร้างกราฟแยกตามระนาบ (1 กราฟ ต่อ 1 หลังคา)
-            planes.forEach((plane, idx) => {
-                let chartId = `chart-sunpath-${idx}`;
-                let div = document.createElement('div');
-                div.style = "position: relative; height:550px; width:100%; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background-color: white;";
-                div.innerHTML = `<canvas id="${chartId}"></canvas>`;
-                wrapper.appendChild(div);
-
-                // 🌟 เส้น Behind the plane สีน้ำเงิน (ถอดการเทสีออกเพื่อความเสถียร 100%)
-                let behindPlaneData = [];
-                let wasBehind = false;
-                for(let azi=-180; azi<=180; azi+=2) {
-                    let radTilt = plane.tilt * Math.PI / 180;
-                    let radSunAzi = azi * Math.PI / 180;
-                    let radPlaneAzi = plane.azi * Math.PI / 180;
-                    let elevRad = Math.atan(-Math.tan(radTilt) * Math.cos(radSunAzi - radPlaneAzi));
-                    let alt = elevRad * 180 / Math.PI;
-                    if(alt >= -5 && alt <= 90) { 
-                        behindPlaneData.push({x: azi, y: alt});
-                        wasBehind = true;
-                    } else {
-                        // แทรกค่าว่าง (NaN) เพื่อตัดเส้นสีน้ำเงิน ไม่ให้ลากผ่านกลางกราฟ
-                        if (wasBehind) {
-                            behindPlaneData.push({x: NaN, y: NaN});
-                            wasBehind = false;
-                        }
-                    }
-                }
-                
-                let planeDatasets = JSON.parse(JSON.stringify(baseDatasets)); 
-                
-                // คืนค่าเป็นเส้นสีน้ำเงินล้วน (เอา fill และ backgroundColor ออกทั้งหมด)
-                planeDatasets.push({ type: 'line', label: `Behind the plane`, data: behindPlaneData, borderColor: '#0000cc', borderWidth: 2.0, tension: 0.1, pointRadius: 0, fill: false, spanGaps: false, datalabels: { display: false } });
-
-                // 🌟 วาดเส้น Shading และขอบฟ้าหลัก (คงค่า tension: 0.4 ไว้ให้เส้น Smooth สวยงามตามเดิม)
-                planeDatasets.push({ type: 'line', label: 'Shading 1%', data: baseHorizon.map(p=>({x:p.x, y:p.y+1})), borderColor: '#000', borderWidth: 1.2, borderDash: [2, 2], tension: 0.4, pointRadius: 0, fill: false, datalabels: { display: false } });
-                planeDatasets.push({ type: 'line', label: 'Shading 5%', data: baseHorizon.map(p=>({x:p.x, y:p.y+3})), borderColor: '#000', borderWidth: 1.2, borderDash: [5, 5], tension: 0.4, pointRadius: 0, fill: false, datalabels: { display: false } });
-                planeDatasets.push({ type: 'line', label: 'Shading 10%', data: baseHorizon.map(p=>({x:p.x, y:p.y+6})), borderColor: '#000', borderWidth: 1.5, borderDash: [10, 5], tension: 0.4, pointRadius: 0, fill: false, datalabels: { display: false } });
-                planeDatasets.push({ type: 'line', label: 'Shading 20%', data: baseHorizon.map(p=>({x:p.x, y:p.y+12})), borderColor: '#000', borderWidth: 1.5, borderDash: [15, 5, 5, 5], tension: 0.4, pointRadius: 0, fill: false, datalabels: { display: false } });
-                planeDatasets.push({ type: 'line', label: 'Shading 40%', data: baseHorizon.map(p=>({x:p.x, y:p.y+25})), borderColor: '#000', borderWidth: 1.8, borderDash: [20, 5], tension: 0.4, pointRadius: 0, fill: false, datalabels: { display: false } });
-                
-                // เส้นขอบฟ้าหลัก (Horizon Profile)
-                planeDatasets.push({ type: 'line', label: 'Horizon Profile', data: baseHorizon, borderColor: '#000', borderWidth: 2.5, backgroundColor: '#f1f5f9', fill: 'start', tension: 0.4, pointRadius: 0, datalabels: { display: false } });
-			   // 🌟 ปลั๊กอินระดับวิศวกรรม: ลบการเทสีเหลืองพื้นหลังทิ้ง และจัดการลูกศร
-                const pvSystStylePlugin = {
-                    id: 'pvSystStylePlugin',
-                    afterDraw: (chart) => {
-                        const {ctx, chartArea, scales} = chart;
-                        if(!chartArea) return;
-                        ctx.save();
-
-                        const cx = (chartArea.left + chartArea.right) / 2;
-
-                        // --- พิมพ์ข้อความด้านบน (Top Titles) ---
-                        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                        ctx.font = '16px Arial'; ctx.fillStyle = '#000';
-                        ctx.fillText('Iso-shadings diagram', cx, chartArea.top - 60);
-                        
-                        ctx.beginPath();
-                        ctx.moveTo(cx - 160, chartArea.top - 60); ctx.lineTo(cx - 80, chartArea.top - 60);
-                        ctx.moveTo(cx + 80, chartArea.top - 60); ctx.lineTo(cx + 160, chartArea.top - 60);
-                        ctx.stroke();
-
-                        ctx.font = '14px Arial';
-                        ctx.fillText(`แนวการวางแผง(Orientation) #${idx + 1}`, cx, chartArea.top - 35);
-
-                        ctx.font = 'bold 14px Arial'; ctx.fillStyle = '#0000cc';
-                        ctx.fillText(`Tilts : ${plane.tilt}° Azimuths : ${plane.azi}°`, cx, chartArea.top - 12);
-
-                        ctx.font = 'bold 14px Arial'; ctx.fillStyle = '#000';
-                        ctx.fillText(`ค่าลดทอนของการกระจายรังสี (Attenuation for diffuse): 0.001`, cx, chartArea.top + 20);
-                        ctx.fillText(`และสัดส่วนของรังสี์ที่สะท้อนกลับจากพื้นผิวพื้นดเทียบกับปริมาณรังสีทั้งหมด (albedo): ${albedoVal.toFixed(3)}`, cx, chartArea.top + 40);
-
-                        // --- ตำนาน Shading Loss (มุมซ้ายบน) ---
-                        ctx.textAlign = 'left'; ctx.font = '12px Arial';
-                        let lx = chartArea.left + 20; let ly = chartArea.top + 20;
-                        const drawLegendLine = (yOffset, text, dash, thick) => {
-                            ctx.beginPath(); ctx.setLineDash(dash); ctx.lineWidth = thick;
-                            ctx.moveTo(lx, ly + yOffset); ctx.lineTo(lx + 50, ly + yOffset); ctx.stroke();
-                            ctx.setLineDash([]); ctx.fillText(text, lx + 60, ly + yOffset);
-                        };
-                        drawLegendLine(0,  'Shading loss: 1%', [2,2], 1.2);
-                        drawLegendLine(15, 'Shading loss: 5%', [5,5], 1.2);
-                        drawLegendLine(30, 'Shading loss: 10%', [10,5], 1.5);
-                        drawLegendLine(45, 'Shading loss: 20%', [15,5,5,5], 1.5);
-                        drawLegendLine(60, 'Shading loss: 40%', [20,5], 1.8);
-
-                        // --- ตำนานฤดูกาล 7 วัน (ตรงกลางล่าง) ---
-                        let bx = cx - 70; let by = chartArea.bottom - 120;
-                        ctx.font = '12px Arial';
-                        ctx.fillText('1: 22 June', bx, by);
-                        ctx.fillText('2: 22 May and 23 July', bx, by + 15);
-                        ctx.fillText('3: 20 Apr and 23 Aug', bx, by + 30);
-                        ctx.fillText('4: 20 Mar and 23 Sep', bx, by + 45);
-                        ctx.fillText('5: 21 Feb and 23 Oct', bx, by + 60);
-                        ctx.fillText('6: 19 Jan and 22 Nov', bx, by + 75);
-                        ctx.fillText('7: 22 December', bx, by + 90);
-
-                        // --- พิมพ์คำว่า Behind the plane ---
-                        ctx.fillStyle = '#0000cc'; ctx.textAlign = 'center';
-                        let bpX1 = scales.x.getPixelForValue(-110); let bpY1 = scales.y.getPixelForValue(5);
-                        ctx.fillText('Behind', bpX1, bpY1); ctx.fillText('the plane', bpX1, bpY1 + 15);
-                        let bpX2 = scales.x.getPixelForValue(140); let bpY2 = scales.y.getPixelForValue(5);
-                        ctx.fillText('Behind', bpX2, bpY2); ctx.fillText('the plane', bpX2, bpY2 + 15);
-
-                        // 🌟 ฟังก์ชันวาดหัวลูกศร
-                        const drawArrow = (p1, p2, color) => {
-                            if (!p1 || !p2 || isNaN(p1.x) || isNaN(p2.x) || isNaN(p1.y) || isNaN(p2.y)) return;
-                            let px1 = scales.x.getPixelForValue(p1.x); let py1 = scales.y.getPixelForValue(p1.y);
-                            let px2 = scales.x.getPixelForValue(p2.x); let py2 = scales.y.getPixelForValue(p2.y);
-                            let angle = Math.atan2(py2 - py1, px2 - px1);
-                            let headlen = 8;
-                            ctx.fillStyle = color;
-                            ctx.beginPath();
-                            ctx.moveTo(px2, py2);
-                            ctx.lineTo(px2 - headlen * Math.cos(angle - Math.PI / 7), py2 - headlen * Math.sin(angle - Math.PI / 7));
-                            ctx.lineTo(px2 - headlen * Math.cos(angle + Math.PI / 7), py2 - headlen * Math.sin(angle + Math.PI / 7));
-                            ctx.closePath(); ctx.fill();
-                        };
-
-                        // --- วาดลูกศรเฉพาะบนเส้น Analemma (เส้นบิดชั่วโมง) เท่านั้น ---
-                        chart.data.datasets.forEach(ds => {
-                            let validPts = ds.data.filter(p => !isNaN(p.x) && !isNaN(p.y));
-                            
-                            // 1. เส้น Analemma (ชั่วโมง) -> มีตัวเลขชั่วโมงกำกับที่ยอด และมีหัวลูกศรชี้ทิศทาง
-                            if (ds.label && ds.label.startsWith('Hour') && validPts.length > 10) {
-                                let hr = ds.label.split(' ')[1];
-                                let maxPt = validPts.reduce((p, c) => c.y > p.y ? c : p, {x: 0, y: -999});
-                                if (maxPt && !isNaN(maxPt.y)) {
-                                    ctx.fillStyle = '#000'; ctx.font = '11px Arial';
-                                    ctx.fillText(`${hr}h`, scales.x.getPixelForValue(maxPt.x) - 15, scales.y.getPixelForValue(maxPt.y) + 5);
-                                }
-                                // วาดหัวลูกศร
-                                [0.3, 0.7].forEach(s => {
-                                    let idx = Math.floor(validPts.length * s);
-                                    if(idx < validPts.length - 2) drawArrow(validPts[idx], validPts[idx+2], '#333333');
-                                });
-                            }
-                            
-                            // 2. 🌟 แก้ไข: เส้น Season (โค้งคว่ำฤดูกาล) -> ลบหัวลูกศรออก เหลือแค่วงกลมมาร์คเกอร์ตัวเลข (1-7) ตรงกลางกราฟ
-                            if (ds.label && ds.label.startsWith('Season') && validPts.length > 10) {
-                                let num = ds.label.split(' ')[1];
-                                let centerPt = validPts.reduce((p, c) => Math.abs(c.x) < Math.abs(p.x) ? c : p, {x: 999, y: 0});
-                                if (centerPt && !isNaN(centerPt.y)) {
-                                    let px = scales.x.getPixelForValue(centerPt.x);
-                                    let py = scales.y.getPixelForValue(centerPt.y);
-                                    ctx.beginPath(); ctx.arc(px, py, 7, 0, 2*Math.PI);
-                                    ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke();
-                                    ctx.fillStyle = '#000'; ctx.font = 'bold 10px Arial';
-                                    ctx.fillText(num, px, py + 1);
-                                }
-                                // ลบฟังก์ชันวาดลูกศร 4 จุดออกไปแล้ว
-                            }
-                        });
-                        ctx.restore();
-                    }
-                };
-
-                let ctxNew = document.getElementById(chartId).getContext('2d');
-                let chartInstance = new Chart(ctxNew, {
-                    data: { datasets: planeDatasets },
-                    plugins: [pvSystStylePlugin],
-                    options: { 
-                        responsive: true, maintainAspectRatio: false, 
-                        layout: { padding: { top: 75, bottom: 10 } }, 
-                        scales: { 
-                            x: { type: 'linear', title: { display: true, text: 'Azimuth [°]', font: {family: 'Arial'} }, min: -180, max: 180, ticks: { stepSize: 30 } }, 
-                            y: { title: { display: true, text: 'Sun height [°]', font: {family: 'Arial'} }, min: 0, max: 90, ticks: { stepSize: 15 } } 
-                        }, 
-                        plugins: { 
-                            tooltip: { enabled: false }, 
-                            legend: { display: false }
-                        } 
-                    }
-                });
-                window.myChartjsSunpaths.push(chartInstance);
+        // 🌟 ASC DATA GUARD: ทำความสะอาดค่ามุมจาก DB2 (กันเคสทศนิยมหาย เช่น 15.12 → "1512")
+        function ascSanitizePolygons(arr) {
+            if (!arr || !Array.isArray(arr)) return arr || [];
+            return arr.map(p => {
+                let s = parseFloat(p.slope); let a = parseFloat(p.azimuth);
+                if (isNaN(s)) s = 0;
+                if (s > 90 && s <= 9000) { console.warn(`⚠️ ASC: Tilt ${p.slope}° ผิดปกติ — แก้เป็น ${s/100}° (ทศนิยมหายจาก DB2)`); s = s / 100; }
+                s = Math.max(0, Math.min(90, s));
+                if (isNaN(a)) a = 0;
+                a = ((a + 180) % 360 + 360) % 360 - 180; // normalize -180..180
+                return Object.assign({}, p, { slope: s, azimuth: a });
             });
         }
+
+        /* ==================== 🌟 SHADING ENGINE v1 (PHASE 1) — START ==================== */
+/* ============================================================================
+   🌟 PHASE 1: SHADING ENGINE (เครื่องยนต์คำนวณเงาบังส่วนกลาง)
+   ----------------------------------------------------------------------------
+   เป็นแหล่งความจริงหนึ่งเดียว (Single Source of Truth) สำหรับชุดกราฟ ASC:
+   Simplified Heatmap / Polar Obscuration / 3D Isometric Site Model
+   
+   ประกอบด้วย 3 ความสามารถตามแนวทาง B + C + D:
+   [B] Orientation Grouping  : จัดกลุ่มหลังคาที่ tilt/azimuth ใกล้กัน (±tol)
+   [C] Weighted Summary      : สรุปภาพรวมไซต์ถ่วงน้ำหนักตาม kWp
+   [D] Per-Roof Horizon      : เส้นขอบฟ้า/สิ่งกีดขวางแยกรายหลังคา (fallback ค่ากลาง)
+   
+   หมายเหตุวิศวกรรม: โมเดล loss ถูกต้องเชิงฟิสิกส์ — ยิ่งดวงอาทิตย์อยู่สูง
+   เหนือขอบสิ่งกีดขวาง loss ยิ่งลดลง (1% อยู่บนสุด ไล่ลงถึง 40% ติดขอบ)
+   ============================================================================ */
+const ShadingEngine = (function () {
+    'use strict';
+
+    // ---------- ค่าตั้งต้น (ปรับได้) ----------
+    const CONFIG = {
+        tolTilt: 5,          // [B] องศาความต่าง tilt สูงสุดที่ยังถือเป็นกลุ่มเดียวกัน
+        tolAzi: 5,           // [B] องศาความต่าง azimuth สูงสุดที่ยังถือเป็นกลุ่มเดียวกัน
+        // [แถบ Iso-Loss เชิงฟิสิกส์] ความสูงเหนือขอบ obstruction (องศา) → สัดส่วน loss
+        // ต่ำกว่าขอบ = บังเต็ม (loss ≈ 100% ของ beam), สูงขึ้นเรื่อยๆ loss ลดลง
+        isoBands: [
+            { dAlt: 0,  loss: 1.00 },   // ที่ขอบพอดี
+            { dAlt: 1,  loss: 0.40 },   // เหนือขอบ 1°  → 40%
+            { dAlt: 3,  loss: 0.20 },   // เหนือขอบ 3°  → 20%
+            { dAlt: 6,  loss: 0.10 },   // เหนือขอบ 6°  → 10%
+            { dAlt: 12, loss: 0.05 },   // เหนือขอบ 12° → 5%
+            { dAlt: 25, loss: 0.01 },   // เหนือขอบ 25° → 1%
+            { dAlt: 35, loss: 0.00 }    // พ้นอิทธิพลเงาโดยสิ้นเชิง
+        ],
+        heatmapHours: { start: 6, end: 18 },   // ช่วงชั่วโมงของ Heatmap
+        heatmapBuckets: [0, 5, 10, 20, 40],    // ระดับสี 0/5/10/20/40 %
+        defaultHorizon: [                       // ขอบฟ้าเริ่มต้นถ้าไม่มีข้อมูลใดเลย
+            { x: -180, y: 0 }, { x: 180, y: 0 }
+        ],
+        refYear: 2025
+    };
+
+    // ---------- Utilities ----------
+    const D2R = Math.PI / 180, R2D = 180 / Math.PI;
+    const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+    // ทำให้มุม azimuth อยู่ในช่วง -180..180 เสมอ
+    const normAzi = a => { let v = ((a + 180) % 360 + 360) % 360 - 180; return v === -180 ? 180 : v; };
+    // ผลต่างเชิงมุมแบบวงกลม (สั้นสุด)
+    const aziDiff = (a, b) => { let d = Math.abs(normAzi(a) - normAzi(b)); return d > 180 ? 360 - d : d; };
+
+    /* =====================================================================
+       [D] HORIZON LAYER — เส้นขอบฟ้ารายหลังคา + fallback
+       รูปแบบข้อมูล string: "azimuth,elevation" คั่นบรรทัด (เหมือน AppState เดิม)
+       ===================================================================== */
+    function parseHorizon(str) {
+        if (!str || typeof str !== 'string') return null;
+        let pts = str.split('\n').map(line => {
+            let p = line.split(',');
+            if (p.length !== 2) return null;
+            let x = parseFloat(p[0]), y = parseFloat(p[1]);
+            return (isNaN(x) || isNaN(y)) ? null : { x: normAzi(x), y: clamp(y, 0, 90) };
+        }).filter(Boolean);
+        if (pts.length === 0) return null;
+        pts.sort((a, b) => a.x - b.x);
+        // ปิดหัว-ท้ายให้ครอบคลุม -180..180 (ต่อวนแบบ wrap-around)
+        if (pts[0].x > -180) pts.unshift({ x: -180, y: pts[pts.length - 1].y });
+        if (pts[pts.length - 1].x < 180) pts.push({ x: 180, y: pts[0].y });
+        return pts;
+    }
+
+    // เลือกเส้นขอบฟ้าของ "หลังคาหนึ่งหลัง" ตามลำดับ: ของตัวเอง → ค่ากลางไซต์ → ค่า default
+    function resolvePolygonHorizon(poly, globalHorizonStr) {
+        return parseHorizon(poly && poly.horizonProfile)   // [D] schema ใหม่: poly.horizonProfile
+            || parseHorizon(globalHorizonStr)              // fallback ค่ากลางเดิมของไซต์
+            || CONFIG.defaultHorizon.map(p => ({ ...p })); // fallback สุดท้าย
+    }
+
+    // interpolate ความสูงขอบฟ้า ณ azimuth ใดๆ
+    function horizonElevationAt(horizon, azi) {
+        let a = normAzi(azi);
+        for (let i = 0; i < horizon.length - 1; i++) {
+            let p1 = horizon[i], p2 = horizon[i + 1];
+            if (a >= p1.x && a <= p2.x) {
+                if (p2.x === p1.x) return Math.max(p1.y, p2.y);
+                let t = (a - p1.x) / (p2.x - p1.x);
+                return p1.y + t * (p2.y - p1.y);
+            }
+        }
+        return horizon[0].y;
+    }
+
+    // รวมขอบฟ้าหลายชุดของสมาชิกในกลุ่มเดียวกันแบบ "อนุรักษ์นิยม" (เอาค่าสูงสุด)
+    // เหตุผล: ถ้าหลังคา A โดนบังแต่ B ไม่โดน การรายงานระดับกลุ่มต้องไม่ underestimate loss
+    function mergeHorizonsMax(horizons) {
+        let merged = [];
+        for (let a = -180; a <= 180; a += 2) {
+            let y = 0;
+            horizons.forEach(h => { y = Math.max(y, horizonElevationAt(h, a)); });
+            merged.push({ x: a, y: Math.round(y * 100) / 100 });
+        }
+        return merged;
+    }
+
+    /* =====================================================================
+       [B] ORIENTATION GROUPING — จัดกลุ่มระนาบที่หันทิศ/เอียงใกล้กัน
+       input : polygons (AppState.sysPolygons), panelWp (วัตต์/แผง), tol (option)
+       output: [{ id, label, tilt, azi, members[], kwp, area, panelCount, horizon }]
+       ===================================================================== */
+    function polygonKwp(poly, panelWp) {
+        let n = (poly.customLayout || poly.modules || poly.panels || []).length;
+        if (n > 0 && panelWp > 0) return n * panelWp / 1000;       // ถ่วงด้วยแผงจริง
+        if (poly.area && poly.area > 1) return poly.area * 0.18;   // ประมาณจากพื้นที่ (180Wp/m²)
+        return 1; // ไม่มีข้อมูลเลย → น้ำหนักเท่ากัน
+    }
+
+    function buildOrientationGroups(polygons, opts) {
+        opts = opts || {};
+        let panelWp = opts.panelWp || 0;
+        let globalHorizonStr = opts.globalHorizon || "";
+        let tolT = opts.tolTilt !== undefined ? opts.tolTilt : CONFIG.tolTilt;
+        let tolA = opts.tolAzi !== undefined ? opts.tolAzi : CONFIG.tolAzi;
+
+        if (!polygons || polygons.length === 0) return [];
+
+        let groups = [];
+        polygons.forEach((poly, idx) => {
+            let tilt = parseFloat(poly.slope) || 0;
+            if (tilt > 90 && tilt <= 9000) tilt = tilt / 100; // กันทศนิยมหาย (1512 → 15.12)
+            tilt = Math.max(0, Math.min(90, tilt));
+            let azi = normAzi(parseFloat(poly.azimuth) || 0);
+            let kwp = polygonKwp(poly, panelWp);
+            let hz = resolvePolygonHorizon(poly, globalHorizonStr);
+
+            // หากลุ่มที่ "ค่าตัวแทนปัจจุบัน" ห่างไม่เกิน tolerance
+            let g = groups.find(gr => Math.abs(gr.tilt - tilt) <= tolT && aziDiff(gr.azi, azi) <= tolA);
+            if (!g) {
+                groups.push({
+                    id: groups.length + 1, tilt, azi, kwp: 0, area: 0, panelCount: 0,
+                    members: [], _horizons: [], _wTilt: 0, _wAzi: 0
+                });
+                g = groups[groups.length - 1];
+            }
+            g.members.push({ index: idx, tilt, azi, kwp, roofLabel: poly.name || `หลังคา ${idx + 1}` });
+            g.kwp += kwp;
+            g.area += parseFloat(poly.area) || 0;
+            g.panelCount += (poly.customLayout || poly.modules || poly.panels || []).length;
+            g._horizons.push(hz);
+            // ค่าตัวแทนกลุ่ม = ค่าเฉลี่ยถ่วงน้ำหนักด้วย kWp
+            g._wTilt += tilt * kwp; g._wAzi += azi * kwp;
+            g.tilt = Math.round((g._wTilt / g.kwp) * 10) / 10;
+            g.azi = Math.round((g._wAzi / g.kwp) * 10) / 10;
+        });
+
+        groups.forEach(g => {
+            g.horizon = g._horizons.length === 1 ? g._horizons[0] : mergeHorizonsMax(g._horizons);
+            g.label = `แนวการวางแผง #${g.id} (Tilt ${g.tilt}° / Azi ${g.azi}° | ${g.members.length} หลังคา | ${g.kwp.toFixed(1)} kWp)`;
+            delete g._horizons; delete g._wTilt; delete g._wAzi;
+        });
+        return groups;
+    }
+
+    /* =====================================================================
+       CORE — shadingLossAt(sunAzi, sunAlt, group) → สัดส่วน loss 0..1
+       ===================================================================== */
+    // ความสูง (elevation) ของเส้น "Behind the plane" ณ azimuth ที่กำหนด (สูตรเดียวกับกราฟเดิม)
+    function behindPlaneElevation(tilt, planeAzi, sunAzi) {
+        let e = Math.atan(-Math.tan(tilt * D2R) * Math.cos((sunAzi - planeAzi) * D2R)) * R2D;
+        return e; // ถ้า sunAlt < ค่านี้ = ดวงอาทิตย์อยู่หลังระนาบ
+    }
+
+    function shadingLossAt(sunAzi, sunAlt, group) {
+        if (sunAlt <= 0) return null;                                    // กลางคืน
+        if (sunAlt < behindPlaneElevation(group.tilt, group.azi, sunAzi)) return 1.0; // หลังระนาบ
+        let hEdge = horizonElevationAt(group.horizon, sunAzi);
+        let dAlt = sunAlt - hEdge;
+        if (dAlt <= 0) return 1.0;                                       // ต่ำกว่าขอบ obstruction
+        // interpolate ตามแถบ isoBands
+        let b = CONFIG.isoBands;
+        for (let i = 0; i < b.length - 1; i++) {
+            if (dAlt >= b[i].dAlt && dAlt <= b[i + 1].dAlt) {
+                let t = (dAlt - b[i].dAlt) / (b[i + 1].dAlt - b[i].dAlt);
+                return b[i].loss + t * (b[i + 1].loss - b[i].loss);
+            }
+        }
+        return 0;
+    }
+
+    // สร้าง Date ณ เวลา "ท้องถิ่นของไซต์" — ถ้าระบุ tzOffsetHours จะไม่ขึ้นกับโซนเวลาของเครื่องที่รัน
+    function siteDate(y, m, d, hourFloat, tzOffsetHours) {
+        let hh = Math.floor(hourFloat), mm = Math.round((hourFloat % 1) * 60);
+        if (tzOffsetHours === undefined || tzOffsetHours === null) {
+            let dt = new Date(y, m, d); dt.setHours(hh, mm, 0, 0); return dt; // พฤติกรรมเดิม (เวลาเครื่อง)
+        }
+        return new Date(Date.UTC(y, m, d, hh - tzOffsetHours, mm, 0, 0));
+    }
+
+    /* =====================================================================
+       VIEW DATA #1 — HEATMAP (Month × Hour) ต่อ 1 กลุ่ม
+       ต้องมี SunCalc (โหลดแล้วในหน้า) — ส่ง sunCalcRef เข้ามาเพื่อความ testable
+       ===================================================================== */
+    function computeHeatmap(group, lat, lon, sunCalcRef, tzOffsetHours) {
+        const SC = sunCalcRef || (typeof SunCalc !== 'undefined' ? SunCalc : null);
+        if (!SC) throw new Error('SunCalc not available');
+        let hours = [];
+        for (let h = CONFIG.heatmapHours.start; h <= CONFIG.heatmapHours.end; h++) hours.push(h);
+        let matrix = []; // matrix[month][hourIdx] = loss% (null = ดวงอาทิตย์ยังไม่ขึ้น)
+        for (let m = 0; m < 12; m++) {
+            let row = [];
+            hours.forEach(h => {
+                let d = siteDate(CONFIG.refYear, m, 15, h, tzOffsetHours); // วันกลางเดือนเป็นตัวแทน
+                let pos = SC.getPosition(d, lat, lon);
+                let loss = shadingLossAt(pos.azimuth * R2D, pos.altitude * R2D, group);
+                row.push(loss === null ? null : Math.round(loss * 1000) / 10); // เก็บเป็น %
+            });
+            matrix.push(row);
+        }
+        return { hours, matrix, buckets: CONFIG.heatmapBuckets.slice() };
+    }
+
+    /* =====================================================================
+       VIEW DATA #2 — POLAR OBSCURATION ต่อ 1 กลุ่ม
+       คืน outline พื้นที่บัง + เส้นทางดวงอาทิตย์ Jun22/Dec22 ในพิกัดเชิงขั้ว
+       (theta = azimuth องศา, r = 90 - elevation → กลางวง = จุดเหนือศีรษะ)
+       ===================================================================== */
+    function computePolar(group, lat, lon, sunCalcRef, tzOffsetHours) {
+        const SC = sunCalcRef || (typeof SunCalc !== 'undefined' ? SunCalc : null);
+        if (!SC) throw new Error('SunCalc not available');
+        let obstruction = [];
+        for (let a = -180; a <= 180; a += 2) {
+            let elev = horizonElevationAt(group.horizon, a);
+            obstruction.push({ theta: a, rOuter: 90, rInner: 90 - clamp(elev, 0, 90) });
+        }
+        const sunPath = (month, day) => {
+            let pts = [];
+            for (let h = 0; h <= 24; h += 0.25) {
+                let d = siteDate(CONFIG.refYear, month, day, h, tzOffsetHours);
+                let pos = SC.getPosition(d, lat, lon);
+                let alt = pos.altitude * R2D;
+                if (alt > 0) pts.push({ theta: normAzi(pos.azimuth * R2D), r: 90 - alt, hour: h });
+            }
+            return pts;
+        };
+        return { obstruction, pathJun22: sunPath(5, 22), pathDec22: sunPath(11, 22) };
+    }
+
+    /* =====================================================================
+       ANALYSIS — สถิติสำหรับข้อความ "ผลการวิเคราะห์" ใต้กราฟ + PDF
+       ถ่วงน้ำหนักด้วย sin(altitude) เป็น proxy ความเข้มรังสีตรง
+       ===================================================================== */
+    const MONTH_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+    function computeStats(group, lat, lon, sunCalcRef, tzOffsetHours) {
+        const SC = sunCalcRef || (typeof SunCalc !== 'undefined' ? SunCalc : null);
+        if (!SC) throw new Error('SunCalc not available');
+        let sumLossW = 0, sumW = 0, hoursOver20 = 0, totalDayHours = 0;
+        let monthLoss = new Array(12).fill(0), monthW = new Array(12).fill(0);
+        let hourLoss = {}, hourW = {};
+        // สแกนทุก 5 วัน × ทุก 30 นาที (ละเอียดพอและเร็ว)
+        for (let day = 0; day < 365; day += 5) {
+            for (let h = 5; h <= 19; h += 0.5) {
+                let d = siteDate(CONFIG.refYear, 0, 1 + day, h, tzOffsetHours);
+                let pos = SC.getPosition(d, lat, lon);
+                let alt = pos.altitude * R2D;
+                if (alt <= 0) continue;
+                let loss = shadingLossAt(pos.azimuth * R2D, alt, group);
+                let w = Math.sin(alt * D2R); // proxy ความเข้มรังสี
+                sumLossW += loss * w; sumW += w;
+                totalDayHours += 0.5 * 5;                       // สเกลกลับเป็นชั่วโมง/ปี
+                if (loss > 0.20) hoursOver20 += 0.5 * 5;
+                let m = new Date(CONFIG.refYear, 0, 1 + day).getMonth();
+                monthLoss[m] += loss * w; monthW[m] += w;
+                let hk = Math.floor(h);
+                hourLoss[hk] = (hourLoss[hk] || 0) + loss * w;
+                hourW[hk] = (hourW[hk] || 0) + w;
+            }
+        }
+        let monthly = monthLoss.map((v, i) => monthW[i] > 0 ? v / monthW[i] * 100 : 0);
+        let worstMonthIdx = monthly.indexOf(Math.max(...monthly));
+        let hourly = Object.keys(hourLoss).map(k => ({ hour: +k, loss: hourLoss[k] / hourW[k] * 100 }));
+        hourly.sort((a, b) => b.loss - a.loss);
+        let worstHours = hourly.filter(o => o.loss > 0.5).slice(0, 3).map(o => o.hour).sort((a, b) => a - b);
+        const fmtH = h => String(h).padStart(2, '0') + ':00';
+        let worstHourWindow = '-';
+        if (worstHours.length) {
+            let contiguous = worstHours.every((h, i) => i === 0 || h === worstHours[i - 1] + 1);
+            worstHourWindow = contiguous
+                ? `${fmtH(worstHours[0])}–${fmtH(worstHours[worstHours.length - 1] + 1)}`
+                : worstHours.map(fmtH).join(', ');
+        }
+        return {
+            annualLossPct: Math.round(sumLossW / sumW * 1000) / 10,
+            worstMonth: MONTH_TH[worstMonthIdx],
+            worstMonthLossPct: Math.round(monthly[worstMonthIdx] * 10) / 10,
+            worstHourWindow: worstHourWindow,
+            hoursOver20PerYear: Math.round(hoursOver20),
+            monthlyLossPct: monthly.map(v => Math.round(v * 10) / 10)
+        };
+    }
+
+    /* =====================================================================
+       [C] WEIGHTED SUMMARY — รวมทุกกลุ่มถ่วงน้ำหนักด้วย kWp
+       ===================================================================== */
+    function computeWeightedHeatmap(groups, lat, lon, sunCalcRef, tzOffsetHours) {
+        if (!groups.length) return null;
+        let totalKwp = groups.reduce((s, g) => s + g.kwp, 0) || 1;
+        let hms = groups.map(g => computeHeatmap(g, lat, lon, sunCalcRef, tzOffsetHours));
+        let hours = hms[0].hours;
+        let matrix = [];
+        for (let m = 0; m < 12; m++) {
+            let row = [];
+            for (let hi = 0; hi < hours.length; hi++) {
+                let acc = 0, wAcc = 0;
+                hms.forEach((hm, gi) => {
+                    let v = hm.matrix[m][hi];
+                    if (v !== null) { acc += v * groups[gi].kwp; wAcc += groups[gi].kwp; }
+                });
+                row.push(wAcc > 0 ? Math.round(acc / wAcc * 10) / 10 : null);
+            }
+            matrix.push(row);
+        }
+        return { hours, matrix, buckets: CONFIG.heatmapBuckets.slice(), totalKwp, groupCount: groups.length };
+    }
+
+    function computeWeightedStats(groups, lat, lon, sunCalcRef, tzOffsetHours) {
+        if (!groups.length) return null;
+        let totalKwp = groups.reduce((s, g) => s + g.kwp, 0) || 1;
+        let stats = groups.map(g => ({ g, s: computeStats(g, lat, lon, sunCalcRef, tzOffsetHours) }));
+        let annual = stats.reduce((s, o) => s + o.s.annualLossPct * o.g.kwp, 0) / totalKwp;
+        let worst = stats.reduce((a, b) => (b.s.annualLossPct > a.s.annualLossPct ? b : a));
+        let best = stats.reduce((a, b) => (b.s.annualLossPct < a.s.annualLossPct ? b : a));
+        return {
+            siteAnnualLossPct: Math.round(annual * 10) / 10,
+            totalKwp: Math.round(totalKwp * 10) / 10,
+            groupCount: groups.length,
+            worstGroup: { id: worst.g.id, label: worst.g.label, lossPct: worst.s.annualLossPct },
+            bestGroup: { id: best.g.id, label: best.g.label, lossPct: best.s.annualLossPct },
+            perGroup: stats.map(o => ({ id: o.g.id, label: o.g.label, kwp: o.g.kwp, ...o.s }))
+        };
+    }
+
+    /* =====================================================================
+       SELF-TEST — รันใน console: ShadingEngine.runSelfTest()
+       ===================================================================== */
+    function runSelfTest(sunCalcRef) {
+        const out = [];
+        const assert = (name, cond, detail) => { out.push({ test: name, pass: !!cond, detail: detail || '' }); };
+
+        // 1) parseHorizon + interpolation
+        let hz = parseHorizon("-90,25\n0,10\n90,20");
+        assert('parseHorizon ปิดหัวท้าย -180/180', hz[0].x === -180 && hz[hz.length - 1].x === 180);
+        let e0 = horizonElevationAt(hz, 0);
+        assert('interpolate ที่ azi=0 ได้ 10°', Math.abs(e0 - 10) < 0.01, `ได้ ${e0}`);
+        let e45 = horizonElevationAt(hz, -45);
+        assert('interpolate ที่ azi=-45 ได้ 17.5°', Math.abs(e45 - 17.5) < 0.01, `ได้ ${e45}`);
+
+        // 2) [B] grouping: หลังคา 15/0 กับ 17/3 ควรรวมกลุ่ม, 15/90 แยก
+        let polys = [
+            { slope: 15, azimuth: 0, area: 100, customLayout: new Array(20) },
+            { slope: 17, azimuth: 3, area: 80, customLayout: new Array(10) },
+            { slope: 15, azimuth: 90, area: 50, customLayout: new Array(10) }
+        ];
+        let groups = buildOrientationGroups(polys, { panelWp: 600 });
+        assert('[B] จัดกลุ่มได้ 2 กลุ่มจาก 3 หลังคา', groups.length === 2, `ได้ ${groups.length} กลุ่ม`);
+        assert('[B] กลุ่ม 1 มี 2 สมาชิก kWp=18', groups[0].members.length === 2 && Math.abs(groups[0].kwp - 18) < 0.01, `kwp=${groups[0].kwp}`);
+        assert('[B] tilt ตัวแทนถ่วงน้ำหนัก ≈ 15.7°', Math.abs(groups[0].tilt - 15.7) < 0.1, `tilt=${groups[0].tilt}`);
+
+        // 3) [D] per-roof horizon + merge แบบ max
+        let polys2 = [
+            { slope: 15, azimuth: 0, horizonProfile: "0,30", customLayout: new Array(10) },
+            { slope: 15, azimuth: 0, customLayout: new Array(10) } // ไม่มี → fallback global
+        ];
+        let g2 = buildOrientationGroups(polys2, { panelWp: 600, globalHorizon: "0,5" });
+        let mergedE = horizonElevationAt(g2[0].horizon, 0);
+        assert('[D] merge horizon เอาค่าสูงสุด (30°)', Math.abs(mergedE - 30) < 1, `ได้ ${mergedE}`);
+
+        // 4) shadingLossAt: ฟิสิกส์ต้องถูกทิศ
+        let gTest = { tilt: 15, azi: 0, horizon: parseHorizon("0,20") };
+        assert('ต่ำกว่าขอบ → loss 100%', shadingLossAt(0, 15, gTest) === 1.0);
+        let l21 = shadingLossAt(0, 21, gTest);
+        assert('เหนือขอบ 1° → 40%', Math.abs(l21 - 0.40) < 0.01, `ได้ ${l21}`);
+        let l26 = shadingLossAt(0, 26, gTest);
+        assert('เหนือขอบ 6° → 10%', Math.abs(l26 - 0.10) < 0.01, `ได้ ${l26}`);
+        let l60 = shadingLossAt(0, 60, gTest);
+        assert('สูงมาก → loss ≈ 0', l60 === 0, `ได้ ${l60}`);
+        assert('กลางคืน → null', shadingLossAt(0, -5, gTest) === null);
+        // behind the plane: แผง tilt 30 หัน azi 0, ดวงอาทิตย์ทิศตรงข้าม (azi 180) มุมต่ำ
+        let gB = { tilt: 30, azi: 0, horizon: CONFIG.defaultHorizon };
+        assert('หลังระนาบ → loss 100%', shadingLossAt(180, 10, gB) === 1.0);
+        assert('หน้าระนาบมุมสูง → ไม่ติด behind', shadingLossAt(180, 45, gB) < 1.0);
+
+        // 5) Heatmap + Stats + [C] Weighted (ต้องมี SunCalc)
+        const SC = sunCalcRef || (typeof SunCalc !== 'undefined' ? SunCalc : null);
+        if (SC) {
+            let lat = 13.87, lon = 100.5, tz = 7; // ปากเกร็ด นนทบุรี UTC+7
+            let hm = computeHeatmap(groups[0], lat, lon, SC, tz);
+            assert('Heatmap ขนาด 12×13', hm.matrix.length === 12 && hm.matrix[0].length === 13);
+            let noon = hm.matrix[3][6]; // เม.ย. เที่ยง
+            assert('เที่ยง เม.ย. loss ต่ำ (<5%)', noon !== null && noon < 5, `ได้ ${noon}%`);
+            let st = computeStats(groups[0], lat, lon, SC, tz);
+            assert('Stats: annual loss อยู่ในช่วง 0-100', st.annualLossPct >= 0 && st.annualLossPct <= 100, `${st.annualLossPct}%`);
+            let ws = computeWeightedStats(groups, lat, lon, SC, tz);
+            assert('[C] weighted: มี 2 กลุ่ม totalKwp=24', ws.groupCount === 2 && Math.abs(ws.totalKwp - 24) < 0.1, `kwp=${ws.totalKwp}`);
+            let whm = computeWeightedHeatmap(groups, lat, lon, SC, tz);
+            assert('[C] weighted heatmap 12×13', whm.matrix.length === 12 && whm.matrix[0].length === 13);
+            out._sample = { stats: st, weighted: ws };
+        } else {
+            out.push({ test: 'SunCalc tests', pass: null, detail: 'ข้าม (ไม่มี SunCalc ใน environment นี้)' });
+        }
+
+        let passed = out.filter(o => o.pass === true).length;
+        let failed = out.filter(o => o.pass === false).length;
+        if (typeof console !== 'undefined') {
+            console.log(`🧪 ShadingEngine Self-Test: ผ่าน ${passed} / ล้มเหลว ${failed}`);
+            if (console.table) console.table(out.map(o => ({ test: o.test, pass: o.pass, detail: o.detail })));
+        }
+        return { passed, failed, results: out };
+    }
+
+    /* =====================================================================
+       INTEGRATION HOOK — ดึงบริบทไซต์จาก AppState ของ asc_report โดยตรง
+       ใช้ใน Phase 2: let ctx = ShadingEngine.getSiteContext();
+                      ctx.groups / ctx.lat / ctx.lon / ctx.tz พร้อมใช้ทันที
+       ===================================================================== */
+    function getSiteContext() {
+        if (typeof AppState === 'undefined') return null;
+        let coords = (typeof getStr === 'function' ? getStr('inp-coords') : '') || '13.75,100.5';
+        let lat = parseFloat(coords.split(',')[0]) || 13.75;
+        let lon = parseFloat(coords.split(',')[1]) || 100.5;
+        let tz = -new Date().getTimezoneOffset() / 60; // โซนเวลาเบราว์เซอร์ = โซนเวลาไซต์ (ตามพฤติกรรมเดิมของแอป)
+        let panelWp = 0;
+        try { panelWp = parseFloat(AppState.equipData?.pv?.Pmax_Wp || AppState.equipData?.pv?.pmax) || 0; } catch (e) {}
+        let polygons = AppState.sysPolygons || [];
+        if (!polygons.length) {
+            // fallback: สร้าง polygon เสมือนจากช่องกรอก tilt/azi (รองรับหลายค่าคั่น comma)
+            let tilts = ((typeof getStr === 'function' ? getStr('inp-tilt', '15') : '15') + '').split(',').map(v => parseFloat(v) || 0);
+            let azis = ((typeof getStr === 'function' ? getStr('inp-azi', '0') : '0') + '').split(',').map(v => parseFloat(v) || 0);
+            let n = Math.max(tilts.length, azis.length);
+            polygons = [];
+            for (let i = 0; i < n; i++) polygons.push({ slope: tilts[i] ?? tilts[0], azimuth: azis[i] ?? azis[0] });
+        }
+        let groups = buildOrientationGroups(polygons, { panelWp, globalHorizon: AppState.horizonProfile || '' });
+        return { lat, lon, tz, panelWp, groups };
+    }
+
+    // ---------- Public API ----------
+    return {
+        CONFIG,
+        parseHorizon, resolvePolygonHorizon, horizonElevationAt, mergeHorizonsMax,
+        buildOrientationGroups,
+        behindPlaneElevation, shadingLossAt,
+        computeHeatmap, computePolar, computeStats,
+        computeWeightedHeatmap, computeWeightedStats,
+        siteDate, getSiteContext, runSelfTest
+    };
+})();
+if (typeof window !== 'undefined') window.ShadingEngine = ShadingEngine;
+if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEngine;
+
+        console.log('🌞 ShadingEngine v1 พร้อมใช้งาน — ทดสอบด้วย: ShadingEngine.runSelfTest() | ดูข้อมูลไซต์: ShadingEngine.getSiteContext()');
+        /* ==================== 🌟 SHADING ENGINE v1 (PHASE 1) — END ====================== */
+
+        /* ==================== 🌟 SHADING DASHBOARD UI (PHASE 2) — START ==================== */
+        // แผงควบคุมการวิเคราะห์การบังแดด: Heatmap / Polar + ตัวเลือกกลุ่มการวางแผง [B+C+D]
+        // ใช้ข้อมูลจาก ShadingEngine (Phase 1) ทั้งหมด — ไม่มีการคำนวณซ้ำซ้อนในไฟล์นี้
+
+        window.ShadingDashState = { view: 'heatmap', group: 'all' };
+
+        // สีตามระดับ Shading Loss % (ตรงกับ legend ในภาพตัวอย่าง)
+        const SDASH_COLORS = [
+            { max: 2.5,      color: '#4caf50', label: '0%'  },
+            { max: 7.5,      color: '#cddc39', label: '5%'  },
+            { max: 15,       color: '#ffeb3b', label: '10%' },
+            { max: 30,       color: '#ff9800', label: '20%' },
+            { max: Infinity, color: '#f44336', label: '40%' }
+        ];
+        function sdashBucketColor(v) {
+            if (v === null || v === undefined || isNaN(v)) return '#e5e7eb';
+            for (let b of SDASH_COLORS) { if (v <= b.max) return b.color; }
+            return '#f44336';
+        }
+
+        // เปลี่ยนมุมมองหลัก (Main display type)
+        function setShadingDashView(v) {
+            window.ShadingDashState.view = v;
+            renderShadingDashboard();
+        }
+
+        // ---------- ตัววาด #1: Simplified Heatmap (Month × Hour) ----------
+        function sdashDrawHeatmap(canvas, hm, titleText) {
+            const W = 1100, H = 560;
+            canvas.width = W; canvas.height = H;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+            const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+            const padL = 70, padT = 60, padR = 150, padB = 60;
+            const gw = W - padL - padR, gh = H - padT - padB;
+            const cw = gw / hm.hours.length, ch = gh / 12;
+
+            ctx.fillStyle = '#111'; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'left';
+            ctx.fillText(titleText, padL, 28);
+            ctx.font = '12px Arial'; ctx.fillStyle = '#555';
+            ctx.fillText('Simplified Heatmap (Month/Hour Shading Loss) — แผนภูมิความร้อนการสูญเสียจากเงาบัง', padL, 46);
+
+            for (let m = 0; m < 12; m++) {
+                for (let hi = 0; hi < hm.hours.length; hi++) {
+                    let v = hm.matrix[m][hi];
+                    ctx.fillStyle = sdashBucketColor(v);
+                    ctx.fillRect(padL + hi * cw + 1, padT + m * ch + 1, cw - 2, ch - 2);
+                }
+            }
+            // แกน Y (เดือน)
+            ctx.fillStyle = '#111'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+            MONTHS.forEach((mo, m) => ctx.fillText(mo, padL - 8, padT + m * ch + ch / 2));
+            // แกน X (ชั่วโมง)
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.font = '11px Arial';
+            hm.hours.forEach((h, hi) => {
+                if (h % 2 === 0) ctx.fillText(String(h).padStart(2, '0') + ':00', padL + hi * cw + cw / 2, padT + gh + 8);
+            });
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText('Time of Day (เวลาของวัน)', padL + gw / 2, padT + gh + 30);
+            ctx.save(); ctx.translate(20, padT + gh / 2); ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Month (เดือน)', 0, 0); ctx.restore();
+            // Legend
+            let lx = W - padR + 20, ly = padT;
+            ctx.textAlign = 'left'; ctx.font = 'bold 12px Arial'; ctx.textBaseline = 'alphabetic';
+            ctx.fillText('Shading Loss %', lx, ly - 8);
+            SDASH_COLORS.forEach((b, i) => {
+                ctx.fillStyle = b.color; ctx.fillRect(lx, ly + i * 26 + 4, 22, 16);
+                ctx.strokeStyle = '#999'; ctx.strokeRect(lx, ly + i * 26 + 4, 22, 16);
+                ctx.fillStyle = '#111'; ctx.fillText(b.label, lx + 30, ly + i * 26 + 17);
+            });
+            ctx.fillStyle = '#e5e7eb'; ctx.fillRect(lx, ly + 5 * 26 + 4, 22, 16);
+            ctx.strokeStyle = '#999'; ctx.strokeRect(lx, ly + 5 * 26 + 4, 22, 16);
+            ctx.fillStyle = '#111'; ctx.fillText('กลางคืน', lx + 30, ly + 5 * 26 + 17);
+            // 🌟 ลายน้ำเอกลักษณ์ ASC
+            ctx.font = 'bold 11px Arial'; ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+            ctx.fillText('ASC : Auto Solar Copilot', W - 14, H - 10);
+        }
+
+        // ---------- ตัววาด #2: Polar Obscuration View ----------
+        // หมายเหตุมุม: engine ใช้ azimuth แบบ SunCalc (0=ใต้, -90=ตะวันออก, +90=ตะวันตก, ±180=เหนือ)
+        // แปลงเป็นเข็มทิศ (0=เหนือ ตามเข็ม): comp = sunAzi + 180
+        function sdashDrawPolar(canvas, pd, titleText) {
+            const W = 900, H = 640;
+            canvas.width = W; canvas.height = H;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+            const cx = W / 2, cy = H / 2 + 15, R = 240; // R = ขอบนอก (elevation 0°)
+            const toXY = (sunAzi, elev) => {
+                let comp = (sunAzi + 180) * Math.PI / 180;
+                let r = R * (90 - Math.max(0, Math.min(90, elev))) / 90;
+                return { x: cx + r * Math.sin(comp), y: cy - r * Math.cos(comp) };
+            };
+            ctx.fillStyle = '#111'; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'left';
+            ctx.fillText(titleText, 20, 28);
+            ctx.font = '12px Arial'; ctx.fillStyle = '#555';
+            ctx.fillText('Polar Obscuration View (Obstructions & Sun Paths) — มุมมองเชิงขั้วของสิ่งกีดขวางและวิถีดวงอาทิตย์', 20, 46);
+
+            // วงแหวน elevation ทุก 15°
+            ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1; ctx.font = '10px Arial'; ctx.fillStyle = '#888';
+            for (let e = 0; e <= 75; e += 15) {
+                let r = R * (90 - e) / 90;
+                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+                if (e > 0) { ctx.textAlign = 'center'; ctx.fillText(e + '°', cx, cy - r - 3); }
+            }
+            // เส้นรัศมีทุก 30° + ป้ายมุม
+            for (let a = 0; a < 360; a += 30) {
+                let rad = a * Math.PI / 180;
+                ctx.beginPath(); ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + R * Math.sin(rad), cy - R * Math.cos(rad)); ctx.stroke();
+                let lr = R + 16;
+                ctx.fillStyle = '#666'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                let lbl = (a === 0) ? 'N' : (a === 90) ? 'E' : (a === 180) ? 'S' : (a === 270) ? 'W' : a + '°';
+                ctx.font = (lbl.length === 1) ? 'bold 14px Arial' : '10px Arial';
+                ctx.fillText(lbl, cx + lr * Math.sin(rad), cy - lr * Math.cos(rad));
+            }
+
+            // พื้นที่สิ่งกีดขวาง (Obstruction Area): วงนอก → ย้อนกลับตามเส้นขอบฟ้า
+            ctx.beginPath();
+            pd.obstruction.forEach((p, i) => {
+                let pt = toXY(p.theta, 0);
+                i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y);
+            });
+            for (let i = pd.obstruction.length - 1; i >= 0; i--) {
+                let p = pd.obstruction[i];
+                let pt = toXY(p.theta, 90 - p.rInner);
+                ctx.lineTo(pt.x, pt.y);
+            }
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(70,70,70,0.85)'; ctx.fill();
+
+            // เส้นทางดวงอาทิตย์
+            const drawPath = (pts, dash, color, lbl) => {
+                if (!pts.length) return;
+                ctx.beginPath(); ctx.setLineDash(dash); ctx.strokeStyle = color; ctx.lineWidth = 2;
+                pts.forEach((p, i) => {
+                    let pt = toXY(p.theta, 90 - p.r);
+                    i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y);
+                });
+                ctx.stroke(); ctx.setLineDash([]);
+                let pe = toXY(pts[pts.length - 1].theta, 90 - pts[pts.length - 1].r);
+                ctx.fillStyle = color; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'left';
+                ctx.fillText(lbl, pe.x + 6, pe.y);
+            };
+            drawPath(pd.pathJun22, [], '#1d4ed8', 'Jun 22');
+            drawPath(pd.pathDec22, [6, 4], '#b91c1c', 'Dec 22');
+
+            // Legend
+            let lx = 20, ly = H - 70;
+            ctx.fillStyle = 'rgba(70,70,70,0.85)'; ctx.fillRect(lx, ly, 20, 14);
+            ctx.fillStyle = '#111'; ctx.font = '11px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            ctx.fillText('Obstruction Area (พื้นที่ถูกบัง)', lx + 28, ly + 7);
+            ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(lx, ly + 26); ctx.lineTo(lx + 20, ly + 26); ctx.stroke();
+            ctx.fillText('Jun 22 Path (ครีษมายัน)', lx + 28, ly + 26);
+            ctx.strokeStyle = '#b91c1c'; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(lx, ly + 44); ctx.lineTo(lx + 20, ly + 44); ctx.stroke(); ctx.setLineDash([]);
+            ctx.fillText('Dec 22 Path (เหมายัน)', lx + 28, ly + 44);
+            // 🌟 ลายน้ำเอกลักษณ์ ASC
+            ctx.font = 'bold 11px Arial'; ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+            ctx.fillText('ASC : Auto Solar Copilot', W - 14, H - 10);
+        }
+
+        // ---------- ข้อความ "ความหมายของกราฟ + ผลการวิเคราะห์" อัตโนมัติ ----------
+        function sdashBuildDescription(view, stats, scopeLabel, weighted) {
+            let meaning = '';
+            if (view === 'iso3d') {
+                let o = (typeof sdashGet3DOpts === 'function') ? sdashGet3DOpts() : { month: 11, hour: 10 };
+                meaning = `<b>ความหมายของกราฟ:</b> โมเดล 3 มิติ (Isometric) จำลองภาพไซต์จริงประกอบด้วย <b>อาคาร/หลังคาและแผงโซลาร์เซลล์</b> ตามผังการติดตั้ง
+                    ครอบด้วย <b>โดมท้องฟ้า</b> ที่แสดงพื้นที่สีเทาคือขอบเขตสิ่งกีดขวาง (ข้อมูลชุดเดียวกับกราฟวงกลม) และ <b>ดวงอาทิตย์ ☀</b> ณ ตำแหน่งจริงของเดือน/เวลาที่เลือก
+                    (ปัจจุบัน: เดือน${SDASH_MONTH_TH_FULL[o.month]} เวลา ${String(o.hour).padStart(2,'0')}:00 น.)
+                    <b>สีของแผงบนหลังคา</b> บอกระดับ Shading Loss ณ ขณะนั้น: เขียว = รับแสงเต็มที่, เหลือง–ส้ม = ถูกบังบางส่วน, แดง = ถูกบังรุนแรง, เทาเข้ม = ดวงอาทิตย์ยังไม่ขึ้น
+                    ลองเปลี่ยนเดือน/เวลาเพื่อดูว่าช่วงใดของปีที่เงาจากสิ่งกีดขวางพาดถึงแผงกลุ่มใด`;
+            } else if (view === 'heatmap') {
+                meaning = `<b>ความหมายของกราฟ:</b> แผนภูมิความร้อนแสดงเปอร์เซ็นต์การสูญเสียพลังงานจากเงาบัง (Shading Loss) จำแนกตาม <b>เดือน (แกนตั้ง)</b> และ <b>เวลาของวัน (แกนนอน 06:00–18:00)</b>
+                    สีเขียวหมายถึงแทบไม่มีเงาบัง ไล่ไปจนถึงสีแดงคือสูญเสียเกิน 30–40% ช่องสีเทาคือช่วงที่ดวงอาทิตย์ยังไม่ขึ้น/ตกแล้ว
+                    รูปแบบสีแดงที่ขอบเช้า–เย็นเป็นปกติของทุกไซต์ (ดวงอาทิตย์มุมต่ำถูกขอบฟ้า/สิ่งกีดขวางบัง) แต่หากสีส้ม–แดงลามเข้าช่วง 09:00–15:00 แสดงว่ามีสิ่งกีดขวางที่กระทบพลังงานอย่างมีนัยสำคัญ`;
+            } else {
+                meaning = `<b>ความหมายของกราฟ:</b> มุมมองเชิงขั้ว (Polar View) มองจากตำแหน่งติดตั้งขึ้นไปบนท้องฟ้า จุดศูนย์กลางคือจุดเหนือศีรษะ (Elevation 90°) ขอบวงนอกคือขอบฟ้า (0°)
+                    <b>พื้นที่สีเทา</b> คือขอบเขตสิ่งกีดขวาง (อาคาร ต้นไม้ ภูเขา) ที่บังท้องฟ้า ส่วน <b>เส้นสีน้ำเงิน (Jun 22)</b> และ <b>เส้นประสีแดง (Dec 22)</b> คือวิถีดวงอาทิตย์วันครีษมายันและเหมายัน — ขอบเขตบน/ล่างของวิถีทั้งปี
+                    หากวิถีดวงอาทิตย์ตัดผ่านพื้นที่สีเทา ณ ช่วงใด แสดงว่าเวลานั้นของวันในฤดูนั้นแผงจะถูกเงาบังโดยตรง`;
+            }
+            let analysis = '';
+            if (stats) {
+                let advice = [];
+                if (stats.annualLossPct < 2) advice.push('ระดับเงาบังรวมทั้งปีอยู่ในเกณฑ์ <b class="text-green-700">ดีมาก</b> (ต่ำกว่า 2%) ไม่จำเป็นต้องปรับผังการวางแผง');
+                else if (stats.annualLossPct < 5) advice.push('ระดับเงาบังรวมอยู่ในเกณฑ์ <b class="text-yellow-700">ยอมรับได้</b> แนะนำตรวจสอบว่า string ใดพาดผ่านโซนเงาช่วง ' + stats.worstHourWindow + ' และพิจารณาจัด string ให้แผงโซนเงาอยู่กลุ่มเดียวกัน');
+                else advice.push('ระดับเงาบังรวม <b class="text-red-700">สูงเกินเกณฑ์</b> (≥5%) แนะนำพิจารณา: ย้าย/ลดแผงในโซนเงา, ใช้ Power Optimizer หรือ Micro-inverter เฉพาะ string ที่โดนเงา, หรือเจรจาจัดการสิ่งกีดขวาง (เช่น ตัดแต่งต้นไม้)');
+                if (stats.hoursOver20PerYear > 300) advice.push(`มีชั่วโมงที่ loss เกิน 20% ถึง <b>${formatNum(stats.hoursOver20PerYear,0)} ชม./ปี</b> — ควรตรวจการจัด string อย่างละเอียดเพื่อไม่ให้เงาฉุดทั้ง string`);
+                analysis = `<b>ผลการวิเคราะห์ (${scopeLabel}):</b>
+                    <ul class="list-disc pl-4 mt-1 space-y-0.5">
+                        <li>การสูญเสียจากเงาบังเฉลี่ยทั้งปี (ถ่วงน้ำหนักความเข้มรังสี): <b>${formatNum(stats.annualLossPct,1)}%</b></li>
+                        <li>เดือนที่ได้รับผลกระทบมากที่สุด: <b>${stats.worstMonth}</b> (loss เฉลี่ย ${formatNum(stats.worstMonthLossPct,1)}%)</li>
+                        <li>ช่วงเวลาที่ถูกบังหนักที่สุด: <b>${stats.worstHourWindow}</b> | ชั่วโมงที่ loss เกิน 20%: <b>${formatNum(stats.hoursOver20PerYear,0)} ชม./ปี</b></li>
+                        <li>${advice.join('</li><li>')}</li>
+                    </ul>`;
+            }
+            let weightedNote = '';
+            if (weighted) {
+                weightedNote = `<div class="mt-2 pt-2 border-t border-blue-100"><b>ภาพรวมทุกกลุ่ม (ถ่วงน้ำหนัก kWp):</b>
+                    ไซต์นี้มี <b>${weighted.groupCount} กลุ่มการวางแผง</b> รวม <b>${formatNum(weighted.totalKwp,1)} kWp</b> —
+                    loss เฉลี่ยทั้งไซต์ <b>${formatNum(weighted.siteAnnualLossPct,1)}%</b> |
+                    กลุ่มที่โดนเงามากที่สุด: <b>#${weighted.worstGroup.id}</b> (${formatNum(weighted.worstGroup.lossPct,1)}%) |
+                    น้อยที่สุด: <b>#${weighted.bestGroup.id}</b> (${formatNum(weighted.bestGroup.lossPct,1)}%)</div>`;
+            }
+            return `
+                <div class="text-blue-800 mb-2 border-b border-blue-200 pb-1"><i class="fa-solid fa-microchip"></i> <b>Pee Analysis: ASC Solar Shading Analysis Dashboard</b></div>
+                <div class="text-[11px] text-gray-700 space-y-1.5 leading-relaxed">
+                    <p>${meaning}</p>
+                    <p>${analysis}</p>
+                    ${weightedNote}
+                </div>`;
+        }
+
+        // ---------- Renderer หลัก ----------
+        function renderShadingDashboard() {
+            const container = document.getElementById('shading-dash-container');
+            if (!container) return;
+            const canvas = document.getElementById('sdash-canvas');
+            const descBox = document.getElementById('desc-shading-dash');
+            const sel = document.getElementById('sdash-group-sel');
+            const sysInfo = document.getElementById('sdash-sysinfo');
+            const msgBox = document.getElementById('sdash-msg');
+
+            let ctx;
+            try { ctx = ShadingEngine.getSiteContext(); } catch (e) { ctx = null; }
+            if (!ctx || !ctx.groups || ctx.groups.length === 0) {
+                if (msgBox) { msgBox.style.display = 'block'; msgBox.innerHTML = '⚠️ ยังไม่มีข้อมูลระนาบการวางแผง กรุณากรอกมุมเอียง/มุมทิศ หรือ Import ไฟล์ DB2 แล้วกด Run Simulation'; }
+                if (canvas) canvas.style.display = 'none';
+                return;
+            }
+            if (msgBox) msgBox.style.display = 'none';
+            if (canvas) canvas.style.display = 'block';
+            const st = window.ShadingDashState;
+
+            // เติมตัวเลือกกลุ่ม [B]+[C] (คงค่าที่ผู้ใช้เลือกไว้)
+            if (sel) {
+                let prev = sel.value || st.group;
+                let opts = '';
+                if (ctx.groups.length > 1) {
+                    let totKwp = ctx.groups.reduce((s, g) => s + g.kwp, 0);
+                    opts += `<option value="all">🌐 ทั้งหมด ${ctx.groups.length} กลุ่ม (ถ่วงน้ำหนัก ${totKwp.toFixed(1)} kWp)</option>`;
+                }
+                ctx.groups.forEach(g => { opts += `<option value="${g.id}">${g.label}</option>`; });
+                sel.innerHTML = opts;
+                if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+                st.group = sel.value;
+            }
+
+            // ปุ่ม Main display type: ไฮไลต์ปุ่มที่เลือก
+            ['heatmap', 'polar', 'iso3d'].forEach(v => {
+                let btn = document.getElementById('sdash-btn-' + v);
+                if (btn) {
+                    btn.className = (st.view === v)
+                        ? 'w-full text-left text-xs font-bold p-2.5 rounded border-2 border-green-600 bg-green-50 text-green-800 mb-2 transition'
+                        : 'w-full text-left text-xs font-bold p-2.5 rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 mb-2 transition';
+                }
+            });
+
+            // 🌟 PHASE 4: แสดงตัวเลือกเดือน/เวลา เฉพาะโหมดโมเดล 3 มิติ
+            let c3d = document.getElementById('sdash-3d-controls');
+            if (c3d) c3d.style.display = (st.view === 'iso3d') ? 'block' : 'none';
+
+            // เลือกขอบเขตข้อมูล: กลุ่มเดียว หรือ ถ่วงน้ำหนักทั้งไซต์ [C]
+            let isAll = (st.group === 'all' && ctx.groups.length > 1);
+            let scopeGroup = isAll ? null : (ctx.groups.find(g => String(g.id) === String(st.group)) || ctx.groups[0]);
+            let weighted = (ctx.groups.length > 1) ? ShadingEngine.computeWeightedStats(ctx.groups, ctx.lat, ctx.lon, SunCalc, ctx.tz) : null;
+
+            let stats, scopeLabel, titleText;
+            if (isAll) {
+                stats = weighted ? {
+                    annualLossPct: weighted.siteAnnualLossPct,
+                    worstMonth: weighted.perGroup[0].worstMonth,
+                    worstMonthLossPct: Math.max(...weighted.perGroup.map(p => p.worstMonthLossPct)),
+                    worstHourWindow: weighted.perGroup.map(p => p.worstHourWindow).filter((v, i, a) => a.indexOf(v) === i).join(' / '),
+                    hoursOver20PerYear: Math.round(weighted.perGroup.reduce((s, p) => s + p.hoursOver20PerYear * (ctx.groups.find(g => g.id === p.id).kwp), 0) / weighted.totalKwp)
+                } : null;
+                scopeLabel = `ภาพรวมทั้งไซต์ ${ctx.groups.length} กลุ่ม ถ่วงน้ำหนัก kWp`;
+                titleText = `ภาพรวมทั้งไซต์: ${ctx.groups.length} กลุ่มการวางแผง (${weighted ? formatNum(weighted.totalKwp,1) : '-'} kWp)`;
+            } else {
+                stats = ShadingEngine.computeStats(scopeGroup, ctx.lat, ctx.lon, SunCalc, ctx.tz);
+                scopeLabel = scopeGroup.label;
+                titleText = scopeGroup.label;
+            }
+
+            // System Info bar ด้านบน (แบบภาพตัวอย่าง)
+            if (sysInfo) {
+                let albedo = (AppState.bifacialParams && AppState.bifacialParams.albedo) || 0.2;
+                let tiltAzi = isAll
+                    ? ctx.groups.map(g => `#${g.id}: Tilt ${g.tilt}°/Azi ${g.azi}°`).join(' | ')
+                    : `Orientation Tilt ${scopeGroup.tilt}° , Azimuth ${scopeGroup.azi}°`;
+                sysInfo.innerHTML = `<b>System Info:</b> ${tiltAzi} | Albedo: ${Number(albedo).toFixed(3)} | Timezone: UTC${ctx.tz >= 0 ? '+' : ''}${ctx.tz}`;
+            }
+
+            // วาดกราฟตามมุมมองที่เลือก
+            if (st.view === 'polar') {
+                if (isAll) {
+                    // Polar ของ "ทั้งไซต์" ใช้ขอบฟ้ารวมแบบอนุรักษ์นิยม (merge max ของทุกกลุ่ม)
+                    let mergedHorizon = ShadingEngine.mergeHorizonsMax(ctx.groups.map(g => g.horizon));
+                    let gAll = { tilt: 0, azi: 0, horizon: mergedHorizon };
+                    let pd = ShadingEngine.computePolar(gAll, ctx.lat, ctx.lon, SunCalc, ctx.tz);
+                    sdashDrawPolar(canvas, pd, titleText + ' (ขอบฟ้ารวมแบบอนุรักษ์นิยม)');
+                } else {
+                    let pd = ShadingEngine.computePolar(scopeGroup, ctx.lat, ctx.lon, SunCalc, ctx.tz);
+                    sdashDrawPolar(canvas, pd, titleText);
+                }
+            } else if (st.view === 'iso3d') {
+                // 🌟 PHASE 4: โมเดล 3 มิติ (ทั้งไซต์ หรือเฉพาะกลุ่มที่เลือก)
+                sdashDrawIso3D(canvas, ctx, isAll ? null : scopeGroup, sdashGet3DOpts());
+            } else {
+                let hm = isAll
+                    ? ShadingEngine.computeWeightedHeatmap(ctx.groups, ctx.lat, ctx.lon, SunCalc, ctx.tz)
+                    : ShadingEngine.computeHeatmap(scopeGroup, ctx.lat, ctx.lon, SunCalc, ctx.tz);
+                sdashDrawHeatmap(canvas, hm, titleText);
+            }
+
+            // คำอธิบาย + ผลการวิเคราะห์อัตโนมัติ
+            if (descBox) descBox.innerHTML = sdashBuildDescription(st.view, stats, scopeLabel, isAll ? null : weighted);
+
+            // เก็บบริบทล่าสุดไว้ให้ Phase 3 (PDF) ใช้
+            window.ShadingDashState.lastCtx = ctx;
+            window.ShadingDashState.lastStats = stats;
+            window.ShadingDashState.lastWeighted = weighted;
+        }
+        // วาดครั้งแรกทันทีที่หน้าโหลดเสร็จ (ใช้ค่า tilt/azi จากช่องกรอก แม้ยังไม่ Run Simulation)
+        window.addEventListener('load', function() { try { renderShadingDashboard(); } catch(e) { console.error('Shading Dashboard init failed', e); } });
+
+        /* ==================== 🌟 SHADING DASHBOARD UI (PHASE 2) — END ====================== */
+
+        /* ==================== 🌟 SHADING DASHBOARD → PDF (PHASE 3) — START ==================== */
+        // สร้างภาพกราฟ + คำอธิบายใต้กราฟสำหรับเอกสาร PDF ตามมุมมองที่ผู้ใช้เลือก (Main display type)
+        // นโยบายรายงาน [B+C]: ถ้ามีหลายกลุ่ม → หน้าสรุปภาพรวมถ่วงน้ำหนัก 1 ภาพ ตามด้วยกราฟรายกลุ่มครบทุกกลุ่ม
+
+        function sdashViewNameTH(view) {
+            if (view === 'polar') return 'กราฟที่ 2: กราฟวงกลม (Polar Obscuration View)';
+            if (view === 'iso3d') return 'กราฟที่ 3: โมเดล 3 มิติ (3D Site Modeling & Shading)';
+            return 'กราฟที่ 1: แผนภูมิความร้อน (Simplified Heatmap)';
+        }
+
+        // วาดกราฟลง canvas ชั่วคราว (offscreen) แล้วคืนค่าเป็น dataURL
+        function sdashRenderToImage(view, group, ctx, titleText) {
+            let cv = document.createElement('canvas');
+            if (view === 'polar') {
+                let pd = ShadingEngine.computePolar(group, ctx.lat, ctx.lon, SunCalc, ctx.tz);
+                sdashDrawPolar(cv, pd, titleText);
+            } else {
+                let hm = (group === 'ALL_WEIGHTED')
+                    ? ShadingEngine.computeWeightedHeatmap(ctx.groups, ctx.lat, ctx.lon, SunCalc, ctx.tz)
+                    : ShadingEngine.computeHeatmap(group, ctx.lat, ctx.lon, SunCalc, ctx.tz);
+                sdashDrawHeatmap(cv, hm, titleText);
+            }
+            return cv.toDataURL('image/png', 1.0);
+        }
+
+        // ข้อความ "ความหมายของกราฟ" ฉบับเอกสาร (ภาษาเป็นทางการ อ่านได้โดยไม่ต้องเห็นหน้าจอ)
+        function sdashPdfMeaningText(view) {
+            if (view === 'iso3d') {
+                let o = sdashGet3DOpts();
+                return `<p><b>ความหมายของกราฟ:</b> โมเดล 3 มิติ (Isometric Site Model) เป็นภาพจำลองไซต์ติดตั้งจริง ประกอบด้วยอาคาร หลังคา
+                    และแผงโซลาร์เซลล์ตามผังการติดตั้ง ครอบด้วยโดมท้องฟ้าซึ่งแสดงขอบเขตสิ่งกีดขวางเป็นพื้นที่สีเทา (ใช้ข้อมูลชุดเดียวกับกราฟวงกลมเชิงขั้ว)
+                    และแสดงตำแหน่งดวงอาทิตย์จริง ณ สถานการณ์จำลอง <b>เดือน${SDASH_MONTH_TH_FULL[o.month]} เวลา ${String(o.hour).padStart(2,'0')}:00 น.</b>
+                    พร้อมลำแสงชี้เข้าสู่กลางไซต์ <b>วิธีแปลผล:</b> สีของแผงบนหลังคาแต่ละกลุ่มแสดงระดับการสูญเสียจากเงาบัง ณ ขณะนั้น
+                    (เขียว = รับแสงเต็มที่ ไล่ไปจนถึงแดง = ถูกบังรุนแรง) และกล่องข้อมูลมุมขวาบนสรุปมุมเงย/มุมทิศดวงอาทิตย์พร้อมเปอร์เซ็นต์ loss ของทุกกลุ่ม
+                    ภาพนี้ช่วยให้เห็นเชิงพื้นที่ว่าเงาจากสิ่งกีดขวางทิศใดส่งผลต่อแผงกลุ่มใด ประกอบการตัดสินใจย้ายผังหรือเลือกใช้อุปกรณ์แก้ไข</p>`;
+            }
+            if (view === 'polar') {
+                return `<p><b>ความหมายของกราฟ:</b> กราฟวงกลม (Polar Obscuration View) เป็นการฉายภาพท้องฟ้าทั้งหมดจากตำแหน่งติดตั้งแผงขึ้นไปยังท้องฟ้า
+                    โดยจุดศูนย์กลางของวงกลมแทนตำแหน่งเหนือศีรษะ (มุมเงย Elevation 90°) และขอบวงนอกสุดแทนเส้นขอบฟ้า (Elevation 0°)
+                    ทิศเหนือ (N) อยู่ด้านบน ตะวันออก (E) ขวา ใต้ (S) ล่าง และตะวันตก (W) ซ้าย ตามหลักเข็มทิศ
+                    <b>พื้นที่สีเทา (Obstruction Area)</b> แสดงขอบเขตของสิ่งกีดขวางที่บดบังท้องฟ้า เช่น อาคาร ต้นไม้ หรือภูมิประเทศโดยรอบ
+                    <b>เส้นทึบสีน้ำเงิน</b> คือวิถีโคจรของดวงอาทิตย์ในวันครีษมายัน (22 มิ.ย. — วิถีสูงสุดของปี) และ
+                    <b>เส้นประสีแดง</b> คือวิถีในวันเหมายัน (22 ธ.ค. — วิถีต่ำสุดของปี) วิถีของทุกวันในรอบปีจะอยู่ระหว่างเส้นทั้งสองนี้
+                    <b>วิธีแปลผล:</b> ตำแหน่งใดที่วิถีดวงอาทิตย์พาดผ่านหรือเฉียดพื้นที่สีเทา หมายความว่า ณ วัน-เวลานั้น แผงจะถูกเงาบังโดยตรง
+                    ยิ่งพื้นที่สีเทารุกล้ำเข้าใกล้จุดศูนย์กลางมาก (สิ่งกีดขวางมุมเงยสูง) ผลกระทบต่อพลังงานยิ่งรุนแรงและกินเวลายาวนานขึ้น</p>`;
+            }
+            return `<p><b>ความหมายของกราฟ:</b> แผนภูมิความร้อน (Simplified Heatmap) สรุปเปอร์เซ็นต์การสูญเสียพลังงานจากเงาบัง (Shading Loss)
+                ของตำแหน่งติดตั้ง โดยแกนตั้งแทนเดือน (ม.ค.–ธ.ค.) และแกนนอนแทนเวลาของวัน (06:00–18:00 น.)
+                ระดับสีไล่จาก <b>เขียว (0% — ไม่มีเงาบัง)</b> → เหลือง (5–10%) → ส้ม (20%) → <b>แดง (40% ขึ้นไป — ถูกบังรุนแรง)</b>
+                ส่วนช่องสีเทาคือช่วงเวลาที่ดวงอาทิตย์ยังไม่ขึ้นหรือตกลับขอบฟ้าแล้วของเดือนนั้น
+                <b>วิธีแปลผล:</b> แถบสีส้ม–แดงบริเวณขอบเช้าตรู่และเย็นเป็นลักษณะปกติของทุกสถานที่ เนื่องจากดวงอาทิตย์มุมต่ำถูกขอบฟ้าบดบังตามธรรมชาติ
+                จุดที่ต้องให้ความสำคัญคือหากสีส้ม–แดงปรากฏในช่วงเวลาผลิตพลังงานหลัก (ประมาณ 09:00–15:00 น.)
+                ซึ่งบ่งชี้ว่ามีสิ่งกีดขวางที่ส่งผลต่อพลังงานอย่างมีนัยสำคัญ และควรพิจารณามาตรการแก้ไขตามข้อเสนอแนะในผลการวิเคราะห์</p>`;
+        }
+
+        // ข้อเสนอแนะเชิงวิศวกรรมตามระดับ loss (ใช้ร่วมกันระหว่างรายกลุ่มและภาพรวม)
+        function sdashAdviceText(st) {
+            if (st.annualLossPct < 2) return `อยู่ในเกณฑ์<b>ดีมาก</b> (ต่ำกว่า 2%) ไม่จำเป็นต้องปรับผังการวางแผง`;
+            if (st.annualLossPct < 5) return `อยู่ในเกณฑ์<b>ยอมรับได้</b> (2–5%) ควรตรวจสอบการจัดสตริง (String) ไม่ให้แผงในโซนเงาช่วง ${st.worstHourWindow} พ่วงอยู่กับแผงที่ไม่ถูกบัง`;
+            return `<b>สูงเกินเกณฑ์</b> (≥5%) ควรพิจารณามาตรการ: (1) ย้ายหรือลดจำนวนแผงในโซนเงา (2) ติดตั้ง Power Optimizer หรือ Micro-inverter เฉพาะสตริงที่ถูกบัง (3) จัดการสิ่งกีดขวางที่ควบคุมได้ เช่น การตัดแต่งต้นไม้`;
+        }
+
+        // สร้างเนื้อหา PDF ทั้งหมดของ section นี้ (เรียกจาก generatePDF)
+        function updateShadingDashPDF() {
+            let imgBox = document.getElementById('prt-sdash-images');
+            let descBox = document.getElementById('prt-desc-shading-dash');
+            let subTitle = document.getElementById('prt-sdash-subtitle');
+            if (!imgBox || !descBox) return;
+            imgBox.innerHTML = ''; descBox.innerHTML = ''; if (subTitle) subTitle.innerHTML = '';
+
+            let chk = document.getElementById('chk-sec-shading-dash');
+            if (chk && !chk.checked) return; // ผู้ใช้ไม่เลือก section นี้ → ไม่ต้องสร้าง (บล็อกถูกซ่อนโดย toggleSections อยู่แล้ว)
+
+            let ctx;
+            try { ctx = ShadingEngine.getSiteContext(); } catch (e) { ctx = null; }
+            if (!ctx || !ctx.groups || ctx.groups.length === 0) {
+                descBox.innerHTML = 'ไม่มีข้อมูลระนาบการวางแผงสำหรับการวิเคราะห์เงาบัง';
+                return;
+            }
+
+            let view = (window.ShadingDashState && window.ShadingDashState.view) || 'heatmap';
+            let multi = ctx.groups.length > 1;
+            let weighted = multi ? ShadingEngine.computeWeightedStats(ctx.groups, ctx.lat, ctx.lon, SunCalc, ctx.tz) : null;
+            let albedo = (AppState.bifacialParams && AppState.bifacialParams.albedo) || 0.2;
+
+            if (subTitle) {
+                subTitle.innerHTML = `รูปแบบการแสดงผลที่เลือก: <b>${sdashViewNameTH(view)}</b> |
+                    จำนวนกลุ่มการวางแผง: <b>${ctx.groups.length} กลุ่ม</b> (${ctx.groups.reduce((s,g)=>s+g.members.length,0)} หลังคา) |
+                    Albedo: ${Number(albedo).toFixed(3)} | พิกัด: ${formatNum(ctx.lat,4)}, ${formatNum(ctx.lon,4)} (UTC${ctx.tz>=0?'+':''}${ctx.tz})`;
+            }
+
+            const imgStyle = 'width: 92% !important; max-height: 430px !important; margin: 0 auto 12px auto !important; border: 1px solid #cbd5e1; border-radius: 4px; object-fit: contain; display: block; page-break-inside: avoid;';
+            const addImg = (dataUrl, caption) => {
+                imgBox.innerHTML += `<img src="${dataUrl}" class="chart-img" style="${imgStyle}">` +
+                    (caption ? `<div class="text-[10px] text-gray-600 mb-4" style="page-break-inside: avoid;">${caption}</div>` : '');
+            };
+
+            // ---- 1) ภาพกราฟ: หน้าสรุปรวม (ถ้ามีหลายกลุ่ม) + รายกลุ่มครบทุกกลุ่ม ----
+            if (view === 'iso3d') {
+                // 🌟 PHASE 4: โมเดล 3 มิติ = ภาพรวมไซต์ภาพเดียว ณ เดือน/เวลาที่เลือก
+                let o3 = sdashGet3DOpts();
+                let cv3 = document.createElement('canvas');
+                sdashDrawIso3D(cv3, ctx, null, o3);
+                addImg(cv3.toDataURL('image/png', 1.0),
+                    `โมเดล 3 มิติของไซต์ ณ สถานการณ์จำลอง เดือน${SDASH_MONTH_TH_FULL[o3.month]} เวลา ${String(o3.hour).padStart(2,'0')}:00 น. — สีของแผงแสดงระดับ Shading Loss ณ ขณะนั้น`);
+            } else if (multi) {
+                if (view === 'polar') {
+                    let mergedHorizon = ShadingEngine.mergeHorizonsMax(ctx.groups.map(g => g.horizon));
+                    let gAll = { tilt: 0, azi: 0, horizon: mergedHorizon };
+                    addImg(sdashRenderToImage('polar', gAll, ctx, `ภาพรวมทั้งไซต์ (ขอบฟ้ารวมแบบอนุรักษ์นิยม)`),
+                        `ภาพรวมทั้งไซต์: พื้นที่สีเทาคือขอบเขตสิ่งกีดขวางรวมของทุกกลุ่ม (ใช้ค่าที่บังมากที่สุดในแต่ละทิศ เพื่อไม่ประเมินผลกระทบต่ำกว่าความเป็นจริง)`);
+                } else {
+                    addImg(sdashRenderToImage('heatmap', 'ALL_WEIGHTED', ctx, `ภาพรวมทั้งไซต์: ${ctx.groups.length} กลุ่ม (ถ่วงน้ำหนัก ${formatNum(weighted.totalKwp,1)} kWp)`),
+                        `ภาพรวมทั้งไซต์: ค่า Shading Loss ในแต่ละช่องคือค่าเฉลี่ยถ่วงน้ำหนักตามขนาดติดตั้ง (kWp) ของทุกกลุ่มการวางแผง`);
+                }
+            }
+            if (view !== 'iso3d') {
+                ctx.groups.forEach(g => {
+                    addImg(sdashRenderToImage(view, g, ctx, g.label), null);
+                });
+            }
+
+            // ---- 2) คำอธิบายใต้กราฟ: ความหมาย + ผลการวิเคราะห์ + ข้อเสนอแนะ ----
+            let html = sdashPdfMeaningText(view);
+
+            let perGroupStats = weighted ? weighted.perGroup
+                : [{ ...ShadingEngine.computeStats(ctx.groups[0], ctx.lat, ctx.lon, SunCalc, ctx.tz), id: ctx.groups[0].id, label: ctx.groups[0].label, kwp: ctx.groups[0].kwp }];
+
+            html += `<p class="mt-2"><b>ผลการวิเคราะห์:</b></p><ul class="list-disc pl-5 space-y-1">`;
+            if (weighted) {
+                html += `<li><b>ภาพรวมทั้งไซต์ (ถ่วงน้ำหนัก kWp):</b> การสูญเสียจากเงาบังเฉลี่ยทั้งปี <b>${formatNum(weighted.siteAnnualLossPct,1)}%</b>
+                    จากกำลังติดตั้งรวม ${formatNum(weighted.totalKwp,1)} kWp ใน ${weighted.groupCount} กลุ่มการวางแผง |
+                    กลุ่มที่ได้รับผลกระทบมากที่สุดคือกลุ่ม #${weighted.worstGroup.id} (${formatNum(weighted.worstGroup.lossPct,1)}%)
+                    และน้อยที่สุดคือกลุ่ม #${weighted.bestGroup.id} (${formatNum(weighted.bestGroup.lossPct,1)}%)</li>`;
+            }
+            perGroupStats.forEach(p => {
+                html += `<li><b>${p.label}:</b> loss เฉลี่ยทั้งปี <b>${formatNum(p.annualLossPct,1)}%</b> |
+                    เดือนที่กระทบมากที่สุด: ${p.worstMonth} (${formatNum(p.worstMonthLossPct,1)}%) |
+                    ช่วงเวลาที่ถูกบังหนักที่สุด: ${p.worstHourWindow} |
+                    ชั่วโมงที่ loss เกิน 20%: ${formatNum(p.hoursOver20PerYear,0)} ชม./ปี —
+                    การประเมิน: ${sdashAdviceText(p)}</li>`;
+            });
+            html += `</ul>`;
+            html += `<p class="mt-2 text-[10px] text-gray-500"><b>หมายเหตุวิธีคำนวณ:</b>
+                ค่าเฉลี่ยรายปีถ่วงน้ำหนักด้วยความเข้มรังสีตามมุมเงยดวงอาทิตย์ (สแกนทุก 5 วัน ความละเอียด 30 นาที) |
+                ระบบจัดกลุ่มหลังคาที่มุมเอียง/มุมทิศต่างกันไม่เกิน ±${ShadingEngine.CONFIG.tolTilt}° เป็นกลุ่มเดียวกันโดยอัตโนมัติ
+                และใช้เส้นขอบฟ้าเฉพาะของแต่ละหลังคาหากมีข้อมูล (มิฉะนั้นใช้ค่ากลางของไซต์)</p>`;
+
+            descBox.innerHTML = html;
+        }
+        /* ==================== 🌟 SHADING DASHBOARD → PDF (PHASE 3) — END ====================== */
+
+        /* ==================== 🌟 3D ISOMETRIC SITE MODEL (PHASE 4) — START ==================== */
+        // กราฟที่ 3: โมเดล 3 มิติของไซต์ (Isometric) — พื้น/อาคาร/แผง + โดมท้องฟ้า + สิ่งกีดขวาง + ดวงอาทิตย์
+        // ใช้ข้อมูลชุดเดียวกับ Heatmap/Polar (ShadingEngine) เพื่อให้ผลวิเคราะห์ตรงกันทุกมุมมอง
+
+        const SDASH_MONTH_TH_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+        // อ่านค่าเดือน/เวลาจาก dropdown (default: ธันวาคม 10:00 — เดือนที่ดวงอาทิตย์ต่ำสุดของซีกโลกเหนือ)
+        function sdashGet3DOpts() {
+            let mSel = document.getElementById('sdash-3d-month');
+            let hSel = document.getElementById('sdash-3d-hour');
+            return {
+                month: mSel ? parseInt(mSel.value) : 11,
+                hour: hSel ? parseInt(hSel.value) : 10
+            };
+        }
+
+        // รวบรวมเรขาคณิตของไซต์: หลังคาจริงจาก DB2 หรือหลังคาสังเคราะห์เมื่อยังไม่มีข้อมูลผัง
+        function sdashCollectSiteGeometry(ctx) {
+            let pv = (AppState.equipData && AppState.equipData.pv) || {};
+            let pw = pv.Width_mm ? pv.Width_mm / 1000 : 1.134;
+            let ph = pv.Length_mm ? pv.Length_mm / 1000 : 2.382;
+            let polyToGroup = {};
+            ctx.groups.forEach(g => g.members.forEach(m => { polyToGroup[m.index] = g; }));
+
+            let roofs = [];
+            let polys = AppState.sysPolygons || [];
+            let hasRealBoundary = polys.some(p => (p.localBoundary || p.points || p.vertices || []).length >= 3);
+
+            if (hasRealBoundary) {
+                let offsetX = 0;
+                polys.forEach((roof, idx) => {
+                    let ptsRaw = roof.localBoundary || roof.points || roof.vertices || [];
+                    if (ptsRaw.length < 3) return;
+                    let pts = ptsRaw.map(p => ({ x: (p.x !== undefined ? p.x : p.X || 0), y: (p.y !== undefined ? p.y : p.Y || 0) }));
+                    // เลื่อนแต่ละหลังคาให้เรียงต่อกัน ไม่ทับกัน (พิกัด local ของแต่ละหลังเริ่มที่ศูนย์เหมือนกัน)
+                    let minX = Math.min(...pts.map(p => p.x)), maxX = Math.max(...pts.map(p => p.x));
+                    let minY = Math.min(...pts.map(p => p.y));
+                    pts = pts.map(p => ({ x: p.x - minX + offsetX, y: p.y - minY }));
+                    let modsRaw = roof.customLayout || roof.modules || roof.panels || [];
+                    let mods = modsRaw.map(m => {
+                        let isLS = m.isLandscape === true || m.isLandscape === 'true' || m.isLandscape === 'True';
+                        return {
+                            x: (m.x !== undefined ? m.x : m.cx || 0) - minX + offsetX,
+                            y: (m.y !== undefined ? m.y : m.cy || 0) - minY,
+                            w: isLS ? ph : pw, h: isLS ? pw : ph
+                        };
+                    });
+                    let g = polyToGroup[idx] || ctx.groups[0];
+                    roofs.push({ groupId: g.id, tilt: g.tilt, azi: g.azi, pts, mods, label: `หลังคา ${idx + 1} (กลุ่ม #${g.id})` });
+                    offsetX += (maxX - minX) + 4; // เว้นช่องไฟ 4 ม.
+                });
+            } else {
+                // หลังคาสังเคราะห์: 1 หลังต่อ 1 กลุ่ม (กว้าง 12 × ลึก 8 ม. แผงตาราง 5×3)
+                let offsetX = 0;
+                ctx.groups.forEach(g => {
+                    let W = 12, D = 8;
+                    let pts = [{ x: offsetX, y: 0 }, { x: offsetX + W, y: 0 }, { x: offsetX + W, y: D }, { x: offsetX, y: D }];
+                    let mods = [];
+                    for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) {
+                        mods.push({ x: offsetX + 0.8 + c * 2.2, y: 0.8 + r * 2.5, w: pw * 1.7, h: ph });
+                    }
+                    roofs.push({ groupId: g.id, tilt: g.tilt, azi: g.azi, pts, mods, label: `กลุ่ม #${g.id} (ผังจำลอง)` });
+                    offsetX += W + 4;
+                });
+            }
+
+            // จุดศูนย์กลางไซต์ (สำหรับจัดกึ่งกลางและวางโดม)
+            let allX = [], allY = [];
+            roofs.forEach(r => r.pts.forEach(p => { allX.push(p.x); allY.push(p.y); }));
+            let cx = (Math.min(...allX) + Math.max(...allX)) / 2;
+            let cy = (Math.min(...allY) + Math.max(...allY)) / 2;
+            let halfSpan = Math.max(Math.max(...allX) - cx, Math.max(...allY) - cy, 8);
+            roofs.forEach(r => {
+                r.pts = r.pts.map(p => ({ x: p.x - cx, y: p.y - cy }));
+                r.mods = r.mods.map(m => ({ ...m, x: m.x - cx, y: m.y - cy }));
+            });
+            return { roofs, halfSpan };
+        }
+
+        // ตัววาดหลัก: canvas 2D + Isometric projection (world: +x=ตะวันออก, +y=เหนือ, +z=สูง)
+        function sdashDrawIso3D(canvas, ctx, onlyGroup, opts) {
+            const W = 1100, H = 660;
+            canvas.width = W; canvas.height = H;
+            const g2 = canvas.getContext('2d');
+            g2.fillStyle = '#ffffff'; g2.fillRect(0, 0, W, H);
+
+            let site = sdashCollectSiteGeometry(ctx);
+            let roofs = onlyGroup ? site.roofs.filter(r => r.groupId === onlyGroup.id) : site.roofs;
+            if (!roofs.length) roofs = site.roofs;
+
+            const Rd = site.halfSpan * 1.7 + 8;         // รัศมีโดมท้องฟ้า
+            const scale = Math.min(360 / (Rd * 1.9), 9); // สเกล ม. → พิกเซล
+            const ox = W / 2, oy = H / 2 + 120;
+            const ROOF_H = 3.2;                          // ความสูงอาคาร (ม.)
+            const iso = (x, y, z) => ({
+                x: ox + (x - y) * 0.866 * scale,
+                y: oy + (x + y) * 0.5 * scale - (z || 0) * scale
+            });
+            const D2R = Math.PI / 180;
+            // จุดบนผิวโดม ณ (azimuth เข็มทิศองศา, elevation องศา)
+            const domePt = (compAzi, elev) => {
+                let r = Rd * Math.cos(elev * D2R), z = Rd * Math.sin(elev * D2R);
+                return iso(r * Math.sin(compAzi * D2R), r * Math.cos(compAzi * D2R), z);
+            };
+            const poly = (pts, fill, stroke, lw) => {
+                g2.beginPath();
+                pts.forEach((p, i) => i === 0 ? g2.moveTo(p.x, p.y) : g2.lineTo(p.x, p.y));
+                g2.closePath();
+                if (fill) { g2.fillStyle = fill; g2.fill(); }
+                if (stroke) { g2.strokeStyle = stroke; g2.lineWidth = lw || 1; g2.stroke(); }
+            };
+
+            // ---- หัวเรื่อง ----
+            let scopeName = onlyGroup ? onlyGroup.label : `ทั้งไซต์ (${ctx.groups.length} กลุ่ม)`;
+            g2.fillStyle = '#111'; g2.font = 'bold 16px Arial'; g2.textAlign = 'left'; g2.textBaseline = 'alphabetic';
+            g2.fillText('3D Site Modeling & Shading Visualization — ' + scopeName, 20, 28);
+            g2.font = '12px Arial'; g2.fillStyle = '#555';
+            g2.fillText(`สถานการณ์จำลอง: เดือน${SDASH_MONTH_TH_FULL[opts.month]} เวลา ${String(opts.hour).padStart(2, '0')}:00 น.`, 20, 46);
+
+            // ---- 1. พื้นไซต์ (สี่เหลี่ยมข้าวหลามตัด) + เส้นกริด ----
+            let G = Rd * 1.05;
+            poly([iso(-G, -G, 0), iso(G, -G, 0), iso(G, G, 0), iso(-G, G, 0)], '#f0fdf4', '#d1d5db', 1);
+            g2.strokeStyle = '#e5e7eb'; g2.lineWidth = 0.5;
+            for (let v = -G; v <= G; v += G / 5) {
+                g2.beginPath(); let a = iso(v, -G, 0), b = iso(v, G, 0); g2.moveTo(a.x, a.y); g2.lineTo(b.x, b.y); g2.stroke();
+                g2.beginPath(); let c = iso(-G, v, 0), d = iso(G, v, 0); g2.moveTo(c.x, c.y); g2.lineTo(d.x, d.y); g2.stroke();
+            }
+
+            // ---- 2. กำแพงสิ่งกีดขวางบนโดม (ข้อมูลเดียวกับ Polar View) ----
+            let horizon = onlyGroup ? onlyGroup.horizon : ShadingEngine.mergeHorizonsMax(ctx.groups.map(g => g.horizon));
+            g2.fillStyle = 'rgba(75, 85, 99, 0.75)';
+            for (let a = -180; a < 180; a += 4) {
+                let h1 = ShadingEngine.horizonElevationAt(horizon, a);
+                let h2 = ShadingEngine.horizonElevationAt(horizon, a + 4);
+                if (h1 < 0.5 && h2 < 0.5) continue;
+                let c1 = a + 180, c2 = a + 184; // sunAzi(0=ใต้) → เข็มทิศ(0=เหนือ)
+                poly([domePt(c1, 0), domePt(c2, 0), domePt(c2, Math.max(h2, 0.5)), domePt(c1, Math.max(h1, 0.5))], 'rgba(75,85,99,0.75)', null);
+            }
+
+            // ---- 3. โดมท้องฟ้า wireframe ----
+            g2.strokeStyle = 'rgba(148, 163, 184, 0.55)'; g2.lineWidth = 0.8;
+            for (let e = 15; e <= 75; e += 15) { // วงขนาน (elevation)
+                g2.beginPath();
+                for (let a = 0; a <= 360; a += 6) { let p = domePt(a, e); a === 0 ? g2.moveTo(p.x, p.y) : g2.lineTo(p.x, p.y); }
+                g2.stroke();
+            }
+            for (let a = 0; a < 360; a += 30) { // เส้นเมริเดียน
+                g2.beginPath();
+                for (let e = 0; e <= 90; e += 6) { let p = domePt(a, e); e === 0 ? g2.moveTo(p.x, p.y) : g2.lineTo(p.x, p.y); }
+                g2.stroke();
+            }
+            // ป้ายทิศที่ฐานโดม
+            g2.font = 'bold 13px Arial'; g2.fillStyle = '#334155'; g2.textAlign = 'center'; g2.textBaseline = 'middle';
+            [['N', 0], ['E', 90], ['S', 180], ['W', 270]].forEach(([lbl, a]) => {
+                let p = domePt(a, -4); g2.fillText(lbl, p.x, p.y);
+            });
+
+            // ---- 4. ตำแหน่งดวงอาทิตย์ + สถานะเงาของแต่ละกลุ่ม ณ ขณะนั้น ----
+            let d = ShadingEngine.siteDate(2025, opts.month, 15, opts.hour, ctx.tz);
+            let pos = SunCalc.getPosition(d, ctx.lat, ctx.lon);
+            let sunAzi = pos.azimuth * 180 / Math.PI, sunAlt = pos.altitude * 180 / Math.PI;
+            let sunUp = sunAlt > 0;
+            let groupLossNow = {};
+            ctx.groups.forEach(g => {
+                groupLossNow[g.id] = sunUp ? ShadingEngine.shadingLossAt(sunAzi, sunAlt, g) : null;
+            });
+
+            let sunP = null;
+            if (sunUp) {
+                sunP = domePt(sunAzi + 180, sunAlt);
+                // ลำแสงจากดวงอาทิตย์สู่กลางไซต์
+                let c0 = iso(0, 0, 0);
+                g2.beginPath(); g2.setLineDash([8, 5]); g2.strokeStyle = '#f59e0b'; g2.lineWidth = 1.5;
+                g2.moveTo(sunP.x, sunP.y); g2.lineTo(c0.x, c0.y); g2.stroke(); g2.setLineDash([]);
+            }
+
+            // ---- 5. อาคาร + หลังคา + แผง (เรียงวาดจากไกล→ใกล้ด้วยค่า x+y) ----
+            roofs.slice().sort((a, b) => {
+                let ka = Math.min(...a.pts.map(p => p.x + p.y)), kb = Math.min(...b.pts.map(p => p.x + p.y));
+                return ka - kb;
+            }).forEach(r => {
+                // ผนังอาคาร (เฉพาะด้านที่หันเข้ากล้อง: ด้านใต้ y=max และด้านตะวันออก x=max โดยประมาณจากขอบ polygon)
+                for (let i = 0; i < r.pts.length; i++) {
+                    let p1 = r.pts[i], p2 = r.pts[(i + 1) % r.pts.length];
+                    poly([iso(p1.x, p1.y, 0), iso(p2.x, p2.y, 0), iso(p2.x, p2.y, ROOF_H), iso(p1.x, p1.y, ROOF_H)], 'rgba(203, 213, 225, 0.7)', '#94a3b8', 0.7);
+                }
+                // แผ่นหลังคา
+                poly(r.pts.map(p => iso(p.x, p.y, ROOF_H)), '#e2e8f0', '#64748b', 1.2);
+                // แผงโซลาร์: สีตาม loss ของกลุ่ม ณ เวลาที่เลือก
+                let lossNow = groupLossNow[r.groupId];
+                let panelColor = (lossNow === null || lossNow === undefined) ? '#475569' : sdashBucketColor(lossNow * 100);
+                r.mods.forEach(m => {
+                    poly([
+                        iso(m.x, m.y, ROOF_H + 0.15), iso(m.x + m.w, m.y, ROOF_H + 0.15),
+                        iso(m.x + m.w, m.y + m.h, ROOF_H + 0.15), iso(m.x, m.y + m.h, ROOF_H + 0.15)
+                    ], panelColor, '#1e293b', 0.5);
+                });
+                // ป้ายชื่อหลังคา
+                let lp = iso(r.pts[0].x, r.pts[0].y, ROOF_H + 1.2);
+                g2.font = '10px Arial'; g2.fillStyle = '#334155'; g2.textAlign = 'left';
+                g2.fillText(`${r.label} T${r.tilt}°/A${r.azi}°`, lp.x, lp.y);
+            });
+
+            // ---- 6. วาดดวงอาทิตย์ทับด้านหน้า ----
+            if (sunUp && sunP) {
+                g2.beginPath(); g2.arc(sunP.x, sunP.y, 11, 0, Math.PI * 2);
+                g2.fillStyle = '#fbbf24'; g2.fill(); g2.strokeStyle = '#d97706'; g2.lineWidth = 2; g2.stroke();
+                g2.font = 'bold 10px Arial'; g2.fillStyle = '#92400e'; g2.textAlign = 'center';
+                g2.fillText('☀', sunP.x, sunP.y + 3);
+            }
+
+            // ---- 7. กล่องข้อมูลสถานการณ์ (มุมขวาบน) ----
+            let ix = W - 300, iy = 62;
+            g2.fillStyle = 'rgba(255,255,255,0.92)'; g2.fillRect(ix, iy, 285, 40 + ctx.groups.length * 18);
+            g2.strokeStyle = '#cbd5e1'; g2.strokeRect(ix, iy, 285, 40 + ctx.groups.length * 18);
+            g2.font = 'bold 11px Arial'; g2.fillStyle = '#111'; g2.textAlign = 'left'; g2.textBaseline = 'alphabetic';
+            if (sunUp) {
+                let comp = ((sunAzi + 180) % 360 + 360) % 360;
+                g2.fillText(`☀ มุมเงย ${sunAlt.toFixed(1)}° | มุมทิศ ${comp.toFixed(0)}° (เข็มทิศ)`, ix + 10, iy + 18);
+            } else {
+                g2.fillText('🌙 ดวงอาทิตย์ยังไม่ขึ้น/ตกแล้ว ณ เวลานี้', ix + 10, iy + 18);
+            }
+            g2.font = '10px Arial';
+            g2.fillText('Shading Loss ณ ขณะนี้ (สีแผงบนหลังคา):', ix + 10, iy + 34);
+            ctx.groups.forEach((g, i) => {
+                let ln = groupLossNow[g.id];
+                let txt = (ln === null || ln === undefined) ? '—' : (ln * 100).toFixed(0) + '%';
+                let col = (ln === null || ln === undefined) ? '#94a3b8' : sdashBucketColor(ln * 100);
+                g2.fillStyle = col; g2.fillRect(ix + 12, iy + 42 + i * 18, 12, 10);
+                g2.strokeStyle = '#64748b'; g2.strokeRect(ix + 12, iy + 42 + i * 18, 12, 10);
+                g2.fillStyle = '#111';
+                g2.fillText(`กลุ่ม #${g.id} (T${g.tilt}°/A${g.azi}°): loss ${txt}`, ix + 30, iy + 51 + i * 18);
+            });
+            // 🌟 ลายน้ำเอกลักษณ์ ASC
+            g2.font = 'bold 11px Arial'; g2.fillStyle = '#94a3b8'; g2.textAlign = 'right'; g2.textBaseline = 'alphabetic';
+            g2.fillText('ASC : Auto Solar Copilot', W - 14, H - 10);
+        }
+        /* ==================== 🌟 3D ISOMETRIC SITE MODEL (PHASE 4) — END ====================== */
+
+        /* ==================== 🌟 ASC ENERGY VIEWS (PHASE 5) — START ==================== */
+        // 4 องค์ประกอบใหม่สไตล์ ASC: (1) KPI Card สรุปรายปี (2) Energy Flow Diagram
+        // (3) Power Curve 12 เดือน (4) ตาราง Electrical Connection — ใช้ข้อมูลที่คำนวณแล้วทั้งหมด
+
+        const ASC_THEME = {
+            green: '#10b981', greenLight: '#6ee7b7', greenDark: '#047857',
+            amber: '#f59e0b', amberLight: '#fcd34d',
+            slate: '#64748b', slateLight: '#cbd5e1',
+            blue: '#0ea5e9', ink: '#1e293b', grid: '#f1f5f9'
+        };
+
+        // สมดุลพลังงานรายปี (จากโปรไฟล์วันเฉลี่ย daily8760 × 365 — ไม่รวมแบตเตอรี่ ระบุในหมายเหตุ)
+        function ascComputeEnergyBalance() {
+            let dd = AppState.daily8760;
+            if (!dd || dd.length === 0) return null;
+            let selfUse = 0, feedIn = 0, gridImport = 0, pvSum = 0, loadSum = 0;
+            dd.forEach(d => {
+                let pv = d.pv || 0, load = d.load || 0;
+                pvSum += pv; loadSum += load;
+                selfUse += Math.min(pv, load);
+                feedIn += Math.max(pv - load, 0);
+                gridImport += Math.max(load - pv, 0);
+            });
+            const Y = 365;
+            return {
+                pvTotal: pvSum * Y, consumption: loadSum * Y,
+                selfUse: selfUse * Y, feedIn: feedIn * Y, gridImport: gridImport * Y,
+                pctFromSolar: loadSum > 0 ? (selfUse / loadSum) * 100 : 0,
+                pctSelfConsumption: pvSum > 0 ? (selfUse / pvSum) * 100 : 0
+            };
+        }
+
+        // ---------- (1) KPI Card สรุปรายปี ----------
+        function ascRenderKPI() {
+            let box = document.getElementById('asc-kpi-wrapper');
+            if (!box) return;
+            let eb = ascComputeEnergyBalance();
+            let r = AppState.results || {};
+            if (!eb || !r.pnom) { box.innerHTML = '<div class="text-sm text-gray-400 p-4">รอผลการประมวลผล (Run Simulation)</div>'; return; }
+            let specificYield = r.pnom > 0 ? (r.totalEGrid || eb.pvTotal) / r.pnom : 0;
+            const card = (label, val, unit, sub, color) => `
+                <div class="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                    <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">${label}</div>
+                    <div class="text-xl font-bold mt-1" style="color:${color}">${val}<span class="text-xs font-normal text-gray-500 ml-1">${unit}</span></div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">${sub}</div>
+                </div>`;
+            let pct = Math.min(100, eb.pctFromSolar);
+            box.innerHTML = `
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
+                    ${card('Total Production', formatNum((r.totalEGrid || eb.pvTotal) / 1000, 2), 'MWh/ปี', 'พลังงานผลิตรวมปีแรก', ASC_THEME.greenDark)}
+                    ${card('Consumption', formatNum(eb.consumption / 1000, 2), 'MWh/ปี', 'ความต้องการใช้ไฟรวม', ASC_THEME.ink)}
+                    ${card('Self-Consumption', formatNum(eb.pctSelfConsumption, 1), '%', `ใช้เอง ${formatNum(eb.selfUse/1000,1)} MWh / ขายกริด ${formatNum(eb.feedIn/1000,1)} MWh`, ASC_THEME.green)}
+                    ${card('Performance Ratio', formatNum((r.effPR || 0) * 100, 1), '%', 'ดัชนีสมรรถนะระบบ (ปีแรก)', ASC_THEME.blue)}
+                    ${card('Specific Yield', formatNum(specificYield, 0), 'kWh/kWp', 'ผลผลิตจำเพาะต่อกำลังติดตั้ง', ASC_THEME.amber)}
+                </div>
+                <div class="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <div class="text-xs font-bold text-gray-600 whitespace-nowrap">Energy from Solar</div>
+                    <div class="flex-1 h-5 bg-gray-200 rounded-full overflow-hidden">
+                        <div style="width:${pct.toFixed(1)}%; background:linear-gradient(90deg, ${ASC_THEME.green}, ${ASC_THEME.greenLight});" class="h-full flex items-center justify-center text-[10px] font-bold text-white">${formatNum(pct,1)}%</div>
+                    </div>
+                    <div class="text-[10px] text-gray-500 whitespace-nowrap">สัดส่วนโหลดที่จ่ายด้วยโซลาร์โดยตรง</div>
+                </div>`;
+        }
+
+        // ---------- (2) Energy Flow Diagram (โดนัท 3 จุด PV / Grid / Consumption) ----------
+        function ascDrawEnergyFlow(canvas) {
+            let eb = ascComputeEnergyBalance();
+            if (!eb) return false;
+            const W = 1100, H = 480;
+            canvas.width = W; canvas.height = H;
+            const c = canvas.getContext('2d');
+            c.fillStyle = '#ffffff'; c.fillRect(0, 0, W, H);
+            const R = 62, LW = 16;
+            const nodes = {
+                pv:   { x: W/2,        y: 110, icon: '☀', title: 'PV Production',  total: eb.pvTotal },
+                grid: { x: W/2 - 300,  y: 330, icon: '⚡', title: 'Grid',           total: eb.gridImport + eb.feedIn },
+                load: { x: W/2 + 300,  y: 330, icon: '🏠', title: 'Consumption',    total: eb.consumption }
+            };
+            // เส้นเชื่อมโค้ง
+            const link = (a, b, color, width) => {
+                c.beginPath(); c.strokeStyle = color; c.lineWidth = width; c.lineCap = 'round';
+                c.moveTo(a.x, a.y + R + 10);
+                c.bezierCurveTo(a.x, (a.y + b.y) / 2 + 40, b.x, (a.y + b.y) / 2 - 40, b.x, b.y - R - 10);
+                c.stroke();
+            };
+            const linkH = (a, b, color, width) => {
+                c.beginPath(); c.strokeStyle = color; c.lineWidth = width; c.lineCap = 'round';
+                c.moveTo(a.x + R + 10, a.y); c.lineTo(b.x - R - 10, b.y); c.stroke();
+            };
+            let maxE = Math.max(eb.selfUse, eb.feedIn, eb.gridImport, 1);
+            const lw = v => 2 + 8 * (v / maxE);
+            if (eb.selfUse > 0)   link(nodes.pv, nodes.load, ASC_THEME.green, lw(eb.selfUse));
+            if (eb.feedIn > 0)    link(nodes.pv, nodes.grid, ASC_THEME.greenLight, lw(eb.feedIn));
+            if (eb.gridImport > 0) linkH(nodes.grid, nodes.load, ASC_THEME.slateLight, lw(eb.gridImport));
+
+            // วาดโดนัทแต่ละจุด (segments: [{v, color}])
+            const donut = (n, segments, ringBase) => {
+                c.beginPath(); c.arc(n.x, n.y, R, 0, Math.PI * 2);
+                c.strokeStyle = ringBase; c.lineWidth = LW; c.stroke();
+                let total = segments.reduce((s, x) => s + x.v, 0);
+                let a0 = -Math.PI / 2;
+                if (total > 0) segments.forEach(sg => {
+                    let a1 = a0 + (sg.v / total) * Math.PI * 2;
+                    c.beginPath(); c.arc(n.x, n.y, R, a0, a1);
+                    c.strokeStyle = sg.color; c.lineWidth = LW; c.stroke();
+                    a0 = a1;
+                });
+                c.fillStyle = ASC_THEME.ink; c.textAlign = 'center';
+                c.font = '26px Arial'; c.fillText(n.icon, n.x, n.y + 9);
+                c.font = 'bold 13px Arial'; c.fillText(n.title, n.x, n.y - R - 26);
+                c.font = 'bold 12px Arial'; c.fillStyle = ASC_THEME.slate;
+                c.fillText(formatNum(n.total, 0) + ' kWh/ปี', n.x, n.y - R - 10);
+            };
+            donut(nodes.pv,   [{ v: eb.selfUse, color: ASC_THEME.greenDark }, { v: eb.feedIn, color: ASC_THEME.greenLight }], '#e5e7eb');
+            donut(nodes.grid, [{ v: eb.gridImport, color: ASC_THEME.slate }, { v: eb.feedIn, color: ASC_THEME.greenLight }], '#e5e7eb');
+            donut(nodes.load, [{ v: eb.selfUse, color: ASC_THEME.green }, { v: eb.gridImport, color: ASC_THEME.slateLight }], '#e5e7eb');
+
+            // ป้ายรายละเอียดข้างจุด
+            c.textAlign = 'left'; c.font = '11px Arial';
+            const legendAt = (x, y, rows) => rows.forEach((rw, i) => {
+                c.fillStyle = rw.color; c.beginPath(); c.arc(x, y + i * 18, 4.5, 0, Math.PI * 2); c.fill();
+                c.fillStyle = ASC_THEME.ink;
+                c.fillText(`${rw.name}: ${formatNum(rw.pct, 1)}%  (${formatNum(rw.v, 0)} kWh)`, x + 12, y + i * 18 + 4);
+            });
+            legendAt(nodes.pv.x + R + 24, nodes.pv.y - 12, [
+                { name: 'Used by Loads (ใช้เอง)', v: eb.selfUse, pct: eb.pctSelfConsumption, color: ASC_THEME.greenDark },
+                { name: 'Fed to Grid (ขายเข้ากริด)', v: eb.feedIn, pct: 100 - eb.pctSelfConsumption, color: ASC_THEME.greenLight }
+            ]);
+            legendAt(nodes.load.x + R + 24, nodes.load.y - 12, [
+                { name: 'From PV', v: eb.selfUse, pct: eb.pctFromSolar, color: ASC_THEME.green },
+                { name: 'From Grid', v: eb.gridImport, pct: 100 - eb.pctFromSolar, color: ASC_THEME.slateLight }
+            ]);
+            c.font = 'bold 11px Arial'; c.fillStyle = '#94a3b8'; c.textAlign = 'right';
+            c.fillText('ASC : Auto Solar Copilot', W - 14, H - 10);
+            return true;
+        }
+
+        // ---------- (3) Power Curve 12 เดือน (small multiples 3×4 บน canvas เดียว) ----------
+        function ascDrawPowerCurve12(canvas) {
+            let dd = AppState.daily8760, mb = AppState.monthlyBalances, r = AppState.results || {};
+            if (!dd || dd.length === 0 || !mb || mb.length !== 12) return false;
+            const W = 1100, H = 900;
+            canvas.width = W; canvas.height = H;
+            const c = canvas.getContext('2d');
+            c.fillStyle = '#ffffff'; c.fillRect(0, 0, W, H);
+            const MTH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+            const cols = 3, rows = 4, padX = 55, padTop = 46, cellW = (W - padX - 20) / cols, cellH = (H - padTop - 60) / rows;
+            let avgMonthE = (r.totalEGrid || mb.reduce((s, m) => s + m.eGrid, 0)) / 12;
+            let maxVal = 0;
+            let series = mb.map(m => {
+                let k = avgMonthE > 0 ? (m.eGrid / avgMonthE) : 1;
+                let pv = dd.map(d => (d.pv || 0) * k);
+                let load = dd.map(d => d.load || 0);
+                maxVal = Math.max(maxVal, ...pv, ...load);
+                return { pv, load };
+            });
+            if (maxVal <= 0) maxVal = 1;
+            c.font = 'bold 15px Arial'; c.fillStyle = ASC_THEME.ink; c.textAlign = 'left';
+            c.fillText('ASC Power Curve — โปรไฟล์กำลังไฟฟ้าเฉลี่ยรายวัน แยก 12 เดือน (kW)', padX, 26);
+            for (let m = 0; m < 12; m++) {
+                let gx = padX + (m % cols) * cellW, gy = padTop + Math.floor(m / cols) * cellH;
+                let pw = cellW - 34, ph = cellH - 46;
+                c.font = 'bold 12px Arial'; c.fillStyle = ASC_THEME.ink; c.textAlign = 'center';
+                c.fillText(MTH[m], gx + pw / 2, gy + 12);
+                // กรอบ + เส้นกริดแนวนอน
+                c.strokeStyle = ASC_THEME.grid; c.lineWidth = 1;
+                for (let f = 0; f <= 1; f += 0.5) {
+                    let yy = gy + 22 + ph * (1 - f);
+                    c.beginPath(); c.moveTo(gx, yy); c.lineTo(gx + pw, yy); c.stroke();
+                }
+                const X = h => gx + (h / 23) * pw;
+                const Y = v => gy + 22 + ph * (1 - Math.min(v, maxVal) / maxVal);
+                // พื้นที่ PV (เขียว)
+                c.beginPath(); c.moveTo(X(0), Y(0));
+                series[m].pv.forEach((v, h) => c.lineTo(X(h), Y(v)));
+                c.lineTo(X(23), Y(0)); c.closePath();
+                c.fillStyle = 'rgba(16, 185, 129, 0.25)'; c.fill();
+                c.beginPath(); series[m].pv.forEach((v, h) => h === 0 ? c.moveTo(X(h), Y(v)) : c.lineTo(X(h), Y(v)));
+                c.strokeStyle = ASC_THEME.green; c.lineWidth = 1.6; c.stroke();
+                // เส้น Load (ส้ม)
+                c.beginPath(); series[m].load.forEach((v, h) => h === 0 ? c.moveTo(X(h), Y(v)) : c.lineTo(X(h), Y(v)));
+                c.strokeStyle = ASC_THEME.amber; c.lineWidth = 1.6; c.stroke();
+                // แกน
+                c.font = '9px Arial'; c.fillStyle = '#94a3b8'; c.textAlign = 'center';
+                [0, 6, 12, 18, 23].forEach(h => c.fillText(String(h).padStart(2, '0'), X(h), gy + 22 + ph + 12));
+                c.textAlign = 'right';
+                c.fillText(formatNum(maxVal, 0), gx - 4, gy + 26);
+                c.fillText('0', gx - 4, gy + 22 + ph + 3);
+            }
+            // Legend รวม
+            let ly = H - 24;
+            c.textAlign = 'left'; c.font = '11px Arial';
+            c.fillStyle = 'rgba(16,185,129,0.25)'; c.fillRect(padX, ly - 9, 22, 11);
+            c.strokeStyle = ASC_THEME.green; c.strokeRect(padX, ly - 9, 22, 11);
+            c.fillStyle = ASC_THEME.ink; c.fillText('PV Power (ปรับสเกลตามพลังงานจริงรายเดือน)', padX + 28, ly);
+            c.strokeStyle = ASC_THEME.amber; c.lineWidth = 2; c.beginPath(); c.moveTo(padX + 330, ly - 4); c.lineTo(padX + 352, ly - 4); c.stroke();
+            c.fillText('Load Power (โปรไฟล์การใช้ไฟ)', padX + 358, ly);
+            c.font = 'bold 11px Arial'; c.fillStyle = '#94a3b8'; c.textAlign = 'right';
+            c.fillText('ASC : Auto Solar Copilot', W - 14, H - 10);
+            return true;
+        }
+
+        // ---------- (4) ตาราง Electrical Connection: กระจายรายสตริงแยกแต่ละ MPPT ----------
+        function ascRenderElecTable() {
+            let box = document.getElementById('asc-elec-wrapper');
+            if (!box) return;
+            let eq = AppState.equipData || {};
+            let counts = eq.counts || {};
+            let inv1 = eq.inv1 || {};
+            let sc = AppState.stringConfig || {};
+            let invQty = counts.inv1Qty || getVal('inv1-qty') || 1;
+            let totalPanels = counts.totalPanels || getVal('inp-pv-qty') || 0;
+            let optQty = counts.optQty || getVal('inp-opt-qty') || 0;
+            if (!totalPanels) { box.innerHTML = '<div class="text-sm text-gray-400 p-4">รอผลการประมวลผล (Run Simulation)</div>'; return; }
+
+            // --- อ่านสเปก MPPT จาก DB2 ---
+            let nMppt = parseInt(inv1.Number_of_MPPTs) || 1;
+            let portsPerInv = 0;
+            let mPorts = String(sc.totalDcInputsCapacity_Ports || '').match(/(\d+)/);
+            if (mPorts) portsPerInv = parseInt(mPorts[1]);
+            let inputsPerMppt = parseInt(inv1.Inputs_per_MPPT) || (portsPerInv > 0 ? Math.max(1, Math.round(portsPerInv / nMppt)) : 2);
+            if (!portsPerInv) portsPerInv = nMppt * inputsPerMppt;
+            let maxPanelsAllowed = 0;
+            let mMax = String(sc.inverterMaxPanelsAllowed || '').match(/(\d+)/);
+            if (mMax) maxPanelsAllowed = parseInt(mMax[1]);
+
+            // --- แตกรายการสตริงจาก arrayConfigSummary เช่น "14 String(s) × 24 แผง" ---
+            let stringSizes = [];
+            (sc.arrayConfigSummary || []).forEach(txt => {
+                let m = String(txt).match(/(\d+)\s*String[^\d]*(\d+)/i);
+                if (m) { let n = parseInt(m[1]), size = parseInt(m[2]); for (let i = 0; i < n; i++) stringSizes.push(size); }
+            });
+            if (stringSizes.length === 0) { // fallback: แบ่งเท่ากันจาก modules_per_string
+                let mps = (AppState.ivParams || {}).modules_per_string || 24;
+                let nStr = Math.ceil(totalPanels / mps);
+                for (let i = 0; i < nStr; i++) stringSizes.push(i < nStr - 1 ? mps : totalPanels - mps * (nStr - 1));
+            }
+            stringSizes.sort((a, b) => b - a);
+            let panelsPerOpt = optQty > 0 ? Math.max(1, Math.round(totalPanels / optQty)) : 0;
+
+            // --- กระจายสตริงลง Inverter × MPPT แบบถ่วงสมดุลแผง (string ใหญ่ก่อน → ช่องที่เบาสุด) ---
+            let slots = [];
+            for (let i = 0; i < invQty; i++) for (let m = 0; m < nMppt; m++) slots.push({ inv: i, mppt: m, strings: [], panels: 0 });
+            stringSizes.forEach(sz => {
+                // เลือกช่องที่แผงน้อยสุด → ถ้าเท่ากัน เลือกอินเวอร์เตอร์ที่ยอดรวมเบากว่า (สมดุล 2 ชั้น: ราย MPPT + รายเครื่อง)
+                let invTotal = new Array(invQty).fill(0);
+                slots.forEach(s => { invTotal[s.inv] += s.panels; });
+                slots.sort((a, b) => a.panels - b.panels || invTotal[a.inv] - invTotal[b.inv] || a.strings.length - b.strings.length || a.inv - b.inv || a.mppt - b.mppt);
+                slots[0].strings.push(sz); slots[0].panels += sz;
+            });
+            slots.sort((a, b) => a.inv - b.inv || a.mppt - b.mppt);
+
+            // --- แถบสรุปด้านบน (แบบภาพตัวอย่าง) ---
+            let perInvPanels = [];
+            for (let i = 0; i < invQty; i++) perInvPanels.push(slots.filter(s => s.inv === i).reduce((t, s) => t + s.panels, 0));
+            let worstInv = Math.max(...perInvPanels);
+            let okCap = maxPanelsAllowed > 0 ? worstInv <= maxPanelsAllowed : true;
+            let chips = `
+                <div class="flex flex-wrap gap-2 mb-3 text-[11px]">
+                    <div class="bg-gray-50 border border-gray-200 rounded px-3 py-1.5"><b>Total DC Inputs Capacity</b> (Nu.Input × Nu.Trackers): <b class="text-blue-800">${portsPerInv} ช่อง/เครื่อง</b> (${nMppt} MPPT × ${inputsPerMppt} Input)</div>
+                    ${maxPanelsAllowed > 0 ? `<div class="${okCap ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-700'} border rounded px-3 py-1.5"><b>Inverter รองรับแผงสูงสุด (150% max.):</b> <b>${maxPanelsAllowed} แผง/เครื่อง</b> | ติดตั้งจริงสูงสุด <b>${worstInv} แผง</b> ${okCap ? '✓ ผ่านเกณฑ์' : '⚠ เกินพิกัด — ตรวจสอบการออกแบบ'}</div>` : ''}
+                </div>`;
+
+            // --- ตารางกระจายราย MPPT ---
+            let rows = '';
+            for (let i = 0; i < invQty; i++) {
+                let invSlots = slots.filter(s => s.inv === i);
+                invSlots.forEach((s, si) => {
+                    let strTxt = s.strings.length ? s.strings.map(x => x + ' แผง').join(' + ') : '—';
+                    let parallelWarn = s.strings.length > inputsPerMppt ? ' <span class="text-orange-600 font-bold" title="จำนวนสตริงเกินช่อง Input ต้องต่อขนาน">⚠ ขนาน</span>' : '';
+                    let optN = panelsPerOpt > 0 ? Math.round(s.panels / panelsPerOpt) : '-';
+                    rows += `<tr class="border-b ${si === invSlots.length - 1 ? 'border-gray-300' : 'border-gray-100'} hover:bg-gray-50">
+                        ${si === 0 ? `<td class="p-2 border font-bold text-gray-800 align-top" rowspan="${invSlots.length}"># ${i + 1}<br><span class="font-normal text-gray-500 text-[10px]">${inv1.Model_Name || getStr('inp-inv-model') || '-'}</span></td>` : ''}
+                        <td class="p-2 border font-bold text-blue-800">MPPT ${s.mppt + 1}</td>
+                        <td class="p-2 border text-center">${s.strings.length} String${parallelWarn}</td>
+                        <td class="p-2 border text-center text-[10px] text-gray-600">${strTxt}</td>
+                        <td class="p-2 border text-center">${optN}</td>
+                        <td class="p-2 border text-center font-bold">${s.panels}</td>
+                    </tr>`;
+                });
+            }
+            box.innerHTML = chips + `
+                <div class="overflow-x-auto border border-gray-200 rounded">
+                    <table class="w-full text-xs">
+                        <thead class="bg-gray-100 text-gray-600">
+                            <tr><th class="p-2 border text-left">Inverter</th><th class="p-2 border text-left">MPPT</th>
+                            <th class="p-2 border">String</th><th class="p-2 border">การจัดแผง/String</th>
+                            <th class="p-2 border">Optimizer${panelsPerOpt ? ' (' + panelsPerOpt + ':1)' : ''}</th><th class="p-2 border">PV Module</th></tr>
+                        </thead>
+                        <tbody>${rows}
+                            <tr class="bg-green-50 font-bold text-green-800">
+                                <td class="p-2 border" colspan="2">รวมทั้งระบบ: ${getStr('inp-pv-model') || 'PV Module'}</td>
+                                <td class="p-2 border text-center">${stringSizes.length} Strings</td>
+                                <td class="p-2 border text-center text-[10px]">${(sc.arrayConfigSummary || []).join(' | ') || '-'}</td>
+                                <td class="p-2 border text-center">${optQty > 0 ? formatNum(optQty, 0) : '-'}</td>
+                                <td class="p-2 border text-center">${formatNum(totalPanels, 0)} แผง</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-[10px] text-gray-500 mt-1.5">💡 การกระจายสตริงจัดสมดุลจำนวนแผงต่อ MPPT โดยอัตโนมัติจากข้อมูลการออกแบบจริง (${sc.totalStringsUsed || stringSizes.length + ' Strings'}) — พลังงานรายแนวการวางแผง (Orientation) ดูได้ที่ตาราง Hourly Simulation</div>`;
+        }
+
+        // ---------- Orchestrator + คำอธิบายอัตโนมัติ ----------
+        function renderASCEnergyViews() {
+            ascRenderKPI();
+            ascRenderElecTable();
+            let fc = document.getElementById('asc-flow-canvas');
+            if (fc) ascDrawEnergyFlow(fc);
+            let pc = document.getElementById('asc-powercurve-canvas');
+            if (pc) ascDrawPowerCurve12(pc);
+            // คำอธิบาย + ผลวิเคราะห์
+            let eb = ascComputeEnergyBalance();
+            let descF = document.getElementById('desc-asc-overview');
+            if (descF && eb) {
+                let verdict = eb.pctSelfConsumption >= 70
+                    ? 'สัดส่วนการใช้พลังงานเอง (Self-Consumption) อยู่ในเกณฑ์<b class="text-green-700">ดี</b> ระบบถูกออกแบบสอดคล้องกับโหลด'
+                    : eb.pctSelfConsumption >= 40
+                    ? 'มีพลังงานส่วนเกินไหลเข้ากริดพอสมควร ควรพิจารณาแบตเตอรี่หรือเลื่อนโหลดมาช่วงกลางวัน (Load Shifting)'
+                    : 'พลังงานส่วนใหญ่ไหลเข้ากริด — ระบบอาจใหญ่เกินโหลดกลางวัน ควรทบทวนขนาดติดตั้งหรือแผนการใช้พลังงาน';
+                descF.innerHTML = `
+                    <div class="text-blue-800 mb-2 border-b border-blue-200 pb-1"><i class="fa-solid fa-microchip"></i> <b>Pee Analysis: ASC Energy Overview</b></div>
+                    <div class="text-[11px] text-gray-700 space-y-1.5 leading-relaxed">
+                        <p><b>ความหมาย:</b> การ์ดตัวชี้วัด (KPI) และแผนภาพการไหลของพลังงาน (Energy Flow) สรุปสมดุลพลังงานรายปีระหว่าง 3 จุด:
+                        การผลิตจากโซลาร์ (PV) โครงข่ายไฟฟ้า (Grid) และการใช้พลังงาน (Consumption) — วงแหวนแต่ละจุดแบ่งสีตามสัดส่วนที่มา/ปลายทางของพลังงาน
+                        ความหนาของเส้นเชื่อมแปรผันตามปริมาณพลังงานที่ไหลในเส้นทางนั้น</p>
+                        <p><b>ผลการวิเคราะห์:</b> ผลิตรวม <b>${formatNum(eb.pvTotal/1000,2)} MWh/ปี</b> ใช้เองโดยตรง <b>${formatNum(eb.pctSelfConsumption,1)}%</b>
+                        ขายเข้ากริด <b>${formatNum(eb.feedIn/1000,2)} MWh</b> | โหลดรวม <b>${formatNum(eb.consumption/1000,2)} MWh/ปี</b>
+                        พึ่งพาโซลาร์ได้ <b>${formatNum(eb.pctFromSolar,1)}%</b> — ${verdict}</p>
+                        <p class="text-[10px] text-gray-500">หมายเหตุ: คำนวณจากโปรไฟล์วันเฉลี่ยรายปี ยังไม่รวมผลของแบตเตอรี่ (ดูรายละเอียดแบตเตอรี่ในกราฟ Daily Operation)</p>
+                    </div>`;
+            }
+            let descP = document.getElementById('desc-asc-powercurve');
+            if (descP && AppState.monthlyBalances && AppState.monthlyBalances.length === 12) {
+                let mb = AppState.monthlyBalances;
+                let mx = mb.reduce((a, b) => a.eGrid > b.eGrid ? a : b);
+                let mn = mb.reduce((a, b) => a.eGrid < b.eGrid ? a : b);
+                descP.innerHTML = `
+                    <div class="text-blue-800 mb-2 border-b border-blue-200 pb-1"><i class="fa-solid fa-microchip"></i> <b>Pee Analysis: ASC Power Curve (12 เดือน)</b></div>
+                    <div class="text-[11px] text-gray-700 space-y-1.5 leading-relaxed">
+                        <p><b>ความหมาย:</b> โปรไฟล์กำลังไฟฟ้าเฉลี่ยรายวันของแต่ละเดือน — พื้นที่สีเขียวคือกำลังผลิต PV (ปรับสเกลตามพลังงานจริงของเดือนนั้น)
+                        เส้นสีส้มคือโหลด จุดที่เส้นส้มอยู่เหนือพื้นที่เขียวคือช่วงที่ต้องดึงไฟจากกริด และส่วนเขียวที่พ้นเส้นส้มคือพลังงานส่วนเกิน</p>
+                        <p><b>ผลการวิเคราะห์:</b> เดือนที่ผลิตได้มากที่สุดคือ <b>${mx.month}</b> (${formatNum(mx.eGrid,0)} kWh)
+                        และน้อยที่สุดคือ <b>${mn.month}</b> (${formatNum(mn.eGrid,0)} kWh) — ต่างกัน <b>${formatNum(mn.eGrid>0?(mx.eGrid/mn.eGrid-1)*100:0,0)}%</b>
+                        ใช้ประเมินความผันผวนตามฤดูกาลเพื่อวางแผนสำรองพลังงาน/สัญญาซื้อขายไฟ</p>
+                    </div>`;
+            }
+        }
+
+        // ---------- ส่งทั้ง 4 องค์ประกอบเข้า PDF ----------
+        function updateASCEnergyPDF() {
+            const cp = (srcId, dstId) => {
+                let s = document.getElementById(srcId), d = document.getElementById(dstId);
+                if (s && d) d.innerHTML = s.innerHTML;
+            };
+            // KPI + ตาราง + คำอธิบาย: คัดลอก HTML ตรง
+            let chkO = document.getElementById('chk-sec-overview');
+            if (!chkO || chkO.checked) {
+                cp('asc-kpi-wrapper', 'prt-asc-kpi');
+                cp('desc-asc-overview', 'prt-desc-asc-overview');
+                let fc = document.getElementById('asc-flow-canvas');
+                let pf = document.getElementById('prt-asc-flow');
+                if (fc && pf && fc.width > 0) pf.innerHTML = `<img src="${fc.toDataURL('image/png', 1.0)}" class="chart-img" style="width: 92% !important; margin: 8px auto !important; border: 1px solid #e2e8f0; border-radius: 4px; display: block;">`;
+            }
+            let chkP = document.getElementById('chk-sec-powercurve');
+            if (!chkP || chkP.checked) {
+                let pc = document.getElementById('asc-powercurve-canvas');
+                let pp = document.getElementById('prt-asc-powercurve');
+                if (pc && pp && pc.width > 0) pp.innerHTML = `<img src="${pc.toDataURL('image/png', 1.0)}" class="chart-img" style="width: 94% !important; margin: 8px auto !important; border: 1px solid #e2e8f0; border-radius: 4px; display: block;">`;
+                cp('desc-asc-powercurve', 'prt-desc-asc-powercurve');
+            }
+            let chkE = document.getElementById('chk-sec-electable');
+            if (!chkE || chkE.checked) cp('asc-elec-wrapper', 'prt-asc-elec');
+        }
+        /* ==================== 🌟 ASC ENERGY VIEWS (PHASE 5) — END ==================== */
+
+        /* ==================== 🌟 ASC BRANDING (PHASE 5.1) — START ==================== */
+        // ลายน้ำ "ASC : Auto Solar Copilot" อัตโนมัติบนกราฟ Chart.js ทุกตัว (ติดเข้า PDF ผ่าน toDataURL ด้วย)
+        if (typeof Chart !== 'undefined' && Chart.register) {
+            Chart.register({
+                id: 'ascWatermark',
+                afterDraw(chart) {
+                    try {
+                        const { ctx } = chart;
+                        ctx.save();
+                        ctx.font = 'bold 10px Arial';
+                        ctx.fillStyle = 'rgba(148, 163, 184, 0.9)';
+                        ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+                        ctx.fillText('ASC : Auto Solar Copilot', chart.width - 8, chart.height - 5);
+                        ctx.restore();
+                    } catch (e) {}
+                }
+            });
+        }
+        // ลายน้ำสำหรับ SVG/HTML containers (แผนภาพ Sankey, Wiring, SLD, CAD, Apex, ตาราง)
+        function ascApplyWatermarks() {
+            const targets = ['custom-loss-diagram', 'diagram-wiring', 'diagram-sld', 'dynamic-cad-wrapper',
+                             'chart-cashflow-apex', 'bankability-container', 'bom-container'];
+            targets.forEach(id => {
+                let el = document.getElementById(id);
+                if (el && !el.querySelector('.asc-wm')) {
+                    let d = document.createElement('div');
+                    d.className = 'asc-wm';
+                    d.style.cssText = 'text-align:right; font:bold 10px Arial; color:#94a3b8; padding:2px 8px 0 0;';
+                    d.textContent = 'ASC : Auto Solar Copilot';
+                    el.appendChild(d);
+                }
+            });
+        }
+        /* ==================== 🌟 ASC BRANDING (PHASE 5.1) — END ==================== */
+
+
+
+
+
 
         // 🌟 2.2 Engine เรนเดอร์ตาราง Aging เสื่อมสภาพ
         function renderAgingTable() {
@@ -3411,7 +4909,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                             type: 'bar',
                             label: 'Energy injected into grid (kWh)',
                             data: d.map(x => parseFloat(x.eGrid.toFixed(2))),
-                            backgroundColor: '#7f1d1d', // สีแดงเข้ม (เหมือน PVsyst)
+                            backgroundColor: '#7f1d1d', // สีแดงเข้ม (ธีมมาตรฐาน ASC)
                             yAxisID: 'y1', // อ้างอิงสเกลแกน Y ฝั่งซ้าย
                             barPercentage: 0.7,
                             order: 2, // 🌟 ลำดับ 2 บังคับให้อยู่เลเยอร์หลังเส้น
@@ -3441,7 +4939,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                             position: 'right', 
                             title: { display: true, text: 'PR [%]', font: { family: 'Kanit', weight: 'bold' } }, 
                             grid: { drawOnChartArea: false }, // ซ่อนเส้นตารางไม่ให้กวนฝั่งซ้าย
-                            min: 50, // กดกราฟเส้นให้อยู่โซนบนๆ เหมือน PVsyst
+                            min: 50, // กดกราฟเส้นให้อยู่โซนบน เพื่อความชัดเจนในการอ่านค่า
                             max: 100 
                         } 
                     },
@@ -3670,10 +5168,10 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                     let img2 = projectImagesBase64.length > 1 ? projectImagesBase64[1] : null;
                     
                     // 🌟 วางรูปภาพให้สวยงามกึ่งกลาง และปรับขนาดไม่ให้ล้น A4 จนเกิดหน้าว่าง
-                    coverHtml += `<div style="width: 90%; height: 280px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; overflow: hidden; background-color: #f8fafc;"><img src="${img1}" style="max-width: 100%; max-height: 100%; object-fit: contain;"></div>`;
+                    coverHtml += `<div style="width: 95%; height: ${img2 ? '330px' : '560px'}; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; overflow: hidden; background-color: #f8fafc;"><img src="${img1}" style="max-width: 100%; max-height: 100%; object-fit: contain;"></div>`;
                     
                     if (img2) {
-                        coverHtml += `<div style="width: 90%; height: 280px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; overflow: hidden; background-color: #f8fafc;"><img src="${img2}" style="max-width: 100%; max-height: 100%; object-fit: contain;"></div>`;
+                        coverHtml += `<div style="width: 95%; height: 330px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; overflow: hidden; background-color: #f8fafc;"><img src="${img2}" style="max-width: 100%; max-height: 100%; object-fit: contain;"></div>`;
                     }
                 }
                 
@@ -3716,19 +5214,9 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
             // 🌟 เพิ่ม Try-Catch ป้องกัน Error ถอดรูปกราฟ
             try {
                 // 🌟 ดึงกราฟ Sun Path ที่อาจมีหลายแผง ไปเรียงใน PDF อัตโนมัติ
-                let prtSunpathBox = document.getElementById('prt-dynamic-sunpath');
-                if (prtSunpathBox) {
-                    prtSunpathBox.innerHTML = ''; // เคลียร์ของเก่า
-                    if (window.myChartjsSunpaths && window.myChartjsSunpaths.length > 0) {
-                        window.myChartjsSunpaths.forEach((c, idx) => {
-                            let canvas = document.getElementById(`chart-sunpath-${idx}`);
-                            if (canvas) {
-                                // 🌟 อัปเกรด: ขยายกราฟเป็น 450px ให้ใหญ่สะใจ และให้รูปไหลตัดขึ้นหน้าใหม่ได้เองถ้าที่ว่างไม่พอ
-                                prtSunpathBox.innerHTML += `<img src="${canvas.toDataURL('image/png', 1.0)}" class="chart-img" style="width: 95% !important; max-height: 450px !important; margin: 0 auto 15px auto !important; border: 1px solid #cbd5e1; border-radius: 4px; object-fit: contain; display: block; page-break-inside: avoid;">`;
-                            }
-                        });
-                    }
-                }
+                // 🌟 PHASE 3: สร้างกราฟ + คำอธิบาย Shading Dashboard สำหรับ PDF (ตามมุมมองที่เลือก)
+                try { updateShadingDashPDF(); } catch(e) { console.error("Shading Dash PDF Failed", e); }
+                try { updateASCEnergyPDF(); } catch(e) { console.error("ASC Energy PDF Failed", e); }
 
                 if(window.myChartjsDaily && document.getElementById('chart-daily-chartjs'))
                     document.getElementById('prt-img-daily').src = document.getElementById('chart-daily-chartjs').toDataURL('image/png', 1.0);
@@ -3805,7 +5293,10 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
             const mapping = {
                 'chk-sec-env': { dash: ['#env-container'], pdf: ['#prt-sec-env'] }, 
                 'chk-sec-loss': { dash: ['#custom-loss-diagram'], pdf: ['#prt-sec-loss'] },
-                'chk-sec-sunpath': { dash: ['#sunpath-container'], pdf: ['#prt-sec-sunpath1', '#prt-sec-sunpath2'] },
+                'chk-sec-shading-dash': { dash: ['#shading-dash-container'], pdf: ['#prt-sec-shading-dash1', '#prt-sec-shading-dash2'] }, // 🌟 PHASE 3
+                'chk-sec-overview': { dash: ['#asc-overview-container'], pdf: ['#prt-sec-asc-overview'] }, // 🌟 PHASE 5
+                'chk-sec-powercurve': { dash: ['#asc-powercurve-container'], pdf: ['#prt-sec-asc-powercurve'] }, // 🌟 PHASE 5
+                'chk-sec-electable': { dash: ['#asc-elec-container'], pdf: ['#prt-sec-asc-elec'] }, // 🌟 PHASE 5
                 'chk-sec-balances': { dash: ['#tbl-balances'], pdf: ['#prt-sec-balances'] },
                 'chk-sec-aging': { dash: ['#aging-container'], pdf: ['#prt-sec-aging'] },
                 'chk-sec-daily': { dash: ['#chart-daily-chartjs'], pdf: ['#prt-sec-daily'] },
@@ -4443,7 +5934,7 @@ function renderCADLayout() {
 
             let html = '';
             let count = 0;
-            const ids = ['env', 'waterfall', 'sunpath', 'balances', 'aging', 'daily', 'monthly', 'scatter', 'hist', 'bell', 'bankability', 'cashflow', 'finance', 'bom', 'wiring', 'sld', 'iv-eit', 'iv-irr'];
+            const ids = ['env', 'waterfall', 'balances', 'aging', 'daily', 'monthly', 'scatter', 'hist', 'bell', 'bankability', 'cashflow', 'finance', 'bom', 'wiring', 'sld', 'iv-eit', 'iv-irr'];
             
             ids.forEach(id => {
                 let chk = document.getElementById(`chk-detail-${id}`);
@@ -4471,7 +5962,7 @@ function renderCADLayout() {
         }
 		// 🌟 ฟังก์ชันเลือกกลับไปใช้ค่าเริ่มต้น (5 รายการหลัก)
         function checkDefaultSections() {
-            const defaultChecked = ['chk-sec-env', 'chk-sec-loss', 'chk-sec-daily', 'chk-sec-monthly', 'chk-sec-exec'];
+            const defaultChecked = ['chk-sec-exec', 'chk-sec-overview', 'chk-sec-env', 'chk-sec-shading-dash', 'chk-sec-daily', 'chk-sec-monthly', 'chk-sec-powercurve', 'chk-sec-finance']; // 🌟 ค่าแนะนำ ASC
             document.querySelectorAll('input[type="checkbox"][id^="chk-sec-"]').forEach(chk => {
                 chk.checked = defaultChecked.includes(chk.id);
             });
