@@ -1136,15 +1136,15 @@ $("#imOk").onclick = () => {
 };
 
 /* ═══════════════ เซฟ/เปิดไฟล์ผัง (.json) ═══════════════ */
-$("#projSaveBtn").onclick = () => {
-  const blob = new Blob([JSON.stringify(projectData(true), null, 1)], { type:'application/json' });
-  const a = document.createElement('a');
+$("#projSaveBtn").onclick = async () => {
   const d = new Date(), p = n => String(n).padStart(2,'0');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'ผังติดตั้ง_' + d.getFullYear() + p(d.getMonth()+1) + p(d.getDate())
+  const name = 'ผังติดตั้ง_' + d.getFullYear() + p(d.getMonth()+1) + p(d.getDate())
              + '_' + p(d.getHours()) + p(d.getMinutes()) + '.json';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  try {
+    const r = await saveOut(JSON.stringify(projectData(true), null, 1), name,
+                            { text:true, mime:'application/json' });
+    if (r.where === 'native') stamp('บันทึกไฟล์ผังแล้ว');
+  } catch (e) { alert('บันทึกไฟล์ไม่สำเร็จ: ' + (e.message || e)); }
 };
 
 $("#fileProj").addEventListener('change', e => {
@@ -1281,14 +1281,21 @@ function showResult(canvas) {
   const url = canvas.toDataURL('image/png');
   const m = document.createElement('div');
   m.className = 'modal';
+  const stampName = (() => { const d = new Date(), p = n => String(n).padStart(2,'0');
+    return 'ผังติดตั้ง_' + d.getFullYear() + p(d.getMonth()+1) + p(d.getDate())
+         + '_' + p(d.getHours()) + p(d.getMinutes()) + '.png'; })();
   m.innerHTML = '<div class="t">' + canvas.width + ' × ' + canvas.height + ' พิกเซล'
-    + '<br>กดค้างที่ภาพเพื่อบันทึก หรือใช้ปุ่มด้านล่าง</div>'
+    + '<br>' + (NATIVE ? 'กดบันทึกแล้วเลือกปลายทางที่ต้องการ' : 'กดค้างที่ภาพเพื่อบันทึก หรือใช้ปุ่มด้านล่าง') + '</div>'
     + '<img src="' + url + '" alt="ผลลัพธ์">'
     + '<div class="row">'
-    + '<a class="btn primary" href="' + url + '" download="ผังติดตั้ง.png">⬇ ดาวน์โหลด</a>'
+    + '<button class="btn primary" id="dlBtn">⬇ บันทึกภาพ</button>'
     + '<button class="btn" id="shareBtn" hidden>📤 แชร์</button>'
     + '<button class="btn" id="closeBtn">ปิด</button></div>';
   document.body.appendChild(m);
+  m.querySelector('#dlBtn').onclick = async () => {
+    try { await saveOut(url, stampName); }
+    catch (e) { alert('บันทึกภาพไม่สำเร็จ: ' + (e.message || e)); }
+  };
   m.querySelector('#closeBtn').onclick = () => m.remove();
   m.addEventListener('click', e => { if (e.target === m) m.remove(); });
   if (navigator.canShare) {
@@ -1300,8 +1307,46 @@ function showResult(canvas) {
   }
 }
 
+/* ═══════════════ บันทึกไฟล์ ═══════════════
+   ใน WebView ของแอปเนทีฟ ลิงก์ <a download> และ blob: ไม่ทำงาน กดแล้วเงียบไปเฉย ๆ
+   จึงต้องเขียนผ่านปลั๊กอินระบบไฟล์แล้วเปิดแผงแชร์ให้ผู้ใช้เลือกปลายทางเอง
+   เรียกผ่านสะพาน Capacitor.Plugins ตอนรันไทม์ จึงไม่ต้องมีขั้นตอน build ใด ๆ
+   และไฟล์นี้ยังเปิดในเบราว์เซอร์ธรรมดาได้เหมือนเดิม */
+const NATIVE = !!(window.Capacitor && typeof Capacitor.isNativePlatform === 'function'
+                  && Capacitor.isNativePlatform());
+
+function dlBrowser(href, filename) {
+  const a = document.createElement('a');
+  a.href = href; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+async function saveOut(data, filename, opts) {
+  const asText = !!(opts && opts.text);
+  if (!NATIVE) {
+    if (asText) {
+      const url = URL.createObjectURL(new Blob([data], { type: opts.mime || 'application/json' }));
+      dlBrowser(url, filename);
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } else {
+      dlBrowser(data, filename);
+    }
+    return { where: 'browser' };
+  }
+
+  const FS = Capacitor.Plugins.Filesystem, SH = Capacitor.Plugins.Share;
+  const args = asText
+    ? { path: filename, data: data, directory: 'DOCUMENTS', encoding: 'utf8', recursive: true }
+    : { path: filename, data: String(data).split(',')[1] || '', directory: 'DOCUMENTS', recursive: true };
+  const res = await FS.writeFile(args);
+  try {
+    await SH.share({ title: filename, url: res.uri, dialogTitle: 'บันทึกหรือส่งต่อไฟล์' });
+  } catch (e) { /* ผู้ใช้กดยกเลิกแผงแชร์ ไฟล์ถูกเขียนไปแล้ว */ }
+  return { where: 'native', uri: res.uri };
+}
+
 /* ═══════════════ ติดตั้งเป็นแอปและทำงานออฟไลน์ ═══════════════ */
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && !NATIVE) {
   addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').then(reg => {
       /* พบตัวใหม่รออยู่ ให้ผู้ใช้เลือกเองว่าจะโหลดตอนนี้หรือไว้ก่อน
@@ -1330,6 +1375,7 @@ if ('serviceWorker' in navigator) {
    บน iOS ไม่มีเหตุการณ์นี้ ต้องบอกวิธีเพิ่มลงหน้าจอโฮมเอง */
 let deferredPrompt = null;
 addEventListener('beforeinstallprompt', e => {
+  if (NATIVE) return;
   e.preventDefault();
   deferredPrompt = e;
   $("#installBtn").hidden = false;
@@ -1345,6 +1391,7 @@ addEventListener('appinstalled', () => { $("#installBtn").hidden = true; deferre
 
 /* ซาฟารีบน iOS: ถ้ายังไม่ได้ติดตั้ง ให้ขึ้นคำแนะนำครั้งเดียว */
 (function iosHint() {
+  if (NATIVE) return;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
   if (!isIOS || standalone) return;

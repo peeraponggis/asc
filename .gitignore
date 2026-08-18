@@ -1,1 +1,21 @@
 master_shellOLD.html
+
+# ── Capacitor / Android ────────────────────────────────────────────────
+# node_modules ติดตั้งใหม่ได้ด้วย npm install จึงไม่ต้องเก็บ (27 MB)
+capacitor/node_modules/
+
+# ผลลัพธ์การ build และไฟล์ชั่วคราวของ Gradle
+capacitor/android/build/
+capacitor/android/app/build/
+capacitor/android/.gradle/
+capacitor/android/local.properties
+capacitor/android/.idea/
+capacitor/android/app/release/
+capacitor/android/app/debug/
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# ไฟล์เว็บที่ Capacitor คัดลอกเข้ามา — ต้นฉบับอยู่ที่ docs/
+capacitor/android/app/src/main/assets/public/
