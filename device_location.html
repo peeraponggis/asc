@@ -242,6 +242,22 @@
     <div class="fld"><label>ลึก (ม.)</label><input type="number" id="imD" step="0.01" min="0"></div>
     <div class="fld"><label>ระยะเว้นว่างรอบตัว (ม.)</label><input type="number" id="imCl" step="0.05" min="0"></div>
     <div class="fld"><label>สี</label><input type="text" id="imColor" style="width:110px" placeholder="#E05038"></div>
+    <div style="border-top:1px solid var(--line); margin:12px 0 10px; padding-top:12px;">
+      <div class="fld" style="align-items:flex-start">
+        <label>ภาพจริงของอุปกรณ์</label>
+        <div style="flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+          <img id="imThumb" alt="" style="display:none; width:110px; height:88px; object-fit:cover; border-radius:8px; border:1px solid var(--line); background:#000;">
+          <div style="display:flex; gap:6px;">
+            <label class="btn mini file">เลือกภาพ<input type="file" accept="image/*" id="imPhoto"></label>
+            <button class="btn mini danger" id="imPhotoDel" style="display:none">เอาออก</button>
+          </div>
+        </div>
+      </div>
+      <div class="hint" style="font-size:11.5px">
+        ภาพจะถูกวางทับกล่องตามขนาดจริงที่กรอก และถูกตัดให้อยู่ในกรอบเท่านั้น
+        ระบบย่อภาพเหลือด้านยาวสุด 420 px ก่อนเก็บ เพื่อไม่ให้ไฟล์ผังใหญ่เกินไป
+      </div>
+    </div>
     <div class="row" style="margin-top:12px; justify-content:flex-start">
       <button class="btn mini primary" id="imOk">บันทึก</button>
       <button class="btn mini danger" id="imDel">ลบออกจากแคตตาล็อก</button>
@@ -358,6 +374,43 @@ function buildH() {
   if (!Hi) return false;
   S.H = H; S.Hi = Hi;
   return true;
+}
+
+/* ย่อภาพก่อนเก็บ — ภาพอุปกรณ์ถูกวาดบนจอไม่กี่ร้อยพิกเซล เก็บใหญ่กว่านี้ไม่ได้ประโยชน์
+   แต่ทำให้ localStorage เต็มและไฟล์ผังบวมจนส่งต่อลำบาก */
+function downscaleImage(file, maxPx, quality) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        const k = Math.min(1, maxPx / Math.max(im.naturalWidth, im.naturalHeight));
+        const w = Math.max(1, Math.round(im.naturalWidth  * k));
+        const h = Math.max(1, Math.round(im.naturalHeight * k));
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(im, 0, 0, w, h);
+        res(c.toDataURL('image/jpeg', quality || 0.82));
+      };
+      im.onerror = () => rej(new Error('ไฟล์ภาพไม่ถูกต้อง'));
+      im.src = fr.result;
+    };
+    fr.onerror = () => rej(new Error('อ่านไฟล์ไม่สำเร็จ'));
+    fr.readAsDataURL(file);
+  });
+}
+
+/* แคชอิลิเมนต์ภาพไว้ใช้ตอนส่งออกเป็น canvas */
+const imgCache = {};
+function getImgEl(src) {
+  if (!src) return null;
+  if (imgCache[src] && imgCache[src].complete) return imgCache[src];
+  if (!imgCache[src]) {
+    const el = new Image();
+    el.onload = () => render();
+    el.src = src;
+    imgCache[src] = el;
+  }
+  return imgCache[src].complete ? imgCache[src] : null;
 }
 
 /* ═══════════════ การบันทึก ═══════════════ */
@@ -576,7 +629,7 @@ function addItem(q) {
   S.items.push({
     id: S.nextId++, cat: q.id, name: q.name,
     X: S.wall.w / 2, Y: Math.min(S.wall.h / 2, 1.5),
-    w: q.w, h: q.h, d: q.d, cl: q.cl, color: q.color
+    w: q.w, h: q.h, d: q.d, cl: q.cl, color: q.color, img: q.img || null
   });
   S.sel = S.nextId - 1;
   render(); saveSoon();
@@ -697,16 +750,49 @@ function render() {
         'stroke-width': Math.max(1.5, S.nw/900), 'stroke-dasharray':'10 8'
       }));
     }
+    /* พื้นกล่อง — ถ้ามีภาพให้จางลง ใช้เป็นแค่ฉากหลังกันภาพโปร่ง */
     g.appendChild(el('polygon', {
       points: ptsStr(quad(r)),
-      fill: it.color + (isSel ? 'E6' : 'B3'),
+      fill: it.color + (it.img ? '55' : (isSel ? 'E6' : 'B3'))
+    }));
+
+    /* ภาพจริงของอุปกรณ์ วางทับตามขนาดที่กรอก และตัดให้อยู่ในกรอบเท่านั้น
+       เมทริกซ์สร้างจาก 3 มุม จึงเป็นการแปลงแบบ affine — บนภาพเฉียงมากจะคลาดเล็กน้อย
+       แต่กรอบตัดใช้รูปสี่เหลี่ยมจริงเสมอ ภาพจึงไม่มีทางล้นออกนอกกล่อง */
+    if (it.img) {
+      const p0 = w2i(r.x1, r.y2), p1 = w2i(r.x2, r.y2), p2 = w2i(r.x1, r.y1);
+      const ax = (p1.x - p0.x) / it.w, ay = (p1.y - p0.y) / it.w;
+      const bx = (p2.x - p0.x) / it.h, by = (p2.y - p0.y) / it.h;
+      if (isFinite(ax) && isFinite(by)) {
+        const cid = 'clipItem' + it.id;
+        const cp = el('clipPath', { id: cid, clipPathUnits: 'userSpaceOnUse' });
+        cp.appendChild(el('polygon', { points: ptsStr(quad(r)) }));
+        g.appendChild(cp);
+        const im = el('image', {
+          x: 0, y: 0, width: it.w, height: it.h,
+          preserveAspectRatio: 'xMidYMid slice',
+          transform: 'matrix(' + [ax, ay, bx, by, p0.x, p0.y].map(n => n.toFixed(4)).join(',') + ')',
+          'clip-path': 'url(#' + cid + ')',
+          style: 'pointer-events:none'
+        });
+        im.setAttributeNS('http://www.w3.org/1999/xlink', 'href', it.img);
+        im.setAttribute('href', it.img);
+        g.appendChild(im);
+      }
+    }
+
+    /* เส้นขอบวาดทับสุดท้าย และเป็นตัวรับการลากด้วย */
+    g.appendChild(el('polygon', {
+      points: ptsStr(quad(r)),
+      fill: it.img ? 'transparent' : 'none',
       stroke: isSel ? '#FFC400' : stroke,
       'stroke-width': Math.max(2, S.nw / (isSel ? 340 : 520))
     }));
     const c = w2i(it.X, it.Y);
     const fs = Math.max(11, S.nw / 62);
     const t = el('text', { x:c.x.toFixed(1), y:(c.y + fs*0.35).toFixed(1), 'text-anchor':'middle',
-      fill:'#fff', 'font-size':fs, 'font-weight':'600', stroke:'#000', 'stroke-width':fs/9,
+      fill:'#fff', 'font-size':fs, 'font-weight':'600', stroke:'#000',
+      'stroke-width': it.img ? fs/5 : fs/9,
       'paint-order':'stroke', style:'pointer-events:none' });
     t.textContent = it.name;
     g.appendChild(t);
@@ -872,7 +958,7 @@ $("#catReset").onclick   = () => {
 };
 $("#catAdd").onclick = () => {
   editIdx = -1;
-  fillItemForm({ name:'อุปกรณ์ใหม่', w:0.4, h:0.4, d:0.2, cl:0.1, color:'#4FC3F7' });
+  fillItemForm({ name:'อุปกรณ์ใหม่', w:0.4, h:0.4, d:0.2, cl:0.1, color:'#4FC3F7', img:null });
   $("#imDel").style.display = 'none';
   $("#itemModal").style.display = 'flex';
 };
@@ -883,7 +969,9 @@ function drawCatList() {
   S.cat.forEach((q, i) => {
     const row = document.createElement('div');
     row.className = 'catrow';
-    row.innerHTML = '<span class="sw" style="background:' + q.color + '"></span>'
+    row.innerHTML = (q.img
+        ? '<img src="' + q.img + '" alt="" style="width:26px;height:26px;object-fit:cover;border-radius:5px;border:1px solid var(--line);flex-shrink:0">'
+        : '<span class="sw" style="background:' + q.color + '"></span>')
       + '<span class="nm">' + q.name + '</span>'
       + '<span class="mono">' + fmt(q.w) + '×' + fmt(q.h) + '×' + fmt(q.d) + ' ม.'
       + (q.cl > 0 ? ' · เว้น ' + fmt(q.cl) : '') + '</span>';
@@ -899,10 +987,26 @@ function drawCatList() {
   });
 }
 
+let imPhotoBuf = null;   // data URL ของภาพในฟอร์มที่กำลังแก้
+
 function fillItemForm(q) {
   $("#imName").value = q.name; $("#imW").value = q.w; $("#imH").value = q.h;
   $("#imD").value = q.d; $("#imCl").value = q.cl; $("#imColor").value = q.color;
+  imPhotoBuf = q.img || null;
+  showFormPhoto();
 }
+function showFormPhoto() {
+  const t = $("#imThumb"), d = $("#imPhotoDel");
+  if (imPhotoBuf) { t.src = imPhotoBuf; t.style.display = ''; d.style.display = ''; }
+  else { t.removeAttribute('src'); t.style.display = 'none'; d.style.display = 'none'; }
+}
+$("#imPhoto").addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  try { imPhotoBuf = await downscaleImage(f, 420, 0.82); showFormPhoto(); }
+  catch (err) { alert(err.message); }
+});
+$("#imPhotoDel").addEventListener('click', () => { imPhotoBuf = null; showFormPhoto(); });
 
 $("#imCancel").onclick = () => { $("#itemModal").style.display = 'none'; };
 $("#imDel").onclick = () => {
@@ -920,7 +1024,8 @@ $("#imOk").onclick = () => {
     h: Math.max(0.01, parseFloat($("#imH").value) || 0.4),
     d: Math.max(0,    parseFloat($("#imD").value) || 0),
     cl: Math.max(0,   parseFloat($("#imCl").value) || 0),
-    color: /^#[0-9a-f]{6}$/i.test($("#imColor").value.trim()) ? $("#imColor").value.trim() : '#4FC3F7'
+    color: /^#[0-9a-f]{6}$/i.test($("#imColor").value.trim()) ? $("#imColor").value.trim() : '#4FC3F7',
+    img: imPhotoBuf || null
   };
   if (editIdx >= 0) S.cat[editIdx] = q; else S.cat.push(q);
   $("#itemModal").style.display = 'none';
@@ -981,7 +1086,26 @@ $("#saveBtn").onclick = () => {
         }
         const q = quad(r);
         g.beginPath(); q.forEach((p,i) => i ? g.lineTo(p.x,p.y) : g.moveTo(p.x,p.y)); g.closePath();
-        g.fillStyle = it.color + 'CC'; g.fill();
+        g.fillStyle = it.color + (it.img ? '55' : 'CC'); g.fill();
+
+        /* ภาพจริงของอุปกรณ์ — ตัดด้วยรูปสี่เหลี่ยมจริง แล้วเติมเต็มกรอบแบบครอบตัด */
+        const el0 = it.img ? getImgEl(it.img) : null;
+        if (el0) {
+          const p0 = w2i(r.x1, r.y2), p1 = w2i(r.x2, r.y2), p2 = w2i(r.x1, r.y1);
+          const ax = (p1.x-p0.x)/it.w, ay = (p1.y-p0.y)/it.w;
+          const bx = (p2.x-p0.x)/it.h, by = (p2.y-p0.y)/it.h;
+          if (isFinite(ax) && isFinite(by)) {
+            g.save();
+            g.beginPath(); q.forEach((p,i) => i ? g.lineTo(p.x,p.y) : g.moveTo(p.x,p.y)); g.closePath(); g.clip();
+            g.transform(ax, ay, bx, by, p0.x, p0.y);
+            const k  = Math.max(it.w / el0.naturalWidth, it.h / el0.naturalHeight);
+            const dw = el0.naturalWidth * k, dh = el0.naturalHeight * k;
+            g.drawImage(el0, (it.w - dw) / 2, (it.h - dh) / 2, dw, dh);
+            g.restore();
+          }
+        }
+
+        g.beginPath(); q.forEach((p,i) => i ? g.lineTo(p.x,p.y) : g.moveTo(p.x,p.y)); g.closePath();
         g.strokeStyle = '#111'; g.lineWidth = lw; g.stroke();
 
         const c0 = w2i(it.X, it.Y);

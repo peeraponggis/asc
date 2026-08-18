@@ -65,7 +65,19 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <a href="#m2-step3"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 3 · งานวิศวกรรม</a>
                 <a href="#m2-step4"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 4 · บันทึกฐานข้อมูล</a>
 
-                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 3 · รายงาน</div>
+                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 3 · แบบจำลอง 3 มิติ</div>
+                <a href="#m3d-load"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">นำเข้าข้อมูล</a>
+                <a href="#m3d-height" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ความสูงและทิศหลังคา</a>
+                <a href="#m3d-sun"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ดวงอาทิตย์และเงา</a>
+                <a href="#m3d-export" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ส่งออกภาพ</a>
+
+                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 4 · วางผังอุปกรณ์</div>
+                <a href="#m4-cal"     class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 1 · ปรับเทียบผนัง</a>
+                <a href="#m4-place"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 2 · วางอุปกรณ์</a>
+                <a href="#m4-catalog" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">แคตตาล็อกอุปกรณ์</a>
+                <a href="#m4-export"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 3 · บันทึกและส่งออก</a>
+
+                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 5 · รายงาน</div>
                 <a href="#m3-import" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">นำเข้าข้อมูล</a>
                 <a href="#m3-param"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ตั้งค่าการเงิน</a>
                 <a href="#m3-run"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ประมวลผลและออก PDF</a>
@@ -100,7 +112,9 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <div class="mt-6 flex flex-wrap gap-2">
                     <button onclick="jumpTo('pea')"    class="no-print text-xs bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition">เริ่มที่เมนู 1 <i class="fa-solid fa-arrow-right ml-1"></i></button>
                     <button onclick="jumpTo('asc')"    class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 2</button>
-                    <button onclick="jumpTo('report')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 3</button>
+                    <button onclick="jumpTo('model3d')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 3</button>
+                    <button onclick="jumpTo('device')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 4</button>
+                    <button onclick="jumpTo('report')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 5</button>
                 </div>
             </header>
 
@@ -554,9 +568,195 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
 
             <hr class="my-14 border-slate-200">
 
-            <!-- ═══════════ เมนู 3 ═══════════ -->
+            <hr class="my-14 border-slate-200">
+
+            <!-- ═══════════ เมนู 3 · 3D Model ═══════════ -->
             <div class="flex items-center gap-3 mb-6">
-                <div class="step-num bg-green-600 text-white">3</div>
+                <div class="step-num bg-indigo-600 text-white">3</div>
+                <h2 class="text-2xl font-bold text-slate-900">แบบจำลอง 3 มิติ</h2>
+            </div>
+            <p class="text-slate-600 leading-relaxed mb-8">
+                เมนูนี้เปลี่ยนผังแผงที่ออกแบบไว้ในเมนู 2 ให้เป็นภาพอาคารสามมิติที่ลูกค้าดูแล้วเข้าใจทันที
+                พร้อมเงาตกกระทบตามตำแหน่งดวงอาทิตย์จริง และส่งออกเป็นภาพความละเอียดสูงไปใส่ในข้อเสนอได้
+            </p>
+
+            <section class="mb-12">
+                <h3 id="m3d-load" class="text-lg font-bold text-slate-800 mb-3">นำเข้าข้อมูล</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    ข้อมูลรูปทรงทั้งหมดมาจากไฟล์ DB2 ที่บันทึกไว้ตอนจบเมนู 2
+                </p>
+                <ol class="space-y-4 mb-5">
+                    <li class="flex gap-4">
+                        <div class="step-num bg-indigo-50 text-indigo-700">1</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            ลากไฟล์ <span class="kbd">DB2</span> มาวางกลางหน้าจอ หรือกด <span class="btn-ref">เลือกไฟล์</span>
+                            ถ้าลาก <span class="kbd">DB3</span> มาพร้อมกันด้วย จะได้ตัวเลขผลผลิตต่อปีและภาพดาวเทียมปูพื้นเพิ่มมาให้
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-indigo-50 text-indigo-700">2</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            อาคาร หลังคา และแผงทุกใบจะถูกสร้างขึ้นตามผังที่ออกแบบไว้ทันที
+                            รวมถึงกล่องสิ่งกีดขวางและตำแหน่งตู้ MDB ถ้าเคยวาดไว้
+                        </p></div>
+                    </li>
+                </ol>
+                <div class="bg-amber-50 border-l-4 border-amber-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        หน้านี้ต้องเปิดผ่าน <span class="kbd">http://</span> เท่านั้น
+                        ดับเบิลคลิกไฟล์ตรง ๆ จะใช้ไม่ได้ เพราะไลบรารีสามมิติโหลดแบบ ES Module
+                        ถ้าเปิดผิดทางจะมีกล่องแดงขึ้นบอกวิธีแก้พร้อมคำสั่งให้คัดลอก
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m3d-height" class="text-lg font-bold text-slate-800 mb-3">ปรับความสูงและทิศหลังคา</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    ค่าตั้งต้นดึงมาจาก DB2 ให้แล้ว แก้ตรงนี้ได้โดยไม่กระทบไฟล์ต้นทาง
+                    ค่าที่แก้จะถูกจำไว้ในเครื่องแยกตามชื่อโครงการ
+                </p>
+                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed mb-5">
+                    <li><b class="text-slate-800">ความสูงชายคา</b> — ระดับที่คนปีนขึ้นไปเหยียบหลังคา</li>
+                    <li><b class="text-slate-800">ชายคาอีกปลายหนึ่ง</b> — ใส่ต่างจากปลายแรกเมื่ออาคารทรงโมเดิร์นที่ชายคาสองข้างไม่เท่ากัน ถ้าเท่ากันคือหลังคาลาดทางเดียวตามปกติ</li>
+                    <li><b class="text-slate-800">ความสูงสันหลังคา</b> — แก้ค่านี้แล้วความชันจะคำนวณให้เอง และกลับกัน</li>
+                    <li><b class="text-slate-800">ปุ่ม ⟳180°</b> — ใช้เมื่อหลังคาเอียงกลับด้าน เพราะการหาทิศอัตโนมัติมีโอกาสได้ทิศตรงข้าม ให้เทียบกับภาพถ่ายดาวเทียมแล้วกดสลับ</li>
+                    <li><b class="text-slate-800">ระยะยกแผงจากหลังคา</b> — ความสูงของรางที่ยกแผงขึ้นจากผิวหลังคา</li>
+                </ul>
+                <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        ถ้าเห็นคำเตือนว่าความสูง 10 เมตรเป็นค่าตั้งต้น แปลว่าตอนออกแบบยังไม่ได้กรอกความสูงจริง
+                        กลับไปกรอกที่เมนู 2 แล้วบันทึก DB2 ใหม่จะได้ภาพที่ถูกต้องกว่า
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m3d-sun" class="text-lg font-bold text-slate-800 mb-3">ดวงอาทิตย์และเงา</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    เลื่อนแถบเดือนและเวลา ตำแหน่งดวงอาทิตย์คำนวณจากพิกัดจริงของโครงการ
+                    ใช้ตอบคำถามลูกค้าว่าเงาจากส่วนที่สูงกว่าจะบังแผงตอนไหนบ้าง
+                </p>
+                <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        ช่วงที่ควรลองคือเดือนธันวาคมตอนเช้าและบ่ายแก่ ๆ เพราะดวงอาทิตย์อยู่ต่ำที่สุดของปี
+                        เงาจะยาวที่สุด ถ้าช่วงนั้นไม่มีเงาบังก็วางใจได้ทั้งปี
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m3d-export" class="text-lg font-bold text-slate-800 mb-3">ส่งออกภาพ</h3>
+                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed mb-5">
+                    <li>เลือกมุมกล้องจากปุ่มสำเร็จรูป 6 แบบ หรือหมุนเองด้วยเมาส์</li>
+                    <li><span class="btn-ref">ส่งออกมุมนี้</span> ได้ภาพเดียว · <span class="btn-ref">ชุด 4 มุม</span> ได้ครบสี่ด้านรวดเดียว</li>
+                    <li>ติ๊ก <b class="text-slate-800">พื้นหลังโปร่งใส</b> เมื่อจะเอาไปแปะใน Word หรือ PowerPoint</li>
+                    <li>ภาพดาวเทียมปูพื้นต้องปรับขนาดและมุมหมุนด้วยตาเอง เพราะภาพใน DB3 เป็นภาพจับหน้าจอที่ไม่มีขอบเขตพิกัดติดมาด้วย</li>
+                </ul>
+            </section>
+
+            <hr class="my-14 border-slate-200">
+
+            <!-- ═══════════ เมนู 4 · Device Location ═══════════ -->
+            <div class="flex items-center gap-3 mb-6">
+                <div class="step-num bg-amber-500 text-white">4</div>
+                <h2 class="text-2xl font-bold text-slate-900">วางผังอุปกรณ์บนภาพถ่าย</h2>
+            </div>
+            <p class="text-slate-600 leading-relaxed mb-8">
+                เมนูนี้ใช้ตอนสำรวจหน้างาน ถ่ายภาพผนังห้องไฟฟ้าแล้ววางอินเวอร์เตอร์ ตู้ MDB แบตเตอรี่ และรางเดินสาย
+                ลงไปตามขนาดจริง เพื่อดูว่าของทั้งหมดลงตัวไหมก่อนสั่งซื้อ ทำงานแยกจากเมนูอื่น ไม่ต้องมีไฟล์ DB
+            </p>
+
+            <section class="mb-12">
+                <h3 id="m4-cal" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 1 · ปรับเทียบผนัง</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    ขั้นนี้สำคัญที่สุด ถ้าข้ามไปขนาดอุปกรณ์ทั้งหมดจะผิด
+                </p>
+                <ol class="space-y-4 mb-5">
+                    <li class="flex gap-4">
+                        <div class="step-num bg-amber-50 text-amber-700">1</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            กด <span class="btn-ref">📷 ถ่ายภาพ</span> หรือเลือกภาพจากคลัง
+                            บนคอมพิวเตอร์ลากไฟล์มาวางหรือกด <span class="kbd">Ctrl</span>+<span class="kbd">V</span> ก็ได้
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-amber-50 text-amber-700">2</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            กด <span class="btn-ref">📐 ปรับเทียบผนัง</span> แล้วแตะมุมผนังทีละมุมตามลำดับ
+                            ซ้ายล่าง ขวาล่าง ขวาบน ซ้ายบน
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-amber-50 text-amber-700">3</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            กรอกความกว้างและความสูงจริงของผนังที่ล้อมด้วยสี่มุมนั้น แล้วกด <span class="btn-ref">ยืนยัน</span>
+                        </p></div>
+                    </li>
+                </ol>
+                <div class="bg-amber-50 border-l-4 border-amber-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        ต้องใช้สี่มุม ไม่ใช่สองจุด เพราะห้องไฟฟ้ามักแคบจนต้องถ่ายเฉียง
+                        การวัดระยะสองจุดจะถูกต้องเฉพาะเมื่อถ่ายตั้งฉากพอดีเท่านั้น
+                        ภาพที่เอียงเพียงเล็กน้อยก็ทำให้ขนาดอุปกรณ์ผิดได้เกือบสองในสิบส่วน
+                        แต่ดูเหมือนถูกต้องจนไม่มีใครสังเกต
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m4-place" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 2 · วางอุปกรณ์</h3>
+                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed mb-5">
+                    <li>กดชื่ออุปกรณ์ที่แถบล่างเพื่อวางลงกลางผนัง แล้วลากไปยังตำแหน่งที่ต้องการ</li>
+                    <li>แถบด้านล่างบอกระยะห่างจากขอบซ้ายและความสูงจากพื้นของชิ้นที่เลือกอยู่</li>
+                    <li>ปุ่มลูกศรสี่ทิศขยับทีละ 5 เซนติเมตร ใช้ตอนต้องการความละเอียด</li>
+                    <li><span class="btn-ref">⟳ หมุน 90°</span> สำหรับของที่ติดตั้งได้สองแนว · รางเดินสายมีแถบปรับความยาว</li>
+                    <li>กด <span class="btn-ref">⬓ ผังพื้น</span> ดูมุมมองจากด้านบน ตรวจว่าอุปกรณ์ยื่นออกจากผนังมากแค่ไหน ชนทางเดินหรือเปล่า</li>
+                </ul>
+                <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        ระบบตรวจให้อัตโนมัติสี่อย่าง — อุปกรณ์ทับกัน ระยะเว้นว่างรอบตัวไม่พอตามคู่มือผู้ผลิต
+                        อุปกรณ์ล้นออกนอกขอบผนัง และติดตั้งต่ำกว่า 15 เซนติเมตรจากพื้น
+                        แถบเตือนสีแดงคือต้องแก้ สีส้มคือควรทบทวน
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m4-catalog" class="text-lg font-bold text-slate-800 mb-3">แคตตาล็อกอุปกรณ์</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    กด <span class="btn-ref">✎ แคตตาล็อก</span> เพื่อเพิ่มหรือแก้อุปกรณ์ของคุณเอง
+                    กรอกกว้าง สูง ลึก และระยะเว้นว่างรอบตัวตามคู่มือผู้ผลิต
+                    ค่าที่กรอกถูกจำไว้ในเครื่อง ใช้กับงานถัดไปได้เลยไม่ต้องกรอกซ้ำ
+                </p>
+                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed">
+                    <li>อัปโหลดภาพจริงของอุปกรณ์ได้ ภาพจะถูกวางทับกล่องตามขนาดที่กรอก ทำให้ภาพผังดูเหมือนของจริง</li>
+                    <li>ภาพถูกย่อขนาดอัตโนมัติก่อนเก็บ เพื่อไม่ให้ไฟล์ผังใหญ่เกินไป</li>
+                    <li>ความลึกไม่แสดงในมุมมองผนัง แต่ใช้ในผังพื้นและใช้ตรวจระยะยื่น</li>
+                </ul>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m4-export" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 3 · บันทึกและส่งออก</h3>
+                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed mb-5">
+                    <li>งานถูกบันทึกลงเครื่องอัตโนมัติทุกครั้งที่แก้ เปิดหน้าใหม่จะถามว่าจะทำงานต่อไหม</li>
+                    <li><span class="btn-ref">💾 เซฟไฟล์ผัง</span> ได้ไฟล์ <span class="kbd">.json</span> สำหรับส่งต่อหรือเก็บถาวร</li>
+                    <li><span class="btn-ref">▭ มุมตรง</span> แปลงภาพถ่ายเฉียงให้เป็นภาพมองตรงเหมือนแบบก่อสร้าง</li>
+                    <li><span class="btn-ref">⬇ บันทึกภาพ</span> ได้ไฟล์ PNG พร้อมชื่อและขนาดของอุปกรณ์ทุกชิ้น
+                        ถ้าแปลงเป็นมุมตรงไว้แล้วจะมีเส้นบอกขนาดแบบแบบก่อสร้างให้ด้วย</li>
+                </ul>
+                <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        แถบซูมด้านบนภาพมีปุ่ม พอดีจอ ย่อ ขยาย และ 1:1
+                        กด <span class="kbd">Ctrl</span> ค้างแล้วหมุนลูกกลิ้งเมาส์ก็ซูมได้เหมือนกัน
+                        ลากอุปกรณ์ได้แม่นเท่าเดิมทุกระดับการซูม
+                    </p>
+                </div>
+            </section>
+
+            <!-- ═══════════ เมนู 5 ═══════════ -->
+            <div class="flex items-center gap-3 mb-6">
+                <div class="step-num bg-green-600 text-white">5</div>
                 <h2 class="text-2xl font-bold text-slate-900">รายงานนำเสนอ</h2>
             </div>
             <p class="text-slate-600 leading-relaxed mb-8">
