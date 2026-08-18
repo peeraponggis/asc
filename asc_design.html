@@ -455,9 +455,10 @@
                     </div>
                     <div class="form-group smart-db smart-db-drone" id="droneListContainer">
                         <div style="font-size: 0.75em; color: #64748b; margin-bottom: 8px; line-height: 1.3;">
-                            เลือกไฟล์ภาพ แล้วเลื่อนแผนที่ให้จุดสังเกต (มุมอาคาร/เสา) อยู่กึ่งกลางจอ กด <b>🎯 ปักหมุดกลางจอ</b> จากนั้นลากหมุดสีส้มไปยังตำแหน่งจริงบนภาพดาวเทียม<br>
-                            ปักได้ไม่จำกัดจำนวน ยิ่งมากยิ่งแม่น — ตั้งแต่ 3 จุดขึ้นไประบบจะแสดง<b>ค่าคลาดเฉลี่ยเป็นเมตร</b> · คลิกขวาที่หมุดเพื่อลบทีละจุด<br>
-                            ถ้าภาพบิดไม่สม่ำเสมอ ให้เปลี่ยนเป็นโหมด <b>Rubber-sheet</b> (ต้องมี GCP ≥ 4 จุด) · ซ้อนหลายภาพได้ด้วยปุ่ม "+ เพิ่มรูป"
+                            <b>1. วางคร่าว ๆ ก่อน</b> — เลือกไฟล์ แล้วใช้ <b>✋ ย้ายภาพ</b> ลากไปวาง ปรับ <b>หมุน / ย่อ-ขยาย</b> ให้ทาบกับภาพดาวเทียมพอประมาณ<br>
+                            <b>2. ปรับละเอียดด้วย GCP</b> — เลื่อนแผนที่ให้จุดสังเกต (มุมอาคาร/เสา) อยู่กึ่งกลางจอ กด <b>🎯 เพิ่ม GCP</b> แล้วลากหมุดส้มไปยังตำแหน่งจริง<br>
+                            <span style="color:#94a3b8;">1 จุด = เลื่อน · 2 จุด = เลื่อน+หมุน+ย่อขยาย · 3 จุด = Affine ตรงเป๊ะทุกจุด · 4 จุดขึ้นไป = Affine เฉลี่ยความคลาด (มี RMSE) หรือเลือก Rubber-sheet เพื่อดัดให้ตรงทุกจุด</span><br>
+                            🔍 ซูมไปที่ภาพ · 🔒 ล็อกกันขยับ · คลิกขวาที่หมุด = ลบทีละจุด · ซ้อนหลายภาพด้วยปุ่ม "+ เพิ่มรูป"
                         </div>
                     </div>
 
@@ -1925,6 +1926,9 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 this.opacity = 0.7;
                 this.visible = true;
                 this.mode    = 'affine';  // affine | rubber
+                this.locked  = false;
+                this.rotDeg  = 0;         // ค่าสะสมบนสไลเดอร์ ใช้คำนวณส่วนต่างตอนลาก
+                this.scalePct= 100;
                 this.gcps    = [];        // { u, v, lat, lng, marker }
                 this.A       = AscAff.identity();   // พิกเซล → Mercator เมตร
             }
@@ -2003,6 +2007,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 }).addTo(droneMarkers);
                 m.bindTooltip(() => 'GCP ' + idx() + ' — ' + this.name + ' (ลากไปยังตำแหน่งจริง)',
                               { direction: 'top', offset: [0, -12] });
+                m.on('dragstart', () => { if (this.locked) m.dragging.disable(); });
                 m.on('drag', () => {
                     const ll = m.getLatLng();
                     g.lat = ll.lat; g.lng = ll.lng;
@@ -2011,6 +2016,48 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 m.on('dragend', () => { renderDroneList(); });
                 m.on('contextmenu', () => { this.removeGcp(g); });
                 g.marker = m;
+            }
+
+            /* แปลงภาพในพิกัดพิกเซล แล้วลาก GCP ตามไปด้วย
+               การจัดวางด้วยมือคือการวางคร่าว ๆ ทั้งก้อน ไม่ควรทำให้ค่าที่ปรับละเอียดไว้แล้วเสียไป */
+            applyPxTransform(T) {
+                this.A = AscAff.compose(this.A, T);
+                this.syncGcpFromA();
+            }
+            syncGcpFromA() {
+                this.gcps.forEach(g => {
+                    const ll = this.pxToLatLng(g.u, g.v);
+                    g.lat = ll.lat; g.lng = ll.lng;
+                    if (g.marker) g.marker.setLatLng([g.lat, g.lng]);
+                });
+            }
+            translateMerc(dx, dy) {
+                this.A = AscAff.compose(AscAff.translation(dx, dy), this.A);
+                this.syncGcpFromA();
+            }
+            /* หมุน/ย่อขยายรอบจุดกึ่งกลางภาพ */
+            _aboutCenter(M) {
+                const cu = this.w / 2, cv = this.h / 2;
+                return AscAff.compose(AscAff.translation(cu, cv),
+                       AscAff.compose(M, AscAff.translation(-cu, -cv)));
+            }
+            rotateTo(deg) {
+                const d = (deg - this.rotDeg) * Math.PI / 180;
+                this.rotDeg = deg;
+                if (!d) return;
+                const co = Math.cos(d), si = Math.sin(d);
+                this.applyPxTransform(this._aboutCenter([co, -si, 0, si, co, 0]));
+            }
+            scaleTo(pct) {
+                const k = pct / (this.scalePct || 100);
+                this.scalePct = pct;
+                if (!isFinite(k) || k <= 0 || Math.abs(k - 1) < 1e-9) return;
+                this.applyPxTransform(this._aboutCenter([k, 0, 0, 0, k, 0]));
+            }
+            getBounds() {
+                if (!this.w || !this.h) return null;
+                const pts = this.corners().map(c => this.pxToLatLng(c[0], c[1]));
+                return L.latLngBounds(pts);
             }
 
             removeGcp(g) {
@@ -2037,6 +2084,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 return {
                     id: this.id, name: this.name, w: this.w, h: this.h,
                     opacity: this.opacity, visible: this.visible, mode: this.mode,
+                    locked: this.locked, rotDeg: this.rotDeg, scalePct: this.scalePct,
                     A: this.A.slice(),
                     gcps: this.gcps.map(g => ({
                         u: Number(g.u.toFixed(2)), v: Number(g.v.toFixed(2)),
@@ -2170,13 +2218,59 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
 
         const droneLayer = new AscDroneLayer().addTo(map);
 
+        /* ---------- โหมดย้ายภาพด้วยการลาก ----------
+           ปกติ pane ของภาพปิดการรับคลิกไว้ เพื่อไม่ให้บังเครื่องมือวาดหลังคา
+           จะเปิดรับเฉพาะตอนกดปุ่ม "ย้ายภาพ" เท่านั้น แล้วปิดกลับทันทีที่เลิก */
+        let ascMoveTarget = null;
+        function ascSetMoveMode(im) {
+            ascMoveTarget = (ascMoveTarget === im) ? null : im;
+            const pane = map.getPane('dronePane');
+            pane.style.pointerEvents = ascMoveTarget ? 'auto' : 'none';
+            pane.style.cursor = ascMoveTarget ? 'grab' : '';
+            renderDroneList();
+        }
+        (function attachImageDrag() {
+            const cv = droneLayer._canvas || (droneLayer._canvas = null);
+            const bind = () => {
+                const el = droneLayer._canvas;
+                if (!el || el.__ascBound) return;
+                el.__ascBound = true;
+                let last = null;
+                el.addEventListener('pointerdown', e => {
+                    if (!ascMoveTarget || ascMoveTarget.locked) return;
+                    e.preventDefault();
+                    last = map.mouseEventToLatLng(e);
+                    map.dragging.disable();
+                    el.setPointerCapture(e.pointerId);
+                    map.getPane('dronePane').style.cursor = 'grabbing';
+                });
+                el.addEventListener('pointermove', e => {
+                    if (!last || !ascMoveTarget) return;
+                    const now = map.mouseEventToLatLng(e);
+                    const a = llToMerc(last.lat, last.lng), b = llToMerc(now.lat, now.lng);
+                    ascMoveTarget.translateMerc(b[0] - a[0], b[1] - a[1]);
+                    last = now;
+                    droneLayer.redraw();
+                });
+                const stop = () => {
+                    if (!last) return;
+                    last = null; map.dragging.enable();
+                    map.getPane('dronePane').style.cursor = ascMoveTarget ? 'grab' : '';
+                    renderDroneList();
+                };
+                el.addEventListener('pointerup', stop);
+                el.addEventListener('pointercancel', stop);
+            };
+            bind();
+            map.on('zoomend moveend', bind);   // canvas ถูกสร้างใหม่ตอนรีเซ็ตเลเยอร์
+        })();
+
         /* ---------- หน้าจอรายการภาพ ---------- */
-        function ascRmseBadge(im) {
+        function ascRmseText(im) {
             const r = im.rmse();
-            if (r === null) return '<span style="color:#94a3b8;">GCP ' + im.gcps.length + ' จุด (ต้องมี 3 จุดขึ้นไปจึงคำนวณความคลาดได้)</span>';
+            if (r === null) return '<span style="color:#94a3b8;">RMSE: ต้องมี GCP ≥ 3 จุด</span>';
             const col = r <= 0.5 ? '#16a34a' : (r <= 1.5 ? '#d97706' : '#dc2626');
-            return '<span style="color:' + col + '; font-weight:bold;">GCP ' + im.gcps.length +
-                   ' จุด · คลาดเฉลี่ย ' + r.toFixed(2) + ' ม.</span>';
+            return 'RMSE: <b style="color:' + col + ';">' + r.toFixed(3) + ' ม.</b>';
         }
 
         function renderDroneList() {
@@ -2184,68 +2278,108 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
             if (!host) return;
             host.querySelectorAll('.drone-item-row').forEach(el => el.remove());
 
-            ascDroneImages.forEach(im => {
+            ascDroneImages.forEach((im, idx) => {
+                const moving = (ascMoveTarget === im);
+                const dis = im.locked ? ' disabled' : '';
                 const box = document.createElement('div');
                 box.className = 'drone-item-row';
-                box.style.cssText = 'border:1px solid #fed7aa; background:#fff; border-radius:6px; padding:8px; margin-bottom:8px;';
-                box.innerHTML =
-                  '<div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">' +
-                    '<b style="flex:1; font-size:0.85em; color:#9a3412; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + im.name + '</b>' +
-                    '<button data-a="vis" style="border:1px solid #cbd5e1; background:#f8fafc; border-radius:4px; padding:2px 7px; cursor:pointer; font-size:0.85em;">' + (im.visible ? '👁' : '🙈') + '</button>' +
-                    '<button data-a="del" style="border:1px solid #fecaca; background:#fef2f2; color:#dc2626; border-radius:4px; padding:2px 7px; cursor:pointer; font-size:0.85em;">✕</button>' +
-                  '</div>' +
-                  (im.src ? '' :
-                    '<div style="font-size:0.75em; color:#b45309; background:#fffbeb; border:1px dashed #fde68a; border-radius:4px; padding:5px 7px; margin-bottom:6px;">' +
-                      'ตำแหน่งและ GCP ถูกกู้คืนจากไฟล์แล้ว — เลือกไฟล์ภาพเดิมเพื่อให้ภาพกลับมาแสดง</div>') +
-                  '<input type="file" data-a="file" accept="image/png, image/jpeg" style="width:100%; font-size:0.8em; margin-bottom:6px;">' +
-                  '<div style="display:flex; align-items:center; gap:6px; margin-bottom:5px; font-size:0.8em;">' +
-                    '<span style="width:52px; color:#64748b;">โปร่งแสง</span>' +
-                    '<input type="range" data-a="op" min="0.1" max="1" step="0.05" value="' + im.opacity + '" style="flex:1;">' +
-                    '<span style="width:34px; text-align:right; color:#475569;">' + Math.round(im.opacity*100) + '%</span>' +
-                  '</div>' +
-                  '<div style="display:flex; align-items:center; gap:6px; margin-bottom:6px; font-size:0.8em;">' +
-                    '<span style="width:52px; color:#64748b;">การบิดภาพ</span>' +
-                    '<select data-a="mode" style="flex:1; font-size:0.95em; padding:2px 4px;">' +
-                      '<option value="affine"' + (im.mode === 'affine' ? ' selected' : '') + '>Affine — ยืด/หมุน/เฉือนทั้งภาพ</option>' +
-                      '<option value="rubber"' + (im.mode === 'rubber' ? ' selected' : '') + '>Rubber-sheet — ดัดเฉพาะจุด (ต้องมี GCP ≥ 4)</option>' +
-                    '</select>' +
-                  '</div>' +
-                  '<div style="font-size:0.75em; margin-bottom:6px;">' + ascRmseBadge(im) + '</div>' +
-                  '<div style="display:flex; gap:5px;">' +
-                    '<button data-a="addgcp" style="flex:2; padding:5px; background:#ea580c; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:0.8em; font-weight:bold;">🎯 ปักหมุดกลางจอ</button>' +
-                    '<button data-a="cleargcp" style="flex:1; padding:5px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:4px; cursor:pointer; font-size:0.8em;">ล้าง GCP</button>' +
+                box.style.cssText = 'border:1px solid ' + (moving ? '#f59e0b' : '#fed7aa') +
+                    '; background:#fff; border-radius:6px; padding:8px; margin-bottom:8px;';
+
+                const sl = (key, label, min, max, step, val, unit) =>
+                  '<div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:0.78em;">' +
+                    '<span style="width:50px; color:#64748b; flex-shrink:0;">' + label + '</span>' +
+                    '<input type="range" data-a="' + key + '" min="' + min + '" max="' + max + '" step="' + step +
+                      '" value="' + val + '" style="flex:1;"' + (key === 'op' ? '' : dis) + '>' +
+                    '<span data-o="' + key + '" style="width:40px; text-align:right; color:#475569; font-family:ui-monospace,monospace;">' + val + unit + '</span>' +
                   '</div>';
 
-                box.querySelector('[data-a="file"]').addEventListener('change', e => {
+                box.innerHTML =
+                  '<div style="display:flex; align-items:center; gap:5px; margin-bottom:6px;">' +
+                    '<b style="flex:1; font-size:0.82em; color:#9a3412; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + im.name + '">' +
+                       (idx + 1) + '. ' + im.name + '</b>' +
+                    '<button data-a="zoom" title="ซูมไปที่ภาพ" style="border:1px solid #bae6fd; background:#f0f9ff; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:0.85em;">🔍</button>' +
+                    '<button data-a="vis" title="ซ่อน/แสดง" style="border:1px solid #cbd5e1; background:#f8fafc; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:0.85em;">' + (im.visible ? '👁' : '🙈') + '</button>' +
+                    '<button data-a="lock" title="ล็อกไม่ให้ขยับ" style="border:1px solid ' + (im.locked ? '#fbbf24' : '#cbd5e1') + '; background:' + (im.locked ? '#fffbeb' : '#f8fafc') + '; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:0.85em;">' + (im.locked ? '🔒' : '🔓') + '</button>' +
+                    '<button data-a="del" title="ลบภาพ" style="border:1px solid #fecaca; background:#fef2f2; color:#dc2626; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:0.85em;">✕</button>' +
+                  '</div>' +
+                  (im.src ? '' :
+                    '<div style="font-size:0.74em; color:#b45309; background:#fffbeb; border:1px dashed #fde68a; border-radius:4px; padding:5px 7px; margin-bottom:6px;">' +
+                      'กู้ตำแหน่งและ GCP จากไฟล์แล้ว — เลือกไฟล์ภาพเดิมเพื่อให้ภาพกลับมา</div>') +
+                  (im.src ? '' : '<input type="file" data-a="file" accept="image/png, image/jpeg" style="width:100%; font-size:0.78em; margin-bottom:6px;">') +
+                  sl('op',  'โปร่งแสง', 0.1, 1,   0.05, im.opacity,  '') +
+                  sl('rot', 'หมุน',     0,   360, 0.5,  im.rotDeg,   '°') +
+                  sl('sc',  'ย่อ/ขยาย', 10,  400, 1,    im.scalePct, '%') +
+                  '<div style="display:flex; gap:4px; margin:6px 0 5px;">' +
+                    '<button data-a="addgcp" style="flex:1.6; padding:5px 2px; background:#ea580c; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:0.78em; font-weight:bold;">🎯 เพิ่ม GCP (' + im.gcps.length + ')</button>' +
+                    '<button data-a="move" style="flex:1.2; padding:5px 2px; background:' + (moving ? '#f59e0b' : '#f1f5f9') + '; color:' + (moving ? '#fff' : '#475569') + '; border:1px solid ' + (moving ? '#f59e0b' : '#cbd5e1') + '; border-radius:4px; cursor:pointer; font-size:0.78em; font-weight:bold;">✋ ' + (moving ? 'กำลังย้าย' : 'ย้ายภาพ') + '</button>' +
+                    '<button data-a="cleargcp" style="flex:1; padding:5px 2px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:4px; cursor:pointer; font-size:0.78em;">ล้าง GCP</button>' +
+                  '</div>' +
+                  '<select data-a="mode" style="width:100%; font-size:0.78em; padding:3px 4px; margin-bottom:5px;">' +
+                    '<option value="affine"' + (im.mode === 'affine' ? ' selected' : '') + '>Affine — ยืด/หมุน/เฉือนทั้งภาพ</option>' +
+                    '<option value="rubber"' + (im.mode === 'rubber' ? ' selected' : '') + '>Rubber-sheet — ดัดให้ตรงทุกจุด (GCP ≥ 4)</option>' +
+                  '</select>' +
+                  '<div style="font-size:0.72em; color:#64748b; font-family:ui-monospace,monospace;">' +
+                    (im.w ? im.w + '×' + im.h + ' px' : 'ยังไม่มีภาพ') + ' • GCP ' + im.gcps.length + ' จุด • ' + ascRmseText(im) +
+                  '</div>' +
+                  (moving ? '<div style="font-size:0.72em; color:#b45309; margin-top:5px;">ลากบนภาพเพื่อย้าย — กดปุ่มซ้ำเพื่อออกจากโหมดนี้</div>' : '');
+
+                const q = k => box.querySelector('[data-a="' + k + '"]');
+                const fEl = q('file');
+                if (fEl) fEl.addEventListener('change', e => {
                     const f = e.target.files[0]; if (!f) return;
-                    ascAttachImageFile(im, f);
-                    e.target.value = '';
+                    ascAttachImageFile(im, f); e.target.value = '';
                 });
-                box.querySelector('[data-a="op"]').addEventListener('input', e => {
+                q('op').addEventListener('input', e => {
                     im.opacity = parseFloat(e.target.value) || 0.7;
-                    e.target.nextElementSibling.textContent = Math.round(im.opacity*100) + '%';
+                    box.querySelector('[data-o="op"]').textContent = im.opacity;
                     droneLayer.redraw();
                 });
-                box.querySelector('[data-a="mode"]').addEventListener('change', e => {
+                q('rot').addEventListener('input', e => {
+                    if (im.locked) return;
+                    im.rotateTo(parseFloat(e.target.value) || 0);
+                    box.querySelector('[data-o="rot"]').textContent = im.rotDeg + '°';
+                    droneLayer.redraw();
+                });
+                q('sc').addEventListener('input', e => {
+                    if (im.locked) return;
+                    im.scaleTo(parseFloat(e.target.value) || 100);
+                    box.querySelector('[data-o="sc"]').textContent = im.scalePct + '%';
+                    droneLayer.redraw();
+                });
+                q('mode').addEventListener('change', e => {
                     im.mode = e.target.value;
                     if (im.mode === 'rubber' && im.gcps.length < 4) {
-                        alert('โหมด Rubber-sheet ต้องมี GCP อย่างน้อย 4 จุด\nตอนนี้มี ' + im.gcps.length + ' จุด — ระบบจะใช้ Affine ไปก่อนจนกว่าจะครบ');
+                        alert('โหมด Rubber-sheet ต้องมี GCP อย่างน้อย 4 จุด (ตอนนี้ ' + im.gcps.length + ' จุด)\nระบบจะใช้ Affine ไปก่อนจนกว่าจะครบ');
                     }
                     droneLayer.redraw();
                 });
-                box.querySelector('[data-a="vis"]').addEventListener('click', () => {
-                    im.visible = !im.visible; droneLayer.redraw(); renderDroneList();
+                q('zoom').addEventListener('click', () => {
+                    const b = im.getBounds();
+                    if (b) map.fitBounds(b, { padding: [40, 40] });
+                    else alert('ยังไม่มีภาพให้ซูมไปหา');
                 });
-                box.querySelector('[data-a="del"]').addEventListener('click', () => {
+                q('vis').addEventListener('click', () => { im.visible = !im.visible; droneLayer.redraw(); renderDroneList(); });
+                q('lock').addEventListener('click', () => {
+                    im.locked = !im.locked;
+                    if (im.locked && ascMoveTarget === im) ascSetMoveMode(im);
+                    else renderDroneList();
+                });
+                q('del').addEventListener('click', () => {
                     if (!confirm('ลบ "' + im.name + '" ออกจากโครงการ?')) return;
+                    if (ascMoveTarget === im) ascSetMoveMode(im);
                     im.destroy(); renderDroneList();
                 });
-                box.querySelector('[data-a="addgcp"]').addEventListener('click', () => {
-                    if (!im.src) { alert('เลือกไฟล์ภาพก่อนจึงจะปักหมุดได้'); return; }
-                    im.addGcpAtCenter();
-                    droneLayer.redraw(); renderDroneList();
+                q('move').addEventListener('click', () => {
+                    if (!im.src) { alert('เลือกไฟล์ภาพก่อน'); return; }
+                    if (im.locked) { alert('ภาพถูกล็อกอยู่ กดปลดล็อก 🔒 ก่อน'); return; }
+                    ascSetMoveMode(im);
                 });
-                box.querySelector('[data-a="cleargcp"]').addEventListener('click', () => {
+                q('addgcp').addEventListener('click', () => {
+                    if (!im.src) { alert('เลือกไฟล์ภาพก่อนจึงจะปักหมุดได้'); return; }
+                    im.addGcpAtCenter(); droneLayer.redraw(); renderDroneList();
+                });
+                q('cleargcp').addEventListener('click', () => {
                     if (!im.gcps.length) return;
                     if (!confirm('ล้าง GCP ทั้ง ' + im.gcps.length + ' จุดของภาพนี้?')) return;
                     im.clearGcps();
@@ -2310,6 +2444,9 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 im.opacity = (typeof d.opacity === 'number') ? d.opacity : 0.7;
                 im.visible = d.visible !== false;
                 im.mode = (d.mode === 'rubber') ? 'rubber' : 'affine';
+                im.locked = !!d.locked;
+                if (isFinite(d.rotDeg))   im.rotDeg   = d.rotDeg;
+                if (isFinite(d.scalePct)) im.scalePct = d.scalePct;
                 if (Array.isArray(d.A) && d.A.length === 6) im.A = d.A.slice();
                 (d.gcps || []).forEach(g => {
                     const o = { u: g.u, v: g.v, lat: g.lat, lng: g.lng, marker: null };
