@@ -13,6 +13,10 @@
     --text:#EDEFF3; --dim:#9AA3B2; --accent:#FFC400; --ok:#3FBF7F; --danger:#FF7A6E; --warn:#FF9F45;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  /* กฎ display ใน CSS มีน้ำหนักมากกว่าค่า hidden ของเบราว์เซอร์
+     ทำให้กล่องที่สั่งซ่อนแล้ว (เช่นกล่องเลือกไฟล์ แถบเครื่องมือ) ยังกินพื้นที่หน้าจออยู่
+     ทั้งที่มองไม่เห็น */
+  [hidden]{display:none !important}
   html,body{margin:0;height:100%}
   body{
     background:var(--bg); color:var(--text);

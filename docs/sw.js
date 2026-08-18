@@ -12,7 +12,7 @@
       ไม่งั้นเครื่องที่ติดตั้งไว้แล้วจะยังใช้ของเก่าต่อไป
    ========================================================================== */
 
-const VERSION = 'mobi-v2';
+const VERSION = 'mobi-v3';
 const SHELL = [
   './',
   './index.html',
@@ -70,4 +70,7 @@ self.addEventListener('fetch', e => {
 /* ให้หน้าเว็บสั่งข้ามคิวรออัปเดตได้ทันทีเมื่อผู้ใช้กดปุ่มโหลดรุ่นใหม่ */
 self.addEventListener('message', e => {
   if (e.data === 'skipWaiting') self.skipWaiting();
+  /* บอกเลขรุ่นกลับไป หน้าเว็บจะได้จำว่าผู้ใช้กด "ไว้ก่อน" กับรุ่นไหน
+     แล้วไม่ต้องขึ้นแถบซ้ำทุกครั้งที่เปิดแอป */
+  if (e.data === 'version' && e.ports && e.ports[0]) e.ports[0].postMessage(VERSION);
 });

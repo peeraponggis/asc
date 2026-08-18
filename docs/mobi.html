@@ -20,6 +20,10 @@
     --text:#EDEFF3; --dim:#9AA3B2; --accent:#FFC400; --ok:#3FBF7F; --danger:#FF7A6E; --warn:#FF9F45;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  /* กฎ display ใน CSS มีน้ำหนักมากกว่าค่า hidden ของเบราว์เซอร์
+     ทำให้กล่องที่สั่งซ่อนแล้ว (เช่นกล่องเลือกไฟล์ แถบแจ้งรุ่นใหม่ แถบเครื่องมือ)
+     ยังกินพื้นที่หน้าจออยู่ทั้งที่มองไม่เห็น — บนมือถือเสียไปเกือบ 300 px */
+  [hidden]{display:none !important}
   html,body{margin:0;height:100%}
   body{
     background:var(--bg); color:var(--text);
@@ -31,7 +35,8 @@
     display:flex; align-items:center; gap:8px; flex-wrap:wrap;
     padding-top:calc(12px + env(safe-area-inset-top));
   }
-  h1{font-size:15px; margin:0; font-weight:700; letter-spacing:.3px; flex:1}
+  h1{font-size:13.5px; margin:0; font-weight:700; letter-spacing:.2px; flex:1;
+     white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
   .badge{
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
     background:var(--panel); border:1px solid var(--line); border-radius:6px;
@@ -61,8 +66,9 @@
      ก่อนหน้านี้เวทีกว้าง 100% แล้วผูก aspect-ratio ภาพ 4000x3000 บนจอ 1920
      จึงสูงราว 1425 px มองไม่เห็นทั้งภาพ */
   #stageScroll{
-    height:clamp(240px, calc(100vh - 330px), 900px);
-    height:clamp(240px, calc(100dvh - 330px), 900px);
+    /* ความสูงถูกกำหนดด้วย sizeStageBox() ตอนรันไทม์ ค่านี้เป็นแค่ค่าตั้งต้นก่อนวัดจริง */
+    height:clamp(200px, calc(100vh - 330px), 900px);
+    height:clamp(200px, calc(100dvh - 330px), 900px);
     overflow:auto; border-radius:12px; background:#0A0D11;
     display:flex; align-items:center; justify-content:center;
     box-shadow:inset 0 0 0 1px var(--line);
@@ -144,7 +150,7 @@
 <body>
 
 <header>
-  <h1>⚡ วางแผนติดตั้งบนภาพถ่าย</h1>
+  <h1>⚡ ตำแหน่งอุปกรณ์</h1>
   <span class="badge" id="scaleBadge">ยังไม่ปรับเทียบผนัง</span>
   <span class="badge save" id="saveBadge">—</span>
   <button class="btn mini" id="installBtn" hidden style="border-color:var(--accent);color:var(--accent)">⤓ ติดตั้งแอป</button>
@@ -228,9 +234,9 @@
 </main>
 
 <footer id="tools" hidden>
+  <button class="btn" id="calBtn" style="border-color:var(--accent);color:var(--accent)">📐 ปรับเทียบผนัง</button>
   <span id="catBtns" style="display:flex; gap:8px"></span>
   <button class="btn" id="catEditBtn" style="color:var(--dim)">✎ แคตตาล็อก</button>
-  <button class="btn" id="calBtn" style="border-color:var(--accent);color:var(--accent)">📐 ปรับเทียบผนัง</button>
   <button class="btn" id="tvBtn">⬓ ผังพื้น</button>
   <button class="btn" id="rectBtn" title="แปลงภาพให้ตั้งฉากเหมือนแบบก่อสร้าง">▭ มุมตรง</button>
   <button class="btn" id="saveBtn">⬇ บันทึกภาพ</button>
@@ -313,8 +319,22 @@ const DEFAULT_CAT = [
   { id:'bat',  name:'แบตเตอรี่',      w:0.60, h:0.60, d:0.30, cl:0.20, color:'#3FBF7F' },
   { id:'comb', name:'คอมไบเนอร์บ๊อกซ์', w:0.40, h:0.50, d:0.18, cl:0.15, color:'#B57BFF' },
   { id:'tray', name:'รางไวร์เวย์',    w:2.00, h:0.10, d:0.10, cl:0,    color:'#C9A227' },
-  { id:'cam',  name:'กล้องวงจรปิด',   w:0.15, h:0.15, d:0.15, cl:0,    color:'#4FC3F7' }
+  { id:'evc',  name:'EVC',            w:0.35, h:0.50, d:0.20, cl:0.20, color:'#4FC3F7' }
 ];
+
+/* แคตตาล็อกถูกเก็บไว้ในเครื่องผู้ใช้ การแก้ค่าตั้งต้นด้านบนจึงไม่ถึงคนที่เคยใช้แล้ว
+   ย้ายรายการที่ยังเป็นค่าเดิมมาให้ตรงกัน แต่ไม่แตะรายการที่ผู้ใช้แก้เองไว้ */
+const CAT_VERSION = 2;
+function migrateCatalog() {
+  let v = 0;
+  try { v = parseInt(localStorage.getItem('asc_layout_cat_ver')) || 0; } catch (e) {}
+  if (v >= CAT_VERSION) return;
+  const i = S.cat.findIndex(q => q.id === 'cam');
+  if (i >= 0 && S.cat[i].name === 'กล้องวงจรปิด' && !S.cat[i].img) {
+    S.cat[i] = Object.assign({}, DEFAULT_CAT[DEFAULT_CAT.length - 1]);
+  }
+  try { localStorage.setItem('asc_layout_cat_ver', String(CAT_VERSION)); } catch (e) {}
+}
 
 const S = {
   img:null, nw:0, nh:0,
@@ -469,6 +489,7 @@ function stamp(t) {
 function loadCatalog() {
   try { S.cat = JSON.parse(localStorage.getItem(K_CAT)) || null; } catch (e) { S.cat = null; }
   if (!Array.isArray(S.cat) || !S.cat.length) S.cat = JSON.parse(JSON.stringify(DEFAULT_CAT));
+  migrateCatalog();
 }
 
 function restoreProject(d) {
@@ -513,7 +534,25 @@ function loadBlob(f) {
    และ toNat() แปลงพิกัดจาก getBoundingClientRect จึงยังถูกต้องทุกระดับการซูม */
 /* วัดอัตราส่วน "พอดีจอ" โดยย่อเวทีให้เป็นศูนย์ก่อน เพื่อให้แถบเลื่อนหายไป
    ไม่งั้นขนาดกล่องจะเปลี่ยนตามการมี/ไม่มีแถบเลื่อน แล้ววนกลับมากระทบค่าที่เพิ่งคำนวณ */
+/* วัดพื้นที่ว่างที่เหลือจริงแล้วยืดเวทีให้เต็ม
+   แถบแจ้งรุ่นใหม่ แถบอุปกรณ์ที่เลือก แถบเตือน และผังพื้น โผล่/หายได้ตลอด
+   ถ้าใช้สูตรตายตัวจะเสียพื้นที่ทำงานไปเปล่า ๆ ทุกครั้งที่แถบหายไป */
+function sizeStageBox() {
+  const box = $("#stageScroll");
+  if (!box || wrap.hidden) return;
+  const top = box.getBoundingClientRect().top;
+  let below = 0;
+  ['selBar', 'checkBar', 'topview'].forEach(id => {
+    const e = $("#" + id);
+    if (e && !e.hidden) below += e.offsetHeight + 10;
+  });
+  const footerH = (tools && !tools.hidden) ? tools.offsetHeight : 0;
+  const avail = window.innerHeight - top - below - footerH - 14;
+  box.style.height = Math.max(200, Math.min(avail, 1400)) + 'px';
+}
+
 function recomputeFit() {
+  sizeStageBox();
   const box = $("#stageScroll");
   if (!box || !S.nw || !S.nh) { S.fitS = 1; return; }
   const pw = stage.style.width, ph = stage.style.height;
@@ -961,11 +1000,15 @@ function render() {
   }
 
   drawTopView();
+  sizeStageBox(); applyStageSize();
 }
 window.addEventListener('resize', () => { /* SVG ใช้ viewBox จึงปรับขนาดเอง */ });
 
 /* ═══════════════ ผังพื้น (มองจากด้านบน) ═══════════════ */
-$("#tvBtn").onclick = () => { S.showTop = !S.showTop; $("#topview").hidden = !S.showTop; drawTopView(); };
+$("#tvBtn").onclick = () => {
+  S.showTop = !S.showTop; $("#topview").hidden = !S.showTop;
+  drawTopView(); sizeStageBox(); applyStageSize();
+};
 
 function drawTopView() {
   if (!S.showTop) return;
@@ -1351,22 +1394,40 @@ if ('serviceWorker' in navigator && !NATIVE) {
     navigator.serviceWorker.register('sw.js').then(reg => {
       /* พบตัวใหม่รออยู่ ให้ผู้ใช้เลือกเองว่าจะโหลดตอนนี้หรือไว้ก่อน
          ไม่รีเฟรชเองเพราะอาจกำลังวางผังค้างอยู่กลางงาน */
-      const offer = w => {
+      const askVersion = w => new Promise(res => {
+        let done = false;
+        const fin = v => { if (!done) { done = true; res(v); } };
+        try {
+          const ch = new MessageChannel();
+          ch.port1.onmessage = e => fin(e.data);
+          w.postMessage('version', [ch.port2]);
+        } catch (e) { fin(null); }
+        setTimeout(() => fin(null), 900);
+      });
+
+      const showUpdate = async w => {
+        if (!w) return;
+        const ver = (await askVersion(w)) || 'unknown';
+        /* ผู้ใช้เคยกด "ไว้ก่อน" กับรุ่นนี้แล้ว ไม่ต้องมาบังพื้นที่ทำงานอีก
+           จะขึ้นใหม่ก็ต่อเมื่อมีรุ่นที่ใหม่กว่านี้จริง ๆ */
+        try { if (localStorage.getItem('mobi_update_skipped') === ver) return; } catch (e) {}
+        $("#updateBar").hidden = false;
+        $("#updateBtn").onclick = () => { w.postMessage('skipWaiting'); location.reload(); };
+        $("#updateSkip").onclick = () => {
+          $("#updateBar").hidden = true;
+          try { localStorage.setItem('mobi_update_skipped', ver); } catch (e) {}
+          sizeStageBox(); applyStageSize();     // คืนพื้นที่ที่แถบเคยกินให้เวทีทันที
+        };
+      };
+
+      if (reg.waiting) showUpdate(reg.waiting);
+      reg.addEventListener('updatefound', () => {
+        const w = reg.installing;
         if (!w) return;
         w.addEventListener('statechange', () => {
-          if (w.state === 'installed' && navigator.serviceWorker.controller) {
-            $("#updateBar").hidden = false;
-            $("#updateBtn").onclick = () => { w.postMessage('skipWaiting'); location.reload(); };
-            $("#updateSkip").onclick = () => { $("#updateBar").hidden = true; };
-          }
+          if (w.state === 'installed' && navigator.serviceWorker.controller) showUpdate(w);
         });
-      };
-      if (reg.waiting) {
-        $("#updateBar").hidden = false;
-        $("#updateBtn").onclick = () => { reg.waiting.postMessage('skipWaiting'); location.reload(); };
-        $("#updateSkip").onclick = () => { $("#updateBar").hidden = true; };
-      }
-      reg.addEventListener('updatefound', () => offer(reg.installing));
+      });
     }).catch(() => {});
   });
 }
