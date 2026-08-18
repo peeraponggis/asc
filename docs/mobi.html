@@ -35,7 +35,7 @@
     display:flex; align-items:center; gap:8px; flex-wrap:wrap;
     padding-top:calc(12px + env(safe-area-inset-top));
   }
-  h1{font-size:13.5px; margin:0; font-weight:700; letter-spacing:.2px; flex:1;
+  h1{font-size:11px; margin:0; font-weight:800; letter-spacing:.2px; flex:1;
      white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
   .badge{
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
@@ -87,6 +87,7 @@
     min-height:40px; min-width:44px;
   }
   #zoomBar .zb:active{transform:scale(.96)}
+  #zoomBar .zb:disabled{opacity:.32; cursor:default; transform:none}
   #zoomVal{font-family:ui-monospace,monospace; color:var(--accent); min-width:52px; text-align:center}
   #stage{
     position:relative; flex-shrink:0; border-radius:6px; overflow:hidden;
@@ -111,11 +112,20 @@
   input[type=range]{accent-color:var(--accent); flex:1; min-width:110px; height:34px; touch-action:pan-y}
   footer{
     position:sticky; bottom:0; background:var(--panel); border-top:1px solid var(--line);
-    padding:10px 12px calc(10px + env(safe-area-inset-bottom));
-    display:flex; gap:8px; overflow-x:auto; scrollbar-width:none;
+    padding:10px 12px calc(6px + env(safe-area-inset-bottom));
+    display:flex; gap:8px; overflow-x:auto;
+    scrollbar-width:thin; scrollbar-color:var(--accent) var(--panel2);
+    /* เงาจางที่ขอบขวาเป็นสัญญาณว่ายังมีปุ่มเลยออกไป มือถือบางรุ่นไม่แสดง scrollbar ให้เห็น */
+    background-image:linear-gradient(to left, #0009, transparent 42px);
   }
-  footer::-webkit-scrollbar{display:none}
+  footer::-webkit-scrollbar{height:7px}
+  footer::-webkit-scrollbar-track{background:var(--panel2); border-radius:4px}
+  footer::-webkit-scrollbar-thumb{background:var(--accent); border-radius:4px}
   footer .btn{white-space:nowrap; flex-shrink:0}
+  footer::after{content:''; flex:0 0 6px}          /* เว้นท้ายให้ปุ่มสุดท้ายไม่ติดขอบ */
+  /* กล่องเลื่อนอื่น ๆ ให้เห็น scrollbar เหมือนกัน */
+  #stageScroll{scrollbar-width:thin; scrollbar-color:var(--line) transparent}
+  .sheet{scrollbar-width:thin; scrollbar-color:var(--line) transparent}
   .modal{
     position:fixed; inset:0; background:#000d; z-index:50; display:flex; flex-direction:column;
     align-items:center; justify-content:flex-start; gap:12px;
@@ -181,6 +191,9 @@
 
   <div id="stageWrap" hidden>
     <div id="zoomBar">
+      <button class="zb" id="undoBtn" title="ย้อนกลับ (Ctrl+Z)" disabled>↶</button>
+      <button class="zb" id="redoBtn" title="ทำซ้ำ (Ctrl+Shift+Z)" disabled>↷</button>
+      <span style="width:1px;height:22px;background:var(--line)"></span>
       <button class="zb" data-z="fit">⤢ พอดีจอ</button>
       <button class="zb" data-z="out">−</button>
       <span id="zoomVal">100%</span>
@@ -343,6 +356,7 @@ const S = {
   H:null, Hi:null,    // homography wall→img และผกผัน
   items:[], sel:null, nextId:1,
   calib:false, rectified:false, zoom:1, fitS:1,
+  past:[], future:[],
   cat:[], showTop:false
 };
 
@@ -519,6 +533,7 @@ function loadBlob(f) {
       S.img = r.result; S.nw = im.naturalWidth; S.nh = im.naturalHeight;
       S.wall = null; S.calPts = []; S.H = S.Hi = null;
       S.items = []; S.sel = null; S.calib = false; S.rectified = false;
+      S.past.length = 0; S.future.length = 0; updateHistBtns();
       photo.src = r.result; photo.hidden = false;
       stage.style.background = '#000';
       showStage(); render(); saveSoon();
@@ -527,6 +542,65 @@ function loadBlob(f) {
   };
   r.readAsDataURL(f);
 }
+
+/* ═══════════════ ย้อนกลับ / ทำซ้ำ ═══════════════
+   เก็บภาพรวมของสิ่งที่ผู้ใช้แก้ได้ (อุปกรณ์ที่วาง + การปรับเทียบผนัง)
+   ไม่รวมตัวภาพถ่าย เพราะการแปลงมุมตรงเปลี่ยนภาพถาวร ย้อนกลับไม่ได้
+   การลากหนึ่งครั้งนับเป็นหนึ่งขั้น ไม่ใช่ทุกพิกเซลที่นิ้วขยับ */
+const HIST_MAX = 50;
+let histBurst = null;
+
+function snapState() {
+  return JSON.stringify({ items: S.items, nextId: S.nextId, wall: S.wall, calPts: S.calPts });
+}
+function applyState(str) {
+  const d = JSON.parse(str);
+  S.items = d.items || []; S.nextId = d.nextId || 1;
+  S.wall = d.wall || null; S.calPts = d.calPts || [];
+  S.sel = null; S.calib = false;
+  buildH(); render(); saveSoon();
+}
+function updateHistBtns() {
+  const u = $("#undoBtn"), r = $("#redoBtn");
+  if (u) u.disabled = !S.past.length;
+  if (r) r.disabled = !S.future.length;
+}
+/* เรียกก่อนแก้ทุกครั้ง — การแก้รัว ๆ ภายใน 700 มิลลิวินาทีนับเป็นขั้นเดียว */
+function beginEdit(force) {
+  if (!force && histBurst) {
+    clearTimeout(histBurst);
+    histBurst = setTimeout(() => { histBurst = null; }, 700);
+    return;
+  }
+  S.past.push(snapState());
+  if (S.past.length > HIST_MAX) S.past.shift();
+  S.future.length = 0;
+  clearTimeout(histBurst);
+  /* คำสั่งที่เป็นเหตุการณ์เดี่ยว (วาง ลบ หมุน เริ่มลาก) ไม่เปิดช่วงรวบ
+     ไม่งั้นการแก้ครั้งถัดไปจะถูกยุบรวมเข้ากับคำสั่งนี้เป็นขั้นเดียว */
+  histBurst = force ? null : setTimeout(() => { histBurst = null; }, 700);
+  updateHistBtns();
+}
+function undo() {
+  if (!S.past.length) return;
+  S.future.push(snapState());
+  applyState(S.past.pop());
+  clearTimeout(histBurst); histBurst = null;
+  updateHistBtns();
+}
+function redo() {
+  if (!S.future.length) return;
+  S.past.push(snapState());
+  applyState(S.future.pop());
+  clearTimeout(histBurst); histBurst = null;
+  updateHistBtns();
+}
+addEventListener('keydown', e => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  const k = (e.key || '').toLowerCase();
+  if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); }
+});
 
 /* ═══════════════ ขนาดเวทีและการซูม ═══════════════
    เวทีถูกกำหนดเป็นพิกเซลจริง ไม่ใช่ 100% ของความกว้าง เพื่อให้ "พอดีจอ" หมายถึง
@@ -604,6 +678,9 @@ function showStage() {
   recomputeFit(); applyStageSize();
   requestAnimationFrame(() => { recomputeFit(); applyStageSize(); });  // เผื่อฟอนต์/เลย์เอาต์ยังไม่นิ่ง
 }
+
+$("#undoBtn").addEventListener('click', undo);
+$("#redoBtn").addEventListener('click', redo);
 
 $$('#zoomBar [data-z]').forEach(b => b.addEventListener('click', () => {
   const a = b.dataset.z;
@@ -725,6 +802,7 @@ $("#calUndo").onclick = () => { S.calPts.pop(); render(); };
 $("#calOk").onclick = () => {
   const w = parseFloat($("#calW").value), h = parseFloat($("#calH").value);
   if (!(w > 0) || !(h > 0) || S.calPts.length !== 4) return;
+  beginEdit(true);
   S.wall = { w, h };
   if (!buildH()) { alert('มุมทั้ง 4 อยู่ในแนวเดียวกันหรือซ้ำกัน กรุณาแตะใหม่'); return; }
   S.calib = false;
@@ -768,6 +846,7 @@ function buildCatButtons() {
 
 function addItem(q) {
   if (!S.H) { alert('ปรับเทียบผนังก่อน จึงจะวางอุปกรณ์ตามขนาดจริงได้'); return; }
+  beginEdit(true);
   S.items.push({
     id: S.nextId++, cat: q.id, name: q.name,
     X: S.wall.w / 2, Y: Math.min(S.wall.h / 2, 1.5),
@@ -779,16 +858,18 @@ function addItem(q) {
 
 const cur = () => S.items.find(i => i.id === S.sel);
 
-$("#rotBtn").onclick = () => { const it = cur(); if (it) { const t = it.w; it.w = it.h; it.h = t; render(); saveSoon(); } };
-$("#delBtn").onclick = () => { S.items = S.items.filter(i => i.id !== S.sel); S.sel = null; render(); saveSoon(); };
+$("#rotBtn").onclick = () => { const it = cur(); if (it) { beginEdit(true); const t = it.w; it.w = it.h; it.h = t; render(); saveSoon(); } };
+$("#delBtn").onclick = () => { if (S.sel === null) return; beginEdit(true); S.items = S.items.filter(i => i.id !== S.sel); S.sel = null; render(); saveSoon(); };
 $("#lenRange").oninput = e => {
   const it = cur(); if (!it) return;
+  beginEdit();
   const v = parseFloat(e.target.value);
   if (it.w >= it.h) it.w = v; else it.h = v;
   render(); saveSoon();
 };
 $$('[data-nudge]').forEach(b => b.onclick = () => {
   const it = cur(); if (!it) return;
+  beginEdit();
   const [dx, dy] = b.dataset.nudge.split(',').map(Number);
   it.X += dx; it.Y += dy;
   render(); saveSoon();
@@ -801,6 +882,7 @@ function attachDrag(node, it) {
     e.stopPropagation();
     if (S.calib) return;
     S.sel = it.id;
+    beginEdit(true);
     const p = toNat(e), wp = i2w(p.x, p.y);
     drag = { id: it.id, dx: wp.x - it.X, dy: wp.y - it.Y };
     node.setPointerCapture(e.pointerId);
@@ -861,6 +943,35 @@ function el(tag, attrs) {
 const quad = (r) => [ w2i(r.x1, r.y1), w2i(r.x2, r.y1), w2i(r.x2, r.y2), w2i(r.x1, r.y2) ];
 const ptsStr = a => a.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
 
+/* แผนที่ภาพอุปกรณ์ลงกล่องที่ถูกบิดด้วยเปอร์สเปกทีฟ
+   เมทริกซ์เดียวจากสามมุมทำให้มุมที่สี่คลาด เห็นชัดบนภาพผนังที่ถ่ายเอียง
+   จึงหั่นกล่องเป็นสองสามเหลี่ยมแล้วแปลงทีละชิ้น ผลคือตรงครบทั้งสี่มุม */
+function triAffine(s0, s1, s2, q0, q1, q2) {
+  const den = (s1[0]-s0[0])*(s2[1]-s0[1]) - (s2[0]-s0[0])*(s1[1]-s0[1]);
+  if (Math.abs(den) < 1e-9) return null;
+  const m11 = ((q1.x-q0.x)*(s2[1]-s0[1]) - (q2.x-q0.x)*(s1[1]-s0[1])) / den;
+  const m21 = ((q2.x-q0.x)*(s1[0]-s0[0]) - (q1.x-q0.x)*(s2[0]-s0[0])) / den;
+  const m12 = ((q1.y-q0.y)*(s2[1]-s0[1]) - (q2.y-q0.y)*(s1[1]-s0[1])) / den;
+  const m22 = ((q2.y-q0.y)*(s1[0]-s0[0]) - (q1.y-q0.y)*(s2[0]-s0[0])) / den;
+  if (![m11,m12,m21,m22].every(isFinite)) return null;
+  return [m11, m12, m21, m22,
+          q0.x - m11*s0[0] - m21*s0[1],
+          q0.y - m12*s0[0] - m22*s0[1]];
+}
+/* ขยายสามเหลี่ยมออกจากจุดกึ่งกลางนิดหน่อย กันเห็นรอยต่อเป็นเส้นบาง ๆ */
+function growTri(a, b, c) {
+  const cx = (a.x+b.x+c.x)/3, cy = (a.y+b.y+c.y)/3;
+  const f = p => ({ x: cx + (p.x-cx)*1.006, y: cy + (p.y-cy)*1.006 });
+  return [f(a), f(b), f(c)];
+}
+/* สี่มุมของกล่องในพิกัดภาพ พร้อมคู่พิกัดในระบบของรูปอุปกรณ์ */
+function itemQuadUV(it, r) {
+  return {
+    P: { A: w2i(r.x1, r.y2), B: w2i(r.x2, r.y2), C: w2i(r.x2, r.y1), D: w2i(r.x1, r.y1) },
+    U: { A: [0, 0], B: [it.w, 0], C: [it.w, it.h], D: [0, it.h] }
+  };
+}
+
 function render() {
   badge.textContent = S.wall
     ? 'ผนัง ' + fmt(S.wall.w) + ' × ' + fmt(S.wall.h) + ' ม.' + (S.rectified ? ' · มุมตรง' : '')
@@ -902,25 +1013,26 @@ function render() {
        เมทริกซ์สร้างจาก 3 มุม จึงเป็นการแปลงแบบ affine — บนภาพเฉียงมากจะคลาดเล็กน้อย
        แต่กรอบตัดใช้รูปสี่เหลี่ยมจริงเสมอ ภาพจึงไม่มีทางล้นออกนอกกล่อง */
     if (it.img) {
-      const p0 = w2i(r.x1, r.y2), p1 = w2i(r.x2, r.y2), p2 = w2i(r.x1, r.y1);
-      const ax = (p1.x - p0.x) / it.w, ay = (p1.y - p0.y) / it.w;
-      const bx = (p2.x - p0.x) / it.h, by = (p2.y - p0.y) / it.h;
-      if (isFinite(ax) && isFinite(by)) {
-        const cid = 'clipItem' + it.id;
+      const { P, U } = itemQuadUV(it, r);
+      /* หั่นเป็นสองสามเหลี่ยม ABD และ BCD ให้ตรงครบทั้งสี่มุมของกล่อง */
+      [[ 'A','B','D' ], [ 'B','C','D' ]].forEach((t, ti) => {
+        const m = triAffine(U[t[0]], U[t[1]], U[t[2]], P[t[0]], P[t[1]], P[t[2]]);
+        if (!m) return;
+        const cid = 'clipItem' + it.id + '_' + ti;
         const cp = el('clipPath', { id: cid, clipPathUnits: 'userSpaceOnUse' });
-        cp.appendChild(el('polygon', { points: ptsStr(quad(r)) }));
+        cp.appendChild(el('polygon', { points: ptsStr(growTri(P[t[0]], P[t[1]], P[t[2]])) }));
         g.appendChild(cp);
         const im = el('image', {
           x: 0, y: 0, width: it.w, height: it.h,
           preserveAspectRatio: 'xMidYMid slice',
-          transform: 'matrix(' + [ax, ay, bx, by, p0.x, p0.y].map(n => n.toFixed(4)).join(',') + ')',
+          transform: 'matrix(' + m.map(n => n.toFixed(5)).join(',') + ')',
           'clip-path': 'url(#' + cid + ')',
           style: 'pointer-events:none'
         });
         im.setAttributeNS('http://www.w3.org/1999/xlink', 'href', it.img);
         im.setAttribute('href', it.img);
         g.appendChild(im);
-      }
+      });
     }
 
     /* เส้นขอบวาดทับสุดท้าย และเป็นตัวรับการลากด้วย */
@@ -1237,18 +1349,20 @@ $("#saveBtn").onclick = () => {
         /* ภาพจริงของอุปกรณ์ — ตัดด้วยรูปสี่เหลี่ยมจริง แล้วเติมเต็มกรอบแบบครอบตัด */
         const el0 = it.img ? getImgEl(it.img) : null;
         if (el0) {
-          const p0 = w2i(r.x1, r.y2), p1 = w2i(r.x2, r.y2), p2 = w2i(r.x1, r.y1);
-          const ax = (p1.x-p0.x)/it.w, ay = (p1.y-p0.y)/it.w;
-          const bx = (p2.x-p0.x)/it.h, by = (p2.y-p0.y)/it.h;
-          if (isFinite(ax) && isFinite(by)) {
+          const { P, U } = itemQuadUV(it, r);
+          const k  = Math.max(it.w / el0.naturalWidth, it.h / el0.naturalHeight);
+          const dw = el0.naturalWidth * k, dh = el0.naturalHeight * k;
+          [[ 'A','B','D' ], [ 'B','C','D' ]].forEach(t => {
+            const m = triAffine(U[t[0]], U[t[1]], U[t[2]], P[t[0]], P[t[1]], P[t[2]]);
+            if (!m) return;
+            const e3 = growTri(P[t[0]], P[t[1]], P[t[2]]);
             g.save();
-            g.beginPath(); q.forEach((p,i) => i ? g.lineTo(p.x,p.y) : g.moveTo(p.x,p.y)); g.closePath(); g.clip();
-            g.transform(ax, ay, bx, by, p0.x, p0.y);
-            const k  = Math.max(it.w / el0.naturalWidth, it.h / el0.naturalHeight);
-            const dw = el0.naturalWidth * k, dh = el0.naturalHeight * k;
+            g.beginPath(); g.moveTo(e3[0].x, e3[0].y); g.lineTo(e3[1].x, e3[1].y); g.lineTo(e3[2].x, e3[2].y);
+            g.closePath(); g.clip();
+            g.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
             g.drawImage(el0, (it.w - dw) / 2, (it.h - dh) / 2, dw, dh);
             g.restore();
-          }
+          });
         }
 
         g.beginPath(); q.forEach((p,i) => i ? g.lineTo(p.x,p.y) : g.moveTo(p.x,p.y)); g.closePath();
