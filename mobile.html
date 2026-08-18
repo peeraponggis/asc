@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#14171C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>วางแผนติดตั้ง — Layout Planner</title>
+<style>
+  :root{
+    --bg:#14171C; --panel:#1E232B; --panel2:#262C36; --line:#3A4250;
+    --text:#EDEFF3; --dim:#9AA3B2; --accent:#FFC400; --ok:#3FBF7F; --danger:#FF7A6E; --warn:#FF9F45;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:'Noto Sans Thai','Segoe UI',system-ui,-apple-system,sans-serif;
+    display:flex; flex-direction:column; overscroll-behavior:none;
+  }
+  header{
+    padding:12px 14px 10px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    padding-top:calc(12px + env(safe-area-inset-top));
+  }
+  h1{font-size:15px; margin:0; font-weight:700; letter-spacing:.3px; flex:1}
+  .badge{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+    background:var(--panel); border:1px solid var(--line); border-radius:6px;
+    padding:3px 8px; color:var(--accent); white-space:nowrap;
+  }
+  .badge.set{color:var(--ok)}
+  .badge.save{color:var(--dim)}
+  main{flex:1; padding:12px; overflow:auto}
+  .btn{
+    background:var(--panel2); color:var(--text); border:1px solid var(--line);
+    border-radius:10px; padding:10px 13px; font-size:14px; cursor:pointer;
+    font-family:inherit; display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--accent); color:#111; font-weight:700; border-color:var(--accent)}
+  .btn.danger{color:var(--danger); border-color:#ff7a6e55}
+  .btn.mini{padding:6px 10px; font-size:12.5px; border-radius:8px}
+  .btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  #drop{
+    border:2px dashed var(--line); border-radius:16px; padding:40px 20px; text-align:center;
+    display:flex; flex-direction:column; gap:14px; align-items:center;
+  }
+  #drop.over{border-color:var(--accent); background:#ffc4000f}
+  .hint{font-size:13px; color:var(--dim); max-width:460px; line-height:1.65}
+  #stage{
+    position:relative; width:100%; border-radius:12px; overflow:hidden;
+    background:#000; box-shadow:0 4px 24px #0008; user-select:none; touch-action:none;
+  }
+  #stage img{position:absolute; inset:0; width:100%; height:100%; display:block}
+  #svg{position:absolute; inset:0; width:100%; height:100%; touch-action:none}
+  .bar{
+    margin-top:10px; background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size:13px;
+  }
+  .bar.cal{border-color:var(--accent)}
+  .bar.warn{border-color:var(--warn); background:#2a2115}
+  .bar.bad{border-color:var(--danger); background:#2a1a18}
+  input[type=number],input[type=text]{
+    width:104px; padding:8px 10px; border-radius:8px; border:1px solid var(--line);
+    background:var(--panel2); color:var(--text); font-family:ui-monospace,monospace; font-size:14px;
+  }
+  input[type=number].w70{width:74px}
+  input[type=range]{accent-color:var(--accent); flex:1; min-width:110px}
+  footer{
+    position:sticky; bottom:0; background:var(--panel); border-top:1px solid var(--line);
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+    display:flex; gap:8px; overflow-x:auto; scrollbar-width:none;
+  }
+  footer::-webkit-scrollbar{display:none}
+  footer .btn{white-space:nowrap; flex-shrink:0}
+  .modal{
+    position:fixed; inset:0; background:#000d; z-index:50; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:12px; padding:16px; overflow:auto;
+  }
+  .modal img{max-width:100%; max-height:62vh; border-radius:8px; box-shadow:0 8px 40px #000}
+  .modal .t{color:var(--accent); font-size:14px; font-weight:700; text-align:center}
+  .sheet{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:16px; width:100%; max-width:460px; max-height:82vh; overflow:auto;
+  }
+  .sheet h2{margin:0 0 12px; font-size:15px; color:var(--accent)}
+  .fld{display:flex; align-items:center; gap:8px; margin-bottom:9px; font-size:13px}
+  .fld label{flex:1; color:var(--dim)}
+  .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+  .mono{font-family:ui-monospace,monospace; font-size:12px; color:var(--dim)}
+  label.file{cursor:pointer}
+  label.file input{display:none}
+  .catrow{
+    display:flex; align-items:center; gap:8px; padding:8px; border:1px solid var(--line);
+    border-radius:9px; margin-bottom:7px; font-size:13px;
+  }
+  .catrow .sw{width:15px; height:15px; border-radius:4px; flex-shrink:0}
+  .catrow .nm{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  #topview{margin-top:10px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px}
+  #topview h3{margin:0 0 8px; font-size:12px; color:var(--dim); font-weight:600}
+  #tvsvg{width:100%; height:190px; display:block; background:#12161C; border-radius:8px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ วางแผนติดตั้งบนภาพถ่าย</h1>
+  <span class="badge" id="scaleBadge">ยังไม่ปรับเทียบผนัง</span>
+  <span class="badge save" id="saveBadge">—</span>
+</header>
+
+<main>
+  <div id="drop">
+    <div class="hint">
+      ถ่ายภาพผนังหรือบริเวณติดตั้ง แล้ววางอุปกรณ์ตามขนาดจริง<br>
+      บนคอมพิวเตอร์ลากรูปมาวางที่นี่ หรือกด Ctrl+V ได้เลย
+    </div>
+    <div class="row">
+      <label class="btn primary file">📷 ถ่ายภาพ<input type="file" accept="image/*" capture="environment" id="fileCam"></label>
+      <label class="btn file">📁 เลือกจากคลัง<input type="file" accept="image/*" id="fileLib"></label>
+    </div>
+    <div class="row">
+      <button class="btn" id="demoBtn">ลองด้วยฉากตัวอย่าง (ผนัง 6 × 3 ม.)</button>
+      <label class="btn file" style="color:var(--dim)">📂 เปิดไฟล์ผัง (.json)<input type="file" accept=".json,.txt" id="fileProj"></label>
+    </div>
+    <div class="hint" id="resumeHint" hidden></div>
+  </div>
+
+  <div id="stageWrap" hidden>
+    <div id="stage">
+      <img id="photo" alt="">
+      <svg id="svg"></svg>
+    </div>
+
+    <div class="bar cal" id="calBar" hidden>
+      <span id="calMsg" style="color:var(--accent); flex:1"></span>
+      <span id="calSize" hidden style="display:flex; gap:6px; align-items:center">
+        กว้าง <input type="number" inputmode="decimal" id="calW" class="w70" step="0.1" placeholder="ม.">
+        สูง <input type="number" inputmode="decimal" id="calH" class="w70" step="0.1" placeholder="ม.">
+      </span>
+      <button class="btn primary" id="calOk" hidden>ยืนยัน</button>
+      <button class="btn" id="calUndo">↩ ถอย 1 จุด</button>
+      <button class="btn" id="calCancel">ยกเลิก</button>
+    </div>
+
+    <div class="bar" id="selBar" hidden>
+      <b id="selName"></b>
+      <span class="mono" id="selDim"></span>
+      <button class="btn mini" id="rotBtn">⟳ หมุน 90°</button>
+      <span class="mono" id="selPos"></span>
+      <span style="display:flex; gap:4px">
+        <button class="btn mini" data-nudge="-0.05,0">◀</button>
+        <button class="btn mini" data-nudge="0.05,0">▶</button>
+        <button class="btn mini" data-nudge="0,0.05">▲</button>
+        <button class="btn mini" data-nudge="0,-0.05">▼</button>
+      </span>
+      <span id="lenWrap" hidden style="display:flex;gap:8px;align-items:center;flex:1">
+        ยาว <input type="range" id="lenRange" min="0.3" max="12" step="0.1">
+        <span class="mono" id="lenVal"></span>
+      </span>
+      <button class="btn mini danger" id="delBtn">ลบ</button>
+    </div>
+
+    <div class="bar" id="checkBar" hidden></div>
+
+    <div id="topview" hidden>
+      <h3>ผังพื้น (มองจากด้านบน) — ตรวจระยะยื่นออกจากผนัง</h3>
+      <svg id="tvsvg"></svg>
+    </div>
+  </div>
+</main>
+
+<footer id="tools" hidden>
+  <span id="catBtns" style="display:flex; gap:8px"></span>
+  <button class="btn" id="catEditBtn" style="color:var(--dim)">✎ แคตตาล็อก</button>
+  <button class="btn" id="calBtn" style="border-color:var(--accent);color:var(--accent)">📐 ปรับเทียบผนัง</button>
+  <button class="btn" id="tvBtn">⬓ ผังพื้น</button>
+  <button class="btn" id="rectBtn" title="แปลงภาพให้ตั้งฉากเหมือนแบบก่อสร้าง">▭ มุมตรง</button>
+  <button class="btn" id="saveBtn">⬇ บันทึกภาพ</button>
+  <button class="btn" id="projSaveBtn" style="color:var(--dim)">💾 เซฟไฟล์ผัง</button>
+  <label class="btn file" style="color:var(--dim)">📁 เปลี่ยนภาพ<input type="file" accept="image/*" id="fileSwap"></label>
+</footer>
+
+<!-- แผงแก้ไขแคตตาล็อกอุปกรณ์ -->
+<div class="modal" id="catModal" style="display:none">
+  <div class="sheet">
+    <h2>แคตตาล็อกอุปกรณ์</h2>
+    <div class="hint" style="margin-bottom:12px">
+      กรอกขนาดจริงของอุปกรณ์ กว้าง × สูง × ลึก และระยะเว้นว่างรอบตัวตามคู่มือผู้ผลิต
+      ค่าที่กรอกจะถูกจำไว้ใช้กับงานถัดไป
+    </div>
+    <div id="catList"></div>
+    <div class="row" style="margin-top:12px; justify-content:flex-start">
+      <button class="btn mini primary" id="catAdd">＋ เพิ่มอุปกรณ์</button>
+      <button class="btn mini" id="catReset" style="color:var(--dim)">คืนค่าตั้งต้น</button>
+      <button class="btn mini" id="catClose" style="margin-left:auto">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- แผงแก้ไขอุปกรณ์รายตัว -->
+<div class="modal" id="itemModal" style="display:none">
+  <div class="sheet">
+    <h2 id="imTitle">แก้ไขอุปกรณ์</h2>
+    <div class="fld"><label>ชื่อ</label><input type="text" id="imName" style="width:170px"></div>
+    <div class="fld"><label>กว้าง (ม.)</label><input type="number" id="imW" step="0.01" min="0.01"></div>
+    <div class="fld"><label>สูง (ม.)</label><input type="number" id="imH" step="0.01" min="0.01"></div>
+    <div class="fld"><label>ลึก (ม.)</label><input type="number" id="imD" step="0.01" min="0"></div>
+    <div class="fld"><label>ระยะเว้นว่างรอบตัว (ม.)</label><input type="number" id="imCl" step="0.05" min="0"></div>
+    <div class="fld"><label>สี</label><input type="text" id="imColor" style="width:110px" placeholder="#E05038"></div>
+    <div class="row" style="margin-top:12px; justify-content:flex-start">
+      <button class="btn mini primary" id="imOk">บันทึก</button>
+      <button class="btn mini danger" id="imDel">ลบออกจากแคตตาล็อก</button>
+      <button class="btn mini" id="imCancel" style="margin-left:auto">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================================
+   วางแผนติดตั้งบนภาพถ่าย — Layout Planner
+   ----------------------------------------------------------------------------
+   ระบบพิกัด
+     wall  : เมตรบนระนาบผนัง จุดกำเนิดที่มุมซ้ายล่าง +X ไปขวา +Y ขึ้นบน
+     img   : พิกเซลจริงของภาพถ่าย (ไม่ขึ้นกับขนาดที่แสดงบนจอ)
+
+   ปรับเทียบด้วยการแตะมุมผนัง 4 มุมแล้วกรอกกว้าง×สูงจริง จากนั้นคำนวณ homography
+   3×3 แปลง wall ↔ img ได้ทั้งภาพ จึงวางอุปกรณ์ได้ขนาดถูกต้องแม้ถ่ายเฉียง
+   (การปรับเทียบ 2 จุดแบบเดิมถูกต้องเฉพาะเมื่อถ่ายตั้งฉากกับผนังพอดีเท่านั้น)
+   ============================================================================ */
+
+const K_CAT  = 'asc_layout_catalog_v1';
+const K_PROJ = 'asc_layout_project_v1';
+
+const DEFAULT_CAT = [
+  { id:'inv',  name:'อินเวอร์เตอร์',  w:0.45, h:0.55, d:0.22, cl:0.30, color:'#E05038' },
+  { id:'mdb',  name:'ตู้ควบคุม MDB',  w:0.60, h:0.80, d:0.25, cl:0.20, color:'#7A8CA0' },
+  { id:'bat',  name:'แบตเตอรี่',      w:0.60, h:0.60, d:0.30, cl:0.20, color:'#3FBF7F' },
+  { id:'comb', name:'คอมไบเนอร์บ๊อกซ์', w:0.40, h:0.50, d:0.18, cl:0.15, color:'#B57BFF' },
+  { id:'tray', name:'รางไวร์เวย์',    w:2.00, h:0.10, d:0.10, cl:0,    color:'#C9A227' },
+  { id:'cam',  name:'กล้องวงจรปิด',   w:0.15, h:0.15, d:0.15, cl:0,    color:'#4FC3F7' }
+];
+
+const S = {
+  img:null, nw:0, nh:0,
+  wall:null,          // { w, h } เมตร
+  calPts:[],          // 4 มุมผนังในพิกัดภาพ
+  H:null, Hi:null,    // homography wall→img และผกผัน
+  items:[], sel:null, nextId:1,
+  calib:false, rectified:false,
+  cat:[], showTop:false
+};
+
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const stage=$("#stage"), photo=$("#photo"), svg=$("#svg"), wrap=$("#stageWrap"),
+      drop=$("#drop"), tools=$("#tools"), badge=$("#scaleBadge"), saveBadge=$("#saveBadge");
+
+const NS = 'http://www.w3.org/2000/svg';
+const fmt = n => (Math.round(n*100)/100).toFixed(2);
+
+/* ═══════════════ พีชคณิตของ homography ═══════════════ */
+function solve8(A, b) {
+  const n = 8;
+  for (let i = 0; i < n; i++) {
+    let piv = i;
+    for (let r = i+1; r < n; r++) if (Math.abs(A[r][i]) > Math.abs(A[piv][i])) piv = r;
+    if (Math.abs(A[piv][i]) < 1e-12) return null;
+    const tA = A[i]; A[i] = A[piv]; A[piv] = tA;
+    const tb = b[i]; b[i] = b[piv]; b[piv] = tb;
+    for (let r = 0; r < n; r++) {
+      if (r === i) continue;
+      const f = A[r][i] / A[i][i];
+      if (!f) continue;
+      for (let c = i; c < n; c++) A[r][c] -= f * A[i][c];
+      b[r] -= f * b[i];
+    }
+  }
+  return b.map((v, i) => v / A[i][i]);
+}
+
+/* src = พิกัดผนัง (เมตร), dst = พิกัดภาพ (พิกเซล) */
+function homography(src, dst) {
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++) {
+    const x = src[i].x, y = src[i].y, u = dst[i].x, v = dst[i].y;
+    A.push([x, y, 1, 0, 0, 0, -u*x, -u*y]); b.push(u);
+    A.push([0, 0, 0, x, y, 1, -v*x, -v*y]); b.push(v);
+  }
+  const h = solve8(A, b);
+  if (!h) return null;
+  return [[h[0],h[1],h[2]], [h[3],h[4],h[5]], [h[6],h[7],1]];
+}
+
+function inv3(m) {
+  const [a,b,c] = m[0], [d,e,f] = m[1], [g,h,i] = m[2];
+  const det = a*(e*i - f*h) - b*(d*i - f*g) + c*(d*h - e*g);
+  if (Math.abs(det) < 1e-14) return null;
+  const s = 1/det;
+  return [
+    [ (e*i-f*h)*s, (c*h-b*i)*s, (b*f-c*e)*s ],
+    [ (f*g-d*i)*s, (a*i-c*g)*s, (c*d-a*f)*s ],
+    [ (d*h-e*g)*s, (b*g-a*h)*s, (a*e-b*d)*s ]
+  ];
+}
+
+const applyH = (M, x, y) => {
+  const w = M[2][0]*x + M[2][1]*y + M[2][2];
+  return { x: (M[0][0]*x + M[0][1]*y + M[0][2]) / w,
+           y: (M[1][0]*x + M[1][1]*y + M[1][2]) / w };
+};
+const w2i = (x, y) => applyH(S.H,  x, y);   // ผนัง → ภาพ
+const i2w = (x, y) => applyH(S.Hi, x, y);   // ภาพ → ผนัง
+
+function buildH() {
+  if (!S.wall || S.calPts.length !== 4) { S.H = S.Hi = null; return false; }
+  const W = S.wall.w, Ht = S.wall.h;
+  const src = [{x:0,y:0}, {x:W,y:0}, {x:W,y:Ht}, {x:0,y:Ht}];
+  const H = homography(src, S.calPts);
+  if (!H) return false;
+  const Hi = inv3(H);
+  if (!Hi) return false;
+  S.H = H; S.Hi = Hi;
+  return true;
+}
+
+/* ═══════════════ การบันทึก ═══════════════ */
+let saveTimer = null;
+function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(saveProject, 400); }
+
+function projectData(withImage) {
+  return {
+    v: 1, nw: S.nw, nh: S.nh, wall: S.wall, calPts: S.calPts,
+    items: S.items, nextId: S.nextId, rectified: S.rectified,
+    cat: S.cat, img: withImage ? S.img : null
+  };
+}
+
+function saveProject() {
+  try {
+    localStorage.setItem(K_CAT, JSON.stringify(S.cat));
+    localStorage.setItem(K_PROJ, JSON.stringify(projectData(true)));
+    stamp('บันทึกแล้ว');
+  } catch (e) {
+    /* โควตาเต็มเพราะภาพถ่ายใหญ่ — เก็บทุกอย่างยกเว้นภาพไว้ก่อน ดีกว่าไม่เก็บเลย */
+    try {
+      localStorage.setItem(K_PROJ, JSON.stringify(projectData(false)));
+      stamp('บันทึกแล้ว (ไม่รวมภาพ)');
+    } catch (e2) { stamp('บันทึกไม่สำเร็จ'); }
+  }
+}
+function stamp(t) {
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  saveBadge.textContent = t + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+function loadCatalog() {
+  try { S.cat = JSON.parse(localStorage.getItem(K_CAT)) || null; } catch (e) { S.cat = null; }
+  if (!Array.isArray(S.cat) || !S.cat.length) S.cat = JSON.parse(JSON.stringify(DEFAULT_CAT));
+}
+
+function restoreProject(d) {
+  if (!d || !d.nw) return false;
+  S.nw = d.nw; S.nh = d.nh; S.wall = d.wall || null;
+  S.calPts = d.calPts || []; S.items = d.items || [];
+  S.nextId = d.nextId || (S.items.reduce((m,i) => Math.max(m, i.id), 0) + 1);
+  S.rectified = !!d.rectified;
+  if (Array.isArray(d.cat) && d.cat.length) S.cat = d.cat;
+  S.img = d.img || null;
+  buildH();
+  if (S.img) { photo.src = S.img; photo.hidden = false; stage.style.background = '#000'; }
+  else { photo.hidden = true; stage.style.background = demoBg(); }
+  showStage(); buildCatButtons(); render();
+  return true;
+}
+
+/* ═══════════════ โหลดภาพ ═══════════════ */
+const demoBg = () => 'repeating-linear-gradient(90deg,#8b8f95 0,#8b8f95 98px,#9aa0a6 98px,#9aa0a6 100px)';
+
+function loadBlob(f) {
+  if (!f || !f.type.startsWith('image/')) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const im = new Image();
+    im.onload = () => {
+      S.img = r.result; S.nw = im.naturalWidth; S.nh = im.naturalHeight;
+      S.wall = null; S.calPts = []; S.H = S.Hi = null;
+      S.items = []; S.sel = null; S.calib = false; S.rectified = false;
+      photo.src = r.result; photo.hidden = false;
+      stage.style.background = '#000';
+      showStage(); render(); saveSoon();
+    };
+    im.src = r.result;
+  };
+  r.readAsDataURL(f);
+}
+
+function showStage() {
+  drop.hidden = true; wrap.hidden = false; tools.hidden = false;
+  stage.style.aspectRatio = S.nw + '/' + S.nh;
+  svg.setAttribute('viewBox', '0 0 ' + S.nw + ' ' + S.nh);
+}
+
+['#fileCam','#fileLib','#fileSwap'].forEach(id => {
+  $(id).addEventListener('change', e => { loadBlob(e.target.files[0]); e.target.value = ''; });
+});
+window.addEventListener('paste', e => {
+  const it = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+  if (it) loadBlob(it.getAsFile());
+});
+['dragenter','dragover'].forEach(t => document.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(t => document.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+document.addEventListener('drop', e => loadBlob(e.dataTransfer?.files?.[0]));
+
+$("#demoBtn").onclick = () => {
+  S.img = null; S.nw = 1200; S.nh = 800;
+  S.items = []; S.sel = null; S.rectified = false;
+  S.wall = { w: 6, h: 3 };
+  /* ฉากตัวอย่างถ่ายเฉียงเล็กน้อย เพื่อให้เห็นว่า homography ทำงาน */
+  S.calPts = [{x:120,y:700}, {x:1080,y:660}, {x:1050,y:180}, {x:150,y:150}];
+  buildH();
+  photo.hidden = true; photo.removeAttribute('src');
+  stage.style.background = demoBg();
+  showStage(); render(); saveSoon();
+};
+
+/* ═══════════════ แปลงพิกัดหน้าจอ → พิกเซลจริงของภาพ ═══════════════ */
+function toNat(e) {
+  const r = stage.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * S.nw / r.width,
+           y: (e.clientY - r.top)  * S.nh / r.height };
+}
+
+/* ═══════════════ ปรับเทียบผนัง 4 มุม ═══════════════ */
+const CAL_LABEL = ['ซ้ายล่าง', 'ขวาล่าง', 'ขวาบน', 'ซ้ายบน'];
+
+$("#calBtn").onclick = () => { S.calib = true; S.calPts = []; S.sel = null; render(); };
+$("#calCancel").onclick = () => { S.calib = false; buildH(); render(); };
+$("#calUndo").onclick = () => { S.calPts.pop(); render(); };
+$("#calOk").onclick = () => {
+  const w = parseFloat($("#calW").value), h = parseFloat($("#calH").value);
+  if (!(w > 0) || !(h > 0) || S.calPts.length !== 4) return;
+  S.wall = { w, h };
+  if (!buildH()) { alert('มุมทั้ง 4 อยู่ในแนวเดียวกันหรือซ้ำกัน กรุณาแตะใหม่'); return; }
+  S.calib = false;
+  render(); saveSoon();
+};
+
+svg.addEventListener('pointerdown', e => {
+  if (e.target.closest('[data-item]')) return;
+  if (S.calib) {
+    if (S.calPts.length >= 4) S.calPts = [];
+    S.calPts.push(toNat(e));
+    render();
+  } else if (S.sel !== null) { S.sel = null; render(); }
+});
+
+/* ═══════════════ แคตตาล็อกอุปกรณ์ ═══════════════ */
+function buildCatButtons() {
+  const box = $("#catBtns");
+  box.innerHTML = '';
+  S.cat.forEach(q => {
+    const b = document.createElement('button');
+    b.className = 'btn';
+    b.style.borderColor = q.color;
+    b.innerHTML = '<span style="color:' + q.color + '">■</span> ' + q.name;
+    b.onclick = () => addItem(q);
+    box.appendChild(b);
+  });
+}
+
+function addItem(q) {
+  if (!S.H) { alert('ปรับเทียบผนังก่อน จึงจะวางอุปกรณ์ตามขนาดจริงได้'); return; }
+  S.items.push({
+    id: S.nextId++, cat: q.id, name: q.name,
+    X: S.wall.w / 2, Y: Math.min(S.wall.h / 2, 1.5),
+    w: q.w, h: q.h, d: q.d, cl: q.cl, color: q.color
+  });
+  S.sel = S.nextId - 1;
+  render(); saveSoon();
+}
+
+const cur = () => S.items.find(i => i.id === S.sel);
+
+$("#rotBtn").onclick = () => { const it = cur(); if (it) { const t = it.w; it.w = it.h; it.h = t; render(); saveSoon(); } };
+$("#delBtn").onclick = () => { S.items = S.items.filter(i => i.id !== S.sel); S.sel = null; render(); saveSoon(); };
+$("#lenRange").oninput = e => {
+  const it = cur(); if (!it) return;
+  const v = parseFloat(e.target.value);
+  if (it.w >= it.h) it.w = v; else it.h = v;
+  render(); saveSoon();
+};
+$$('[data-nudge]').forEach(b => b.onclick = () => {
+  const it = cur(); if (!it) return;
+  const [dx, dy] = b.dataset.nudge.split(',').map(Number);
+  it.X += dx; it.Y += dy;
+  render(); saveSoon();
+});
+
+/* ═══════════════ ลากย้ายอุปกรณ์ ═══════════════ */
+let drag = null;
+function attachDrag(node, it) {
+  node.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    if (S.calib) return;
+    S.sel = it.id;
+    const p = toNat(e), wp = i2w(p.x, p.y);
+    drag = { id: it.id, dx: wp.x - it.X, dy: wp.y - it.Y };
+    node.setPointerCapture(e.pointerId);
+    render();
+  });
+  node.addEventListener('pointermove', e => {
+    if (!drag || drag.id !== it.id) return;
+    const p = toNat(e), wp = i2w(p.x, p.y);
+    it.X = wp.x - drag.dx; it.Y = wp.y - drag.dy;
+    render();
+  });
+  const stop = () => { if (drag) { drag = null; saveSoon(); } };
+  node.addEventListener('pointerup', stop);
+  node.addEventListener('pointercancel', stop);
+}
+
+/* ═══════════════ ตรวจสอบเชิงวิศวกรรม ═══════════════ */
+const rectOf   = it => ({ x1: it.X - it.w/2, x2: it.X + it.w/2, y1: it.Y - it.h/2, y2: it.Y + it.h/2 });
+const expand   = (r, m) => ({ x1: r.x1-m, x2: r.x2+m, y1: r.y1-m, y2: r.y2+m });
+const overlaps = (a, b) => a.x1 < b.x2 - 1e-6 && b.x1 < a.x2 - 1e-6 && a.y1 < b.y2 - 1e-6 && b.y1 < a.y2 - 1e-6;
+
+function runChecks() {
+  const bad = new Set(), warn = new Set(), msgs = [];
+  if (!S.wall) return { bad, warn, msgs };
+
+  for (let i = 0; i < S.items.length; i++) {
+    const A = S.items[i], ra = rectOf(A);
+
+    if (ra.x1 < -1e-6 || ra.y1 < -1e-6 || ra.x2 > S.wall.w + 1e-6 || ra.y2 > S.wall.h + 1e-6) {
+      warn.add(A.id); msgs.push(A.name + ' ล้นขอบผนัง');
+    }
+    if (ra.y1 < 0.15 && ra.y1 >= -1e-6) {
+      warn.add(A.id); msgs.push(A.name + ' อยู่สูงจากพื้นเพียง ' + fmt(ra.y1) + ' ม.');
+    }
+    for (let j = i + 1; j < S.items.length; j++) {
+      const B = S.items[j], rb = rectOf(B);
+      if (overlaps(ra, rb)) {
+        bad.add(A.id); bad.add(B.id);
+        msgs.push(A.name + ' ทับกับ ' + B.name);
+      } else {
+        const m = Math.max(A.cl || 0, B.cl || 0);
+        if (m > 0 && overlaps(expand(ra, m), rb)) {
+          warn.add(A.id); warn.add(B.id);
+          msgs.push(A.name + ' กับ ' + B.name + ' ห่างกันน้อยกว่าระยะเว้นว่าง ' + fmt(m) + ' ม.');
+        }
+      }
+    }
+  }
+  return { bad, warn, msgs };
+}
+
+/* ═══════════════ วาดหน้าจอ ═══════════════ */
+function el(tag, attrs) {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  return n;
+}
+const quad = (r) => [ w2i(r.x1, r.y1), w2i(r.x2, r.y1), w2i(r.x2, r.y2), w2i(r.x1, r.y2) ];
+const ptsStr = a => a.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+
+function render() {
+  badge.textContent = S.wall
+    ? 'ผนัง ' + fmt(S.wall.w) + ' × ' + fmt(S.wall.h) + ' ม.' + (S.rectified ? ' · มุมตรง' : '')
+    : 'ยังไม่ปรับเทียบผนัง';
+  badge.classList.toggle('set', !!S.wall);
+
+  svg.innerHTML = '';
+  const chk = runChecks();
+
+  /* กรอบผนังที่ปรับเทียบไว้ */
+  if (S.H && !S.calib) {
+    svg.appendChild(el('polygon', {
+      points: ptsStr(quad({x1:0, y1:0, x2:S.wall.w, y2:S.wall.h})),
+      fill:'none', stroke:'#FFC40055', 'stroke-width':Math.max(2, S.nw/500), 'stroke-dasharray':'14 10'
+    }));
+  }
+
+  /* อุปกรณ์ */
+  if (S.H) S.items.forEach(it => {
+    const r = rectOf(it);
+    const g = el('g', { 'data-item': it.id, style:'cursor:grab' });
+    const isSel = it.id === S.sel;
+    const stroke = chk.bad.has(it.id) ? '#FF7A6E' : (chk.warn.has(it.id) ? '#FF9F45' : '#111');
+
+    if (it.cl > 0) {
+      g.appendChild(el('polygon', {
+        points: ptsStr(quad(expand(r, it.cl))),
+        fill:'none', stroke: chk.warn.has(it.id) ? '#FF9F45' : '#ffffff55',
+        'stroke-width': Math.max(1.5, S.nw/900), 'stroke-dasharray':'10 8'
+      }));
+    }
+    g.appendChild(el('polygon', {
+      points: ptsStr(quad(r)),
+      fill: it.color + (isSel ? 'E6' : 'B3'),
+      stroke: isSel ? '#FFC400' : stroke,
+      'stroke-width': Math.max(2, S.nw / (isSel ? 340 : 520))
+    }));
+    const c = w2i(it.X, it.Y);
+    const fs = Math.max(11, S.nw / 62);
+    const t = el('text', { x:c.x.toFixed(1), y:(c.y + fs*0.35).toFixed(1), 'text-anchor':'middle',
+      fill:'#fff', 'font-size':fs, 'font-weight':'600', stroke:'#000', 'stroke-width':fs/9,
+      'paint-order':'stroke', style:'pointer-events:none' });
+    t.textContent = it.name;
+    g.appendChild(t);
+    attachDrag(g, it);
+    svg.appendChild(g);
+  });
+
+  /* จุดปรับเทียบ */
+  if (S.calib) {
+    const rr = Math.max(7, S.nw/130);
+    if (S.calPts.length > 1) {
+      svg.appendChild(el('polyline', {
+        points: ptsStr(S.calPts) + (S.calPts.length === 4 ? ' ' + ptsStr([S.calPts[0]]) : ''),
+        fill:'none', stroke:'#FFC400', 'stroke-width':Math.max(2,S.nw/430), 'stroke-dasharray':'12 8'
+      }));
+    }
+    S.calPts.forEach((p, i) => {
+      svg.appendChild(el('circle', { cx:p.x, cy:p.y, r:rr, fill:'#FFC400', stroke:'#111', 'stroke-width':2 }));
+      const t = el('text', { x:p.x, y:p.y - rr*1.6, 'text-anchor':'middle', fill:'#FFC400',
+        'font-size':Math.max(12,S.nw/58), 'font-weight':'700', stroke:'#000', 'stroke-width':2, 'paint-order':'stroke' });
+      t.textContent = CAL_LABEL[i];
+      svg.appendChild(t);
+    });
+  }
+
+  /* แถบปรับเทียบ */
+  $("#calBar").hidden = !S.calib;
+  if (S.calib) {
+    const done = S.calPts.length === 4;
+    $("#calMsg").textContent = done
+      ? 'กรอกขนาดจริงของผนังที่ล้อมด้วย 4 มุมนี้'
+      : 'แตะมุมผนัง ' + CAL_LABEL[S.calPts.length] + ' (' + S.calPts.length + '/4)';
+    $("#calSize").hidden = !done; $("#calOk").hidden = !done;
+    $("#calSize").style.display = done ? 'flex' : 'none';
+    if (done && S.wall) { $("#calW").value = $("#calW").value || S.wall.w; $("#calH").value = $("#calH").value || S.wall.h; }
+  }
+
+  /* แถบอุปกรณ์ที่เลือก */
+  const it = cur();
+  $("#selBar").hidden = !it || S.calib;
+  if (it && !S.calib) {
+    $("#selName").textContent = it.name;
+    $("#selDim").textContent = fmt(it.w) + ' × ' + fmt(it.h) + ' × ลึก ' + fmt(it.d) + ' ม.';
+    $("#selPos").textContent = 'ห่างซ้าย ' + fmt(it.X - it.w/2) + ' · สูงจากพื้น ' + fmt(it.Y - it.h/2) + ' ม.';
+    const long = Math.max(it.w, it.h) >= 1.2;
+    $("#lenWrap").hidden = !long;
+    $("#lenWrap").style.display = long ? 'flex' : 'none';
+    if (long) {
+      const L = Math.max(it.w, it.h);
+      $("#lenRange").value = L; $("#lenVal").textContent = fmt(L) + ' ม.';
+    }
+  }
+
+  /* แถบผลตรวจ */
+  const cb = $("#checkBar");
+  if (!chk.msgs.length) { cb.hidden = true; }
+  else {
+    cb.hidden = false;
+    cb.className = 'bar ' + (chk.bad.size ? 'bad' : 'warn');
+    const uniq = [...new Set(chk.msgs)];
+    cb.innerHTML = (chk.bad.size ? '⛔ ' : '⚠️ ') + uniq.slice(0,4).join(' · ')
+      + (uniq.length > 4 ? ' · และอีก ' + (uniq.length-4) + ' รายการ' : '');
+  }
+
+  drawTopView();
+}
+window.addEventListener('resize', () => { /* SVG ใช้ viewBox จึงปรับขนาดเอง */ });
+
+/* ═══════════════ ผังพื้น (มองจากด้านบน) ═══════════════ */
+$("#tvBtn").onclick = () => { S.showTop = !S.showTop; $("#topview").hidden = !S.showTop; drawTopView(); };
+
+function drawTopView() {
+  if (!S.showTop) return;
+  const sv = $("#tvsvg");
+  sv.innerHTML = '';
+  if (!S.wall) return;
+  const W = 1000, H = 300;
+  sv.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  const maxD = Math.max(0.6, ...S.items.map(i => i.d || 0)) * 1.6;
+  const pad = 40;
+  const sx = (W - pad*2) / S.wall.w;
+  const sy = (H - pad*2) / maxD;
+
+  sv.appendChild(el('line', { x1:pad, y1:pad, x2:W-pad, y2:pad, stroke:'#94a3b8', 'stroke-width':6 }));
+  const wl = el('text', { x:pad, y:pad-12, fill:'#9AA3B2', 'font-size':16 });
+  wl.textContent = 'ผนัง (กว้าง ' + fmt(S.wall.w) + ' ม.)';
+  sv.appendChild(wl);
+
+  S.items.forEach(it => {
+    const x = pad + (it.X - it.w/2) * sx, w = it.w * sx;
+    const d = Math.max(it.d || 0, 0.02) * sy;
+    sv.appendChild(el('rect', { x, y:pad, width:Math.max(w,3), height:d,
+      fill: it.color + 'CC', stroke: it.id === S.sel ? '#FFC400' : '#111', 'stroke-width':2, rx:3 }));
+    const t = el('text', { x: x + Math.max(w,3)/2, y: pad + d + 18, 'text-anchor':'middle',
+      fill:'#EDEFF3', 'font-size':14 });
+    t.textContent = it.name + ' ยื่น ' + fmt(it.d) + ' ม.';
+    sv.appendChild(t);
+  });
+}
+
+/* ═══════════════ แปลงภาพให้ตั้งฉาก (Rectify) ═══════════════
+   ใช้ homography ผกผันสุ่มค่าสีทีละพิกเซล ได้ภาพผนังแบบมองตรงเหมือนแบบก่อสร้าง
+   หลังแปลงแล้ว H จะกลายเป็นการย่อ-ขยายล้วน ๆ พิกัดอุปกรณ์ที่เก็บเป็นเมตรจึงไม่ต้องแก้ */
+$("#rectBtn").onclick = () => {
+  if (!S.H) { alert('ปรับเทียบผนังก่อน'); return; }
+  if (S.rectified) { alert('ภาพนี้ถูกแปลงเป็นมุมตรงแล้ว'); return; }
+  if (!S.img) { alert('ฉากตัวอย่างไม่มีภาพจริงให้แปลง'); return; }
+
+  const OW = 1400, OH = Math.max(200, Math.round(OW * S.wall.h / S.wall.w));
+  const src = document.createElement('canvas');
+  src.width = S.nw; src.height = S.nh;
+  const sg = src.getContext('2d', { willReadFrequently: true });
+  const im = new Image();
+  im.onload = () => {
+    sg.drawImage(im, 0, 0);
+    let sd;
+    try { sd = sg.getImageData(0, 0, S.nw, S.nh); }
+    catch (e) { alert('อ่านข้อมูลภาพไม่ได้ (' + e.message + ')'); return; }
+
+    const out = document.createElement('canvas');
+    out.width = OW; out.height = OH;
+    const og = out.getContext('2d');
+    const od = og.createImageData(OW, OH);
+    const mx = S.wall.w / OW, my = S.wall.h / OH;
+
+    for (let py = 0; py < OH; py++) {
+      const wy = S.wall.h - (py + 0.5) * my;
+      for (let px = 0; px < OW; px++) {
+        const wx = (px + 0.5) * mx;
+        const p = w2i(wx, wy);
+        const ix = p.x | 0, iy = p.y | 0;
+        const o = (py * OW + px) * 4;
+        if (ix < 0 || iy < 0 || ix >= S.nw || iy >= S.nh) { od.data[o+3] = 255; continue; }
+        const s = (iy * S.nw + ix) * 4;
+        od.data[o]   = sd.data[s];
+        od.data[o+1] = sd.data[s+1];
+        od.data[o+2] = sd.data[s+2];
+        od.data[o+3] = 255;
+      }
+    }
+    og.putImageData(od, 0, 0);
+
+    S.img = out.toDataURL('image/jpeg', 0.9);
+    S.nw = OW; S.nh = OH;
+    S.calPts = [{x:0,y:OH}, {x:OW,y:OH}, {x:OW,y:0}, {x:0,y:0}];
+    S.rectified = true;
+    buildH();
+    photo.src = S.img; photo.hidden = false;
+    showStage(); render(); saveSoon();
+  };
+  im.src = S.img;
+};
+
+/* ═══════════════ แคตตาล็อกอุปกรณ์ ═══════════════ */
+let editIdx = -1;
+
+$("#catEditBtn").onclick = () => { drawCatList(); $("#catModal").style.display = 'flex'; };
+$("#catClose").onclick   = () => { $("#catModal").style.display = 'none'; };
+$("#catReset").onclick   = () => {
+  if (!confirm('คืนแคตตาล็อกกลับเป็นค่าตั้งต้น? อุปกรณ์ที่วางไว้แล้วจะไม่ถูกแตะต้อง')) return;
+  S.cat = JSON.parse(JSON.stringify(DEFAULT_CAT));
+  drawCatList(); buildCatButtons(); saveSoon();
+};
+$("#catAdd").onclick = () => {
+  editIdx = -1;
+  fillItemForm({ name:'อุปกรณ์ใหม่', w:0.4, h:0.4, d:0.2, cl:0.1, color:'#4FC3F7' });
+  $("#imDel").style.display = 'none';
+  $("#itemModal").style.display = 'flex';
+};
+
+function drawCatList() {
+  const box = $("#catList");
+  box.innerHTML = '';
+  S.cat.forEach((q, i) => {
+    const row = document.createElement('div');
+    row.className = 'catrow';
+    row.innerHTML = '<span class="sw" style="background:' + q.color + '"></span>'
+      + '<span class="nm">' + q.name + '</span>'
+      + '<span class="mono">' + fmt(q.w) + '×' + fmt(q.h) + '×' + fmt(q.d) + ' ม.'
+      + (q.cl > 0 ? ' · เว้น ' + fmt(q.cl) : '') + '</span>';
+    const b = document.createElement('button');
+    b.className = 'btn mini'; b.textContent = 'แก้ไข';
+    b.onclick = () => {
+      editIdx = i; fillItemForm(q);
+      $("#imDel").style.display = '';
+      $("#itemModal").style.display = 'flex';
+    };
+    row.appendChild(b);
+    box.appendChild(row);
+  });
+}
+
+function fillItemForm(q) {
+  $("#imName").value = q.name; $("#imW").value = q.w; $("#imH").value = q.h;
+  $("#imD").value = q.d; $("#imCl").value = q.cl; $("#imColor").value = q.color;
+}
+
+$("#imCancel").onclick = () => { $("#itemModal").style.display = 'none'; };
+$("#imDel").onclick = () => {
+  if (editIdx < 0) return;
+  if (!confirm('ลบ "' + S.cat[editIdx].name + '" ออกจากแคตตาล็อก?')) return;
+  S.cat.splice(editIdx, 1);
+  $("#itemModal").style.display = 'none';
+  drawCatList(); buildCatButtons(); saveSoon();
+};
+$("#imOk").onclick = () => {
+  const q = {
+    id: editIdx >= 0 ? S.cat[editIdx].id : ('u' + Date.now().toString(36)),
+    name: ($("#imName").value || 'อุปกรณ์').trim(),
+    w: Math.max(0.01, parseFloat($("#imW").value) || 0.4),
+    h: Math.max(0.01, parseFloat($("#imH").value) || 0.4),
+    d: Math.max(0,    parseFloat($("#imD").value) || 0),
+    cl: Math.max(0,   parseFloat($("#imCl").value) || 0),
+    color: /^#[0-9a-f]{6}$/i.test($("#imColor").value.trim()) ? $("#imColor").value.trim() : '#4FC3F7'
+  };
+  if (editIdx >= 0) S.cat[editIdx] = q; else S.cat.push(q);
+  $("#itemModal").style.display = 'none';
+  drawCatList(); buildCatButtons(); saveSoon();
+};
+
+/* ═══════════════ เซฟ/เปิดไฟล์ผัง (.json) ═══════════════ */
+$("#projSaveBtn").onclick = () => {
+  const blob = new Blob([JSON.stringify(projectData(true), null, 1)], { type:'application/json' });
+  const a = document.createElement('a');
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ผังติดตั้ง_' + d.getFullYear() + p(d.getMonth()+1) + p(d.getDate())
+             + '_' + p(d.getHours()) + p(d.getMinutes()) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+};
+
+$("#fileProj").addEventListener('change', e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (!restoreProject(d)) alert('ไฟล์นี้ไม่ใช่ไฟล์ผังติดตั้ง');
+      else saveSoon();
+    } catch (err) { alert('เปิดไฟล์ไม่สำเร็จ: ' + err.message); }
+  };
+  r.readAsText(f, 'utf-8');
+});
+
+/* ═══════════════ บันทึกภาพผลลัพธ์ ═══════════════ */
+$("#saveBtn").onclick = () => {
+  const c = document.createElement('canvas');
+  c.width = S.nw; c.height = S.nh;
+  const g = c.getContext('2d');
+
+  const paint = () => {
+    const lw = Math.max(2, S.nw / 500);
+    const fs = Math.max(13, S.nw / 55);
+    g.lineJoin = 'round';
+
+    if (S.H) {
+      /* กรอบผนัง */
+      const wq = quad({ x1:0, y1:0, x2:S.wall.w, y2:S.wall.h });
+      g.setLineDash([14, 10]); g.strokeStyle = '#FFC400AA'; g.lineWidth = lw;
+      g.beginPath(); wq.forEach((p,i) => i ? g.lineTo(p.x,p.y) : g.moveTo(p.x,p.y)); g.closePath(); g.stroke();
+      g.setLineDash([]);
+
+      S.items.forEach(it => {
+        const r = rectOf(it);
+        if (it.cl > 0) {
+          const eq = quad(expand(r, it.cl));
+          g.setLineDash([10, 8]); g.strokeStyle = '#ffffff88'; g.lineWidth = lw * 0.7;
+          g.beginPath(); eq.forEach((p,i) => i ? g.lineTo(p.x,p.y) : g.moveTo(p.x,p.y)); g.closePath(); g.stroke();
+          g.setLineDash([]);
+        }
+        const q = quad(r);
+        g.beginPath(); q.forEach((p,i) => i ? g.lineTo(p.x,p.y) : g.moveTo(p.x,p.y)); g.closePath();
+        g.fillStyle = it.color + 'CC'; g.fill();
+        g.strokeStyle = '#111'; g.lineWidth = lw; g.stroke();
+
+        const c0 = w2i(it.X, it.Y);
+        g.font = '600 ' + fs + 'px sans-serif'; g.textAlign = 'center';
+        g.lineWidth = fs / 4.5; g.strokeStyle = '#000'; g.fillStyle = '#fff';
+        g.strokeText(it.name, c0.x, c0.y - fs * 0.15);
+        g.fillText(it.name, c0.x, c0.y - fs * 0.15);
+        const dim = fmt(it.w) + '×' + fmt(it.h) + '×' + fmt(it.d) + ' ม.';
+        g.font = (fs * 0.78) + 'px ui-monospace,monospace';
+        g.strokeText(dim, c0.x, c0.y + fs * 0.95);
+        g.fillText(dim, c0.x, c0.y + fs * 0.95);
+      });
+
+      /* เส้นบอกขนาดแบบแบบก่อสร้าง — วาดเฉพาะภาพมุมตรง เพราะบนภาพเฉียงจะอ่านผิด */
+      if (S.rectified) {
+        g.strokeStyle = '#FFC400'; g.fillStyle = '#FFC400';
+        g.lineWidth = Math.max(1.5, lw * 0.6);
+        g.font = '600 ' + (fs * 0.85) + 'px ui-monospace,monospace';
+        const arrow = (a, b, txt, below) => {
+          g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+          [[a,b],[b,a]].forEach(([p,q2]) => {
+            const ang = Math.atan2(q2.y - p.y, q2.x - p.x), s = fs * 0.4;
+            g.beginPath(); g.moveTo(p.x, p.y);
+            g.lineTo(p.x + s*Math.cos(ang-0.4), p.y + s*Math.sin(ang-0.4));
+            g.lineTo(p.x + s*Math.cos(ang+0.4), p.y + s*Math.sin(ang+0.4));
+            g.closePath(); g.fill();
+          });
+          g.textAlign = 'center'; g.fillStyle = '#000';
+          const mx2 = (a.x+b.x)/2, my2 = (a.y+b.y)/2 + (below ? fs*1.1 : -fs*0.4);
+          const tw = g.measureText(txt).width;
+          g.fillRect(mx2 - tw/2 - 5, my2 - fs*0.8, tw + 10, fs*1.05);
+          g.fillStyle = '#FFC400'; g.fillText(txt, mx2, my2);
+        };
+        const off = fs * 1.6;
+        arrow({x:0, y:S.nh-off}, {x:S.nw, y:S.nh-off}, 'ผนังกว้าง ' + fmt(S.wall.w) + ' ม.', false);
+        S.items.forEach(it => {
+          const r = rectOf(it);
+          const a = w2i(r.x1, r.y2), b = w2i(r.x2, r.y2);
+          arrow({x:a.x, y:a.y - fs*0.6}, {x:b.x, y:b.y - fs*0.6}, fmt(it.w) + ' ม.', false);
+          const lft = w2i(r.x1, r.y1);
+          g.textAlign = 'left'; g.fillStyle = '#FFC400';
+          g.fillText('สูงจากพื้น ' + fmt(r.y1) + ' ม.', lft.x + fs*0.3, lft.y + fs*0.9);
+        });
+      }
+    }
+
+    /* หมายเหตุท้ายภาพ */
+    g.font = Math.max(12, S.nw/72) + 'px sans-serif';
+    g.textAlign = 'left'; g.lineWidth = 3; g.strokeStyle = '#000';
+    const note = S.wall
+      ? ('ปรับเทียบผนัง ' + fmt(S.wall.w) + ' × ' + fmt(S.wall.h) + ' ม.'
+         + (S.rectified ? ' · ภาพมุมตรง ขนาดอ่านได้ทั้งภาพ' : ' · ภาพมุมเฉียง ขนาดถูกต้องบนระนาบผนัง'))
+      : '* ยังไม่ได้ปรับเทียบผนัง — ขนาดเป็นค่าประมาณ';
+    g.fillStyle = S.wall ? '#3FBF7F' : '#FFC400';
+    g.strokeText(note, 14, S.nh - 14); g.fillText(note, 14, S.nh - 14);
+
+    showResult(c);
+  };
+
+  if (S.img) { const im = new Image(); im.onload = () => { g.drawImage(im, 0, 0, S.nw, S.nh); paint(); }; im.src = S.img; }
+  else {
+    g.fillStyle = '#8b8f95'; g.fillRect(0, 0, S.nw, S.nh);
+    g.strokeStyle = '#ffffff33'; g.lineWidth = 1;
+    for (let x = 0; x < S.nw; x += 100) { g.beginPath(); g.moveTo(x,0); g.lineTo(x,S.nh); g.stroke(); }
+    paint();
+  }
+};
+
+function showResult(canvas) {
+  const url = canvas.toDataURL('image/png');
+  const m = document.createElement('div');
+  m.className = 'modal';
+  m.innerHTML = '<div class="t">' + canvas.width + ' × ' + canvas.height + ' พิกเซล'
+    + '<br>กดค้างที่ภาพเพื่อบันทึก หรือใช้ปุ่มด้านล่าง</div>'
+    + '<img src="' + url + '" alt="ผลลัพธ์">'
+    + '<div class="row">'
+    + '<a class="btn primary" href="' + url + '" download="ผังติดตั้ง.png">⬇ ดาวน์โหลด</a>'
+    + '<button class="btn" id="shareBtn" hidden>📤 แชร์</button>'
+    + '<button class="btn" id="closeBtn">ปิด</button></div>';
+  document.body.appendChild(m);
+  m.querySelector('#closeBtn').onclick = () => m.remove();
+  m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+  if (navigator.canShare) {
+    const sb = m.querySelector('#shareBtn'); sb.hidden = false;
+    sb.onclick = () => canvas.toBlob(async b => {
+      const f = new File([b], 'layout.png', { type:'image/png' });
+      if (navigator.canShare({ files:[f] })) { try { await navigator.share({ files:[f], title:'ผังติดตั้ง' }); } catch(_) {} }
+    });
+  }
+}
+
+/* ═══════════════ เริ่มระบบ ═══════════════ */
+loadCatalog();
+buildCatButtons();
+(function bootstrap() {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(K_PROJ)); } catch (e) { d = null; }
+  if (!d || !d.nw) return;
+  const n = (d.items || []).length;
+  const hint = $("#resumeHint");
+  hint.hidden = false;
+  hint.innerHTML = 'พบงานที่ค้างไว้ — อุปกรณ์ ' + n + ' ชิ้น'
+    + (d.wall ? ' บนผนัง ' + fmt(d.wall.w) + ' × ' + fmt(d.wall.h) + ' ม.' : '')
+    + (d.img ? '' : ' (ภาพถ่ายไม่ได้ถูกเก็บเพราะไฟล์ใหญ่เกิน)')
+    + '<br><button class="btn primary" id="resumeBtn" style="margin-top:10px">↻ ทำงานต่อ</button>'
+    + ' <button class="btn" id="discardBtn" style="margin-top:10px">เริ่มใหม่</button>';
+  $("#resumeBtn").onclick = () => restoreProject(d);
+  $("#discardBtn").onclick = () => { localStorage.removeItem(K_PROJ); hint.hidden = true; };
+})();
+</script>
+</body>
+</html>

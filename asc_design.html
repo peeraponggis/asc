@@ -455,7 +455,9 @@
                     </div>
                     <div class="form-group smart-db smart-db-drone" id="droneListContainer">
                         <div style="font-size: 0.75em; color: #64748b; margin-bottom: 8px; line-height: 1.3;">
-                            เมื่ออัปโหลดภาพ ให้ลากหมุดสีส้ม 3 จุดเพื่อยืดและจัดตำแหน่งภาพให้ตรง (Orthophoto) หากต้องการซ้อนหลายภาพให้กดปุ่ม "+ เพิ่มรูป" ที่มุมขวาบน
+                            เลือกไฟล์ภาพ แล้วเลื่อนแผนที่ให้จุดสังเกต (มุมอาคาร/เสา) อยู่กึ่งกลางจอ กด <b>🎯 ปักหมุดกลางจอ</b> จากนั้นลากหมุดสีส้มไปยังตำแหน่งจริงบนภาพดาวเทียม<br>
+                            ปักได้ไม่จำกัดจำนวน ยิ่งมากยิ่งแม่น — ตั้งแต่ 3 จุดขึ้นไประบบจะแสดง<b>ค่าคลาดเฉลี่ยเป็นเมตร</b> · คลิกขวาที่หมุดเพื่อลบทีละจุด<br>
+                            ถ้าภาพบิดไม่สม่ำเสมอ ให้เปลี่ยนเป็นโหมด <b>Rubber-sheet</b> (ต้องมี GCP ≥ 4 จุด) · ซ้อนหลายภาพได้ด้วยปุ่ม "+ เพิ่มรูป"
                         </div>
                     </div>
 
@@ -676,12 +678,19 @@
 						<div style="font-size: 0.75em; color: #475569; font-style: italic;">* กรอกตัวเลขแล้วกด "ปรับความยาว" เพื่ออัปเดตรูปทรง (คลิกเลือกหลังคาก่อน)</div>
 					</div>
 					
+                    <!-- 🌟 กลุ่มความสูง/ความชันหลังคา — เรียงตามลำดับที่ผู้ใช้กรอกจริงหน้างาน
+                         วัดความสูง 2 ค่าด้วยเลเซอร์ แล้วให้โปรแกรมคำนวณ Slope ให้ -->
                     <div class="setting-group">
-                        <div class="setting-row"><span class="sr-label">Slope ความเอียงหลังคา:</span><span class="sr-ctrl"><input type="number" id="sysSlope" value="15" min="0" max="90"> องศา</span></div>
-                        <div class="setting-row"><span class="sr-label">Azimuth ทิศหลังคา:</span><span class="sr-ctrl"><input type="number" id="sysAzimuth" value="" min="-180" max="360" placeholder="Auto" style="width: 80px;"> องศา</span></div>
-                        <div class="setting-row"><span class="sr-label" style="color: #dc2626;">ความสูงอาคาร/หลังคา:</span><span class="sr-ctrl"><input type="number" id="roofHeightM" value="10" step="1" min="0"> ม.</span></div>
-                        <div class="setting-row"><span class="sr-label">ระยะห่างหลังแผงถึงพื้น:</span><span class="sr-ctrl"><input type="number" id="groundClearanceM" value="10" step="1" min="0"> ม.</span></div>
+                        <div class="setting-row"><span class="sr-label" style="color: #dc2626;">ความสูงอาคาร (ชายคา):</span><span class="sr-ctrl"><input type="number" id="roofHeightM" value="10" step="0.1" min="0"> ม.</span></div>
+                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.92em; color:#64748b;" title="อาคารทรงโมเดิร์นที่ชายคาสองปลายไม่เท่ากัน ถ้าเท่ากันปล่อยไว้เท่าเดิม">↳ ชายคาอีกปลายหนึ่ง:</span><span class="sr-ctrl"><input type="number" id="eaveHeightBM" value="10" step="0.1" min="0"> ม.</span></div>
+                        <div class="setting-row"><span class="sr-label" style="color: #dc2626;">ความสูงสันหลังคา:</span><span class="sr-ctrl"><input type="number" id="ridgeHeightM" value="10" step="0.1" min="0"> ม.</span></div>
+                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.92em; color:#64748b;">↳ ระยะไหล / ความกว้าง:</span><span class="sr-ctrl"><span id="roofRunVal" style="font-family:ui-monospace,Menlo,monospace; font-size:0.9em; color:#b45309; background:#fffbeb; border:1px dashed #fde68a; border-radius:4px; padding:2px 8px;">— ม.</span></span></div>
+                        <div class="setting-row"><span class="sr-label">Slope ความเอียงหลังคา:</span><span class="sr-ctrl"><input type="number" id="sysSlope" value="15" step="0.1" min="0" max="90"> องศา</span></div>
+                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.92em; color:#64748b;">↳ ความเอียงตามขวาง:</span><span class="sr-ctrl"><span id="crossSlopeVal" style="font-family:ui-monospace,Menlo,monospace; font-size:0.9em; color:#0369a1; background:#f0f9ff; border:1px dashed #bae6fd; border-radius:4px; padding:2px 8px;">0.00°</span></span></div>
+                        <div class="setting-row"><span class="sr-label">Azimuth ทิศหลังคา:</span><span class="sr-ctrl"><input type="number" id="sysAzimuth" value="" min="-180" max="360" placeholder="Auto" style="width: 62px;"> <button type="button" id="btnFlipAzimuth" title="สลับทิศ 180° — ระบบหาทิศอัตโนมัติจากด้านที่ยาวที่สุด จึงมีโอกาสได้ทิศตรงข้าม" style="border:1px solid #cbd5e1; background:#f1f5f9; border-radius:4px; padding:1px 6px; font-size:0.82em; cursor:pointer; color:#475569;">⟳180°</button></span></div>
+                        <div class="setting-row"><span class="sr-label">ระยะห่างหลังแผงถึงพื้น:</span><span class="sr-ctrl"><input type="number" id="groundClearanceM" value="10" step="0.1" min="0"> ม.</span></div>
                     </div>
+                    <div id="roofGeomWarn" style="display:none; font-size:0.78em; line-height:1.55; border-radius:6px; padding:7px 10px; margin:4px 0 8px 0;"></div>
                     <div id="polygonParamsList" style="margin-bottom: 12px; font-size: 0.85em; background: #fffbeb; padding: 10px; border-radius: 4px; border: 1px dashed #fde68a; display: none;"></div>
 
                     <div class="form-group">
@@ -1456,7 +1465,7 @@ const INDUSTRIAL_SOLAR_CONFIG = {
             });
             
             // เพิ่ม bom-rail-length, bom-span-dist, bom-panel-gap และ bom-main-breaker ลงใน keepDefaults เพื่อไม่ให้ถูกรีเซ็ตเป็น 0
-            const keepDefaults = ['sysSlope', 'sysAzimuth', 'rowsPerGroup', 'rowWalkwayGapCm', 'colsPerGroup', 'colWalkwayGapCm', 'innerEdgeGapCm', 'keepoutGapCm', 'droneOpacity', 'soilingLoss', 'lidLoss', 'wiringLoss', 'invEfficiency', 'tempCoeffPmax', 'tempCoeffVoc', 'dcacSlider', 'roofHeightM', 'bifacialAlbedo', 'groundClearanceM', 'keepoutHeightM', 'bom-rail-length', 'bom-span-dist', 'bom-panel-gap', 'bom-main-breaker', 'manualWalkwayWidth', 'uncertMeteo', 'uncertEquip']; // 🌟 เฟส 14: กันรีเซ็ตเป็น 0 (ทางเดินกว้าง 40 / Uncertainty 4.0, 2.0)
+            const keepDefaults = ['sysSlope', 'sysAzimuth', 'rowsPerGroup', 'rowWalkwayGapCm', 'colsPerGroup', 'colWalkwayGapCm', 'innerEdgeGapCm', 'keepoutGapCm', 'droneOpacity', 'soilingLoss', 'lidLoss', 'wiringLoss', 'invEfficiency', 'tempCoeffPmax', 'tempCoeffVoc', 'dcacSlider', 'roofHeightM', 'ridgeHeightM', 'eaveHeightBM', 'bifacialAlbedo', 'groundClearanceM', 'keepoutHeightM', 'bom-rail-length', 'bom-span-dist', 'bom-panel-gap', 'bom-main-breaker', 'manualWalkwayWidth', 'uncertMeteo', 'uncertEquip']; // 🌟 เฟส 14: กันรีเซ็ตเป็น 0 (ทางเดินกว้าง 40 / Uncertainty 4.0, 2.0)
 			
 			document.querySelectorAll('input[type="number"], input[type="range"]').forEach(el => {
                 if (!keepDefaults.includes(el.id)) {
@@ -1479,6 +1488,8 @@ const INDUSTRIAL_SOLAR_CONFIG = {
                     if(el.id === 'tempCoeffVoc') el.value = -0.27;
                     if(el.id === 'dcacSlider') el.value = 1.20;
                     if(el.id === 'roofHeightM') el.value = 10;
+                    if(el.id === 'ridgeHeightM') el.value = 10;   // 🌟 เท่าชายคา = หลังคาราบ 0°
+                    if(el.id === 'eaveHeightBM') el.value = 10;   // 🌟 เท่าชายคาปลายแรก = ลาดทางเดียว
                     if(el.id === 'bifacialAlbedo') el.value = 0.20;
                     if(el.id === 'groundClearanceM') el.value = 10;
                     if(el.id === 'keepoutHeightM') el.value = 1.0;
@@ -1488,13 +1499,10 @@ const INDUSTRIAL_SOLAR_CONFIG = {
                 }
             });
 
-            // 🌟 1. Sync ระยะห่างแผงถึงพื้น กับ ระยะสายลง MDB 
+            /* 🌟 ระยะห่างหลังแผงถึงพื้น = ค่าเฉลี่ยชายคา-สัน ใช้คำนวณ Bifacial เท่านั้น
+               ไม่ดันไปทับ "ระยะสายลงห้อง MDB" อีกต่อไป เพราะสายไฟวิ่งลงจากชายคา ไม่ใช่จากกึ่งกลางหลังคา
+               (ช่อง distToMdbMap ยังรับค่าจากความสูงชายคาตามเดิม) */
             document.getElementById('groundClearanceM').addEventListener('input', function(e) {
-                const val = parseFloat(e.target.value) || 0;
-                if (document.getElementById('distToMdbMap')) {
-                    document.getElementById('distToMdbMap').value = val;
-                    document.getElementById('distToMdbMap').dispatchEvent(new Event('input')); // กระตุ้นการคำนวณ V-Drop
-                }
                 updatePreviews();
             });
 
@@ -1718,7 +1726,11 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
             maxZoom: 23, 
             zoomSnap: 0.25, 
             zoomDelta: 0.25,
-            preferCanvas: true, // 🌟 THE MAGIC SWITCH: สั่งให้วาดแผงด้วย Canvas เอนจิน 2D (ลบรอยหยัก/ไม่กระตุก)
+            /* 🌟 วาดเวกเตอร์ด้วย SVG เพื่อให้ขอบคมตลอดการซูม
+               Canvas เป็นบิตแมป ระหว่างที่ Leaflet ยืดภาพตอนซูมจะเห็นขอบหยัก ส่วน SVG เบราว์เซอร์วาดใหม่ให้
+               วัดแล้วในโปรเจกต์จริงมีวัตถุที่ได้รับผลจากสวิตช์นี้เพียงชิ้นเดียว (ขอบหลังคา)
+               เพราะแผงระบุ L.svg() ไว้เองอยู่แล้ว และเส้นเดินสายระบุ L.canvas() ไว้เอง — จึงไม่กระทบความลื่น */
+            preferCanvas: false,
             layers: [googleSatLayer] // บังคับให้โหลด Google Sat ทันทีเมื่อเปิดโปรแกรม
        }).setView([13.7563, 100.5018], 6);;
 
@@ -1766,144 +1778,556 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
         //panelItems.addTo(map); 
 		wiringItems.addTo(map);
         // --- DRONE OVERLAY LOGIC (MULTI-IMAGE SUPPORT) ---
-        let droneMarkers = L.featureGroup().addTo(map); // ให้คงไว้เป็น Global สำหรับฟังก์ชัน Capture Map
-        let droneCounter = 0;
-        let allDroneOverlays = []; // เก็บอ้างอิงภาพทั้งหมดเพื่อเคลียร์ตอนโหลดใหม่
+        /* ═══════════════════════════════════════════════════════════════════════
+           🌟 ภาพโดรน / ออร์โธโฟโต้ พร้อมจุดควบคุม (GCP) ไม่จำกัดจำนวน
+           -----------------------------------------------------------------------
+           เดิมวางภาพด้วยหมุด 3 จุด (affine ล้วน) และไม่ได้บันทึกอะไรลง DB2 เลย
+           เปิดโปรเจกต์ใหม่ทีต้องลากวางใหม่ทุกครั้ง
 
-        function clearAllDrones() {
-            allDroneOverlays.forEach(overlay => {
-                if (map.hasLayer(overlay)) map.removeLayer(overlay);
+           ของใหม่
+             • GCP กี่จุดก็ได้ → หา affine แบบกำลังสองน้อยสุด (เฉลี่ยความคลาดทุกจุด)
+             • โหมด Rubber-sheet → แบ่งสามเหลี่ยม Delaunay แล้ว affine ทีละชิ้น
+               แก้ความบิดเฉพาะจุดที่ affine ทั้งภาพทำไม่ได้ (ต้องมี GCP ≥ 4)
+             • RMSE รายภาพเป็นเมตร บอกว่าวางแม่นแค่ไหน
+             • บันทึก GCP + เมทริกซ์ลง DB2 (ไม่ฝังภาพเต็มความละเอียด)
+
+           วาดด้วย canvas layer ของตัวเอง เพราะ L.imageOverlay.rotated รับได้แค่ 3 มุม
+           ═══════════════════════════════════════════════════════════════════════ */
+
+        let droneMarkers = L.featureGroup().addTo(map);  // หมุด GCP — คงชื่อเดิมไว้ให้ระบบถ่ายภาพซ่อนหมุดได้เหมือนเดิม
+        let droneCounter = 0;
+        let ascDroneImages = [];
+        let allDroneOverlays = [];      // คงไว้เพื่อความเข้ากันได้ย้อนหลัง
+        let ascGcpTarget = null;
+
+        const ASC_R = 6378137;
+        const llToMerc = (lat, lng) => [
+            ASC_R * lng * Math.PI / 180,
+            ASC_R * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI / 180) / 2))
+        ];
+        const mercToLL = (x, y) => L.latLng(
+            (2 * Math.atan(Math.exp(y / ASC_R)) - Math.PI / 2) * 180 / Math.PI,
+            x / ASC_R * 180 / Math.PI
+        );
+
+        /* แก้ระบบสมการเชิงเส้นด้วย Gauss-Jordan */
+        function ascSolveLinear(A, b) {
+            const n = b.length;
+            const M = A.map((row, i) => row.slice().concat([b[i]]));
+            for (let c = 0; c < n; c++) {
+                let piv = c;
+                for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
+                if (Math.abs(M[piv][c]) < 1e-14) return null;
+                const tmp = M[c]; M[c] = M[piv]; M[piv] = tmp;
+                const d = M[c][c];
+                for (let k = c; k <= n; k++) M[c][k] /= d;
+                for (let r = 0; r < n; r++) {
+                    if (r === c) continue;
+                    const f = M[r][c];
+                    if (!f) continue;
+                    for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k];
+                }
+            }
+            return M.map(r => r[n]);
+        }
+
+        /* เมทริกซ์ Affine [a,b,c,d,e,f] : x' = a·x + b·y + c , y' = d·x + e·y + f */
+        const AscAff = {
+            apply: (m, x, y) => [m[0]*x + m[1]*y + m[2], m[3]*x + m[4]*y + m[5]],
+            identity: () => [1, 0, 0, 0, 1, 0],
+            translation: (tx, ty) => [1, 0, tx, 0, 1, ty],
+            compose: (S, A) => [
+                S[0]*A[0] + S[1]*A[3], S[0]*A[1] + S[1]*A[4], S[0]*A[2] + S[1]*A[5] + S[2],
+                S[3]*A[0] + S[4]*A[3], S[3]*A[1] + S[4]*A[4], S[3]*A[2] + S[4]*A[5] + S[5]
+            ],
+            invert: (m) => {
+                const det = m[0]*m[4] - m[1]*m[3];
+                if (Math.abs(det) < 1e-18) return null;
+                const a = m[4]/det, b = -m[1]/det, d = -m[3]/det, e = m[0]/det;
+                return [a, b, -(a*m[2] + b*m[5]), d, e, -(d*m[2] + e*m[5])];
+            },
+            /* Affine กำลังสองน้อยสุดจากคู่จุด src[i] → dst[i] (ต้องมี ≥ 3 คู่)
+               ยิ่งใส่ GCP มาก ความคลาดยิ่งถูกเฉลี่ยทั่วทั้งภาพ ไม่ใช่บังคับให้ตรงเป๊ะแค่ 3 จุด */
+            fitLS: (src, dst) => {
+                let Suu=0, Suv=0, Su=0, Svv=0, Sv=0;
+                let Sxu=0, Sxv=0, Sx=0, Syu=0, Syv=0, Sy=0;
+                const S1 = src.length;
+                for (let i = 0; i < S1; i++) {
+                    const u = src[i][0], v = src[i][1], x = dst[i][0], y = dst[i][1];
+                    Suu += u*u; Suv += u*v; Su += u; Svv += v*v; Sv += v;
+                    Sxu += x*u; Sxv += x*v; Sx += x; Syu += y*u; Syv += y*v; Sy += y;
+                }
+                const N = [[Suu, Suv, Su], [Suv, Svv, Sv], [Su, Sv, S1]];
+                const rx = ascSolveLinear(N.map(r => r.slice()), [Sxu, Sxv, Sx]);
+                const ry = ascSolveLinear(N.map(r => r.slice()), [Syu, Syv, Sy]);
+                if (!rx || !ry) return null;
+                return [rx[0], rx[1], rx[2], ry[0], ry[1], ry[2]];
+            },
+            /* Similarity จาก 2 คู่จุด — หมุน+ย่อขยาย ไม่เฉือนภาพ */
+            fitSimilarity2: (a1, a2, b1, b2) => {
+                const va = [a2[0]-a1[0], a2[1]-a1[1]], vb = [b2[0]-b1[0], b2[1]-b1[1]];
+                const la = Math.hypot(va[0], va[1]), lb = Math.hypot(vb[0], vb[1]);
+                if (la < 1e-12) return [1, 0, b1[0]-a1[0], 0, 1, b1[1]-a1[1]];
+                const s = lb / la;
+                const th = Math.atan2(vb[1], vb[0]) - Math.atan2(va[1], va[0]);
+                const co = Math.cos(th)*s, si = Math.sin(th)*s;
+                return [co, -si, b1[0] - (co*a1[0] - si*a1[1]),
+                        si,  co, b1[1] - (si*a1[0] + co*a1[1])];
+            }
+        };
+
+        /* สามเหลี่ยม Delaunay ด้วยอัลกอริทึม Bowyer-Watson — ใช้แบ่งชิ้นสำหรับ Rubber-sheet */
+        function ascInCircumcircle(p, a, b, c) {
+            const ax = a[0]-p[0], ay = a[1]-p[1];
+            const bx = b[0]-p[0], by = b[1]-p[1];
+            const cx = c[0]-p[0], cy = c[1]-p[1];
+            const det = (ax*ax + ay*ay) * (bx*cy - cx*by)
+                      - (bx*bx + by*by) * (ax*cy - cx*ay)
+                      + (cx*cx + cy*cy) * (ax*by - bx*ay);
+            const orient = (b[0]-a[0])*(c[1]-a[1]) - (c[0]-a[0])*(b[1]-a[1]);
+            return orient > 0 ? det > 0 : det < 0;
+        }
+        function ascDelaunay(pts) {
+            const n = pts.length;
+            if (n < 3) return [];
+            let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+            pts.forEach(p => {
+                minx = Math.min(minx, p[0]); miny = Math.min(miny, p[1]);
+                maxx = Math.max(maxx, p[0]); maxy = Math.max(maxy, p[1]);
             });
+            const dmax = Math.max(maxx-minx, maxy-miny) || 1;
+            const mx = (minx+maxx)/2, my = (miny+maxy)/2;
+            const P = pts.slice();
+            P.push([mx - 20*dmax, my - dmax], [mx, my + 20*dmax], [mx + 20*dmax, my - dmax]);
+            let tris = [[n, n+1, n+2]];
+            for (let i = 0; i < n; i++) {
+                const bad = [], edges = [];
+                tris.forEach(t => { if (ascInCircumcircle(P[i], P[t[0]], P[t[1]], P[t[2]])) bad.push(t); });
+                if (!bad.length) continue;
+                bad.forEach(t => { edges.push([t[0],t[1]], [t[1],t[2]], [t[2],t[0]]); });
+                tris = tris.filter(t => bad.indexOf(t) < 0);
+                edges.forEach((e, ii) => {
+                    const dup = edges.some((f, jj) => jj !== ii &&
+                        ((f[0] === e[0] && f[1] === e[1]) || (f[0] === e[1] && f[1] === e[0])));
+                    if (!dup) tris.push([e[0], e[1], i]);
+                });
+            }
+            return tris.filter(t => t[0] < n && t[1] < n && t[2] < n);
+        }
+
+        /* ---------- ภาพหนึ่งภาพพร้อมชุด GCP ของตัวเอง ---------- */
+        class AscDroneImage {
+            constructor(id, name) {
+                this.id      = id;
+                this.name    = name || ('ภาพที่ ' + id);
+                this.src     = null;      // HTMLImageElement — ไม่ถูกบันทึกลง DB2
+                this.w = 0; this.h = 0;
+                this.opacity = 0.7;
+                this.visible = true;
+                this.mode    = 'affine';  // affine | rubber
+                this.gcps    = [];        // { u, v, lat, lng, marker }
+                this.A       = AscAff.identity();   // พิกเซล → Mercator เมตร
+            }
+
+            pxToMerc(u, v)  { return AscAff.apply(this.A, u, v); }
+            pxToLatLng(u, v){ const m = this.pxToMerc(u, v); return mercToLL(m[0], m[1]); }
+            latLngToPx(ll)  {
+                const inv = AscAff.invert(this.A); if (!inv) return [0, 0];
+                const m = llToMerc(ll.lat, ll.lng);
+                return AscAff.apply(inv, m[0], m[1]);
+            }
+            corners() { return [[0,0], [this.w,0], [this.w,this.h], [0,this.h]]; }
+
+            /* วางภาพครั้งแรกให้พอดีกับกรอบหน้าจอ */
+            placeAtView() {
+                if (!this.w || !this.h) return;
+                const b = map.getBounds();
+                const tl = llToMerc(b.getNorth(), b.getWest());
+                const br = llToMerc(b.getSouth(), b.getEast());
+                const bw = (br[0] - tl[0]) * 0.6, bh = (tl[1] - br[1]) * 0.6;
+                const s  = Math.min(bw / this.w, bh / this.h);
+                const cx = (tl[0] + br[0]) / 2, cy = (tl[1] + br[1]) / 2;
+                this.A = [s, 0, cx - s*this.w/2, 0, -s, cy + s*this.h/2];
+            }
+
+            /* คำนวณเมทริกซ์ใหม่จาก GCP ทั้งหมด */
+            refit() {
+                const g = this.gcps;
+                if (!g.length) return;
+                const dst = g.map(p => llToMerc(p.lat, p.lng));
+                if (g.length >= 3) {
+                    const A = AscAff.fitLS(g.map(p => [p.u, p.v]), dst);
+                    if (A && isFinite(A[0])) this.A = A;
+                } else if (g.length === 2) {
+                    const c0 = this.pxToMerc(g[0].u, g[0].v), c1 = this.pxToMerc(g[1].u, g[1].v);
+                    this.A = AscAff.compose(AscAff.fitSimilarity2(c0, c1, dst[0], dst[1]), this.A);
+                } else {
+                    const c0 = this.pxToMerc(g[0].u, g[0].v);
+                    this.A = AscAff.compose(AscAff.translation(dst[0][0]-c0[0], dst[0][1]-c0[1]), this.A);
+                }
+            }
+
+            /* ความคลาดเคลื่อนเฉลี่ยเป็นเมตร — ต่ำกว่า 0.5 ม. ถือว่าใช้ได้สำหรับงานออกแบบแผง */
+            rmse() {
+                if (this.gcps.length < 3) return null;
+                let s = 0;
+                this.gcps.forEach(g => {
+                    const p = this.pxToLatLng(g.u, g.v);
+                    s += Math.pow(map.distance(p, L.latLng(g.lat, g.lng)), 2);
+                });
+                return Math.sqrt(s / this.gcps.length);
+            }
+
+            /* ปักหมุดที่กึ่งกลางจอ — จุดพิกเซลล็อกไว้ตรงจุดที่เห็น แล้วผู้ใช้ลากหมุดไปยังตำแหน่งจริง
+               ใช้กึ่งกลางจอแทนการดักคลิกบนแผนที่ เพื่อไม่ให้ชนกับเครื่องมือวาดหลังคาที่มีอยู่เดิม */
+            addGcpAtCenter() {
+                if (!this.src) return null;
+                const ll = map.getCenter();
+                const px = this.latLngToPx(ll);
+                const g = { u: px[0], v: px[1], lat: ll.lat, lng: ll.lng, marker: null };
+                this.gcps.push(g);
+                this._makeMarker(g);
+                return g;
+            }
+
+            _makeMarker(g) {
+                const idx = () => this.gcps.indexOf(g) + 1;
+                const m = L.marker([g.lat, g.lng], {
+                    draggable: true,
+                    zIndexOffset: 900,
+                    icon: L.divIcon({
+                        className: 'drone-marker',
+                        html: '<div style="width:16px;height:16px;background:#ea580c;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.6);"></div>',
+                        iconSize: [20, 20], iconAnchor: [10, 10]
+                    })
+                }).addTo(droneMarkers);
+                m.bindTooltip(() => 'GCP ' + idx() + ' — ' + this.name + ' (ลากไปยังตำแหน่งจริง)',
+                              { direction: 'top', offset: [0, -12] });
+                m.on('drag', () => {
+                    const ll = m.getLatLng();
+                    g.lat = ll.lat; g.lng = ll.lng;
+                    this.refit(); droneLayer.redraw();
+                });
+                m.on('dragend', () => { renderDroneList(); });
+                m.on('contextmenu', () => { this.removeGcp(g); });
+                g.marker = m;
+            }
+
+            removeGcp(g) {
+                const i = this.gcps.indexOf(g);
+                if (i < 0) return;
+                if (g.marker) droneMarkers.removeLayer(g.marker);
+                this.gcps.splice(i, 1);
+                this.refit(); droneLayer.redraw(); renderDroneList();
+            }
+            clearGcps() {
+                this.gcps.forEach(g => { if (g.marker) droneMarkers.removeLayer(g.marker); });
+                this.gcps = [];
+                droneLayer.redraw(); renderDroneList();
+            }
+            destroy() {
+                this.clearGcps();
+                const i = ascDroneImages.indexOf(this);
+                if (i >= 0) ascDroneImages.splice(i, 1);
+                droneLayer.redraw();
+            }
+
+            /* บันทึกลง DB2 — เก็บเฉพาะตัวเลข ไม่มีข้อมูลภาพ */
+            toJSON() {
+                return {
+                    id: this.id, name: this.name, w: this.w, h: this.h,
+                    opacity: this.opacity, visible: this.visible, mode: this.mode,
+                    A: this.A.slice(),
+                    gcps: this.gcps.map(g => ({
+                        u: Number(g.u.toFixed(2)), v: Number(g.v.toFixed(2)),
+                        lat: Number(g.lat.toFixed(9)), lng: Number(g.lng.toFixed(9))
+                    })),
+                    rmse_m: this.rmse() !== null ? Number(this.rmse().toFixed(3)) : null
+                };
+            }
+        }
+
+        /* ---------- เลเยอร์ Canvas ที่วาดภาพทุกใบ ---------- */
+        map.createPane('dronePane');
+        map.getPane('dronePane').style.zIndex = 250;     // เหนือไทล์แผนที่ แต่ใต้แผงและเส้นทุกชนิด
+        map.getPane('dronePane').style.pointerEvents = 'none';
+
+        const AscDroneLayer = L.Layer.extend({
+            options: { padding: 0.25, pane: 'dronePane' },
+            onAdd: function () {
+                this._canvas = L.DomUtil.create('canvas');
+                this._canvas.style.position = 'absolute';
+                this._ctx = this._canvas.getContext('2d');
+                this.getPane().appendChild(this._canvas);
+                if (this._map._zoomAnimated) L.DomUtil.addClass(this._canvas, 'leaflet-zoom-animated');
+                this._reset();
+            },
+            onRemove: function () { L.DomUtil.remove(this._canvas); },
+            getEvents: function () {
+                const ev = { viewreset: this._reset, zoom: this._onZoom, moveend: this._reset,
+                             zoomend: this._reset, resize: this._reset };
+                if (this._map._zoomAnimated) ev.zoomanim = this._onAnimZoom;
+                return ev;
+            },
+            _onAnimZoom: function (e) { this._updateTransform(e.center, e.zoom); },
+            _onZoom: function () { this._updateTransform(this._map.getCenter(), this._map.getZoom()); },
+            _updateTransform: function (center, zoom) {
+                const scale = this._map.getZoomScale(zoom, this._zoom);
+                const pos = this._map._latLngToNewLayerPoint(this._topLeft, zoom, center);
+                L.DomUtil.setTransform(this._canvas, pos, scale);
+            },
+            _reset: function () {
+                const m = this._map; if (!m) return;
+                const size = m.getSize(), pad = size.multiplyBy(this.options.padding);
+                const min = m.containerPointToLayerPoint(pad.multiplyBy(-1)).round();
+                this._bounds = new L.Bounds(min, min.add(size.add(pad.multiplyBy(2))).round());
+                this._topLeft = m.layerPointToLatLng(min);
+                this._center = m.getCenter(); this._zoom = m.getZoom();
+                const s = this._bounds.getSize();
+                const dpr = Math.min(2, window.devicePixelRatio || 1);
+                this._dpr = dpr;
+                this._canvas.width  = Math.max(1, Math.round(s.x * dpr));
+                this._canvas.height = Math.max(1, Math.round(s.y * dpr));
+                this._canvas.style.width  = s.x + 'px';
+                this._canvas.style.height = s.y + 'px';
+                L.DomUtil.setPosition(this._canvas, this._bounds.min);
+                this.redraw();
+            },
+            _pt: function (ll) {
+                const p = this._map.latLngToLayerPoint(ll);
+                return [p.x - this._bounds.min.x, p.y - this._bounds.min.y];
+            },
+            _p: function (im, u, v) { return this._pt(im.pxToLatLng(u, v)); },
+
+            redraw: function () {
+                if (!this._ctx || !this._map) return;
+                const ctx = this._ctx;
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ascDroneImages.forEach(im => {
+                    if (!im.visible || !im.src || im.opacity <= 0) return;
+                    ctx.save();
+                    ctx.globalAlpha = im.opacity;
+                    if (im.mode === 'rubber' && im.gcps.length >= 4) this._drawRubber(ctx, im);
+                    else this._drawAffine(ctx, im);
+                    ctx.restore();
+                });
+            },
+
+            _drawAffine: function (ctx, im) {
+                const q00 = this._p(im, 0, 0), q10 = this._p(im, im.w, 0), q01 = this._p(im, 0, im.h);
+                const a = (q10[0]-q00[0])/im.w, b = (q10[1]-q00[1])/im.w;
+                const c = (q01[0]-q00[0])/im.h, d = (q01[1]-q00[1])/im.h;
+                if (!isFinite(a) || !isFinite(d)) return;
+                ctx.save();
+                ctx.setTransform(this._dpr, 0, 0, this._dpr, 0, 0);
+                ctx.transform(a, b, c, d, q00[0], q00[1]);
+                try { ctx.drawImage(im.src, 0, 0); } catch (e) {}
+                ctx.restore();
+            },
+
+            /* Rubber-sheet: แบ่งภาพเป็นสามเหลี่ยมจาก GCP + มุมภาพ แล้ว affine ทีละชิ้น */
+            _drawRubber: function (ctx, im) {
+                const srcPts = im.gcps.map(g => [g.u, g.v]);
+                const dstPts = im.gcps.map(g => this._pt(L.latLng(g.lat, g.lng)));
+                im.corners().forEach(c => {
+                    // ข้ามมุมที่ทับกับ GCP อยู่แล้ว ไม่งั้นได้สามเหลี่ยมแบนจนภาพขาดเป็นริ้ว
+                    if (srcPts.some(s => Math.abs(s[0]-c[0]) < 2 && Math.abs(s[1]-c[1]) < 2)) return;
+                    srcPts.push(c); dstPts.push(this._p(im, c[0], c[1]));
+                });
+                const tris = ascDelaunay(srcPts);
+                if (!tris.length) { this._drawAffine(ctx, im); return; }
+                ctx.save();
+                ctx.setTransform(this._dpr, 0, 0, this._dpr, 0, 0);
+                tris.forEach(t => {
+                    const s = [srcPts[t[0]], srcPts[t[1]], srcPts[t[2]]];
+                    const q = [dstPts[t[0]], dstPts[t[1]], dstPts[t[2]]];
+                    const den = (s[1][0]-s[0][0])*(s[2][1]-s[0][1]) - (s[2][0]-s[0][0])*(s[1][1]-s[0][1]);
+                    if (Math.abs(den) < 1e-9) return;
+                    const m11 = ((q[1][0]-q[0][0])*(s[2][1]-s[0][1]) - (q[2][0]-q[0][0])*(s[1][1]-s[0][1]))/den;
+                    const m21 = ((q[2][0]-q[0][0])*(s[1][0]-s[0][0]) - (q[1][0]-q[0][0])*(s[2][0]-s[0][0]))/den;
+                    const m12 = ((q[1][1]-q[0][1])*(s[2][1]-s[0][1]) - (q[2][1]-q[0][1])*(s[1][1]-s[0][1]))/den;
+                    const m22 = ((q[2][1]-q[0][1])*(s[1][0]-s[0][0]) - (q[1][1]-q[0][1])*(s[2][0]-s[0][0]))/den;
+                    const dx = q[0][0] - m11*s[0][0] - m21*s[0][1];
+                    const dy = q[0][1] - m12*s[0][0] - m22*s[0][1];
+                    // ขยายสามเหลี่ยมนิดหน่อยกันเห็นรอยต่อเป็นเส้นขาว
+                    const cx = (q[0][0]+q[1][0]+q[2][0])/3, cy = (q[0][1]+q[1][1]+q[2][1])/3;
+                    const ex = p => [cx + (p[0]-cx)*1.004, cy + (p[1]-cy)*1.004];
+                    const e0 = ex(q[0]), e1 = ex(q[1]), e2 = ex(q[2]);
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(e0[0], e0[1]); ctx.lineTo(e1[0], e1[1]); ctx.lineTo(e2[0], e2[1]);
+                    ctx.closePath(); ctx.clip();
+                    ctx.transform(m11, m12, m21, m22, dx, dy);
+                    try { ctx.drawImage(im.src, 0, 0); } catch (e) {}
+                    ctx.restore();
+                });
+                ctx.restore();
+            }
+        });
+
+        const droneLayer = new AscDroneLayer().addTo(map);
+
+        /* ---------- หน้าจอรายการภาพ ---------- */
+        function ascRmseBadge(im) {
+            const r = im.rmse();
+            if (r === null) return '<span style="color:#94a3b8;">GCP ' + im.gcps.length + ' จุด (ต้องมี 3 จุดขึ้นไปจึงคำนวณความคลาดได้)</span>';
+            const col = r <= 0.5 ? '#16a34a' : (r <= 1.5 ? '#d97706' : '#dc2626');
+            return '<span style="color:' + col + '; font-weight:bold;">GCP ' + im.gcps.length +
+                   ' จุด · คลาดเฉลี่ย ' + r.toFixed(2) + ' ม.</span>';
+        }
+
+        function renderDroneList() {
+            const host = document.getElementById('droneListContainer');
+            if (!host) return;
+            host.querySelectorAll('.drone-item-row').forEach(el => el.remove());
+
+            ascDroneImages.forEach(im => {
+                const box = document.createElement('div');
+                box.className = 'drone-item-row';
+                box.style.cssText = 'border:1px solid #fed7aa; background:#fff; border-radius:6px; padding:8px; margin-bottom:8px;';
+                box.innerHTML =
+                  '<div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">' +
+                    '<b style="flex:1; font-size:0.85em; color:#9a3412; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + im.name + '</b>' +
+                    '<button data-a="vis" style="border:1px solid #cbd5e1; background:#f8fafc; border-radius:4px; padding:2px 7px; cursor:pointer; font-size:0.85em;">' + (im.visible ? '👁' : '🙈') + '</button>' +
+                    '<button data-a="del" style="border:1px solid #fecaca; background:#fef2f2; color:#dc2626; border-radius:4px; padding:2px 7px; cursor:pointer; font-size:0.85em;">✕</button>' +
+                  '</div>' +
+                  (im.src ? '' :
+                    '<div style="font-size:0.75em; color:#b45309; background:#fffbeb; border:1px dashed #fde68a; border-radius:4px; padding:5px 7px; margin-bottom:6px;">' +
+                      'ตำแหน่งและ GCP ถูกกู้คืนจากไฟล์แล้ว — เลือกไฟล์ภาพเดิมเพื่อให้ภาพกลับมาแสดง</div>') +
+                  '<input type="file" data-a="file" accept="image/png, image/jpeg" style="width:100%; font-size:0.8em; margin-bottom:6px;">' +
+                  '<div style="display:flex; align-items:center; gap:6px; margin-bottom:5px; font-size:0.8em;">' +
+                    '<span style="width:52px; color:#64748b;">โปร่งแสง</span>' +
+                    '<input type="range" data-a="op" min="0.1" max="1" step="0.05" value="' + im.opacity + '" style="flex:1;">' +
+                    '<span style="width:34px; text-align:right; color:#475569;">' + Math.round(im.opacity*100) + '%</span>' +
+                  '</div>' +
+                  '<div style="display:flex; align-items:center; gap:6px; margin-bottom:6px; font-size:0.8em;">' +
+                    '<span style="width:52px; color:#64748b;">การบิดภาพ</span>' +
+                    '<select data-a="mode" style="flex:1; font-size:0.95em; padding:2px 4px;">' +
+                      '<option value="affine"' + (im.mode === 'affine' ? ' selected' : '') + '>Affine — ยืด/หมุน/เฉือนทั้งภาพ</option>' +
+                      '<option value="rubber"' + (im.mode === 'rubber' ? ' selected' : '') + '>Rubber-sheet — ดัดเฉพาะจุด (ต้องมี GCP ≥ 4)</option>' +
+                    '</select>' +
+                  '</div>' +
+                  '<div style="font-size:0.75em; margin-bottom:6px;">' + ascRmseBadge(im) + '</div>' +
+                  '<div style="display:flex; gap:5px;">' +
+                    '<button data-a="addgcp" style="flex:2; padding:5px; background:#ea580c; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:0.8em; font-weight:bold;">🎯 ปักหมุดกลางจอ</button>' +
+                    '<button data-a="cleargcp" style="flex:1; padding:5px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:4px; cursor:pointer; font-size:0.8em;">ล้าง GCP</button>' +
+                  '</div>';
+
+                box.querySelector('[data-a="file"]').addEventListener('change', e => {
+                    const f = e.target.files[0]; if (!f) return;
+                    ascAttachImageFile(im, f);
+                    e.target.value = '';
+                });
+                box.querySelector('[data-a="op"]').addEventListener('input', e => {
+                    im.opacity = parseFloat(e.target.value) || 0.7;
+                    e.target.nextElementSibling.textContent = Math.round(im.opacity*100) + '%';
+                    droneLayer.redraw();
+                });
+                box.querySelector('[data-a="mode"]').addEventListener('change', e => {
+                    im.mode = e.target.value;
+                    if (im.mode === 'rubber' && im.gcps.length < 4) {
+                        alert('โหมด Rubber-sheet ต้องมี GCP อย่างน้อย 4 จุด\nตอนนี้มี ' + im.gcps.length + ' จุด — ระบบจะใช้ Affine ไปก่อนจนกว่าจะครบ');
+                    }
+                    droneLayer.redraw();
+                });
+                box.querySelector('[data-a="vis"]').addEventListener('click', () => {
+                    im.visible = !im.visible; droneLayer.redraw(); renderDroneList();
+                });
+                box.querySelector('[data-a="del"]').addEventListener('click', () => {
+                    if (!confirm('ลบ "' + im.name + '" ออกจากโครงการ?')) return;
+                    im.destroy(); renderDroneList();
+                });
+                box.querySelector('[data-a="addgcp"]').addEventListener('click', () => {
+                    if (!im.src) { alert('เลือกไฟล์ภาพก่อนจึงจะปักหมุดได้'); return; }
+                    im.addGcpAtCenter();
+                    droneLayer.redraw(); renderDroneList();
+                });
+                box.querySelector('[data-a="cleargcp"]').addEventListener('click', () => {
+                    if (!im.gcps.length) return;
+                    if (!confirm('ล้าง GCP ทั้ง ' + im.gcps.length + ' จุดของภาพนี้?')) return;
+                    im.clearGcps();
+                });
+
+                host.appendChild(box);
+            });
+        }
+
+        /* ผูกไฟล์ภาพเข้ากับรายการ — ถ้ามี GCP อยู่แล้วให้คงตำแหน่งเดิม ไม่วางใหม่ */
+        function ascAttachImageFile(im, file) {
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = function () {
+                const hadGeo = im.gcps.length > 0 || (im.w > 0 && im.h > 0);
+                const oldW = im.w, oldH = im.h;
+                im.src = img; im.w = img.naturalWidth; im.h = img.naturalHeight;
+                if (!im.name || /^ภาพที่ \d+$/.test(im.name)) im.name = file.name;
+
+                if (!hadGeo) {
+                    im.placeAtView();
+                } else if (oldW && oldH && (oldW !== im.w || oldH !== im.h)) {
+                    /* ไฟล์ที่เลือกมาความละเอียดต่างจากตอนบันทึก — ปรับสเกลพิกเซลให้ตรงกัน
+                       ตำแหน่งบนแผนที่จึงไม่เพี้ยนแม้จะใช้ไฟล์ย่อขนาด */
+                    const sx = oldW / im.w, sy = oldH / im.h;
+                    im.A = AscAff.compose(im.A, [sx, 0, 0, 0, sy, 0]);
+                    im.gcps.forEach(g => { g.u /= sx; g.v /= sy; });
+                }
+                droneLayer.redraw(); renderDroneList();
+            };
+            img.onerror = function () { alert('ไฟล์ภาพไม่ถูกต้อง หรือแสดงผลไม่ได้'); };
+            img.src = url;
+        }
+
+        /* ---------- ฟังก์ชันที่โค้ดส่วนอื่นเรียกใช้ (ชื่อเดิม) ---------- */
+        function clearAllDrones() {
+            ascDroneImages.slice().forEach(im => im.destroy());
+            ascDroneImages = [];
             allDroneOverlays = [];
             droneCounter = 0;
+            droneMarkers.clearLayers();
+            droneLayer.redraw();
+            renderDroneList();
         }
 
         function addDroneControlUI() {
             droneCounter++;
-            const currentId = droneCounter;
-            
-            // สร้างกรอบ UI สำหรับภาพที่ X
-            const container = document.createElement('div');
-            container.className = "drone-item-row";
-            container.style.borderTop = currentId > 1 ? "1px dashed #cbd5e1" : "none";
-            container.style.paddingTop = currentId > 1 ? "10px" : "0";
-            container.style.marginTop = currentId > 1 ? "10px" : "0";
-            
-            container.innerHTML = `
-                <label style="color: #0f172a; font-weight: bold; font-size: 0.85em; display: flex; justify-content: space-between; margin-bottom: 6px;">
-                    <span><i class="fa-solid fa-image"></i> รูปที่ ${currentId}</span>
-                </label>
-                <div class="file-upload-row" style="margin-bottom: 6px;">
-                    <input type="file" id="droneImageUpload-${currentId}" accept="image/png, image/jpeg" style="width: 100%; background: white;">
-                </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85em; margin-bottom: 8px;">
-                    <span style="font-weight: bold; color: #475569;">ความโปร่งแสง:</span>
-                    <input type="range" id="droneOpacity-${currentId}" min="0.1" max="1" step="0.1" value="0.7" style="width: 55%;">
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <button id="btnSaveDrone-${currentId}" style="flex: 1; padding: 6px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold; display: none;">ล็อก (Save)</button>
-                    <button id="btnRemoveDrone-${currentId}" style="flex: 1; padding: 6px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold; display: none;">ลบ (Del)</button>
-                </div>
-            `;
-            
-            document.getElementById('droneListContainer').appendChild(container);
+            const im = new AscDroneImage(droneCounter);
+            ascDroneImages.push(im);
+            renderDroneList();
+            return im;
+        }
 
-            // ตัวแปร Local ประจำแต่ละภาพ (Closure)
-            let myOverlay = null;
-            let myMTL = null, myMTR = null, myMBL = null;
-
-            const updateMyDroneOverlay = () => {
-                if(myOverlay && myMTL && myMTR && myMBL) {
-                    myOverlay.reposition(myMTL.getLatLng(), myMTR.getLatLng(), myMBL.getLatLng());
-                }
-            };
-
-            const createMyMarker = (latlng, tooltip) => {
-                const m = L.marker(latlng, {
-                    draggable: true,
-                    icon: L.divIcon({
-                        className: 'drone-marker',
-                        html: `<div style="width:14px;height:14px;background:#ea580c;border:2px solid #ffffff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.5);"></div>`,
-                        iconSize: [18, 18],
-                        iconAnchor: [9, 9]
-                    })
-                }).addTo(droneMarkers); // แอดเข้า Global Group เพื่อให้ Capture Map ทำงานได้
-                m.bindTooltip(tooltip, {direction: 'top', offset: [0, -10]});
-                m.on('drag', updateMyDroneOverlay);
-                return m;
-            };
-
-            // Event อัปโหลดภาพ
-            document.getElementById(`droneImageUpload-${currentId}`).addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                if (typeof L.imageOverlay.rotated !== 'function') { alert("เกิดข้อผิดพลาด: โหลดไลบรารีระบบบิดภาพไม่สมบูรณ์"); return; }
-                const imgUrl = URL.createObjectURL(file);
-                const img = new Image(); 
-                img.onload = function() {
-                    // หากมีการอัปโหลดทับกล่องเดิม ให้เคลียร์ของเก่าในชุดนี้ก่อน
-                    if (myOverlay) { map.removeLayer(myOverlay); }
-                    if (myMTL) droneMarkers.removeLayer(myMTL);
-                    if (myMTR) droneMarkers.removeLayer(myMTR);
-                    if (myMBL) droneMarkers.removeLayer(myMBL);
-
-                    const center = map.getCenter(); const bounds = map.getBounds();
-                    const latDiff = (bounds.getNorth() - bounds.getSouth()) * 0.1; 
-                    const lngDiff = (bounds.getEast() - bounds.getWest()) * 0.1;
-                    
-                    const pTL = L.latLng(center.lat + latDiff, center.lng - lngDiff); 
-                    const pTR = L.latLng(center.lat + latDiff, center.lng + lngDiff); 
-                    const pBL = L.latLng(center.lat - latDiff, center.lng - lngDiff); 
-                    
-                    myMTL = createMyMarker(pTL, `มุมซ้ายบน (TL) - รูปที่ ${currentId}`); 
-                    myMTR = createMyMarker(pTR, `มุมขวาบน (TR) - รูปที่ ${currentId}`); 
-                    myMBL = createMyMarker(pBL, `มุมซ้ายล่าง (BL) - รูปที่ ${currentId}`);
-                    
-                    myOverlay = L.imageOverlay.rotated(img, pTL, pTR, pBL, { 
-                        opacity: parseFloat(document.getElementById(`droneOpacity-${currentId}`).value) || 0.7, 
-                        interactive: false 
-                    }).addTo(map);
-                    
-                    allDroneOverlays.push(myOverlay);
-                    
-                    document.getElementById(`btnSaveDrone-${currentId}`).style.display = 'block';
-                    document.getElementById(`btnRemoveDrone-${currentId}`).style.display = 'block';
-                };
-                img.onerror = function() { alert("ไฟล์ภาพไม่ถูกต้อง หรือไม่สามารถแสดงผลได้"); };
-                img.src = imgUrl; 
+        /* ---------- กู้คืนจาก DB2 ---------- */
+        function restoreDroneImages(list) {
+            clearAllDrones();
+            if (!Array.isArray(list) || !list.length) { addDroneControlUI(); return; }
+            list.forEach(d => {
+                droneCounter = Math.max(droneCounter, parseInt(d.id) || 0) + 0;
+                const im = new AscDroneImage(d.id || (++droneCounter), d.name);
+                im.w = d.w || 0; im.h = d.h || 0;
+                im.opacity = (typeof d.opacity === 'number') ? d.opacity : 0.7;
+                im.visible = d.visible !== false;
+                im.mode = (d.mode === 'rubber') ? 'rubber' : 'affine';
+                if (Array.isArray(d.A) && d.A.length === 6) im.A = d.A.slice();
+                (d.gcps || []).forEach(g => {
+                    const o = { u: g.u, v: g.v, lat: g.lat, lng: g.lng, marker: null };
+                    im.gcps.push(o); im._makeMarker(o);
+                });
+                ascDroneImages.push(im);
+                droneCounter = Math.max(droneCounter, im.id);
             });
-
-            // Event ปรับความโปร่งแสง
-            document.getElementById(`droneOpacity-${currentId}`).addEventListener('input', function(e) { 
-                if (myOverlay) { myOverlay.setOpacity(parseFloat(e.target.value)); }
-            });
-            
-            // Event ล็อกตำแหน่ง (ลบหมุดทิ้ง)
-            document.getElementById(`btnSaveDrone-${currentId}`).addEventListener('click', function() { 
-                if (myMTL) { droneMarkers.removeLayer(myMTL); myMTL = null; }
-                if (myMTR) { droneMarkers.removeLayer(myMTR); myMTR = null; }
-                if (myMBL) { droneMarkers.removeLayer(myMBL); myMBL = null; }
-                this.style.display = 'none'; 
-            });
-            
-            // Event ลบภาพและกล่องนี้ทิ้ง
-            document.getElementById(`btnRemoveDrone-${currentId}`).addEventListener('click', function() { 
-                if (myOverlay) { 
-                    map.removeLayer(myOverlay); 
-                    allDroneOverlays = allDroneOverlays.filter(lyr => lyr !== myOverlay);
-                    myOverlay = null; 
-                } 
-                if (myMTL) droneMarkers.removeLayer(myMTL);
-                if (myMTR) droneMarkers.removeLayer(myMTR);
-                if (myMBL) droneMarkers.removeLayer(myMBL);
-                container.remove();
-            });
+            droneLayer.redraw();
+            renderDroneList();
         }
 
         // ผูก Event ให้ปุ่ม "+ เพิ่มรูป" ที่อยู่บน Header
         document.getElementById('btnAddDroneBtn').addEventListener('click', function() {
             addDroneControlUI();
         });
+
+        
         // --- Crosshair & Guide Lines ---
         let isDrawingMode = false;
         let activeRoofLayer = null;
@@ -1952,6 +2376,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     document.getElementById('innerEdgeGapCm').value = layer.panelConfig.innerEdgeGapM * 100;
                     document.getElementById('keepoutGapCm').value = layer.panelConfig.keepoutGapM * 100;
                     if (layer.panelConfig.slope !== undefined) document.getElementById('sysSlope').value = layer.panelConfig.slope;
+                    /* 🌟 ไฟล์เก่าไม่มี ridgeHeight_m — ascRefreshRoofGeom() คำนวณย้อนจากความชันให้เอง ผลเท่าเดิมทุกประการ */
                     
                     if (layer.panelConfig.customAzimuth !== null && layer.panelConfig.customAzimuth !== undefined) {
                         document.getElementById('sysAzimuth').value = layer.panelConfig.customAzimuth;
@@ -2246,6 +2671,14 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                             if(rb) rb.checked = true;
                         }
                         document.getElementById('roofHeightM').value = d3.buildingHeight_m || 10;
+                        /* ชายคาปลายที่สอง — ไฟล์เก่าไม่มีค่านี้ ให้เท่ากับปลายแรก ผลจึงเหมือนเดิมทุกประการ */
+                        if (isFinite(parseFloat(d3.eaveHeightB_m))) {
+                            document.getElementById('eaveHeightBM').value = d3.eaveHeightB_m;
+                            document.getElementById('eaveHeightBM').dataset.userEdited = '1';
+                        } else {
+                            document.getElementById('eaveHeightBM').value = d3.buildingHeight_m || 10;
+                            delete document.getElementById('eaveHeightBM').dataset.userEdited;
+                        }
                         document.getElementById('sysSlope').value = d3.globalSlope || 15;
                         if(d3.globalAzimuthOverride !== null && d3.globalAzimuthOverride !== undefined) document.getElementById('sysAzimuth').value = d3.globalAzimuthOverride;
                         const oriRad = document.querySelector(`input[name="panelOrientation"][value="${d3.orientation || 'P'}"]`);
@@ -2260,9 +2693,16 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                             document.getElementById('colsPerGroup').value = d3.walkway_cm.colsPerGroup || 2;
                             document.getElementById('colWalkwayGapCm').value = d3.walkway_cm.colGap || 80;
                         }
+                        // 🌟 กู้คืนตำแหน่งภาพโดรนและจุดควบคุม (ตัวภาพต้องเลือกไฟล์เองอีกครั้ง)
+                        if (typeof restoreDroneImages === 'function' && Array.isArray(d3.droneImages)) {
+                            restoreDroneImages(d3.droneImages);
+                        }
                         if(d3.bifacial_params) {
                             if(document.getElementById('bifacialAlbedo')) document.getElementById('bifacialAlbedo').value = d3.bifacial_params.albedo || 0.2;
                             document.getElementById('groundClearanceM').value = d3.bifacial_params.groundClearance_m || 10;
+                            /* 🌟 ไฟล์เก่ามีค่านี้บันทึกไว้แล้ว ถือเป็นค่าที่ผู้ใช้กำหนด — ไม่ให้สูตรเฉลี่ยใหม่ไปทับ
+                               ตัวเลขของโปรเจกต์เดิมจึงไม่เปลี่ยนเองโดยไม่มีใครรู้ */
+                            document.getElementById('groundClearanceM').dataset.userEdited = '1';
                         }
                         if(d3.targetDcAcRatio) {
                             document.getElementById('dcacSlider').value = d3.targetDcAcRatio;
@@ -3206,22 +3646,199 @@ processPolygonsAndPanels = function() {
         let customAzimuth = null;
         document.getElementById('sysAzimuth').addEventListener('input', e => {
             if (e.target.value === "") { customAzimuth = null; } else { customAzimuth = parseFloat(e.target.value); }
-            syncActiveConfig(); // 🌟 อัปเดตผ่านสมองกลรวม
+            syncActiveConfig(); // 🌟 อัปเดตผ่านสมองกลรวม (จะคำนวณระยะไหล/สันหลังคาใหม่ให้เอง)
         });
 
         // 🌟 แก้ไข: ย้ายการอัปเดต Slope ไปใช้ syncActiveConfig()
         document.getElementById('sysSlope').addEventListener('input', e => {
+            const sv = Math.max(0, Math.min(90, parseFloat(e.target.value) || 0));
+            ascApplyToRoofs(pc => { pc.slope = sv; });   // 🌟 ส่งค่าถึงหลังคาแม้ยังไม่ได้คลิกเลือก
+            if (typeof ascRefreshRoofGeom === 'function') ascRefreshRoofGeom('ridgeHeightM'); // 🌟 สันหลังคาเลื่อนตามความชัน
             syncActiveConfig(); // 🌟 อัปเดตผ่านสมองกลรวม
         }); // 🔴 เพิ่มวงเล็บปิดที่หายไปตรงนี้ เพื่อป้องกันจอเทา!
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           🌟 กลุ่มความสูง/ความชันหลังคา
+           -----------------------------------------------------------------------
+           สามค่าผูกกันด้วยสมการเดียว   slope = atan( (ridge − eave) / run )
+           run = ระยะไหลหลังคา คือความกว้างของ localBoundary ตามแนวลาด (ภาพฉายราบ)
+
+           เก็บ slope เป็นค่าหลักรายหลังคาเหมือนเดิม ส่วนความสูงสันหลังคาเป็นค่า
+           ที่คำนวณออกมา จึงไม่มีทางที่สองค่าจะขัดกันเอง และไฟล์ DB2 เก่าทุกไฟล์
+           เปิดมาได้ผลเท่าเดิมทุกประการโดยไม่ต้องมีข้อมูลใหม่
+           ═══════════════════════════════════════════════════════════════════════ */
+        const ASC_D2R = Math.PI / 180;
+
+        /* ระยะไหลของหลังคาที่กำลังเลือกอยู่ (ถ้ายังไม่เลือก ใช้ผืนแรกที่วาดไว้) */
+        function ascActiveRun() {
+            if (activeRoofLayer && activeRoofLayer.panelConfig && activeRoofLayer.panelConfig.roofRunM > 0) {
+                return activeRoofLayer.panelConfig.roofRunM;
+            }
+            const first = (state.roofPolygonsData || [])[0];
+            return (first && first.runM > 0) ? first.runM : 0;
+        }
+
+        /* ความกว้างหลังคาตามแนวสัน — ใช้แปลงส่วนต่างชายคาสองปลายเป็นความเอียงตามขวาง */
+        function ascActiveSpan() {
+            if (activeRoofLayer && activeRoofLayer.panelConfig && activeRoofLayer.panelConfig.roofSpanM > 0) {
+                return activeRoofLayer.panelConfig.roofSpanM;
+            }
+            const first = (state.roofPolygonsData || [])[0];
+            return (first && first.spanM > 0) ? first.spanM : 0;
+        }
+
+        /* เขียนค่าลงหลังคา: ผืนที่คลิกเลือกอยู่ ถ้ายังไม่ได้เลือกให้ใช้กับทุกผืน
+           ป้องกันอาการ "พิมพ์แล้วตัวเลขเด้งกลับ" เพราะ processPolygonsAndPanels
+           อ่านค่าจาก panelConfig ของ layer ไม่ใช่จากช่องกรอก */
+        function ascApplyToRoofs(fn) {
+            const targets = [];
+            if (activeRoofLayer) targets.push(activeRoofLayer);
+            else if (typeof editableItems !== 'undefined') {
+                editableItems.eachLayer(l => { if (l.panelConfig && (l.drawMode || 'roof') === 'roof') targets.push(l); });
+            }
+            targets.forEach(l => fn(l.panelConfig));
+            return targets.length;
+        }
+
+        function ascFlash(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.transition = 'none';
+            el.style.background = '#fef08a';
+            setTimeout(() => { el.style.transition = 'background .8s ease'; el.style.background = ''; }, 30);
+        }
+
+        const ascRidgeFrom = (eave, slope, run) => eave + run * Math.tan(slope * ASC_D2R);
+        const ascSlopeFrom = (eave, ridge, run) => Math.atan((ridge - eave) / run) / ASC_D2R;
+
+        /* แจ้งเตือนกรณีค่าที่กรอกไม่สมเหตุสมผล */
+        function ascWarnRoofGeom(eave, ridge, slope, run) {
+            const box = document.getElementById('roofGeomWarn');
+            if (!box) return;
+            let msg = '', bg = '', bd = '', fg = '';
+            if (run <= 0) {
+                msg = 'ยังไม่ได้วาดหลังคา จึงยังคำนวณระยะไหลและความชันจากความสูงไม่ได้';
+                bg = '#f8fafc'; bd = '#e2e8f0'; fg = '#64748b';
+            } else if (ridge < eave - 0.005) {
+                msg = '<b>สันหลังคาต่ำกว่าชายคา</b> แปลว่าหลังคาลาดกลับด้าน ให้กดปุ่ม ⟳180° ข้างช่อง Azimuth แทนการใส่ค่าติดลบ';
+                bg = '#fef2f2'; bd = '#fecaca'; fg = '#991b1b';
+            } else if (slope > 35) {
+                msg = 'ความชัน ' + slope.toFixed(1) + '° สูงผิดปกติสำหรับอาคารพาณิชย์ในไทย โปรดตรวจสอบความสูงที่กรอก';
+                bg = '#fffbeb'; bd = '#fde68a'; fg = '#92400e';
+            } else if (Math.abs(ridge - eave) < 0.005) {
+                msg = 'สันเท่าชายคา = หลังคาราบ (ดาดฟ้า) ความชัน 0° ถูกต้องตามที่กรอก';
+                bg = '#f0fdf4'; bd = '#bbf7d0'; fg = '#166534';
+            } else {
+                box.style.display = 'none';
+                return;
+            }
+            box.innerHTML = msg;
+            box.style.cssText = 'display:block; font-size:0.78em; line-height:1.55; border-radius:6px; padding:7px 10px; margin:4px 0 8px 0;'
+                + 'background:' + bg + '; border:1px solid ' + bd + '; color:' + fg + ';';
+        }
+
+        /* คำนวณช่องที่เป็นผลลัพธ์ใหม่ทั้งหมด — เรียกทุกครั้งที่รูปหลังคาหรือทิศเปลี่ยน */
+        function ascRefreshRoofGeom(flashId) {
+            const runEl = document.getElementById('roofRunVal');
+            if (!runEl) return;
+            const run   = ascActiveRun();
+            const eave  = parseFloat(document.getElementById('roofHeightM').value) || 0;
+            const slope = Math.max(0, Math.min(90, parseFloat(document.getElementById('sysSlope').value) || 0));
+            const ridge = run > 0 ? ascRidgeFrom(eave, slope, run) : eave;
+
+            const span = ascActiveSpan();
+            runEl.innerText = run > 0 ? (run.toFixed(2) + ' / ' + (span > 0 ? span.toFixed(2) : '—') + ' ม.') : '— ม.';
+            document.getElementById('ridgeHeightM').value = ridge.toFixed(2);
+
+            /* ชายคาปลายที่สอง: ถ้าผู้ใช้ยังไม่เคยแก้เอง ให้เท่ากับปลายแรก = หลังคาลาดทางเดียวเหมือนเดิม */
+            const ebEl = document.getElementById('eaveHeightBM');
+            if (ebEl && !ebEl.dataset.userEdited) ebEl.value = eave.toFixed(2);
+            const eaveB = parseFloat(ebEl ? ebEl.value : eave);
+            const csEl = document.getElementById('crossSlopeVal');
+            if (csEl) {
+                const cs = (span > 0) ? Math.atan((eaveB - eave) / span) / ASC_D2R : 0;
+                csEl.innerText = cs.toFixed(2) + '°' + (Math.abs(cs) < 0.005 ? ' (ลาดทางเดียว)' : '');
+                csEl.style.color = Math.abs(cs) < 0.005 ? '#64748b' : '#0369a1';
+            }
+
+            /* หลังคาเอียงทำให้ความสูงหลังแผงไล่จากชายคาถึงสัน ค่ากลางคือค่าที่ควรใช้คำนวณ Bifacial */
+            const gc = document.getElementById('groundClearanceM');
+            if (gc && !gc.dataset.userEdited) gc.value = ((eave + ridge) / 2).toFixed(2);
+
+            if (flashId) ascFlash(flashId);
+            ascWarnRoofGeom(eave, ridge, slope, run);
+        }
+
+        /* กรอกความสูงสันหลังคา → คำนวณความชันย้อนกลับ */
+        document.getElementById('ridgeHeightM').addEventListener('input', e => {
+            const run = ascActiveRun();
+            if (run <= 0) { ascWarnRoofGeom(0, 0, 0, 0); return; }
+            const eave  = parseFloat(document.getElementById('roofHeightM').value) || 0;
+            const ridge = parseFloat(e.target.value) || 0;
+
+            /* สันต่ำกว่าชายคา = หลังคาลาดกลับด้าน ไม่ใช่ความชันติดลบ
+               หยุดไว้ที่การเตือน คงตัวเลขที่พิมพ์ไว้ให้เห็น และไม่ส่งค่าที่ผิดไปคำนวณต่อ */
+            if (ridge < eave - 0.005) { ascWarnRoofGeom(eave, ridge, 0, run); return; }
+
+            /* ทศนิยม 2 ตำแหน่ง ทำให้ค่าสันที่คำนวณกลับคลาดไม่ถึง 1 ซม. */
+            const slope = Math.max(0, Math.min(89.9, ascSlopeFrom(eave, ridge, run)));
+            document.getElementById('sysSlope').value = Number(slope.toFixed(2));
+            ascApplyToRoofs(pc => { pc.slope = Number(slope.toFixed(2)); });
+            ascFlash('sysSlope');
+            ascWarnRoofGeom(eave, ridge, slope, run);
+            const gc = document.getElementById('groundClearanceM');
+            if (gc && !gc.dataset.userEdited) gc.value = ((eave + ridge) / 2).toFixed(2);
+            syncActiveConfig();   // เก็บความชันลงหลังคาผืนที่เลือก แล้ววาดใหม่
+        });
+
+        /* ปุ่มสลับทิศ 180° — แก้ความกำกวมของการหาทิศอัตโนมัติจากด้านที่ยาวที่สุด */
+        document.getElementById('btnFlipAzimuth').addEventListener('click', () => {
+            const el = document.getElementById('sysAzimuth');
+            let cur = parseFloat(el.value);
+            if (!isFinite(cur)) {
+                cur = (activeRoofLayer && activeRoofLayer.panelConfig && activeRoofLayer.panelConfig.autoAzimuth) || 0;
+            }
+            const flipped = Math.round(((cur + 180) % 360 + 360) % 360);
+            el.value = flipped;
+            ascFlash('sysAzimuth');
+            customAzimuth = flipped;
+
+            /* เขียน customAzimuth ลงหลังคาโดยตรง — ถ้ายังไม่ได้คลิกเลือกให้ใช้กับทุกผืน
+               ไม่งั้น processPolygonsAndPanels จะดันค่า autoAzimuth กลับมาทับทันที */
+            ascApplyToRoofs(pc => { pc.customAzimuth = flipped; });
+            if (activeRoofLayer) syncActiveConfig(); else processPolygonsAndPanels();
+        });
+
+        /* คำนวณครั้งแรกตอนเปิดหน้า ให้ช่องผลลัพธ์ไม่ว่างเปล่า */
+        document.addEventListener('DOMContentLoaded', () => ascRefreshRoofGeom());
+
+        /* ชายคาปลายที่สอง — สำหรับอาคารทรงโมเดิร์นที่ชายคาสองปลายไม่เท่ากัน
+           สามค่านี้ (ชายคา A, ชายคา B, สัน) นิยามระนาบหลังคาได้ครบ เพราะระนาบมีอิสระ 3 ค่าพอดี */
+        document.getElementById('eaveHeightBM').addEventListener('input', function () {
+            this.dataset.userEdited = '1';
+            const eave = parseFloat(document.getElementById('roofHeightM').value) || 0;
+            const span = ascActiveSpan();
+            const csEl = document.getElementById('crossSlopeVal');
+            if (csEl && span > 0) {
+                const cs = Math.atan(((parseFloat(this.value) || 0) - eave) / span) / ASC_D2R;
+                csEl.innerText = cs.toFixed(2) + '°' + (Math.abs(cs) < 0.005 ? ' (ลาดทางเดียว)' : '');
+                csEl.style.color = Math.abs(cs) < 0.005 ? '#64748b' : '#0369a1';
+            }
+            ascApplyToRoofs(pc => { pc.eaveHeightB_m = parseFloat(this.value) || 0; });
+            processPolygonsAndPanels();
+        });
+
+        /* ผู้ใช้แก้ระยะห่างหลังแผงถึงพื้นเอง = หยุดคำนวณให้อัตโนมัติ */
+        document.getElementById('groundClearanceM').addEventListener('input', function () {
+            this.dataset.userEdited = '1';
+        });
 
         // 🌟 ฟังก์ชันลิงก์ความสูงหลังคาเข้ากับตัวแปรทั้งหมดและคำนวณสายไฟ
         document.getElementById('roofHeightM').addEventListener('input', e => {
             const h = parseFloat(e.target.value) || 0;
-            
-            // 1. นำค่าไปป้อนลงใน "ระยะห่างหลังแผงถึงพื้น (ม.)"
-            if (document.getElementById('groundClearanceM')) {
-                document.getElementById('groundClearanceM').value = h;
-            }
+
+            // 1. ความสูงสันหลังคา/ระยะหลังแผงถึงพื้น คำนวณใหม่โดยคงความชันเดิมไว้
+            ascRefreshRoofGeom('ridgeHeightM');
             
             // 2. นำค่าไปป้อนลงใน "ระยะสายจากหลังคาลงห้อง MDB / Inverter"
             if (document.getElementById('distToMdbMap')) {
@@ -3339,20 +3956,60 @@ processPolygonsAndPanels = function() {
 
                 config.roofId = index + 1;
                 layer.panelConfig.roofId = config.roofId; // 🌟 แนบ roofId ลง layer ทันทีเพื่อให้ระบบประวัติการลบแผงหากันเจอ
+
+                /* 🌟 ระยะไหลหลังคา = ช่วงของ localBoundary ตามแนวลาด (แกน y ในพิกัดท้องถิ่น)
+                   ใช้แปลงความสูงสันหลังคา ↔ ความชัน — ต้องคำนวณใหม่ทุกครั้งที่แก้รูปหรือแก้ทิศ */
+                let roofRunM = 0, roofSpanM = 0;
+                if (localBoundary.length > 1) {
+                    const ysLB = localBoundary.map(q => q.y);
+                    const xsLB = localBoundary.map(q => q.x);
+                    roofRunM  = Number((Math.max(...ysLB) - Math.min(...ysLB)).toFixed(3));
+                    roofSpanM = Number((Math.max(...xsLB) - Math.min(...xsLB)).toFixed(3));
+                }
+                config.roofRunM  = roofRunM;
+                config.roofSpanM = roofSpanM;
+                layer.panelConfig.roofRunM  = roofRunM;
+                layer.panelConfig.roofSpanM = roofSpanM;
+
+                const eaveNow  = parseFloat(document.getElementById('roofHeightM').value) || 0;
+                const ridgeNow = Number((eaveNow + roofRunM * Math.tan(currentSlope * Math.PI / 180)).toFixed(3));
+                /* ชายคาปลายที่สอง: ค่ารายหลังคาถ้าเคยตั้งไว้ ไม่งั้นใช้ช่องกรอก ไม่งั้นเท่าปลายแรก */
+                let eaveBNow = layer.panelConfig.eaveHeightB_m;
+                if (!isFinite(eaveBNow)) eaveBNow = parseFloat(document.getElementById('eaveHeightBM').value);
+                if (!isFinite(eaveBNow)) eaveBNow = eaveNow;
+                eaveBNow = Number(eaveBNow.toFixed(3));
+
+                /* เขียนความสูงลง panelConfig ของหลังคาทุกผืน ไม่ใช่เฉพาะผืนที่คลิกเลือกอยู่
+                   เพื่อให้ค่าติดไปกับ mapGeoJSON ครบทุกหลังคาเมื่อส่งออก DB2 */
+                config.eaveHeight_m  = eaveNow;
+                config.ridgeHeight_m = ridgeNow;
+                config.eaveHeightB_m = eaveBNow;
+                layer.panelConfig.eaveHeight_m  = eaveNow;
+                layer.panelConfig.ridgeHeight_m = ridgeNow;
+                layer.panelConfig.eaveHeightB_m = eaveBNow;
+
                 state.roofPolygonsData.push({
                     id: index + 1, area: areaSqM, slope: currentSlope, azimuth: Math.round(finalAzimuth), 
                     mountType: config.mountType || document.getElementById('mountDisplayText').innerText,
+                    runM: roofRunM,                 // 🌟 ระยะไหลหลังคา (ม.)
+                    spanM: roofSpanM,               // 🌟 ความกว้างตามแนวสัน (ม.)
+                    eaveHeight_m: eaveNow,          // 🌟 ความสูงชายคาปลายแรก (x น้อยสุด)
+                    eaveHeightB_m: eaveBNow,        // 🌟 ความสูงชายคาปลายที่สอง (x มากสุด) — เท่ากันคือหลังคาลาดทางเดียว
+                    ridgeHeight_m: ridgeNow,        // 🌟 ความสูงสันหลังคา (ม.) — คำนวณจากชายคา+ความชัน+ระยะไหล
                     localBoundary: localBoundary // 🌟 ส่งขอบเขตหลังคาเข้าไปใน DB
                 });
 
                 state.allPossiblePanelsGeoJSON = state.allPossiblePanelsGeoJSON.concat(generatePanelGrid(geojson, center, finalAzimuth, state.pvWid/1000, state.pvLen/1000, keepoutPolys, config));           
             });
             
+            // 🌟 รูปหลังคา/ทิศเปลี่ยน → ระยะไหลเปลี่ยน → คำนวณความสูงสันหลังคาใหม่โดยคงความชันไว้
+            if (typeof ascRefreshRoofGeom === 'function') ascRefreshRoofGeom();
+
             const polyListDiv = document.getElementById('polygonParamsList');
             if (state.roofPolygonsData.length > 0) {
                 let html = `<strong><i class="fa-solid fa-list"></i> ข้อมูลหลังคาที่วาด (${state.roofPolygonsData.length} พื้นที่):</strong><ul style="margin: 4px 0 0 0; padding-left: 20px; color: #ea580c;">`;
                 state.roofPolygonsData.forEach(p => {
-                    html += `<li>หลังคา ${p.id}: เอียง ${p.slope}°, ทิศ ${p.azimuth}° (พื้นที่ ${p.area.toFixed(1)} ตร.ม.)</li>`;
+                    html += `<li>หลังคา ${p.id}: เอียง ${p.slope}°, ทิศ ${p.azimuth}° · ชายคา ${Number(p.eaveHeight_m||0).toFixed(2)} / สัน ${Number(p.ridgeHeight_m||0).toFixed(2)} ม. (พื้นที่ ${p.area.toFixed(1)} ตร.ม.)</li>`;
                 });
                 html += `</ul>`;
                 polyListDiv.innerHTML = html;
@@ -3425,6 +4082,14 @@ function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM,
             const maxX_m = (bbox[2] - centerCoords[0]) / mToDegLng;
             const maxY_m = (bbox[3] - centerCoords[1]) / mToDegLat;
 
+            /* 🌟 จุดกำเนิดของพิกัดท้องถิ่นต้องอ้างจาก "หลังคาเต็มใบ" ให้ตรงกับ localBoundary
+               ไม่ใช่จาก workableRoof ที่หดเข้ามาแล้วตามระยะเว้นขอบใน
+               (เดิมทั้งสองใช้คนละกรอบ ทำให้ผังแผงที่ส่งออกเลื่อนไปเท่ากับระยะเว้นขอบพอดี) */
+            const rotatedFullRoof = turf.transformRotate(roofGeojson, -azimuth, {pivot: centerPoint});
+            const bboxFull  = turf.bbox(rotatedFullRoof);
+            const refMinX_m = (bboxFull[0] - centerCoords[0]) / mToDegLng;
+            const refMaxY_m = (bboxFull[3] - centerCoords[1]) / mToDegLat;
+
             let currentX_m = minX_m; 
             let colIndex = 0;
 
@@ -3461,13 +4126,20 @@ function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM,
                         }
                         
                         if(!isObstacle) {
-                            let locX = Number((currentX_m - minX_m).toFixed(3));
-                            let locY = Number((maxY_m - currentY_m - actualLengthM).toFixed(3));
-                            
+                            let locX = Number((currentX_m - refMinX_m).toFixed(3));
+                            let locY = Number((refMaxY_m - currentY_m - actualLengthM).toFixed(3));
+
+                            /* ประวัติการลบแผงของโปรเจกต์เก่าถูกบันทึกในกรอบพิกัดเดิม (อ้างจากหลังคาที่หดแล้ว)
+                               จึงเทียบทั้งกรอบใหม่และกรอบเก่า เพื่อไม่ให้แผงที่เคยลบไปแล้วโผล่กลับมา */
+                            let oldLocX = Number((currentX_m - minX_m).toFixed(3));
+                            let oldLocY = Number((maxY_m - currentY_m - actualLengthM).toFixed(3));
+
                             // 🌟 ตรวจสอบว่าแผงตำแหน่งนี้ถูกผู้ใช้ลบไปก่อนหน้านี้หรือไม่ (อิงจากประวัติ deletedPanels)
                             let isDeleted = false;
                             if (config.deletedPanels && config.deletedPanels.length > 0) {
-                                isDeleted = config.deletedPanels.some(dp => Math.abs(dp.x - locX) < 0.05 && Math.abs(dp.y - locY) < 0.05);
+                                isDeleted = config.deletedPanels.some(dp =>
+                                    (Math.abs(dp.x - locX) < 0.05 && Math.abs(dp.y - locY) < 0.05) ||
+                                    (Math.abs(dp.x - oldLocX) < 0.05 && Math.abs(dp.y - oldLocY) < 0.05));
                             }
 
                             if (!isDeleted) {
@@ -4109,6 +4781,13 @@ function updateFinalDcLength() {
                 activeRoofLayer.panelConfig.innerEdgeGapM = (parseFloat(document.getElementById('innerEdgeGapCm').value) || 0) / 100;
                 activeRoofLayer.panelConfig.keepoutGapM = (parseFloat(document.getElementById('keepoutGapCm').value) || 0) / 100;
                 activeRoofLayer.panelConfig.slope = parseFloat(document.getElementById('sysSlope').value) || 15;
+
+                /* 🌟 ความสูงสันหลังคาเป็นค่ารายหลังคา เพราะแต่ละผืนมีระยะไหลและความชันของตัวเอง */
+                const runAC = activeRoofLayer.panelConfig.roofRunM || 0;
+                const eaveAC = parseFloat(document.getElementById('roofHeightM').value) || 0;
+                activeRoofLayer.panelConfig.eaveHeight_m  = eaveAC;
+                activeRoofLayer.panelConfig.ridgeHeight_m = Number(
+                    (eaveAC + runAC * Math.tan(activeRoofLayer.panelConfig.slope * Math.PI / 180)).toFixed(3));
                 
                 let currentAzStr = document.getElementById('sysAzimuth').value;
                 if (currentAzStr === "") {
@@ -4327,7 +5006,13 @@ function updateFinalDcLength() {
                 },
                 step3_design_and_layout: {
 					buildingHeight_m: parseFloat(document.getElementById('roofHeightM').value) || 10,
-                    globalSlope: parseFloat(document.getElementById('sysSlope').value) || 0,
+                    /* 🌟 ความสูงสันหลังคาของผืนที่กำลังเลือก — ค่ารายหลังคาอยู่ใน roofPolygons[].ridgeHeight_m */
+                    ridgeHeight_m: parseFloat(document.getElementById('ridgeHeightM').value) || null,
+                    eaveHeightB_m: parseFloat(document.getElementById('eaveHeightBM').value) || null,
+                    roofRun_m: (function(){ const r = ascActiveRun(); return r > 0 ? r : null; })(),
+                    roofSpan_m: (function(){ const r = ascActiveSpan(); return r > 0 ? r : null; })(),
+                    /* หนีบ 0–90 ก่อนส่งออก กัน heuristic "หาร 100 เงียบๆ" ของ ascSanitizePolygons ในหน้ารายงาน */
+                    globalSlope: Math.max(0, Math.min(90, parseFloat(document.getElementById('sysSlope').value) || 0)),
                     globalAzimuthOverride: parseFloat(document.getElementById('sysAzimuth').value) || null,
                     buildingVoltageLimit: parseInt(document.querySelector('input[name="buildingType"]:checked').value) || 1000,
                     roofPolygons: exportedRoofPolygons, // 🌟 เปลี่ยนมาใช้ตัวแปรที่ฝังพิกัด customLayout แล้ว
@@ -4347,6 +5032,12 @@ function updateFinalDcLength() {
                         colsPerGroup: state.colsPerGroup,
                         colGap: parseFloat(document.getElementById('colWalkwayGapCm').value) || 0
                     },
+                    /* 🌟 ภาพโดรน: เก็บเฉพาะจุดควบคุมและเมทริกซ์การวางภาพ
+                       ไม่ฝังข้อมูลภาพลงไป เพราะออร์โธหนึ่งใบ 5–50 MB จะทำให้ DB2 ใหญ่จนเซฟไม่ผ่าน
+                       เปิดโปรเจกต์ใหม่แล้วเลือกไฟล์ภาพเดิม ภาพจะกลับไปอยู่ตำแหน่งเดิมทันที */
+                    droneImages: (typeof ascDroneImages !== 'undefined')
+                        ? ascDroneImages.filter(im => im.gcps.length > 0 || im.w > 0).map(im => im.toJSON())
+                        : [],
                     bifacial_params: {
                         albedo: parseFloat(document.getElementById('bifacialAlbedo') ? document.getElementById('bifacialAlbedo').value : 0.20) || 0.20,
                         groundClearance_m: parseFloat(document.getElementById('groundClearanceM') ? document.getElementById('groundClearanceM').value : 0.1) || 0.1

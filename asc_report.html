@@ -1414,6 +1414,7 @@
                             AppState.uncertainties = jsonData.app_state.uncertainties || { meteoVariability_pct: 2, equipmentTolerance_pct: 1 };
                             AppState.horizonProfile = jsonData.app_state.horizonProfile || "";
                             AppState.bifacialParams = jsonData.app_state.bifacialParams || { albedo: 0.20, groundClearance_m: 0.1 };
+                            AppState.buildingHeight_m = parseFloat(jsonData.app_state.buildingHeight_m) || null;
                             AppState.iam_b0 = jsonData.app_state.iam_b0 || 0.05;
                             AppState.isBifacial = jsonData.app_state.isBifacial || false;
                             AppState.aging25 = jsonData.app_state.aging25 || [];
@@ -1529,6 +1530,8 @@
                     AppState.uncertainties = db2.uncertainties || { meteoVariability_pct: 2, equipmentTolerance_pct: 1 };
                     AppState.horizonProfile = db2.horizonProfile || "";
                     AppState.bifacialParams = step3.bifacial_params || { albedo: 0.20, groundClearance_m: 0.1 };
+                    // 🌟 ความสูงอาคารจาก DB2 — ใช้ในโมเดล 3 มิติ (เดิมโมเดลใช้ค่าคงที่ 3.2 ม. ทุกอาคาร)
+                    AppState.buildingHeight_m = parseFloat(step3.buildingHeight_m) || null;
                     AppState.iam_b0 = pv.IAM_ASHRAE_b0 ? pv.IAM_ASHRAE_b0 : 0.05; // ดึงค่าการสะท้อนกระจกแผงจาก V10 (ถ้ามี)
                     AppState.isBifacial = pv.Is_Bifacial === "True";
 
@@ -2222,6 +2225,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 uncertainties: AppState.uncertainties,
                 horizonProfile: AppState.horizonProfile,
                 bifacialParams: AppState.bifacialParams,
+                buildingHeight_m: AppState.buildingHeight_m,
                 iam_b0: AppState.iam_b0,
                 isBifacial: AppState.isBifacial,
                 aging25: AppState.aging25,
@@ -4248,7 +4252,26 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                         };
                     });
                     let g = polyToGroup[idx] || ctx.groups[0];
-                    roofs.push({ groupId: g.id, tilt: g.tilt, azi: g.azi, pts, mods, label: `หลังคา ${idx + 1} (กลุ่ม #${g.id})` });
+
+                    /* 🌟 ความสูงจริงของอาคาร แทนค่าคงที่เดิม
+                       ระยะไหลหลังคา = ช่วงแกน y ของขอบหลังคาในพิกัดท้องถิ่น (ภาพฉายบนพื้นราบ)
+                       ถ้า DB2 ไม่มี ridgeHeight_m (ไฟล์รุ่นก่อน) คำนวณย้อนจากความชันได้ผลเท่ากัน */
+                    let yAll = pts.map(q => q.y);
+                    let runM = Math.max(...yAll) - Math.min(...yAll);
+                    if (!(runM > 0)) runM = parseFloat(roof.runM) || 0;
+                    let eaveM = parseFloat(roof.eaveHeight_m);
+                    if (!isFinite(eaveM)) eaveM = parseFloat(AppState.buildingHeight_m) || 3.2;
+                    let ridgeM = parseFloat(roof.ridgeHeight_m);
+                    if (!isFinite(ridgeM)) ridgeM = eaveM + runM * Math.tan((g.tilt || 0) * Math.PI / 180);
+                    /* ชายคาปลายที่สอง — ไฟล์เก่าไม่มี ให้เท่าปลายแรก = หลังคาลาดทางเดียวเหมือนเดิม */
+                    let eaveBM = parseFloat(roof.eaveHeightB_m);
+                    if (!isFinite(eaveBM)) eaveBM = eaveM;
+                    let xAll = pts.map(q => q.x);
+                    let spanM = Math.max(...xAll) - Math.min(...xAll);
+
+                    roofs.push({ groupId: g.id, tilt: g.tilt, azi: g.azi, pts, mods,
+                                 eaveM: eaveM, eaveBM: eaveBM, ridgeM: ridgeM, runM: runM, spanM: spanM,
+                                 label: `หลังคา ${idx + 1} (กลุ่ม #${g.id})` });
                     offsetX += (maxX - minX) + 4; // เว้นช่องไฟ 4 ม.
                 });
             } else {
@@ -4261,7 +4284,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                     for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) {
                         mods.push({ x: offsetX + 0.8 + c * 2.2, y: 0.8 + r * 2.5, w: pw * 1.7, h: ph });
                     }
-                    roofs.push({ groupId: g.id, tilt: g.tilt, azi: g.azi, pts, mods, label: `กลุ่ม #${g.id} (ผังจำลอง)` });
+                    let eaveS = parseFloat(AppState.buildingHeight_m) || 3.2;
+                    roofs.push({ groupId: g.id, tilt: g.tilt, azi: g.azi, pts, mods,
+                                 eaveM: eaveS, eaveBM: eaveS, spanM: W,
+                                 ridgeM: eaveS + D * Math.tan((g.tilt || 0) * Math.PI / 180), runM: D,
+                                 label: `กลุ่ม #${g.id} (ผังจำลอง)` });
                     offsetX += W + 4;
                 });
             }
@@ -4293,7 +4320,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             const Rd = site.halfSpan * 1.7 + 8;         // รัศมีโดมท้องฟ้า
             const scale = Math.min(360 / (Rd * 1.9), 9); // สเกล ม. → พิกเซล
             const ox = W / 2, oy = H / 2 + 120;
-            const ROOF_H = 3.2;                          // ความสูงอาคาร (ม.)
+            const ROOF_H = 3.2;                          // ค่าสำรองเมื่อ DB2 ไม่มีข้อมูลความสูง
             const iso = (x, y, z) => ({
                 x: ox + (x - y) * 0.866 * scale,
                 y: oy + (x + y) * 0.5 * scale - (z || 0) * scale
@@ -4381,26 +4408,40 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 let ka = Math.min(...a.pts.map(p => p.x + p.y)), kb = Math.min(...b.pts.map(p => p.x + p.y));
                 return ka - kb;
             }).forEach(r => {
-                // ผนังอาคาร (เฉพาะด้านที่หันเข้ากล้อง: ด้านใต้ y=max และด้านตะวันออก x=max โดยประมาณจากขอบ polygon)
+                /* 🌟 ความสูงหลังคา ณ ตำแหน่ง y ใดๆ — สันอยู่ที่ y ต่ำสุด ลาดลงไปทางชายคาที่ y สูงสุด
+                   ตรงกับทิศ azimuth ที่ asc_design ใช้จัดพิกัดท้องถิ่น */
+                let eaveH = isFinite(r.eaveM) ? r.eaveM : ROOF_H;
+                let riseH = (isFinite(r.ridgeM) ? r.ridgeM : eaveH) - eaveH;
+                let runH  = (r.runM > 0) ? r.runM : 1;
+                let yTop  = Math.min(...r.pts.map(q => q.y));
+                /* เอียงตามขวางด้วย เมื่อชายคาสองปลายไม่เท่ากัน (อาคารทรงโมเดิร์น) */
+                let crossH = (isFinite(r.eaveBM) ? r.eaveBM : eaveH) - eaveH;
+                let xLeft  = Math.min(...r.pts.map(q => q.x));
+                let spanH  = (r.spanM > 0) ? r.spanM : 1;
+                let roofZ = (x, y) => eaveH + riseH * (1 - (y - yTop) / runH) + crossH * (x - xLeft) / spanH;
+
+                // ผนังอาคาร — ขอบบนไต่ตามความลาดของหลังคา
                 for (let i = 0; i < r.pts.length; i++) {
                     let p1 = r.pts[i], p2 = r.pts[(i + 1) % r.pts.length];
-                    poly([iso(p1.x, p1.y, 0), iso(p2.x, p2.y, 0), iso(p2.x, p2.y, ROOF_H), iso(p1.x, p1.y, ROOF_H)], 'rgba(203, 213, 225, 0.7)', '#94a3b8', 0.7);
+                    poly([iso(p1.x, p1.y, 0), iso(p2.x, p2.y, 0), iso(p2.x, p2.y, roofZ(p2.x, p2.y)), iso(p1.x, p1.y, roofZ(p1.x, p1.y))], 'rgba(203, 213, 225, 0.7)', '#94a3b8', 0.7);
                 }
-                // แผ่นหลังคา
-                poly(r.pts.map(p => iso(p.x, p.y, ROOF_H)), '#e2e8f0', '#64748b', 1.2);
-                // แผงโซลาร์: สีตาม loss ของกลุ่ม ณ เวลาที่เลือก
+                // แผ่นหลังคา (เอียงตามความชันจริง)
+                poly(r.pts.map(p => iso(p.x, p.y, roofZ(p.x, p.y))), '#e2e8f0', '#64748b', 1.2);
+                // แผงโซลาร์: วางแนบระนาบหลังคา สีตาม loss ของกลุ่ม ณ เวลาที่เลือก
                 let lossNow = groupLossNow[r.groupId];
                 let panelColor = (lossNow === null || lossNow === undefined) ? '#475569' : sdashBucketColor(lossNow * 100);
                 r.mods.forEach(m => {
                     poly([
-                        iso(m.x, m.y, ROOF_H + 0.15), iso(m.x + m.w, m.y, ROOF_H + 0.15),
-                        iso(m.x + m.w, m.y + m.h, ROOF_H + 0.15), iso(m.x, m.y + m.h, ROOF_H + 0.15)
+                        iso(m.x,        m.y,        roofZ(m.x,        m.y)        + 0.15),
+                        iso(m.x + m.w,  m.y,        roofZ(m.x + m.w,  m.y)        + 0.15),
+                        iso(m.x + m.w,  m.y + m.h,  roofZ(m.x + m.w,  m.y + m.h)  + 0.15),
+                        iso(m.x,        m.y + m.h,  roofZ(m.x,        m.y + m.h)  + 0.15)
                     ], panelColor, '#1e293b', 0.5);
                 });
-                // ป้ายชื่อหลังคา
-                let lp = iso(r.pts[0].x, r.pts[0].y, ROOF_H + 1.2);
+                // ป้ายชื่อหลังคา พร้อมความสูงชายคา/สัน
+                let lp = iso(r.pts[0].x, r.pts[0].y, roofZ(r.pts[0].x, r.pts[0].y) + 1.2);
                 g2.font = '10px Arial'; g2.fillStyle = '#334155'; g2.textAlign = 'left';
-                g2.fillText(`${r.label} T${r.tilt}°/A${r.azi}°`, lp.x, lp.y);
+                g2.fillText(`${r.label} T${r.tilt}°/A${r.azi}°  ชายคา ${eaveH.toFixed(1)}/สัน ${(eaveH + riseH).toFixed(1)} ม.`, lp.x, lp.y);
             });
 
             // ---- 6. วาดดวงอาทิตย์ทับด้านหน้า ----
