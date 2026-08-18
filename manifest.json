@@ -1,0 +1,21 @@
+{
+  "name": "ProInventive · วางแผนติดตั้งอุปกรณ์",
+  "short_name": "Mobi",
+  "description": "วางผังอุปกรณ์ไฟฟ้าบนภาพถ่ายผนังตามขนาดจริง สำหรับงานสำรวจหน้างานระบบโซลาร์",
+  "id": "/mobi.html",
+  "start_url": "mobi.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#14171C",
+  "theme_color": "#14171C",
+  "lang": "th",
+  "dir": "ltr",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    { "src": "img/icon-192.png",           "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "img/icon-512.png",           "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "img/icon-maskable-192.png",  "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "img/icon-maskable-512.png",  "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

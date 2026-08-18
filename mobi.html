@@ -7,6 +7,12 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mobi">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="img/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>วางแผนติดตั้ง — Mobi</title>
 <style>
   :root{
@@ -141,7 +147,14 @@
   <h1>⚡ วางแผนติดตั้งบนภาพถ่าย</h1>
   <span class="badge" id="scaleBadge">ยังไม่ปรับเทียบผนัง</span>
   <span class="badge save" id="saveBadge">—</span>
+  <button class="btn mini" id="installBtn" hidden style="border-color:var(--accent);color:var(--accent)">⤓ ติดตั้งแอป</button>
 </header>
+
+<div id="updateBar" hidden style="background:#1E232B;border-bottom:1px solid var(--accent);padding:9px 14px;display:flex;align-items:center;gap:10px;font-size:13px">
+  <span style="flex:1;color:var(--accent)">มีรุ่นใหม่พร้อมใช้งานแล้ว</span>
+  <button class="btn mini primary" id="updateBtn">โหลดรุ่นใหม่</button>
+  <button class="btn mini" id="updateSkip">ไว้ก่อน</button>
+</div>
 
 <main>
   <div id="drop">
@@ -1286,6 +1299,71 @@ function showResult(canvas) {
     });
   }
 }
+
+/* ═══════════════ ติดตั้งเป็นแอปและทำงานออฟไลน์ ═══════════════ */
+if ('serviceWorker' in navigator) {
+  addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      /* พบตัวใหม่รออยู่ ให้ผู้ใช้เลือกเองว่าจะโหลดตอนนี้หรือไว้ก่อน
+         ไม่รีเฟรชเองเพราะอาจกำลังวางผังค้างอยู่กลางงาน */
+      const offer = w => {
+        if (!w) return;
+        w.addEventListener('statechange', () => {
+          if (w.state === 'installed' && navigator.serviceWorker.controller) {
+            $("#updateBar").hidden = false;
+            $("#updateBtn").onclick = () => { w.postMessage('skipWaiting'); location.reload(); };
+            $("#updateSkip").onclick = () => { $("#updateBar").hidden = true; };
+          }
+        });
+      };
+      if (reg.waiting) {
+        $("#updateBar").hidden = false;
+        $("#updateBtn").onclick = () => { reg.waiting.postMessage('skipWaiting'); location.reload(); };
+        $("#updateSkip").onclick = () => { $("#updateBar").hidden = true; };
+      }
+      reg.addEventListener('updatefound', () => offer(reg.installing));
+    }).catch(() => {});
+  });
+}
+
+/* ปุ่มติดตั้ง — โครมบนแอนดรอยด์จะยิง beforeinstallprompt ให้เอง
+   บน iOS ไม่มีเหตุการณ์นี้ ต้องบอกวิธีเพิ่มลงหน้าจอโฮมเอง */
+let deferredPrompt = null;
+addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  $("#installBtn").hidden = false;
+});
+$("#installBtn").addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  $("#installBtn").hidden = true;
+});
+addEventListener('appinstalled', () => { $("#installBtn").hidden = true; deferredPrompt = null; });
+
+/* ซาฟารีบน iOS: ถ้ายังไม่ได้ติดตั้ง ให้ขึ้นคำแนะนำครั้งเดียว */
+(function iosHint() {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  if (!isIOS || standalone) return;
+  try { if (localStorage.getItem('mobi_ios_hint')) return; } catch (e) { return; }
+  const b = $("#installBtn");
+  b.hidden = false;
+  b.textContent = '⤓ เพิ่มลงหน้าจอโฮม';
+  b.onclick = () => {
+    alert(`วิธีติดตั้งบน iPhone / iPad
+
+1. กดปุ่มแชร์ (สี่เหลี่ยมมีลูกศรขึ้น) ที่แถบล่างของซาฟารี
+2. เลื่อนหาแล้วเลือก "เพิ่มไปยังหน้าจอโฮม"
+3. กด "เพิ่ม"
+
+เปิดจากไอคอนบนหน้าจอโฮมจะได้เต็มจอและใช้งานออฟไลน์ได้`);
+    try { localStorage.setItem('mobi_ios_hint', '1'); } catch (e) {}
+    b.hidden = true;
+  };
+})();
 
 /* ═══════════════ เริ่มระบบ ═══════════════ */
 loadCatalog();
