@@ -110,19 +110,28 @@
   }
   input[type=number].w70{width:74px}
   input[type=range]{accent-color:var(--accent); flex:1; min-width:110px; height:34px; touch-action:pan-y}
-  footer{
+  /* แอนดรอยด์ใช้ scrollbar แบบลอยที่โผล่ตอนเลื่อนแล้วจางหาย และมักไม่วาดให้เลย
+     กับกล่องที่เลื่อนด้วยนิ้ว จึงพึ่งของระบบไม่ได้ ต้องวาดแถบบอกตำแหน่งเอง */
+  #toolWrap{
     position:sticky; bottom:0; background:var(--panel); border-top:1px solid var(--line);
-    padding:10px 12px calc(6px + env(safe-area-inset-bottom));
-    display:flex; gap:8px; overflow-x:auto;
-    scrollbar-width:thin; scrollbar-color:var(--accent) var(--panel2);
-    /* เงาจางที่ขอบขวาเป็นสัญญาณว่ายังมีปุ่มเลยออกไป มือถือบางรุ่นไม่แสดง scrollbar ให้เห็น */
-    background-image:linear-gradient(to left, #0009, transparent 42px);
+    padding-bottom:env(safe-area-inset-bottom);
   }
-  footer::-webkit-scrollbar{height:7px}
-  footer::-webkit-scrollbar-track{background:var(--panel2); border-radius:4px}
-  footer::-webkit-scrollbar-thumb{background:var(--accent); border-radius:4px}
+  footer{
+    padding:10px 12px 6px; display:flex; gap:8px; overflow-x:auto;
+    scrollbar-width:none;
+    background-image:linear-gradient(to left, #000a, transparent 46px);
+  }
+  footer::-webkit-scrollbar{display:none}
   footer .btn{white-space:nowrap; flex-shrink:0}
   footer::after{content:''; flex:0 0 6px}          /* เว้นท้ายให้ปุ่มสุดท้ายไม่ติดขอบ */
+  #toolScroll{
+    height:5px; margin:0 12px 8px; background:var(--panel2);
+    border-radius:3px; overflow:hidden; cursor:pointer;
+  }
+  #toolThumb{
+    height:100%; background:var(--accent); border-radius:3px;
+    transition:margin-left .08s linear;
+  }
   /* กล่องเลื่อนอื่น ๆ ให้เห็น scrollbar เหมือนกัน */
   #stageScroll{scrollbar-width:thin; scrollbar-color:var(--line) transparent}
   .sheet{scrollbar-width:thin; scrollbar-color:var(--line) transparent}
@@ -246,7 +255,8 @@
   </div>
 </main>
 
-<footer id="tools" hidden>
+<div id="toolWrap" hidden>
+<footer id="tools">
   <button class="btn" id="calBtn" style="border-color:var(--accent);color:var(--accent)">📐 ปรับเทียบผนัง</button>
   <span id="catBtns" style="display:flex; gap:8px"></span>
   <button class="btn" id="catEditBtn" style="color:var(--dim)">✎ แคตตาล็อก</button>
@@ -256,6 +266,8 @@
   <button class="btn" id="projSaveBtn" style="color:var(--dim)">💾 เซฟไฟล์ผัง</button>
   <label class="btn file" style="color:var(--dim)">📁 เปลี่ยนภาพ<input type="file" accept="image/*" id="fileSwap"></label>
 </footer>
+<div id="toolScroll" hidden><div id="toolThumb"></div></div>
+</div>
 
 <!-- แผงแก้ไขแคตตาล็อกอุปกรณ์ -->
 <div class="modal" id="catModal" style="display:none">
@@ -543,6 +555,38 @@ function loadBlob(f) {
   r.readAsDataURL(f);
 }
 
+/* ═══════════════ แถบบอกตำแหน่งของแถบเครื่องมือ ═══════════════ */
+function updateToolScroll() {
+  const f = $("#tools"), bar = $("#toolScroll"), th = $("#toolThumb");
+  if (!f || !bar || !th) return;
+  const vis = f.scrollWidth - f.clientWidth > 4;
+  bar.hidden = !vis;
+  if (!vis) return;
+  const ratio = f.clientWidth / f.scrollWidth;
+  const w = Math.max(ratio * 100, 12);
+  th.style.width = w + '%';
+  const max = f.scrollWidth - f.clientWidth;
+  th.style.marginLeft = (max > 0 ? (f.scrollLeft / max) * (100 - w) : 0) + '%';
+}
+$("#tools").addEventListener('scroll', updateToolScroll, { passive: true });
+addEventListener('resize', updateToolScroll);
+/* ขนาดแถบเปลี่ยนได้จากหลายทาง (เพิ่มอุปกรณ์ หมุนจอ ฟอนต์โหลดเสร็จ)
+   เฝ้าดูขนาดจริงแทนการเดาจังหวะ */
+if (window.ResizeObserver) {
+  const ro = new ResizeObserver(() => updateToolScroll());
+  ro.observe($("#tools"));
+}
+/* แตะที่รางเพื่อกระโดดไปตำแหน่งนั้นเลย */
+$("#toolScroll").addEventListener('pointerdown', e => {
+  const f = $("#tools"), r = e.currentTarget.getBoundingClientRect();
+  const max = f.scrollWidth - f.clientWidth;
+  if (max <= 0) return;
+  if (r.width <= 0) return;
+  const frac = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+  f.scrollLeft = frac * max;
+  updateToolScroll();
+});
+
 /* ═══════════════ ย้อนกลับ / ทำซ้ำ ═══════════════
    เก็บภาพรวมของสิ่งที่ผู้ใช้แก้ได้ (อุปกรณ์ที่วาง + การปรับเทียบผนัง)
    ไม่รวมตัวภาพถ่าย เพราะการแปลงมุมตรงเปลี่ยนภาพถาวร ย้อนกลับไม่ได้
@@ -620,7 +664,8 @@ function sizeStageBox() {
     const e = $("#" + id);
     if (e && !e.hidden) below += e.offsetHeight + 10;
   });
-  const footerH = (tools && !tools.hidden) ? tools.offsetHeight : 0;
+  const tw = $("#toolWrap");
+  const footerH = (tw && !tw.hidden) ? tw.offsetHeight : 0;
   const avail = window.innerHeight - top - below - footerH - 14;
   box.style.height = Math.max(200, Math.min(avail, 1400)) + 'px';
 }
@@ -672,7 +717,10 @@ function setZoom(z, keepCenter) {
 }
 
 function showStage() {
-  drop.hidden = true; wrap.hidden = false; tools.hidden = false;
+  drop.hidden = true; wrap.hidden = false;
+  $("#toolWrap").hidden = false; tools.hidden = false;
+  requestAnimationFrame(updateToolScroll);
+  setTimeout(updateToolScroll, 250);        // เผื่อฟอนต์ยังโหลดไม่เสร็จตอนวัดครั้งแรก
   svg.setAttribute('viewBox', '0 0 ' + S.nw + ' ' + S.nh);
   S.zoom = 1;
   recomputeFit(); applyStageSize();
@@ -842,6 +890,7 @@ function buildCatButtons() {
     b.onclick = () => addItem(q);
     box.appendChild(b);
   });
+  requestAnimationFrame(updateToolScroll);
 }
 
 function addItem(q) {
@@ -1113,6 +1162,7 @@ function render() {
 
   drawTopView();
   sizeStageBox(); applyStageSize();
+  updateToolScroll();
 }
 window.addEventListener('resize', () => { /* SVG ใช้ viewBox จึงปรับขนาดเอง */ });
 
