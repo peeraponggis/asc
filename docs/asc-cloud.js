@@ -50,11 +50,14 @@
             return 'ไม่มีสิทธิ์ทำรายการนี้';
         // PostgREST ตอบแบบนี้ทั้งกรณีไม่มีแถวจริง และกรณี RLS กรองออกจนไม่เหลือแถว
         // ผู้ใช้แยกสองกรณีนี้ไม่ออกอยู่แล้ว จึงบอกรวมเป็นข้อความเดียวที่เข้าใจได้
-        if (/multiple \(or no\) rows|no rows|Results contain 0 rows|PGRST116/i.test(m))
+        if (/multiple \(or no\) rows|no rows|Results contain 0 rows|Cannot coerce the result|PGRST116/i.test(m))
             return 'ไม่พบโครงการนี้ หรือคุณไม่มีสิทธิ์เข้าถึง';
         if (/duplicate key|already exists/i.test(m))    return 'มีรายการนี้อยู่แล้ว';
         if (/JWT expired|session/i.test(m))             return 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่';
-        // เจอบ่อยตอนติดตั้งครั้งแรก บอกให้ตรงจุดจะได้ไม่ต้องไปไล่หาเอง
+        // สองกรณีนี้ข้อความของ PostgREST มีคำว่า schema cache เหมือนกัน แต่คนละสาเหตุ
+        // ต้องแยกให้ออก ไม่งั้นจะไล่ผิดทางว่ายังไม่ได้สร้างตารางทั้งที่สร้างไปแล้ว
+        if (/Could not find a relationship|PGRST200/i.test(m))
+            return 'โครงสร้างฐานข้อมูลไม่ตรงกับที่โปรแกรมต้องการ ให้รันไฟล์ supabase/schema.sql รุ่นล่าสุดอีกครั้ง';
         if (/schema cache|does not exist|PGRST205/i.test(m))
             return 'ยังไม่ได้สร้างตารางบนเซิร์ฟเวอร์ ให้รันไฟล์ supabase/schema.sql ใน SQL Editor ของ Supabase ก่อน';
         return m || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
@@ -338,16 +341,25 @@
             const patch = { data: split.data };
             if (payload.name != null) patch.name = String(payload.name).trim();
 
-            const { error } = await sb.from('projects').update(patch).eq('id', id);
+            // ต้องขอแถวที่ถูกแก้กลับมาด้วย เพื่อรู้ว่าเขียนสำเร็จจริงหรือไม่
+            //
+            // ⚠ ถ้าสิทธิ์ไม่ถึง ฐานข้อมูลจะกรองแถวออกเงียบ ๆ ไม่ถือเป็นข้อผิดพลาด
+            //   คำสั่งจะสำเร็จโดยแก้ศูนย์แถว ถ้าไม่ตรวจตรงนี้ โปรแกรมจะขึ้นว่า
+            //   "บันทึกขึ้นคลาวด์แล้ว" ทั้งที่ไม่มีอะไรถูกเขียนเลย แล้วผู้ใช้จะปิดหน้าไปโดยงานหาย
+            const { data: rows, error } = await sb.from('projects').update(patch).eq('id', id).select('id');
             if (error) throw fail(error);
+            if (!rows || rows.length === 0) {
+                throw new Error('บันทึกไม่สำเร็จ คุณไม่มีสิทธิ์แก้ไขโครงการนี้ หรือโครงการถูกลบไปแล้ว');
+            }
             return true;
         },
 
         async renameProject(id, name) {
             need();
-            const { error } = await sb.from('projects')
-                .update({ name: String(name || '').trim() }).eq('id', id);
+            const { data: rows, error } = await sb.from('projects')
+                .update({ name: String(name || '').trim() }).eq('id', id).select('id');
             if (error) throw fail(error);
+            if (!rows || rows.length === 0) throw new Error('เปลี่ยนชื่อไม่สำเร็จ คุณไม่มีสิทธิ์แก้ไขโครงการนี้');
             return true;
         },
 
@@ -418,20 +430,24 @@
             return true;
         },
 
+        /* สองฟังก์ชันนี้ก็ต้องขอแถวกลับมาเช่นกัน ด้วยเหตุผลเดียวกับ saveProject
+           ไม่งั้นจะขึ้นว่าเปลี่ยนสิทธิ์หรือถอดคนออกสำเร็จ ทั้งที่ถูกกรองทิ้งไปแล้ว */
         async setMemberRole(projectId, userId, role) {
             need();
-            const { error } = await sb.from('project_members')
+            const { data: rows, error } = await sb.from('project_members')
                 .update({ role: (role === 'editor' ? 'editor' : 'viewer') })
-                .eq('project_id', projectId).eq('user_id', userId);
+                .eq('project_id', projectId).eq('user_id', userId).select('user_id');
             if (error) throw fail(error);
+            if (!rows || rows.length === 0) throw new Error('เปลี่ยนสิทธิ์ไม่สำเร็จ เฉพาะเจ้าของโครงการเท่านั้นที่ทำได้');
             return true;
         },
 
         async removeMember(projectId, userId) {
             need();
-            const { error } = await sb.from('project_members')
-                .delete().eq('project_id', projectId).eq('user_id', userId);
+            const { data: rows, error } = await sb.from('project_members')
+                .delete().eq('project_id', projectId).eq('user_id', userId).select('user_id');
             if (error) throw fail(error);
+            if (!rows || rows.length === 0) throw new Error('ถอดออกไม่สำเร็จ เฉพาะเจ้าของโครงการเท่านั้นที่ทำได้');
             return true;
         },
 

@@ -102,6 +102,18 @@ create table if not exists public.project_members (
 
 create index if not exists project_members_user_idx on public.project_members(user_id);
 
+-- คีย์นอกเส้นที่สองชี้ไป profiles โดยตรง จำเป็นสำหรับการดึงชื่อผู้ใช้มาพร้อมกันในคำสั่งเดียว
+-- PostgREST ยอมให้เขียน  profiles:user_id (email, display_name)  ก็ต่อเมื่อมองเห็นความสัมพันธ์นี้
+-- ถ้ามีแต่คีย์นอกที่ชี้ไป auth.users จะหาความสัมพันธ์ไม่เจอ แล้วหน้าจอแชร์จะโหลดรายชื่อไม่ได้
+do $$
+begin
+    if not exists (select 1 from pg_constraint where conname = 'project_members_profile_fkey') then
+        alter table public.project_members
+            add constraint project_members_profile_fkey
+            foreign key (user_id) references public.profiles(id) on delete cascade;
+    end if;
+end $$;
+
 
 -- ────────────────────────────────────────────────────────────────────────────
 --  4. สิทธิ์การเข้าถึง (Row Level Security)
@@ -153,9 +165,20 @@ create policy profiles_update_self on public.profiles
     with check (id = auth.uid() and is_admin = (select is_admin from public.profiles where id = auth.uid()));
 
 -- ── โครงการ
+--
+--    ⚠ เงื่อนไข owner = auth.uid() ที่นำหน้าทุกนโยบายไม่ใช่ของเกิน ห้ามตัดทิ้ง
+--
+--    ฟังก์ชัน can_read_project เป็น stable จึงเห็นภาพข้อมูล ณ ตอนเริ่มคำสั่ง
+--    แถวที่เพิ่งถูกเพิ่มด้วยคำสั่งเดียวกันจะยังมองไม่เห็น
+--    เวลาแอปสั่ง  insert ... returning id  เพื่อรับรหัสโครงการกลับไป
+--    PostgreSQL จะเอานโยบาย select มาตรวจแถวใหม่ด้วย แล้วตกทุกครั้ง
+--    ผลคือสร้างโครงการไม่ได้เลยทั้งระบบ
+--
+--    การเทียบ owner = auth.uid() ตรง ๆ อ่านค่าจากแถวใหม่ได้ทันทีโดยไม่ต้องค้นตาราง
+--    จึงผ่าน และยังช่วยให้เร็วขึ้นเพราะโครงการของตัวเองไม่ต้องเรียกฟังก์ชันเลย
 drop policy if exists projects_select on public.projects;
 create policy projects_select on public.projects
-    for select to authenticated using (public.can_read_project(id));
+    for select to authenticated using (owner = auth.uid() or public.can_read_project(id));
 
 drop policy if exists projects_insert on public.projects;
 create policy projects_insert on public.projects
@@ -164,8 +187,8 @@ create policy projects_insert on public.projects
 drop policy if exists projects_update on public.projects;
 create policy projects_update on public.projects
     for update to authenticated
-    using (public.can_edit_project(id))
-    with check (public.can_edit_project(id));
+    using (owner = auth.uid() or public.can_edit_project(id))
+    with check (owner = auth.uid() or public.can_edit_project(id));
 
 -- ลบได้เฉพาะเจ้าของกับผู้ดูแลระบบ คนที่ถูกเชิญมาแก้ไขลบไม่ได้
 drop policy if exists projects_delete on public.projects;
@@ -173,9 +196,11 @@ create policy projects_delete on public.projects
     for delete to authenticated using (public.owns_project(id));
 
 -- ── สมาชิกโครงการ : เห็นได้ถ้าเข้าถึงโครงการนั้นได้ แต่เชิญ/ถอดได้เฉพาะเจ้าของ
+-- user_id = auth.uid() นำหน้าด้วยเหตุผลเดียวกับตาราง projects
+-- คนที่เพิ่งถูกเชิญต้องเห็นแถวของตัวเองได้แม้ในคำสั่งที่เพิ่งเขียนแถวนั้น
 drop policy if exists members_select on public.project_members;
 create policy members_select on public.project_members
-    for select to authenticated using (public.can_read_project(project_id));
+    for select to authenticated using (user_id = auth.uid() or public.can_read_project(project_id));
 
 drop policy if exists members_insert on public.project_members;
 create policy members_insert on public.project_members
