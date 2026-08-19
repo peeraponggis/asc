@@ -139,7 +139,7 @@ const users = {
     "somyos1259wang@gmail.com": "sha256$7d36a32d6ab1695a15fcf6f6b23fd84b1733f1fa9f71e4226101c00abb91642b",
     "bkhardware888@gmail.com": "sha256$66e9c985b453d20b6b1ffbe846fedb957afa164923b523a2ee59ccb55ba4271e",
     "patarapol777@gmail.com": "sha256$79f9742dded86efd03db1a00275f7b21fac29136ca6d369640f43cd74710d916",
-    "ducksmall2010@gamil.com": "sha256$447010dea6b9c76a965b931215db7ab3ff28437adbe6a17a1944e19650c50160",
+    "ducksmall2010@gmail.com": "sha256$447010dea6b9c76a965b931215db7ab3ff28437adbe6a17a1944e19650c50160",
     "Suphachok2707@gmail.com": "sha256$136e160e6c8dc016cb44e24be99cfa08ef4b79d97a3d48d3226841efde0840e3",
     "chaleepdy@gmail.com": "sha256$a55ff5cd0870a588c3898cf1d968f7b631b21b608f35fbbf72142c8d0416d8e5",
     "canny070459@gmail.com": "sha256$1cbb77973c9e3f5aa7dfacdf6b88972d18d3f75badbb571c999c34e45241a039",

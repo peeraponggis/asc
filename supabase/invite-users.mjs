@@ -79,7 +79,7 @@ if (nonEmail.length) {
 /* เติมอีเมลของบัญชีที่ยังไม่มี เช่น  { supet: 'supet@example.com' } */
 const MANUAL = {
     // supet : '',
-    // lpee  : '',
+    lpee  : 'giskku@gmail.com',
     // pat   : '',
 };
 
