@@ -791,9 +791,11 @@ function prettyName(u)   { return typeof window.displayNameOf === 'function' ? w
 /* ─────────────────────────────────────────────
    2. หน้าเข้าสู่ระบบ
    ───────────────────────────────────────────── */
-function showLoginError(msg) {
+/* extraHtml ใช้ต่อท้ายข้อความได้ ตัวข้อความหลักถูก escape เสมอ
+   เพราะบางส่วนมาจากเซิร์ฟเวอร์ ไม่ควรเอามาแปะเป็น HTML ตรง ๆ */
+function showLoginError(msg, extraHtml) {
     const box = document.getElementById('login-error');
-    document.getElementById('login-error-text').innerText = msg;
+    document.getElementById('login-error-text').innerHTML = esc(msg) + (extraHtml || '');
     box.classList.remove('hidden');
 }
 function hideLoginError() { document.getElementById('login-error').classList.add('hidden'); }
@@ -901,7 +903,16 @@ async function doLoginCloud(u, p) {
         sessionStorage.setItem(SESSION_KEY, JSON.stringify(SESSION));
         await enterApp();
     } catch (err) {
-        showLoginError(err.message);
+        // บอกด้วยว่ากำลังคุยกับเซิร์ฟเวอร์ตัวไหน
+        // เคยเจอกรณีเบราว์เซอร์ยังถือไฟล์ตั้งค่าตัวเก่าไว้ แล้วไปถามโปรเจกต์เดิมที่ไม่มีบัญชีใครเลย
+        // ข้อความที่ได้จะเหมือนกรอกรหัสผิดทุกประการ ทำให้ไล่หาสาเหตุผิดทาง
+        let extra = '';
+        if (/รหัสผ่านไม่ถูกต้อง/.test(err.message)) {
+            const host = (window.SUPABASE_URL || '').replace(/^https?:\/\//, '').split('.')[0];
+            extra = '<span class="block mt-1 text-[11px] font-normal opacity-75">เซิร์ฟเวอร์ที่ใช้อยู่ : ' +
+                    esc(host) + ' — ถ้าไม่ตรงกับที่ควรเป็น ให้กด Ctrl+F5 เพื่อโหลดไฟล์ใหม่</span>';
+        }
+        showLoginError(err.message, extra);
         document.getElementById('login-pass').value = '';
         document.getElementById('login-pass').focus();
     } finally {
