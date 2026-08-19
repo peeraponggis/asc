@@ -5342,9 +5342,19 @@ function generateDB2() {
 
         document.getElementById('btnSaveDb2').addEventListener('click', function() {
             // 🌟 เฟส 14: บันทึก DB1 ควบคู่ไปด้วยเสมอ (แทนปุ่ม Save DB1 เดิมที่ถูกตัดออก)
-            sessionStorage.setItem('db1', JSON.stringify(generateDB1()));
+            const db1 = generateDB1();
+            sessionStorage.setItem('db1', JSON.stringify(db1));
             const db2 = generateDB2();
             sessionStorage.setItem('db2', JSON.stringify(db2));
+
+            // ส่งข้อมูลเข้าฐานข้อมูลของหน้าหลักด้วย ถ้าถูกเปิดอยู่ใน master_shell
+            // ตัวรับมีอยู่แล้วที่ฝั่งนั้น (EXPORT_DB1_DB2) แต่เดิมไม่มีใครส่งให้ db1/db2 จึงว่างเปล่าเสมอ
+            // เปิดเดี่ยว ๆ นอกหน้าหลักจะข้ามบรรทัดนี้ไป การทำงานเดิมไม่เปลี่ยน
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'EXPORT_DB1_DB2', payload: { db1: db1, db2: db2 } }, '*');
+                }
+            } catch (e) { console.warn('ส่งข้อมูลให้หน้าหลักไม่สำเร็จ', e); }
             //document.getElementById('btnExportDb2').style.display = 'block';
             
             // 🌟 เพิ่มคำสั่งบรรทัดนี้ เพื่อสั่ง Export DB2 (ดาวน์โหลดไฟล์และรูป) อัตโนมัติ

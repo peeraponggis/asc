@@ -810,7 +810,28 @@ function loadDB() {
     if (!db.projects) db.projects = {};
     return db;
 }
-function saveDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function saveDB(db) {
+    try {
+        localStorage.setItem(DB_KEY, JSON.stringify(db));
+        return true;
+    } catch (e) {
+        console.error('เขียนฐานข้อมูลไม่สำเร็จ', e);
+        const isFull = e && (e.name === 'QuotaExceededError' ||
+                             e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22);
+        alert(isFull
+            ? 'บันทึกไม่สำเร็จ เพราะพื้นที่เก็บข้อมูลของเบราว์เซอร์เต็ม\n\n' +
+              'ให้กดดาวน์โหลดไฟล์สำรองในหน้าตั้งค่าไว้ก่อน แล้วลบโครงการเก่าที่ไม่ใช้แล้วออก'
+            : 'บันทึกไม่สำเร็จ (' + ((e && e.name) || 'ไม่ทราบสาเหตุ') + ')');
+        return false;
+    }
+}
+
+/* รูปหน้าปกของแต่ละโครงการถูกแยกไปเก็บคนละคีย์ (ดู master_shell.html)
+   เวลาลบโครงการต้องตามไปลบด้วย ไม่งั้นจะเหลือขยะกินพื้นที่ค้างไว้ */
+const IMG_KEY = id => 'proinventive_images_' + id;
+function deleteProjectImages(id) {
+    try { localStorage.removeItem(IMG_KEY(id)); } catch (e) {}
+}
 
 /* โครงการเดิมที่สร้างก่อนมีระบบ Login จะยังไม่มีเจ้าของ
    ยกให้ผู้ใช้คนแรกที่ล็อกอินในเครื่องนี้ (ยกเว้นผู้ดูแลระบบ จะไม่ยึดของใคร) */
@@ -1050,6 +1071,7 @@ function deleteProject(id) {
     if (!confirm(`ลบโปรเจกต์ "${p.meta.name}" อย่างถาวรหรือไม่? ข้อมูลทั้งหมดจะหายไปและกู้คืนไม่ได้`)) return;
     delete db.projects[id];
     saveDB(db);
+    deleteProjectImages(id);
     renderDashboard();
     renderNotifications();
     if (currentView === 'analytics') renderAnalytics();
@@ -1308,15 +1330,38 @@ function renderSettings() {
     document.getElementById('set-login').innerText = new Date(SESSION.loginAt).toLocaleString('th-TH');
     document.getElementById('set-count').innerText = visibleProjects().length + ' โครงการ';
 
-    const raw = localStorage.getItem(DB_KEY) || '';
-    const kb  = (new Blob([raw]).size / 1024).toFixed(1);
-    document.getElementById('set-storage').innerText = `ขนาดข้อมูลที่เก็บอยู่ตอนนี้ประมาณ ${kb} KB (เบราว์เซอร์จำกัดไว้ราว 5,000 KB ต่อโดเมน)`;
+    // นับทั้งฐานข้อมูลหลักและคลังรูปที่แยกเก็บ ไม่งั้นตัวเลขจะดูน้อยเกินจริง
+    const raw   = localStorage.getItem(DB_KEY) || '';
+    const dbKb  = new Blob([raw]).size / 1024;
+    let   imgKb = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.indexOf('proinventive_images_') === 0) {
+            imgKb += new Blob([localStorage.getItem(k) || '']).size / 1024;
+        }
+    }
+    const totalKb = dbKb + imgKb;
+    document.getElementById('set-storage').innerText =
+        `ขนาดข้อมูลที่เก็บอยู่ตอนนี้ประมาณ ${totalKb.toFixed(1)} KB ` +
+        `(ข้อมูลโครงการ ${dbKb.toFixed(1)} KB + รูปภาพ ${imgKb.toFixed(1)} KB) ` +
+        `เบราว์เซอร์จำกัดไว้ราว 5,000 KB ต่อโดเมน`;
 
     renderUserTable();
 }
 
 function exportBackup() {
-    const db   = loadDB();
+    const db = loadDB();
+
+    // รูปถูกแยกไปเก็บคนละคีย์ ต้องดึงกลับมาใส่ในไฟล์สำรองด้วย ไม่งั้นสำรองไม่ครบ
+    Object.keys(db.projects).forEach(id => {
+        const st = db.projects[id] && db.projects[id].data &&
+                   db.projects[id].data.db3 && db.projects[id].data.db3.app_state;
+        if (!st || !st._imagesStashed) return;
+        try { st.projectImagesBase64 = JSON.parse(localStorage.getItem(IMG_KEY(id))) || []; }
+        catch (e) { st.projectImagesBase64 = []; }
+        delete st._imagesStashed;
+    });
+
     const blob = new Blob([JSON.stringify(db, null, 2)], { type:'application/json' });
     const a    = document.createElement('a');
     a.href     = URL.createObjectURL(blob);
@@ -1331,7 +1376,7 @@ function wipeMyProjects() {
     Object.keys(db.projects).forEach(id => {
         const p = db.projects[id];
         const own = (p.meta && p.meta.owner) || SESSION.username;
-        if (SESSION.isAdmin || own === SESSION.username) delete db.projects[id];
+        if (SESSION.isAdmin || own === SESSION.username) { delete db.projects[id]; deleteProjectImages(id); }
     });
     saveDB(db);
     renderDashboard(); renderNotifications(); renderSettings();

@@ -125,6 +125,8 @@
     <script>
         const DB_KEY      = 'proinventive_enterprise_db';
         const SESSION_KEY = 'proinventive_session';
+        /* คลังรูปภาพแยกจากฐานข้อมูลหลัก หนึ่งคีย์ต่อหนึ่งโครงการ */
+        const IMG_KEY     = id => 'proinventive_images_' + id;
 
         let currentProjectId   = null;
         let currentProjectData = null;
@@ -198,9 +200,14 @@
             const meta = db.projects[currentProjectId].meta;
             if (!meta.owner) { meta.owner = SESSION.username; meta.ownerName = SESSION.display || SESSION.username; }
 
-            localStorage.setItem(DB_KEY, JSON.stringify(db));
+            try {
+                localStorage.setItem(DB_KEY, JSON.stringify(db));
+            } catch (e) {
+                reportSaveFailure(e);
+            }
 
-            currentProjectData = db.projects[currentProjectId].data;
+            // เอารูปที่แยกเก็บไว้กลับมาต่อ ให้ข้อมูลในหน่วยความจำครบเหมือนเดิม
+            currentProjectData = restoreStashedImages(currentProjectId, db.projects[currentProjectId].data);
 
             document.getElementById('project-name').innerText = meta.name;
             document.title = meta.name + ' — ProInventive';
@@ -214,18 +221,113 @@
         }
 
         /* --- 3. บันทึก Database (Roadmap สู่ Cloud) --------------------- */
-        function saveProjectToDB() {
-            let db = JSON.parse(localStorage.getItem(DB_KEY));
-            if (!db || !db.projects || !db.projects[currentProjectId]) return;
 
-            db.projects[currentProjectId].data = currentProjectData;
+        /* แยกรูปหน้าปกออกจากก้อนข้อมูลก่อนเขียนลงฐานข้อมูลหลัก
+           วัดจากไฟล์จริง DB3 ขนาด 8.25 MB เป็นรูป base64 เสีย 8.21 MB
+           ข้อมูลวิศวกรรมล้วน ๆ มีแค่ 0.04 MB
+
+           ผลที่ได้คือฐานข้อมูลหลักเล็กลงราว 200 เท่า ซึ่งสำคัญเพราะทุกครั้งที่บันทึก
+           โค้ดต้องอ่านและเขียนใหม่ทั้งก้อน ต้นทุนจึงโตตามจำนวนโครงการทั้งหมด ไม่ใช่แค่โครงการที่แก้
+           รูปยังอยู่ครบในหน่วยความจำและในไฟล์ DB3 ที่ดาวน์โหลด โค้ดส่วนอื่นไม่ต้องรู้เรื่องนี้ */
+        const IMG_BUDGET_BYTES = 2 * 1024 * 1024;   // กันไว้ให้รูปไม่เกิน 2 MB จากโควตาราว 5 MB
+
+        function dataForStorage(projectId, data) {
+            const st   = data && data.db3 && data.db3.app_state;
+            const imgs = st && st.projectImagesBase64;
+            if (!Array.isArray(imgs) || imgs.length === 0) return data;
+
+            // ตัวบอกสถานะที่จะเขียนลงฐานข้อมูลแทนตัวรูปจริง
+            let mark = { projectImagesBase64: [], _imagesStashed: 0, _imagesDropped: 0 };
+
+            const packed = JSON.stringify(imgs);
+            if (packed.length > IMG_BUDGET_BYTES) {
+                // รูปความละเอียดเต็มมักใหญ่กว่าโควตาทั้งก้อน ยัดลงไปก็มีแต่จะทำให้บันทึกพังทั้งโครงการ
+                // จึงไม่เก็บ แต่รูปยังอยู่ครบในไฟล์ DB3 ที่ดาวน์โหลด ซึ่งเป็นทางกู้คืนจริงอยู่แล้ว
+                try { localStorage.removeItem(IMG_KEY(projectId)); } catch (e) {}
+                mark._imagesDropped = imgs.length;
+                console.warn('รูปหน้าปกรวม ' + (packed.length / 1048576).toFixed(2) +
+                             ' MB เกินงบที่กันไว้ จึงไม่เก็บลงฐานข้อมูล (ยังอยู่ในไฟล์ DB3 ที่ดาวน์โหลด)');
+            } else {
+                try {
+                    localStorage.setItem(IMG_KEY(projectId), packed);
+                    mark._imagesStashed = imgs.length;
+                } catch (e) {
+                    // เก็บแยกไม่สำเร็จ ก็อย่าเอากลับไปยัดในก้อนหลัก เดี๋ยวพังทั้งโครงการ
+                    try { localStorage.removeItem(IMG_KEY(projectId)); } catch (e2) {}
+                    mark._imagesDropped = imgs.length;
+                    console.warn('เก็บรูปแยกไม่สำเร็จ จึงข้ามการเก็บรูป', e);
+                }
+            }
+
+            // คัดลอกแบบตื้นเฉพาะชั้นที่ต้องแก้ ของเดิมในหน่วยความจำไม่ถูกแตะ รูปบนหน้าจอยังครบ
+            return Object.assign({}, data, {
+                db3: Object.assign({}, data.db3, {
+                    app_state: Object.assign({}, st, mark)
+                })
+            });
+        }
+
+        /* เอารูปกลับมาต่อให้ตอนโหลดโครงการ */
+        function restoreStashedImages(projectId, data) {
+            const st = data && data.db3 && data.db3.app_state;
+            if (!st || !st._imagesStashed) return data;
+            try {
+                st.projectImagesBase64 = JSON.parse(localStorage.getItem(IMG_KEY(projectId))) || [];
+            } catch (e) {
+                st.projectImagesBase64 = [];
+                console.warn('อ่านรูปที่แยกเก็บไว้ไม่สำเร็จ', e);
+            }
+            return data;
+        }
+
+        /* แจ้งผู้ใช้เมื่อเขียนฐานข้อมูลไม่สำเร็จ
+           เดิมไม่มีการดักข้อผิดพลาด พอพื้นที่เต็มโค้ดจะหยุดก่อนถึงบรรทัดแจ้งผล
+           ผู้ใช้เห็นคำว่า "กำลังบันทึก..." ค้างไว้แล้วเข้าใจว่าบันทึกสำเร็จ ทั้งที่งานหาย */
+        function reportSaveFailure(e) {
+            const isFull = e && (e.name === 'QuotaExceededError' ||
+                                 e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22);
+            showSaveStatus('<i class="fa-solid fa-triangle-exclamation text-red-400 mr-1.5"></i>' +
+                           '<span class="text-red-300">บันทึกไม่สำเร็จ</span>');
+            console.error('เขียนฐานข้อมูลไม่สำเร็จ', e);
+            alert(isFull
+                ? 'บันทึกไม่สำเร็จ เพราะพื้นที่เก็บข้อมูลของเบราว์เซอร์เต็ม\n\n' +
+                  'งานที่ทำอยู่ยังอยู่บนหน้าจอ แต่ยังไม่ได้ถูกบันทึก\n\n' +
+                  'ให้ส่งออกไฟล์ DB เก็บไว้ก่อนทันที แล้วลบโครงการเก่าที่ไม่ใช้แล้วออกจากหน้าแรก'
+                : 'บันทึกไม่สำเร็จ (' + ((e && e.name) || 'ไม่ทราบสาเหตุ') + ')\n\n' +
+                  'งานที่ทำอยู่ยังอยู่บนหน้าจอ แต่ยังไม่ได้ถูกบันทึก\n' +
+                  'ให้ส่งออกไฟล์ DB เก็บไว้ก่อน');
+        }
+
+        function saveProjectToDB() {
+            let db = null;
+            try { db = JSON.parse(localStorage.getItem(DB_KEY)); } catch (e) { db = null; }
+            if (!db || !db.projects || !db.projects[currentProjectId]) return false;
+
+            const toStore = dataForStorage(currentProjectId, currentProjectData);
+            db.projects[currentProjectId].data = toStore;
             db.projects[currentProjectId].meta.lastModified = new Date().toISOString();
 
             // *อนาคต: Firebase.firestore().collection('projects').doc(currentProjectId).set(...)*
-            localStorage.setItem(DB_KEY, JSON.stringify(db));
+            try {
+                localStorage.setItem(DB_KEY, JSON.stringify(db));
+            } catch (e) {
+                reportSaveFailure(e);
+                return false;
+            }
 
-            showSaveStatus('<i class="fa-solid fa-cloud text-green-400 mr-1.5"></i> บันทึกล่าสุด: ' +
-                new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' }) + ' น.');
+            const dropped = toStore.db3 && toStore.db3.app_state && toStore.db3.app_state._imagesDropped;
+            const timeStr = new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
+
+            if (dropped) {
+                // บอกให้เห็นชัด ๆ ว่ารูปไม่ได้ถูกเก็บ จะได้ไม่เข้าใจผิดว่าเก็บครบแล้ว
+                showSaveStatus('<i class="fa-solid fa-cloud text-green-400 mr-1.5"></i> บันทึกล่าสุด: ' + timeStr +
+                    ' น. <span class="text-amber-300" title="รูปความละเอียดเต็มใหญ่เกินพื้นที่ของเบราว์เซอร์ ' +
+                    'จึงไม่ได้เก็บลงฐานข้อมูล แต่ยังอยู่ครบในไฟล์ DB3 ที่ดาวน์โหลด">' +
+                    '· รูป ' + dropped + ' ใบเก็บในไฟล์ DB3 เท่านั้น</span>');
+            } else {
+                showSaveStatus('<i class="fa-solid fa-cloud text-green-400 mr-1.5"></i> บันทึกล่าสุด: ' + timeStr + ' น.');
+            }
+            return true;
         }
 
         function updateLiveKwp(kwp) {
@@ -287,11 +389,29 @@
 
         /* ส่งข้อมูลผู้ใช้และโปรเจกต์ให้หน้าลูกทุกหน้า */
         function broadcastToFrames() {
+            // ส่งรูปเท่าที่หน้าลูกใช้จริงเท่านั้น
+            // asc_3d ใช้แค่รูปแรกเป็นภาพดาวเทียมปูพื้น (parseDB3) ที่เหลือไม่มีใครใช้
+            // ถ้าส่งทั้งชุด ข้อมูลหลายเมกะไบต์จะถูกคัดลอกซ้ำตามจำนวน iframe ทุกครั้งที่เรียก
+            let slim = currentProjectData;
+            const st   = slim && slim.db3 && slim.db3.app_state;
+            const imgs = st && st.projectImagesBase64;
+            if (Array.isArray(imgs) && imgs.length) {
+                const first = (typeof imgs[0] === 'string' && imgs[0].length <= IMG_BUDGET_BYTES)
+                            ? [imgs[0]] : [];
+                if (first.length !== imgs.length) {
+                    slim = Object.assign({}, slim, {
+                        db3: Object.assign({}, slim.db3, {
+                            app_state: Object.assign({}, st, { projectImagesBase64: first })
+                        })
+                    });
+                }
+            }
+
             const payload = {
                 type: 'SYNC_PROJECT_STATE',
                 user: SESSION,
                 projectId: currentProjectId,
-                payload: currentProjectData
+                payload: slim
             };
             ['frame-manual','frame-pea','frame-asc','frame-model3d','frame-device','frame-report'].forEach(id => {
                 const f = document.getElementById(id);
