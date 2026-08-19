@@ -5,6 +5,8 @@
  *
  *    SUPABASE_URL       ช่อง "Project URL"
  *    SUPABASE_ANON_KEY  ช่อง "anon" / "public"
+ *                       โปรเจกต์รุ่นใหม่จะเป็นคีย์ที่ขึ้นต้นด้วย sb_publishable_
+ *                       ซึ่งใช้แทนกันได้ และเป็นคีย์ฝั่งผู้ใช้เหมือนกัน
  *
  *  ⚠ ใส่ได้เฉพาะคีย์ anon เท่านั้น
  *    คีย์นี้ออกแบบมาให้เปิดเผยในโค้ดฝั่งเบราว์เซอร์ได้ ความปลอดภัยมาจาก
@@ -16,5 +18,5 @@
  *  ตราบใดที่ยังไม่ได้ใส่ค่า ระบบจะทำงานแบบเดิม (เก็บในเครื่อง) ต่อไปตามปกติ
  * ========================================================================== */
 
-window.SUPABASE_URL      = '';
-window.SUPABASE_ANON_KEY = '';
+window.SUPABASE_URL      = 'https://teyoycikvwsybnvsxzvv.supabase.co';
+window.SUPABASE_ANON_KEY = 'sb_publishable_rAwyLR9MWQDO8e-wM9FJXw_mNp8VUth';

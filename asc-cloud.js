@@ -54,6 +54,9 @@
             return 'ไม่พบโครงการนี้ หรือคุณไม่มีสิทธิ์เข้าถึง';
         if (/duplicate key|already exists/i.test(m))    return 'มีรายการนี้อยู่แล้ว';
         if (/JWT expired|session/i.test(m))             return 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่';
+        // เจอบ่อยตอนติดตั้งครั้งแรก บอกให้ตรงจุดจะได้ไม่ต้องไปไล่หาเอง
+        if (/schema cache|does not exist|PGRST205/i.test(m))
+            return 'ยังไม่ได้สร้างตารางบนเซิร์ฟเวอร์ ให้รันไฟล์ supabase/schema.sql ใน SQL Editor ของ Supabase ก่อน';
         return m || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
     }
 
