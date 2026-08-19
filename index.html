@@ -1388,8 +1388,14 @@ function authenticate(username, password) {
     const key = String(username || '').trim().toLowerCase();
     const rec = effectiveUsers()[key];
     if (!rec || rec.disabled) return false;
+    /* ค่าที่ขึ้นต้นด้วย sha256$ เทียบแบบแฮช ส่วนค่าอื่นถือเป็นข้อความธรรมดา
+       ผู้ใช้ที่เพิ่มไว้ในเครื่องก่อนหน้านี้จึงยังล็อกอินได้เหมือนเดิม */
+    if (typeof window.pwMatches === 'function') return window.pwMatches(rec.password, key, password);
     return rec.password === password;
 }
+
+/* รหัสผ่านที่ถูกแฮชแล้วอ่านกลับไม่ได้ ต้องแสดงเป็นข้อความบอกสถานะแทน */
+function isHashed(v) { return typeof v === 'string' && v.indexOf('sha256$') === 0; }
 
 function roleOf(username) {
     const rec = effectiveUsers()[String(username || '').trim().toLowerCase()];
@@ -1430,7 +1436,10 @@ function renderUserTable() {
                     ${isMe ? '<div class="text-[10px] text-blue-600">บัญชีที่กำลังใช้งาน</div>' : ''}
                     ${u.disabled ? '<div class="text-[10px] text-red-600">ถูกระงับการใช้งาน</div>' : ''}
                 </td>
-                <td class="px-4 py-3 font-mono text-xs text-slate-600 break-all">${show ? esc(u.password) : '••••••••'}</td>
+                <td class="px-4 py-3 font-mono text-xs text-slate-600 break-all">${
+                    isHashed(u.password)
+                        ? '<span class="text-emerald-600" title="เก็บเป็นค่าแฮช อ่านกลับไม่ได้">🔒 เข้ารหัสแล้ว</span>'
+                        : (show ? esc(u.password) : '••••••••')}</td>
                 <td class="px-4 py-3">${u.role === 'admin'
                     ? '<span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">ผู้ดูแลระบบ</span>'
                     : '<span class="text-xs text-slate-500">ผู้ใช้ทั่วไป</span>'}</td>
@@ -1481,13 +1490,21 @@ function saveUserEntry() {
 
     if (!name)            { nuMsg('กรอกชื่อผู้ใช้ก่อนบันทึก', 'err'); nameEl.focus(); return; }
     if (/\s/.test(name))  { nuMsg('ชื่อผู้ใช้ต้องไม่มีช่องว่าง', 'err'); nameEl.focus(); return; }
-    if (pass.length < 4)  { nuMsg('รหัสผ่านต้องยาวอย่างน้อย 4 ตัวอักษร', 'err'); passEl.focus(); return; }
+    const keyPre  = name.toLowerCase();
+    const prevRec = effectiveUsers()[keyPre];
+    /* เว้นช่องรหัสผ่านไว้ = คงรหัสเดิม ใช้ตอนแก้แค่สิทธิ์ของบัญชีที่รหัสถูกเข้ารหัสไว้แล้ว */
+    const keepOld = pass === '' && prevRec && isHashed(prevRec.password);
+    if (!keepOld && pass.length < 4) {
+        nuMsg('รหัสผ่านต้องยาวอย่างน้อย 4 ตัวอักษร', 'err'); passEl.focus(); return;
+    }
 
-    const key = name.toLowerCase();
+    const key = keyPre;
     const ov  = loadUserOverrides();
-    const existed = !!effectiveUsers()[key];
+    const existed = !!prevRec;
 
-    ov[key] = { username: name, password: pass, role: role, disabled: false };
+    const stored = keepOld ? prevRec.password
+                 : (typeof window.hashPw === 'function' ? window.hashPw(name, pass) : pass);
+    ov[key] = { username: name, password: stored, role: role, disabled: false };
     saveUserOverrides(ov);
 
     nameEl.value = ''; passEl.value = '';
@@ -1500,13 +1517,16 @@ function saveUserEntry() {
 function editUserEntry(key) {
     const u = effectiveUsers()[key];
     if (!u) return;
+    const hashed = isHashed(u.password);
     document.getElementById('nu-name').value = u.username;
-    document.getElementById('nu-pass').value = u.password;
+    document.getElementById('nu-pass').value = hashed ? '' : u.password;
     document.getElementById('nu-role').value = u.role;
-    document.getElementById('nu-showpass').checked = true;
+    document.getElementById('nu-showpass').checked = !hashed;
     renderUserTable();
     document.getElementById('nu-name').focus();
-    nuMsg(`กำลังแก้ไข ${u.username} — แก้แล้วกดปุ่มเครื่องหมายถูกเพื่อบันทึก`, 'info');
+    nuMsg(hashed
+        ? `กำลังแก้ไข ${u.username} — รหัสผ่านเดิมถูกเข้ารหัสไว้จึงอ่านกลับไม่ได้ ถ้าจะเปลี่ยนให้พิมพ์รหัสใหม่`
+        : `กำลังแก้ไข ${u.username} — แก้แล้วกดปุ่มเครื่องหมายถูกเพื่อบันทึก`, 'info');
 }
 
 function toggleUserDisabled(key) {
@@ -1551,67 +1571,55 @@ function clearLocalUsers() {
 }
 
 /* ── สร้างเนื้อไฟล์ user.js ฉบับใหม่ ── */
-function buildUserJs() {
-    const map = effectiveUsers();
-    const live = Object.keys(map).filter(k => !map[k].disabled).map(k => map[k]);
-    live.sort((a, b) => a.username.localeCompare(b.username));
+/* สร้างไฟล์ user.js ฉบับใหม่
+   ------------------------------------------------------------------
+   ดึงเนื้อไฟล์ user.js ตัวจริงมาแล้วเปลี่ยนเฉพาะบล็อกข้อมูล
+   ส่วนโค้ดตรวจรหัสผ่าน (SHA-256, hashPw, pwMatches) ถูกคัดลอกมาทั้งก้อน
+   จึงไม่มีวันหลุดรุ่นกับไฟล์ที่ใช้งานจริง และไม่ต้องเก็บสำเนาซ้ำไว้ที่นี่ */
+async function buildUserJs() {
+    const live = Object.values(effectiveUsers())
+        .filter(u => !u.disabled)
+        .sort((a, b) => a.username.localeCompare(b.username));
+    const q = v => JSON.stringify(v);
 
-    const q = v => JSON.stringify(String(v));
-    const rows   = live.map(u => `    ${q(u.username)}: ${q(u.password)}`).join(',\n');
+    /* บัญชีที่เพิ่มในเครื่องและยังเป็นข้อความธรรมดา ให้เข้ารหัสก่อนเขียนลงไฟล์ */
+    const rows = live.map(u => {
+        const pw = isHashed(u.password) ? u.password
+                 : (typeof window.hashPw === 'function' ? window.hashPw(u.username, u.password) : u.password);
+        return '    ' + q(u.username) + ': ' + q(pw);
+    }).join(',' + '\n');
     const admins = live.filter(u => u.role === 'admin').map(u => q(u.username.toLowerCase())).join(', ');
     const stamp  = new Date().toLocaleString('th-TH');
 
-    return `/* ==========================================================================
-   user.js  —  ฐานข้อมูลผู้ใช้งาน (แหล่งข้อมูลจริงเพียงที่เดียว)
-   --------------------------------------------------------------------------
-   สร้างจากหน้า Settings > จัดการผู้ใช้
-   โดย ${SESSION.username}  เมื่อ ${stamp}
-   จำนวนผู้ใช้ทั้งหมด ${live.length} บัญชี
+    let src;
+    try {
+        const res = await fetch('user.js?t=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        src = await res.text();
+    } catch (e) {
+        throw new Error('อ่านไฟล์ user.js ตัวจริงไม่ได้ (' + e.message + ')' + '\n'
+            + 'ต้องเปิดหน้านี้ผ่าน http:// ไม่ใช่ดับเบิลคลิกไฟล์');
+    }
 
-   วิธีนำไปใช้: วางไฟล์นี้ทับ user.js เดิมใน repo แล้ว commit + push
-   ========================================================================== */
+    const uStart = src.indexOf('const users = {');
+    const uEnd   = src.indexOf('};', uStart);
+    const aRe    = /const ADMIN_USERS = \[[^\]]*\];/;
+    if (uStart < 0 || uEnd < 0 || !aRe.test(src)) {
+        throw new Error('รูปแบบไฟล์ user.js ไม่ตรงกับที่คาดไว้ จึงไม่กล้าเขียนทับ');
+    }
 
-const users = {
-${rows}
-};
-
-/* รายชื่อผู้ดูแลระบบ — เห็น Recent Projects ของผู้ใช้ทุกคน */
-const ADMIN_USERS = [${admins}];
-
-function findUserKey(username) {
-    if (!username) return null;
-    const target = String(username).trim().toLowerCase();
-    return Object.keys(users).find(k => k.toLowerCase() === target) || null;
+    src = src.slice(0, uStart) + 'const users = {' + '\n' + rows + '\n};' + src.slice(uEnd + 2);
+    src = src.replace(aRe, 'const ADMIN_USERS = [' + admins + '];');
+    return src.replace(/\/\* ={70,}/,
+        '/* สร้างจากหน้า Settings > จัดการผู้ใช้ โดย ' + SESSION.username + ' เมื่อ ' + stamp
+        + ' — ' + live.length + ' บัญชี */' + '\n' + '/* ======================================================================');
 }
 
-function validateUser(username, password) {
-    const key = findUserKey(username);
-    if (!key) return false;
-    return users[key] === password;
-}
-
-function isAdminUser(username) {
-    if (!username) return false;
-    return ADMIN_USERS.includes(String(username).trim().toLowerCase());
-}
-
-function displayNameOf(username) {
-    const key = findUserKey(username) || username || '';
-    return key.includes('@') ? key.split('@')[0] : key;
-}
-
-if (typeof window !== 'undefined') {
-    window.users = users;
-    window.validateUser = validateUser;
-    window.isAdminUser = isAdminUser;
-    window.displayNameOf = displayNameOf;
-    window.UserDB = { users, validateUser, isAdminUser, displayNameOf, ADMIN_USERS };
-}
-`;
-}
-
-function downloadUserJs() {
-    const blob = new Blob([buildUserJs()], { type: 'text/javascript;charset=utf-8' });
+async function downloadUserJs() {
+    let text;
+    try { text = await buildUserJs(); }
+    catch (e) { nuMsg(e.message, 'err'); return; }
+    const blob = new Blob([text], { type: 'text/javascript;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'user.js';
@@ -1621,7 +1629,9 @@ function downloadUserJs() {
 }
 
 async function copyUserJs() {
-    const text = buildUserJs();
+    let text;
+    try { text = await buildUserJs(); }
+    catch (e) { nuMsg(e.message, 'err'); return; }
     try {
         await navigator.clipboard.writeText(text);
         nuMsg('คัดลอกเนื้อไฟล์แล้ว วางทับใน user.js บน GitHub ได้เลย', 'ok');

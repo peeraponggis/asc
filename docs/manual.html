@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>วิธีการใช้งาน — ProInventive Solar Suite</title>
+<link rel="icon" href="img/pilogo.png?v=2" type="image/png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'] } } } }
+</script>
+<style>
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Kanit', sans-serif; }
+    .toc-link.active { background:#eff6ff; color:#1d4ed8; font-weight:600; border-left-color:#2563eb; }
+    .step-num { flex-shrink:0; width:32px; height:32px; border-radius:9px; display:flex; align-items:center;
+                justify-content:center; font-weight:700; font-size:.85rem; }
+    h2[id], h3[id] { scroll-margin-top: 20px; }
+    .kbd { font-family: ui-monospace, monospace; background:#f1f5f9; border:1px solid #cbd5e1;
+           border-bottom-width:2px; border-radius:5px; padding:1px 6px; font-size:.8em; white-space:nowrap; }
+    .btn-ref { display:inline-flex; align-items:center; gap:4px; background:#1e293b; color:#fff;
+               border-radius:6px; padding:2px 9px; font-size:.78em; font-weight:500; white-space:nowrap; }
+    ::-webkit-scrollbar { width:10px; height:10px; }
+    ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:5px; }
+    ::-webkit-scrollbar-thumb:hover { background:#94a3b8; }
+    @media print {
+        .no-print { display:none !important; }
+        main { max-width:100% !important; padding:0 !important; }
+        section { break-inside: avoid-page; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+<div class="flex min-h-screen">
+
+    <!-- ══ สารบัญ ══ -->
+    <aside class="no-print hidden lg:block w-64 shrink-0 border-r border-slate-200 bg-white">
+        <div class="sticky top-0 h-screen overflow-y-auto py-6">
+            <div class="px-5 mb-5">
+                <div class="flex items-center gap-2.5 mb-1">
+                    <img src="img/pilogo.png" alt="" class="w-8 h-8 object-contain"
+                         onerror="this.outerHTML='<div class=&quot;w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center text-sm&quot;><i class=&quot;fa-solid fa-book&quot;></i></div>'">
+                    <div class="font-bold text-slate-800 leading-tight">คู่มือการใช้งาน</div>
+                </div>
+                <p class="text-[11px] text-slate-400 pl-[42px]">ProInventive Solar Suite</p>
+            </div>
+
+            <nav id="toc" class="text-sm">
+                <a href="#overview"  class="toc-link block px-5 py-2 border-l-[3px] border-transparent hover:bg-slate-50 transition">ภาพรวมการทำงาน</a>
+                <a href="#dataflow"  class="toc-link block px-5 py-2 border-l-[3px] border-transparent hover:bg-slate-50 transition">ข้อมูลไหลอย่างไร</a>
+
+                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 1 · วิเคราะห์ค่าไฟ</div>
+                <a href="#m1-intro"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">เริ่มต้นใช้งาน</a>
+                <a href="#m1-manual" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">กรอกบิลค่าไฟเอง</a>
+                <a href="#m1-amr"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">นำเข้าไฟล์ AMR</a>
+                <a href="#m1-db0"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ส่งออก DB0</a>
+
+                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 2 · ออกแบบระบบ</div>
+                <a href="#m2-step1"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 1 · ข้อมูลและอุปกรณ์</a>
+                <a href="#m2-step2"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 2 · วางผังบนแผนที่</a>
+                <a href="#m2-step3"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 3 · งานวิศวกรรม</a>
+                <a href="#m2-step4"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 4 · บันทึกฐานข้อมูล</a>
+
+                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 3 · แบบจำลอง 3 มิติ</div>
+                <a href="#m3d-load"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">นำเข้าข้อมูล</a>
+                <a href="#m3d-height" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ความสูงและทิศหลังคา</a>
+                <a href="#m3d-sun"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ดวงอาทิตย์และเงา</a>
+                <a href="#m3d-export" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ส่งออกภาพ</a>
+
+                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 4 · วางผังอุปกรณ์</div>
+                <a href="#m4-cal"     class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 1 · ปรับเทียบผนัง</a>
+                <a href="#m4-place"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 2 · วางอุปกรณ์</a>
+                <a href="#m4-catalog" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">แคตตาล็อกอุปกรณ์</a>
+                <a href="#m4-export"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 3 · บันทึกและส่งออก</a>
+
+                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 5 · รายงาน</div>
+                <a href="#m3-import" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">นำเข้าข้อมูล</a>
+                <a href="#m3-param"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ตั้งค่าการเงิน</a>
+                <a href="#m3-run"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ประมวลผลและออก PDF</a>
+
+                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">อ้างอิง</div>
+                <a href="#troubleshoot" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ปัญหาที่พบบ่อย</a>
+                <a href="#glossary"     class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">อภิธานศัพท์</a>
+
+                <div class="px-5 pt-6 pb-8">
+                    <button onclick="window.print()" class="w-full text-xs border border-slate-300 rounded-lg py-2 hover:bg-slate-50 transition">
+                        <i class="fa-solid fa-print mr-1.5"></i> พิมพ์คู่มือ
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- ══ เนื้อหา ══ -->
+    <main class="flex-1 min-w-0">
+        <div class="max-w-3xl mx-auto px-6 sm:px-10 py-10 pb-24">
+
+            <!-- หัวเรื่อง -->
+            <header class="mb-12 pb-8 border-b border-slate-200">
+                <p class="text-blue-600 text-xs font-bold tracking-[0.2em] uppercase mb-3">คู่มือการใช้งาน</p>
+                <h1 class="text-3xl sm:text-4xl font-semibold text-slate-900 leading-snug mb-4">
+                    ออกแบบระบบโซลาร์เซลล์<br>ตั้งแต่บิลค่าไฟจนถึงรายงานเสนอลูกค้า
+                </h1>
+                <p class="text-slate-600 leading-relaxed">
+                    โปรแกรมแบ่งเป็น 3 เมนูที่ทำงานต่อกันเป็นทอด ๆ ผลลัพธ์ของเมนูก่อนหน้าคือวัตถุดิบของเมนูถัดไป
+                    คู่มือนี้ไล่ตามลำดับการใช้งานจริง เปิดค้างไว้ข้าง ๆ ระหว่างทำงานได้เลย
+                </p>
+                <div class="mt-6 flex flex-wrap gap-2">
+                    <button onclick="jumpTo('pea')"    class="no-print text-xs bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition">เริ่มที่เมนู 1 <i class="fa-solid fa-arrow-right ml-1"></i></button>
+                    <button onclick="jumpTo('asc')"    class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 2</button>
+                    <button onclick="jumpTo('model3d')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 3</button>
+                    <button onclick="jumpTo('device')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 4</button>
+                    <button onclick="jumpTo('report')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 5</button>
+                </div>
+            </header>
+
+            <!-- ═══════════ ภาพรวม ═══════════ -->
+            <section class="mb-14">
+                <h2 id="overview" class="text-xl font-bold text-slate-900 mb-4">ภาพรวมการทำงาน</h2>
+                <p class="text-slate-600 leading-relaxed mb-6">
+                    ทั้งสามเมนูอยู่บนแถบด้านบน สลับไปมาได้ตลอดเวลาโดยข้อมูลไม่หาย
+                    แต่ถ้าทำตามลำดับ 1 → 2 → 3 โปรแกรมจะเติมค่าให้อัตโนมัติเกือบทั้งหมด ไม่ต้องกรอกซ้ำ
+                </p>
+
+                <div class="space-y-3">
+                    <div class="flex gap-4 bg-white border border-slate-200 rounded-xl p-5">
+                        <div class="step-num bg-amber-100 text-amber-700">1</div>
+                        <div class="min-w-0">
+                            <h3 class="font-bold text-slate-800 mb-1">วิเคราะห์ค่าไฟฟ้า <span class="text-slate-400 font-normal text-sm">— Load Energy Profiling</span></h3>
+                            <p class="text-sm text-slate-600 leading-relaxed">
+                                ใส่บิลค่าไฟหรือไฟล์มิเตอร์ AMR เพื่อหาว่าลูกค้าใช้ไฟเท่าไร ใช้ช่วงไหนของวัน
+                                แล้วประเมินว่าควรติดตั้งกี่ kWp จึงคุ้มที่สุด
+                            </p>
+                        </div>
+                    </div>
+                    <div class="pl-9 text-slate-300"><i class="fa-solid fa-arrow-down"></i></div>
+
+                    <div class="flex gap-4 bg-white border border-slate-200 rounded-xl p-5">
+                        <div class="step-num bg-blue-100 text-blue-700">2</div>
+                        <div class="min-w-0">
+                            <h3 class="font-bold text-slate-800 mb-1">ออกแบบระบบ <span class="text-slate-400 font-normal text-sm">— System Design</span></h3>
+                            <p class="text-sm text-slate-600 leading-relaxed">
+                                วาดขอบเขตหลังคาบนแผนที่ดาวเทียม โปรแกรมจัดวางแผงให้อัตโนมัติ
+                                ตรวจ String Sizing ถอด BOM และสร้าง Single Line Diagram
+                            </p>
+                        </div>
+                    </div>
+                    <div class="pl-9 text-slate-300"><i class="fa-solid fa-arrow-down"></i></div>
+
+                    <div class="flex gap-4 bg-white border border-slate-200 rounded-xl p-5">
+                        <div class="step-num bg-green-100 text-green-700">3</div>
+                        <div class="min-w-0">
+                            <h3 class="font-bold text-slate-800 mb-1">รายงานนำเสนอ <span class="text-slate-400 font-normal text-sm">— Proposal &amp; Report</span></h3>
+                            <p class="text-sm text-slate-600 leading-relaxed">
+                                จำลองการผลิตไฟรายชั่วโมงตลอดปี คำนวณจุดคุ้มทุน IRR NPV
+                                แล้วออกรายงาน PDF พร้อมกราฟสำหรับยื่นลูกค้าหรือธนาคาร
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-5">
+                    <h4 class="font-bold text-blue-900 text-sm mb-2"><i class="fa-solid fa-lightbulb mr-1.5"></i> ทำงานถึงไหนก็หยุดได้</h4>
+                    <p class="text-sm text-blue-800 leading-relaxed">
+                        ทุกครั้งที่กดปุ่มบันทึกหรือส่งออก ระบบจะเก็บลงโปรเจกต์ให้ทันที
+                        ปิดหน้าต่างแล้วกลับมาเปิดโปรเจกต์เดิมจากหน้าแรก งานจะอยู่ครบ
+                    </p>
+                </div>
+            </section>
+
+            <!-- ═══════════ Data flow ═══════════ -->
+            <section class="mb-14">
+                <h2 id="dataflow" class="text-xl font-bold text-slate-900 mb-4">ข้อมูลไหลอย่างไร</h2>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    โปรแกรมส่งข้อมูลกันด้วยไฟล์ 4 ชุด ชื่อ DB0 ถึง DB3 เข้าใจว่าแต่ละตัวคืออะไร
+                    จะแก้ปัญหา &ldquo;ทำไมเมนูถัดไปไม่มีข้อมูล&rdquo; ได้เองทันที
+                </p>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-sm bg-white">
+                        <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                            <tr>
+                                <th class="px-5 py-3 text-left font-semibold">ชุดข้อมูล</th>
+                                <th class="px-4 py-3 text-left font-semibold">เก็บอะไร</th>
+                                <th class="px-4 py-3 text-left font-semibold">สร้างที่</th>
+                                <th class="px-5 py-3 text-left font-semibold">ใช้ต่อที่</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr><td class="px-5 py-3 font-bold text-amber-600">DB0 (e-bill)</td>
+                                <td class="px-4 py-3 text-slate-600">พฤติกรรมใช้ไฟ 24 ชั่วโมง และค่าไฟรายเดือน</td>
+                                <td class="px-4 py-3 text-slate-600">เมนู 1</td>
+                                <td class="px-5 py-3 text-slate-600">เมนู 2 และ 3</td></tr>
+                            <tr><td class="px-5 py-3 font-bold text-blue-600">DB1 (backup drawing)</td>
+                                <td class="px-4 py-3 text-slate-600">ผังแผง พิกัด จำนวนแผง ขนาด kWp</td>
+                                <td class="px-4 py-3 text-slate-600">เมนู 2 ขั้น 4</td>
+                                <td class="px-5 py-3 text-slate-600">เมนู 3 และหน้าแรก</td></tr>
+                            <tr><td class="px-5 py-3 font-bold text-indigo-600">DB2 (export design)</td>
+                                <td class="px-4 py-3 text-slate-600">พารามิเตอร์จำลอง ค่าสูญเสีย สเปกอุปกรณ์ BOM</td>
+                                <td class="px-4 py-3 text-slate-600">เมนู 2 ขั้น 4</td>
+                                <td class="px-5 py-3 text-slate-600">เมนู 3</td></tr>
+                            <tr><td class="px-5 py-3 font-bold text-green-600">DB3 (backu</td>
+                                <td class="px-4 py-3 text-slate-600">ผลจำลองรายชั่วโมงตลอดปี และผลการเงิน</td>
+                                <td class="px-4 py-3 text-slate-600">เมนู 3</td>
+                                <td class="px-5 py-3 text-slate-600">รายงาน PDF</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-5 bg-amber-50 border border-amber-200 rounded-xl p-5">
+                    <h4 class="font-bold text-amber-900 text-sm mb-2"><i class="fa-solid fa-triangle-exclamation mr-1.5"></i> ข้ามขั้นได้ แต่ต้องกรอกเอง</h4>
+                    <p class="text-sm text-amber-900 leading-relaxed">
+                        เริ่มที่เมนู 2 เลยโดยไม่ผ่านเมนู 1 ก็ทำได้ แต่กราฟพฤติกรรมใช้ไฟในรายงานจะว่าง
+                        และตัวเลขคืนทุนจะคำนวณไม่ได้ เพราะไม่รู้ว่าลูกค้าใช้ไฟช่วงไหน
+                    </p>
+                </div>
+            </section>
+
+            <hr class="my-14 border-slate-200">
+
+            <!-- ═══════════ เมนู 1 ═══════════ -->
+            <div class="flex items-center gap-3 mb-6">
+                <div class="step-num bg-amber-500 text-white">1</div>
+                <h2 class="text-2xl font-bold text-slate-900">วิเคราะห์ค่าไฟฟ้า</h2>
+            </div>
+
+            <section class="mb-12">
+                <h3 id="m1-intro" class="text-lg font-bold text-slate-800 mb-3">เริ่มต้นใช้งาน</h3>
+                <p class="text-slate-600 leading-relaxed mb-4">
+                    หน้าจอแบ่งเป็นสองส่วน ด้านบนคือการคำนวณค่าไฟตามอัตรา PEA/MEA ด้านล่างคือการประเมินขนาดระบบ
+                    เริ่มจากกรอกหัวข้อร่วมก่อน แล้วค่อยเลือกวิธีใส่ข้อมูล
+                </p>
+
+                <div class="bg-white border border-slate-200 rounded-xl p-5 mb-5">
+                    <h4 class="font-bold text-slate-800 text-sm mb-3">กรอก 3 ช่องนี้ก่อนเสมอ</h4>
+                    <ul class="text-sm text-slate-600 space-y-2.5">
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ชื่อผู้ใช้ไฟฟ้า / โครงการ</b> — ชื่อนี้จะติดไปถึงหัวรายงานในเมนู 3</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ค่า Ft</b> — ดูจากบิลค่าไฟล่าสุด เปลี่ยนทุก 4 เดือน ใส่ผิดตัวเลขคืนทุนจะเพี้ยนทั้งรายงาน</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>VAT</b> — ปกติ 7 เปลี่ยนเฉพาะกรณีลูกค้าได้รับยกเว้น</span></li>
+                    </ul>
+                </div>
+
+                <p class="text-slate-600 leading-relaxed">
+                    จากนั้นเลือกประเภทผู้ใช้ไฟจากปุ่ม 9 ปุ่ม
+                    <span class="btn-ref">1. บ้าน</span> ถึง <span class="btn-ref">9. Meter AMR / AMI</span>
+                    ให้ตรงกับที่ระบุบนบิล เพราะแต่ละประเภทใช้สูตรคิดเงินคนละแบบ
+                    ถ้าลูกค้าเป็นโรงงานที่มีมิเตอร์ AMR ให้ข้ามไปปุ่มที่ 9 ได้เลย
+                </p>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m1-manual" class="text-lg font-bold text-slate-800 mb-3">วิธีที่ 1 — กรอกจากบิลค่าไฟ</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    เหมาะกับงานบ้านและกิจการขนาดเล็กที่มีแค่บิลกระดาษ ใช้เวลาไม่ถึงนาที
+                </p>
+
+                <ol class="space-y-4">
+                    <li class="flex gap-4">
+                        <div class="step-num bg-slate-100 text-slate-600">1</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            เลือกปุ่มประเภทผู้ใช้ไฟ แล้วเลือกอัตราย่อยอีกที เช่น
+                            <b>1.1 อัตราปกติ</b> หรือ <b>1.2 อัตรา TOU</b>
+                            ถ้าบิลมีแยกช่วง Peak / Off-Peak แปลว่าเป็น TOU
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-slate-100 text-slate-600">2</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            กรอกหน่วยที่ใช้ (kWh) และค่า Demand (kW) ถ้ามี ตามที่ระบุบนบิล
+                            ระดับแรงดันให้ดูจากหัวบิลเช่นกัน มีผลกับอัตราค่าไฟโดยตรง
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-slate-100 text-slate-600">3</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            กด <span class="btn-ref">คำนวณค่าไฟฟ้า</span>
+                            ตรวจว่ายอดรวมใกล้เคียงกับบิลจริงหรือไม่ ถ้าต่างกันเกิน 5% แปลว่าเลือกอัตราผิด ให้ย้อนกลับไปแก้
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-slate-100 text-slate-600">4</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            เลื่อนลงไปช่อง <b>กระจาย % การใช้ไฟฟ้าช่วงกลางวัน</b>
+                            ใส่ว่าลูกค้าใช้ไฟช่วงกลางวันประมาณกี่เปอร์เซ็นต์ แล้วกด
+                            <span class="btn-ref">กระจาย % ลงตาราง</span>
+                            โปรแกรมจะเกลี่ยเป็นกราฟ 24 ชั่วโมงให้
+                        </p></div>
+                    </li>
+                </ol>
+
+                <div class="mt-5 bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        <b>ตัวเลขกลางวันประมาณเท่าไร</b> — โรงงานกะเดียวมักอยู่ราว 70–80%
+                        ร้านค้า/สำนักงานราว 60–70% ส่วนบ้านพักอาศัยมักต่ำกว่า 30%
+                        เพราะใช้ไฟหนักตอนกลางคืน ตัวเลขนี้มีผลมากกับความคุ้มค่า ถ้าไม่แน่ใจให้ประเมินต่ำไว้ก่อน
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m1-amr" class="text-lg font-bold text-slate-800 mb-3">วิธีที่ 2 — นำเข้าไฟล์มิเตอร์ AMR</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    แม่นกว่าวิธีแรกมาก เพราะได้ข้อมูลจริงทุก 15 นาที ใช้เมื่อลูกค้าขอไฟล์จากการไฟฟ้ามาได้
+                </p>
+
+                <ol class="space-y-4 mb-5">
+                    <li class="flex gap-4">
+                        <div class="step-num bg-slate-100 text-slate-600">1</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            ไปที่หัวข้อ <b>ข้อมูลผู้ใช้ไฟฟ้าจากไฟล์ AMR</b>
+                            เลือกไฟล์แล้วกด <span class="btn-ref">ประมวลผล (CSV)</span>
+                            หรือ <span class="btn-ref">ประมวลผล (Excel)</span> ตามชนิดไฟล์ที่ได้มา
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-slate-100 text-slate-600">2</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            ดูตาราง <b>สรุปการใช้ไฟฟ้าทั้งปี</b> ที่ขึ้นมา
+                            ตรวจว่าครบ 12 เดือนและไม่มีเดือนไหนเป็นศูนย์ผิดปกติ
+                            เดือนที่ขาดมักเกิดจากช่วงที่มิเตอร์ถูกเปลี่ยน
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-slate-100 text-slate-600">3</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            เลื่อนดูหัวข้อ <b>ประเมินกำลังผลิต Solar PV</b>
+                            โปรแกรมวิเคราะห์เฉพาะช่วง 09:00–15:00 ซึ่งเป็นช่วงที่แดดแรงพอจะผลิตไฟได้จริง
+                            แล้วเสนอขนาดติดตั้งที่แนะนำมาให้
+                        </p></div>
+                    </li>
+                </ol>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-5">
+                    <h4 class="font-bold text-blue-900 text-sm mb-2">ทำไมต้องดูแค่ 09:00–15:00</h4>
+                    <p class="text-sm text-blue-800 leading-relaxed">
+                        ไฟที่ผลิตได้แต่ไม่มีคนใช้จะไหลย้อนออกมิเตอร์ ซึ่งส่วนใหญ่ไม่ได้เงินคืน
+                        ระบบจึงควรมีขนาดไม่เกินโหลดต่ำสุดในช่วงกลางวัน
+                        ถ้าออกแบบใหญ่เกินตัวเลขนี้ ส่วนเกินจะกลายเป็นต้นทุนที่ไม่คืนทุน
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m1-db0" class="text-lg font-bold text-slate-800 mb-3">ส่งออก DB0 ก่อนไปเมนูถัดไป</h3>
+                <p class="text-slate-600 leading-relaxed mb-4">
+                    ขั้นสุดท้ายของเมนูนี้ ไปที่หัวข้อ
+                    <b>พฤติกรรมการใช้ไฟรายชั่วโมง (24h Load Profile) &amp; ส่งออก DB0</b>
+                    ตรวจกราฟให้ดูสมเหตุสมผล แล้วกด <span class="btn-ref">Export DB0 (.txt)</span>
+                </p>
+                <p class="text-slate-600 leading-relaxed mb-4">
+                    ปุ่มนี้ทำสองอย่างพร้อมกัน คือดาวน์โหลดไฟล์สำรองไว้ในเครื่อง และส่งข้อมูลเข้าโปรเจกต์ให้เมนู 2 กับ 3 ใช้ต่อ
+                    ถ้าอยากได้ไฟล์สรุปให้ลูกค้าดูด้วย กด
+                    <span class="btn-ref">📄 Export PDF</span> หรือ
+                    <span class="btn-ref">🖨️ พิมพ์รายงาน</span> เพิ่มได้
+                </p>
+                <div class="bg-red-50 border border-red-200 rounded-xl p-5">
+                    <p class="text-sm text-red-800 leading-relaxed">
+                        <b><i class="fa-solid fa-circle-exclamation mr-1"></i> ข้ามปุ่มนี้ไม่ได้</b> —
+                        กราฟบนหน้าจอสวยแค่ไหนก็ไม่ถูกส่งต่อ ถ้ายังไม่กด Export DB0
+                        อาการที่พบบ่อยคือไปถึงเมนู 3 แล้วช่อง Load Profile ว่างเปล่า
+                    </p>
+                </div>
+            </section>
+
+            <hr class="my-14 border-slate-200">
+
+            <!-- ═══════════ เมนู 2 ═══════════ -->
+            <div class="flex items-center gap-3 mb-6">
+                <div class="step-num bg-blue-600 text-white">2</div>
+                <h2 class="text-2xl font-bold text-slate-900">ออกแบบระบบ</h2>
+            </div>
+            <p class="text-slate-600 leading-relaxed mb-8">
+                เมนูนี้แบ่งเป็น 4 ขั้นตอนตามแถบไอคอนบนสุดของแถบซ้าย
+                คลิกที่หัวข้อเพื่อกางหรือหุบ ทำได้ทีละขั้น ไม่ต้องรีบ
+                ด้านขวาคือแผนที่ดาวเทียม ซูมและลากได้เหมือน Google Maps
+            </p>
+
+            <section class="mb-12">
+                <h3 id="m2-step1" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 1 · ข้อมูลโครงการและอุปกรณ์</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    ขั้นนี้คือการบอกโปรแกรมว่าจะติดที่ไหน และใช้อุปกรณ์รุ่นอะไร
+                </p>
+
+                <ol class="space-y-4 mb-5">
+                    <li class="flex gap-4">
+                        <div class="step-num bg-blue-50 text-blue-700">1</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            พิมพ์ชื่อสถานที่หรือพิกัดในช่องค้นหา แล้วกด <span class="btn-ref">ค้นหา</span>
+                            แผนที่จะเลื่อนไปที่นั่น ซูมเข้าจนเห็นหลังคาชัดก่อนทำขั้นถัดไป
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-blue-50 text-blue-700">2</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            อัปโหลดสเปกอุปกรณ์ทีละชนิด — แผง อินเวอร์เตอร์ตัวที่ 1 และ 2 แบตเตอรี่ ออปติไมเซอร์ และ EV Charger
+                            แต่ละช่องรับไฟล์ <span class="kbd">.txt</span> ที่ถอดมาจากดาต้าชีต
+                            อย่างน้อยต้องมีแผงและอินเวอร์เตอร์ตัวที่ 1 ที่เหลือใส่เฉพาะงานที่มี
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-blue-50 text-blue-700">3</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            ถ้าทำเมนู 1 มาแล้ว ให้โหลดไฟล์ DB0 เข้าช่องรับไฟล์ DB0
+                            เพื่อให้โปรแกรมรู้โหลดจริงและช่วยเตือนเมื่อออกแบบใหญ่เกินความจำเป็น
+                        </p></div>
+                    </li>
+                </ol>
+
+                <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        ปุ่ม <span class="btn-ref">Import Data</span> ด้านบนใช้เปิดงานเก่าที่เคยบันทึกเป็นไฟล์ DB1 ไว้
+                        เลือกไฟล์แล้วโปรแกรมจะคืนค่าทุกอย่างรวมถึงวาดแผงกลับบนแผนที่ให้ครบ
+                        เหมาะกับตอนแก้แบบให้ลูกค้ารอบสอง
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m2-step2" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 2 · วางผังบนแผนที่</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    ขั้นที่ใช้เวลามากที่สุด และเป็นขั้นที่ตัดสินว่าติดได้กี่แผงจริง ๆ
+                </p>
+
+                <ol class="space-y-4 mb-6">
+                    <li class="flex gap-4">
+                        <div class="step-num bg-blue-50 text-blue-700">1</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            ใช้เครื่องมือวาดรูปหลายเหลี่ยมที่มุมแผนที่ ลากตามขอบหลังคาที่จะติดตั้ง
+                            คลิกทีละมุมแล้วปิดรูปที่จุดเริ่มต้น วาดได้หลายผืนถ้าหลังคาแยกส่วน
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-blue-50 text-blue-700">2</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            ตั้ง <b>Slope</b> คือความเอียงหลังคา และ <b>Azimuth</b> คือทิศที่หลังคาหันไป
+                            ปุ่ม <span class="btn-ref">-15°</span> <span class="btn-ref">-1°</span>
+                            <span class="btn-ref">+1°</span> <span class="btn-ref">+15°</span>
+                            ใช้หมุนทิศทีละน้อยจนแนวแผงขนานกับสันหลังคาบนภาพถ่าย
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-blue-50 text-blue-700">3</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            ตั้งระยะเว้นต่าง ๆ — <b>Edge</b> คือระยะร่นจากขอบหลังคา
+                            <b>Keepout</b> คือพื้นที่ที่ติดไม่ได้เช่นช่องแสงหรือเครื่องปรับอากาศ
+                            และทางเดินแกน X กับ Y สำหรับเดินบำรุงรักษา
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-blue-50 text-blue-700">4</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            กด <span class="btn-ref">ปรับระยะ</span> แล้วดูแถบสถานะด้านล่างแผนที่
+                            ตัวเลข <b>PV</b> คือจำนวนแผงที่วางได้ <b>Capacity</b> คือขนาดรวม
+                            และ <b>DC/AC Ratio</b> คือสัดส่วนกำลังแผงต่อกำลังอินเวอร์เตอร์
+                        </p></div>
+                    </li>
+                </ol>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-5">
+                    <h4 class="font-bold text-blue-900 text-sm mb-2">DC/AC Ratio ควรอยู่เท่าไร</h4>
+                    <p class="text-sm text-blue-800 leading-relaxed mb-2">
+                        ค่าที่ใช้กันทั่วไปคือ <b>1.20 ถึง 1.40</b> โปรแกรมจะเตือนให้เองเมื่อหลุดกรอบนี้
+                    </p>
+                    <ul class="text-sm text-blue-800 space-y-1">
+                        <li>• <b>ต่ำกว่า 1.2</b> — อินเวอร์เตอร์ใหญ่เกินแผง จ่ายค่าอุปกรณ์แพงโดยไม่ได้ไฟเพิ่ม</li>
+                        <li>• <b>สูงกว่า 1.4</b> — แผงมากเกินจนอินเวอร์เตอร์รับไม่ทันตอนแดดจัด ไฟส่วนเกินหายไปเปล่า (Clipping)</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl p-5">
+                    <h4 class="font-bold text-slate-800 text-sm mb-3">เครื่องมือเสริมในขั้นนี้</h4>
+                    <ul class="text-sm text-slate-600 space-y-2.5">
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><span class="btn-ref">เพิ่มรูป</span> วางภาพถ่ายโดรนทับแผนที่ ใช้เมื่อภาพดาวเทียมเก่าหรือมัวเกินไป</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><span class="btn-ref">บันทึกรูป(Capture Proj.)</span> จับภาพผังปัจจุบันไว้แนบในรายงาน</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><span class="btn-ref">ล็อก (Save)</span> ตรึงรูปหลังคาไม่ให้ขยับโดยไม่ตั้งใจ ส่วน <span class="btn-ref">ลบ (Del)</span> ลบผืนที่เลือกอยู่</span></li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m2-step3" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 3 · งานวิศวกรรมและพารามิเตอร์จำลอง</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    ขั้นนี้เปลี่ยนผังบนแผนที่ให้เป็นแบบที่หน้างานเอาไปติดตั้งได้จริง
+                </p>
+
+                <div class="space-y-4 mb-6">
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">ระยะสายและอุปกรณ์ประกอบ</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            กรอกความยาวสาย DC สาย AC สายกราวด์ และระยะจากหลังคาถึงตู้ MDB
+                            ตัวเลขเหล่านี้ไปโผล่สองที่ คือคำนวณแรงดันตก และคิดราคาสายใน BOM
+                            วัดจากหน้างานจริงจะแม่นที่สุด ถ้ายังไม่ได้ไปดูให้ประมาณเผื่อไว้
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">ค่าสูญเสียในระบบ</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed mb-2">
+                            ทุกช่องมีค่าตั้งต้นตามมาตรฐานอยู่แล้ว แก้เฉพาะเมื่อมีเหตุผลรองรับ
+                        </p>
+                        <ul class="text-sm text-slate-600 space-y-1.5">
+                            <li>• <b>Soiling Loss</b> ฝุ่นเกาะ 1–5% — ใกล้ถนนหรือโรงงานให้ใช้ค่าสูง</li>
+                            <li>• <b>LID Loss</b> การเสื่อมช่วงแรก 1–3%</li>
+                            <li>• <b>Wiring Ohmic Loss</b> สูญเสียในสาย 1–2%</li>
+                            <li>• <b>Albedo</b> ค่าสะท้อนแสงจากพื้น ดาดฟ้าปูนสีอ่อนสูงกว่าพื้นหญ้า</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h4 class="font-bold text-slate-800 mb-3">ปุ่มสร้างเอกสารทางเทคนิค</h4>
+                <ol class="space-y-4">
+                    <li class="flex gap-4">
+                        <div class="step-num bg-indigo-50 text-indigo-700">1</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            <span class="btn-ref">ตรวจสอบ I-V Curve &amp; ประสิทธิภาพแผง</span>
+                            ดูว่าแรงดันสตริงยังอยู่ในกรอบที่อินเวอร์เตอร์รับได้ไหม ทั้งวันที่ร้อนสุดและเย็นสุด
+                            ถ้าหลุดกรอบต้องกลับไปแก้จำนวนแผงต่อสตริง
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-indigo-50 text-indigo-700">2</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            <span class="btn-ref">แสดงจำลองการเดินสาย DC (Wiring Diagram)</span>
+                            วาดเส้นสายบนผังจริงให้เห็นว่าแต่ละสตริงวิ่งอย่างไร กดซ้ำเพื่อซ่อน
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-indigo-50 text-indigo-700">3</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            <span class="btn-ref">สร้าง Single Line Diagram (SLD)</span>
+                            ออกผังเส้นเดียวสำหรับยื่นขออนุญาตการไฟฟ้า
+                            ดาวน์โหลดเป็นไฟล์ SVG ได้จากปุ่มในหน้าต่างที่เปิดขึ้นมา
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-indigo-50 text-indigo-700">4</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            <span class="btn-ref">คำนวณตารางวัสดุอุปกรณ์ (Generate BOM)</span>
+                            ถอดของทั้งระบบเป็นรายการ ทั้งแผง อินเวอร์เตอร์ สาย เบรกเกอร์ ราง และอุปกรณ์ยึด
+                            พร้อมจำนวนสำหรับทำใบเสนอราคา
+                        </p></div>
+                    </li>
+                </ol>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m2-step4" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 4 · ตรวจสอบและบันทึกฐานข้อมูล</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    ขั้นสุดท้าย ตรวจสรุปทั้งหมดอีกรอบแล้วบันทึก
+                </p>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    กด <span class="btn-ref">บันทึก + ส่งออก DB2</span>
+                    ปุ่มเดียวนี้บันทึกทั้ง DB1 และ DB2 เข้าโปรเจกต์พร้อมกัน
+                    หลังกดแล้วชื่อโปรเจกต์กับตัวเลข kWp จะไปโผล่ที่การ์ดในหน้าแรกทันที
+                    ส่วน <span class="btn-ref">Export DB2</span> ใช้เมื่ออยากได้ไฟล์แยกไว้ส่งให้คนอื่น
+                </p>
+                <div class="bg-green-50 border border-green-200 rounded-xl p-5">
+                    <p class="text-sm text-green-900 leading-relaxed">
+                        <b><i class="fa-solid fa-circle-check mr-1"></i> เช็กก่อนกดบันทึก</b> —
+                        จำนวนแผงตรงกับที่คุยกับลูกค้าไหม DC/AC Ratio อยู่ในกรอบ 1.2–1.4 หรือยัง
+                        และ BOM ถูกคำนวณแล้วหรือยัง ถ้าครบสามข้อนี้กดได้เลย
+                    </p>
+                </div>
+            </section>
+
+            <hr class="my-14 border-slate-200">
+
+            <hr class="my-14 border-slate-200">
+
+            <!-- ═══════════ เมนู 3 · 3D Model ═══════════ -->
+            <div class="flex items-center gap-3 mb-6">
+                <div class="step-num bg-indigo-600 text-white">3</div>
+                <h2 class="text-2xl font-bold text-slate-900">แบบจำลอง 3 มิติ</h2>
+            </div>
+            <p class="text-slate-600 leading-relaxed mb-8">
+                เมนูนี้เปลี่ยนผังแผงที่ออกแบบไว้ในเมนู 2 ให้เป็นภาพอาคารสามมิติที่ลูกค้าดูแล้วเข้าใจทันที
+                พร้อมเงาตกกระทบตามตำแหน่งดวงอาทิตย์จริง และส่งออกเป็นภาพความละเอียดสูงไปใส่ในข้อเสนอได้
+            </p>
+
+            <section class="mb-12">
+                <h3 id="m3d-load" class="text-lg font-bold text-slate-800 mb-3">นำเข้าข้อมูล</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    ข้อมูลรูปทรงทั้งหมดมาจากไฟล์ DB2 ที่บันทึกไว้ตอนจบเมนู 2
+                </p>
+                <ol class="space-y-4 mb-5">
+                    <li class="flex gap-4">
+                        <div class="step-num bg-indigo-50 text-indigo-700">1</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            ลากไฟล์ <span class="kbd">DB2</span> มาวางกลางหน้าจอ หรือกด <span class="btn-ref">เลือกไฟล์</span>
+                            ถ้าลาก <span class="kbd">DB3</span> มาพร้อมกันด้วย จะได้ตัวเลขผลผลิตต่อปีและภาพดาวเทียมปูพื้นเพิ่มมาให้
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-indigo-50 text-indigo-700">2</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            อาคาร หลังคา และแผงทุกใบจะถูกสร้างขึ้นตามผังที่ออกแบบไว้ทันที
+                            รวมถึงกล่องสิ่งกีดขวางและตำแหน่งตู้ MDB ถ้าเคยวาดไว้
+                        </p></div>
+                    </li>
+                </ol>
+                <div class="bg-amber-50 border-l-4 border-amber-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        หน้านี้ต้องเปิดผ่าน <span class="kbd">http://</span> เท่านั้น
+                        ดับเบิลคลิกไฟล์ตรง ๆ จะใช้ไม่ได้ เพราะไลบรารีสามมิติโหลดแบบ ES Module
+                        ถ้าเปิดผิดทางจะมีกล่องแดงขึ้นบอกวิธีแก้พร้อมคำสั่งให้คัดลอก
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m3d-height" class="text-lg font-bold text-slate-800 mb-3">ปรับความสูงและทิศหลังคา</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    ค่าตั้งต้นดึงมาจาก DB2 ให้แล้ว แก้ตรงนี้ได้โดยไม่กระทบไฟล์ต้นทาง
+                    ค่าที่แก้จะถูกจำไว้ในเครื่องแยกตามชื่อโครงการ
+                </p>
+                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed mb-5">
+                    <li><b class="text-slate-800">ความสูงชายคา</b> — ระดับที่คนปีนขึ้นไปเหยียบหลังคา</li>
+                    <li><b class="text-slate-800">ชายคาอีกปลายหนึ่ง</b> — ใส่ต่างจากปลายแรกเมื่ออาคารทรงโมเดิร์นที่ชายคาสองข้างไม่เท่ากัน ถ้าเท่ากันคือหลังคาลาดทางเดียวตามปกติ</li>
+                    <li><b class="text-slate-800">ความสูงสันหลังคา</b> — แก้ค่านี้แล้วความชันจะคำนวณให้เอง และกลับกัน</li>
+                    <li><b class="text-slate-800">ปุ่ม ⟳180°</b> — ใช้เมื่อหลังคาเอียงกลับด้าน เพราะการหาทิศอัตโนมัติมีโอกาสได้ทิศตรงข้าม ให้เทียบกับภาพถ่ายดาวเทียมแล้วกดสลับ</li>
+                    <li><b class="text-slate-800">ระยะยกแผงจากหลังคา</b> — ความสูงของรางที่ยกแผงขึ้นจากผิวหลังคา</li>
+                </ul>
+                <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        ถ้าเห็นคำเตือนว่าความสูง 10 เมตรเป็นค่าตั้งต้น แปลว่าตอนออกแบบยังไม่ได้กรอกความสูงจริง
+                        กลับไปกรอกที่เมนู 2 แล้วบันทึก DB2 ใหม่จะได้ภาพที่ถูกต้องกว่า
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m3d-sun" class="text-lg font-bold text-slate-800 mb-3">ดวงอาทิตย์และเงา</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    เลื่อนแถบเดือนและเวลา ตำแหน่งดวงอาทิตย์คำนวณจากพิกัดจริงของโครงการ
+                    ใช้ตอบคำถามลูกค้าว่าเงาจากส่วนที่สูงกว่าจะบังแผงตอนไหนบ้าง
+                </p>
+                <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        ช่วงที่ควรลองคือเดือนธันวาคมตอนเช้าและบ่ายแก่ ๆ เพราะดวงอาทิตย์อยู่ต่ำที่สุดของปี
+                        เงาจะยาวที่สุด ถ้าช่วงนั้นไม่มีเงาบังก็วางใจได้ทั้งปี
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m3d-export" class="text-lg font-bold text-slate-800 mb-3">ส่งออกภาพ</h3>
+                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed mb-5">
+                    <li>เลือกมุมกล้องจากปุ่มสำเร็จรูป 6 แบบ หรือหมุนเองด้วยเมาส์</li>
+                    <li><span class="btn-ref">ส่งออกมุมนี้</span> ได้ภาพเดียว · <span class="btn-ref">ชุด 4 มุม</span> ได้ครบสี่ด้านรวดเดียว</li>
+                    <li>ติ๊ก <b class="text-slate-800">พื้นหลังโปร่งใส</b> เมื่อจะเอาไปแปะใน Word หรือ PowerPoint</li>
+                    <li>ภาพดาวเทียมปูพื้นต้องปรับขนาดและมุมหมุนด้วยตาเอง เพราะภาพใน DB3 เป็นภาพจับหน้าจอที่ไม่มีขอบเขตพิกัดติดมาด้วย</li>
+                </ul>
+            </section>
+
+            <hr class="my-14 border-slate-200">
+
+            <!-- ═══════════ เมนู 4 · Device Location ═══════════ -->
+            <div class="flex items-center gap-3 mb-6">
+                <div class="step-num bg-amber-500 text-white">4</div>
+                <h2 class="text-2xl font-bold text-slate-900">วางผังอุปกรณ์บนภาพถ่าย</h2>
+            </div>
+            <p class="text-slate-600 leading-relaxed mb-8">
+                เมนูนี้ใช้ตอนสำรวจหน้างาน ถ่ายภาพผนังห้องไฟฟ้าแล้ววางอินเวอร์เตอร์ ตู้ MDB แบตเตอรี่ และรางเดินสาย
+                ลงไปตามขนาดจริง เพื่อดูว่าของทั้งหมดลงตัวไหมก่อนสั่งซื้อ ทำงานแยกจากเมนูอื่น ไม่ต้องมีไฟล์ DB
+            </p>
+
+            <section class="mb-12">
+                <h3 id="m4-cal" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 1 · ปรับเทียบผนัง</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    ขั้นนี้สำคัญที่สุด ถ้าข้ามไปขนาดอุปกรณ์ทั้งหมดจะผิด
+                </p>
+                <ol class="space-y-4 mb-5">
+                    <li class="flex gap-4">
+                        <div class="step-num bg-amber-50 text-amber-700">1</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            กด <span class="btn-ref">📷 ถ่ายภาพ</span> หรือเลือกภาพจากคลัง
+                            บนคอมพิวเตอร์ลากไฟล์มาวางหรือกด <span class="kbd">Ctrl</span>+<span class="kbd">V</span> ก็ได้
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-amber-50 text-amber-700">2</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            กด <span class="btn-ref">📐 ปรับเทียบผนัง</span> แล้วแตะมุมผนังทีละมุมตามลำดับ
+                            ซ้ายล่าง ขวาล่าง ขวาบน ซ้ายบน
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-amber-50 text-amber-700">3</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            กรอกความกว้างและความสูงจริงของผนังที่ล้อมด้วยสี่มุมนั้น แล้วกด <span class="btn-ref">ยืนยัน</span>
+                        </p></div>
+                    </li>
+                </ol>
+                <div class="bg-amber-50 border-l-4 border-amber-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        ต้องใช้สี่มุม ไม่ใช่สองจุด เพราะห้องไฟฟ้ามักแคบจนต้องถ่ายเฉียง
+                        การวัดระยะสองจุดจะถูกต้องเฉพาะเมื่อถ่ายตั้งฉากพอดีเท่านั้น
+                        ภาพที่เอียงเพียงเล็กน้อยก็ทำให้ขนาดอุปกรณ์ผิดได้เกือบสองในสิบส่วน
+                        แต่ดูเหมือนถูกต้องจนไม่มีใครสังเกต
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m4-place" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 2 · วางอุปกรณ์</h3>
+                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed mb-5">
+                    <li>กดชื่ออุปกรณ์ที่แถบล่างเพื่อวางลงกลางผนัง แล้วลากไปยังตำแหน่งที่ต้องการ</li>
+                    <li>แถบด้านล่างบอกระยะห่างจากขอบซ้ายและความสูงจากพื้นของชิ้นที่เลือกอยู่</li>
+                    <li>ปุ่มลูกศรสี่ทิศขยับทีละ 5 เซนติเมตร ใช้ตอนต้องการความละเอียด</li>
+                    <li><span class="btn-ref">⟳ หมุน 90°</span> สำหรับของที่ติดตั้งได้สองแนว · รางเดินสายมีแถบปรับความยาว</li>
+                    <li>กด <span class="btn-ref">⬓ ผังพื้น</span> ดูมุมมองจากด้านบน ตรวจว่าอุปกรณ์ยื่นออกจากผนังมากแค่ไหน ชนทางเดินหรือเปล่า</li>
+                </ul>
+                <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        ระบบตรวจให้อัตโนมัติสี่อย่าง — อุปกรณ์ทับกัน ระยะเว้นว่างรอบตัวไม่พอตามคู่มือผู้ผลิต
+                        อุปกรณ์ล้นออกนอกขอบผนัง และติดตั้งต่ำกว่า 15 เซนติเมตรจากพื้น
+                        แถบเตือนสีแดงคือต้องแก้ สีส้มคือควรทบทวน
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m4-catalog" class="text-lg font-bold text-slate-800 mb-3">แคตตาล็อกอุปกรณ์</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    กด <span class="btn-ref">✎ แคตตาล็อก</span> เพื่อเพิ่มหรือแก้อุปกรณ์ของคุณเอง
+                    กรอกกว้าง สูง ลึก และระยะเว้นว่างรอบตัวตามคู่มือผู้ผลิต
+                    ค่าที่กรอกถูกจำไว้ในเครื่อง ใช้กับงานถัดไปได้เลยไม่ต้องกรอกซ้ำ
+                </p>
+                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed">
+                    <li>อัปโหลดภาพจริงของอุปกรณ์ได้ ภาพจะถูกวางทับกล่องตามขนาดที่กรอก ทำให้ภาพผังดูเหมือนของจริง</li>
+                    <li>ภาพถูกย่อขนาดอัตโนมัติก่อนเก็บ เพื่อไม่ให้ไฟล์ผังใหญ่เกินไป</li>
+                    <li>ความลึกไม่แสดงในมุมมองผนัง แต่ใช้ในผังพื้นและใช้ตรวจระยะยื่น</li>
+                </ul>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m4-export" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 3 · บันทึกและส่งออก</h3>
+                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed mb-5">
+                    <li>งานถูกบันทึกลงเครื่องอัตโนมัติทุกครั้งที่แก้ เปิดหน้าใหม่จะถามว่าจะทำงานต่อไหม</li>
+                    <li><span class="btn-ref">💾 เซฟไฟล์ผัง</span> ได้ไฟล์ <span class="kbd">.json</span> สำหรับส่งต่อหรือเก็บถาวร</li>
+                    <li><span class="btn-ref">▭ มุมตรง</span> แปลงภาพถ่ายเฉียงให้เป็นภาพมองตรงเหมือนแบบก่อสร้าง</li>
+                    <li><span class="btn-ref">⬇ บันทึกภาพ</span> ได้ไฟล์ PNG พร้อมชื่อและขนาดของอุปกรณ์ทุกชิ้น
+                        ถ้าแปลงเป็นมุมตรงไว้แล้วจะมีเส้นบอกขนาดแบบแบบก่อสร้างให้ด้วย</li>
+                </ul>
+                <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        แถบซูมด้านบนภาพมีปุ่ม พอดีจอ ย่อ ขยาย และ 1:1
+                        กด <span class="kbd">Ctrl</span> ค้างแล้วหมุนลูกกลิ้งเมาส์ก็ซูมได้เหมือนกัน
+                        ลากอุปกรณ์ได้แม่นเท่าเดิมทุกระดับการซูม
+                    </p>
+                </div>
+            </section>
+
+            <!-- ═══════════ เมนู 5 ═══════════ -->
+            <div class="flex items-center gap-3 mb-6">
+                <div class="step-num bg-green-600 text-white">5</div>
+                <h2 class="text-2xl font-bold text-slate-900">รายงานนำเสนอ</h2>
+            </div>
+            <p class="text-slate-600 leading-relaxed mb-8">
+                เมนูนี้รวมทุกอย่างที่ทำมาแล้วจำลองการผลิตไฟทีละชั่วโมงตลอดทั้งปี
+                ผลลัพธ์คือรายงาน PDF ที่มีได้ถึง 19 หัวข้อ เลือกเปิดปิดได้ตามคนอ่าน
+            </p>
+
+            <section class="mb-12">
+                <h3 id="m3-import" class="text-lg font-bold text-slate-800 mb-3">นำเข้าข้อมูลจากเมนูก่อนหน้า</h3>
+                <p class="text-slate-600 leading-relaxed mb-4">
+                    ถ้าทำครบตามลำดับมา ข้อมูลจะถูกเติมให้เองแล้ว
+                    ให้เลื่อนดูหัวข้อ <b>ข้อมูลโครงการ &amp; พารามิเตอร์เชิงพื้นที่</b> และ
+                    <b>ข้อมูลอุปกรณ์</b> ว่าตัวเลขขึ้นครบหรือไม่
+                </p>
+                <p class="text-slate-600 leading-relaxed mb-4">
+                    ถ้าช่องไหนว่าง ให้ใช้ปุ่ม <span class="btn-ref">Import &gt;</span> ที่แถบซ้าย
+                    เลือกไฟล์ DB0 DB1 หรือ DB2 ที่เคยดาวน์โหลดไว้ นำเข้าเองได้
+                    เมื่อสำเร็จจะขึ้นข้อความ <b>ระบบกวาดข้อมูลสำเร็จ</b>
+                </p>
+                <p class="text-slate-600 leading-relaxed">
+                    ที่หัวข้อ <b>วัตถุประสงค์การวิเคราะห์</b> ให้เลือกโหมดจำลองให้ตรงกับงาน
+                    เช่นระบบขายไฟคืน ระบบใช้เองล้วน หรือระบบที่มีแบตเตอรี่
+                    เพราะแต่ละโหมดคิดผลตอบแทนคนละแบบ
+                </p>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m3-param" class="text-lg font-bold text-slate-800 mb-3">ตั้งค่าพารามิเตอร์การเงิน</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    ส่วนที่ต้องใส่เองทุกครั้ง เพราะเปลี่ยนไปตามดีลของลูกค้าแต่ละราย
+                    เลื่อนไปที่หัวข้อ <b>พารามิเตอร์การเงิน (Financial Parameters)</b>
+                </p>
+                <div class="bg-white border border-slate-200 rounded-xl p-5 mb-5">
+                    <ul class="text-sm text-slate-600 space-y-2.5">
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>เงินลงทุนรวม</b> — ดึงจาก BOM ในเมนู 2 มาบวกค่าแรงและค่าดำเนินการ</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ค่าไฟต่อหน่วย</b> — ใช้ค่าเฉลี่ยจากบิลจริงในเมนู 1 อย่าใช้อัตราหน้าเว็บการไฟฟ้าดิบ ๆ</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>อัตราค่าไฟที่ปรับขึ้นต่อปี</b> — ค่าที่ใช้กันทั่วไปคือ 2–3%</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ค่าบำรุงรักษารายปี</b> — มักคิดเป็นเปอร์เซ็นต์ของเงินลงทุน</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>อัตราคิดลด</b> — ใช้เมื่อคำนวณ NPV ปกติอิงดอกเบี้ยเงินกู้ของโครงการ</span></li>
+                    </ul>
+                </div>
+                <p class="text-slate-600 leading-relaxed">
+                    หากปรับจนงง กด <span class="btn-ref">🔄 แสดงค่าเริ่มต้น</span> เพื่อกลับไปค่ามาตรฐานได้ทุกเมื่อ
+                </p>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m3-run" class="text-lg font-bold text-slate-800 mb-3">ประมวลผลและออกรายงาน</h3>
+                <ol class="space-y-4 mb-6">
+                    <li class="flex gap-4">
+                        <div class="step-num bg-green-50 text-green-700">1</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            ไปที่หัวข้อ <b>เลือกข้อมูลที่จะแสดงในรายงาน</b> ติ๊กเลือกจาก 19 หัวข้อ
+                            หรือกด <span class="btn-ref">☑️ เลือกทั้งหมด</span> ถ้าต้องการครบทุกอย่าง
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-green-50 text-green-700">2</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            กด <span class="btn-ref">▶ ประมวลผลและสร้างรายงาน (Run Simulation)</span>
+                            โปรแกรมจะคำนวณ 8,760 ชั่วโมงของทั้งปี ใช้เวลาสักครู่ อย่าเพิ่งปิดหน้าต่าง
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-green-50 text-green-700">3</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            ตรวจผลที่ขึ้นมา โดยเฉพาะ <b>Performance Ratio</b> ควรอยู่ราว 75–85%
+                            ถ้าต่ำกว่านี้มากแปลว่ามีค่าสูญเสียตัวใดตัวหนึ่งตั้งไว้สูงผิดปกติ ให้ย้อนไปดูเมนู 2 ขั้น 3
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-green-50 text-green-700">4</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            กด <span class="btn-ref">Export PDF</span> เพื่อออกรายงานฉบับสมบูรณ์
+                            และกด <span class="btn-ref">Export DB3</span> เพื่อเก็บผลจำลองไว้เปิดซ้ำภายหลัง
+                        </p></div>
+                    </li>
+                </ol>
+
+                <div class="bg-white border border-slate-200 rounded-xl p-5">
+                    <h4 class="font-bold text-slate-800 text-sm mb-3">เลือกหัวข้อให้เหมาะกับคนอ่าน</h4>
+                    <ul class="text-sm text-slate-600 space-y-2.5">
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ลูกค้าทั่วไป</b> — เน้นผลตอบแทน กระแสเงินสดสะสม ผลกระทบสิ่งแวดล้อม และผังแผง ตัดหัวข้อวิศวกรรมลึกออก</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ธนาคารหรือผู้ลงทุน</b> — ต้องมี Bankability &amp; Uncertainty และ Probability Distribution P50/P90 ด้วย</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ผู้ตรวจแบบ</b> — เน้น Single Line Diagram, BOM, I-V Curve และ Combiner Box</span></li>
+                    </ul>
+                </div>
+            </section>
+
+            <hr class="my-14 border-slate-200">
+
+            <!-- ═══════════ ปัญหาที่พบบ่อย ═══════════ -->
+            <section class="mb-14">
+                <h2 id="troubleshoot" class="text-xl font-bold text-slate-900 mb-5">ปัญหาที่พบบ่อย</h2>
+                <div class="space-y-3">
+                    <details class="bg-white border border-slate-200 rounded-xl overflow-hidden group">
+                        <summary class="px-5 py-4 cursor-pointer font-semibold text-slate-800 text-sm hover:bg-slate-50 flex items-center justify-between">
+                            <span>เมนู 3 ไม่มีข้อมูลเลย ทั้งที่ทำเมนู 1 กับ 2 มาแล้ว</span>
+                            <i class="fa-solid fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
+                        </summary>
+                        <div class="px-5 pb-5 text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-4">
+                            สาเหตุเกือบทั้งหมดคือยังไม่ได้กดปุ่มส่งออก การเปิดหน้าจอทิ้งไว้ไม่ได้บันทึกอะไร
+                            กลับไปเมนู 1 กด <span class="btn-ref">Export DB0 (.txt)</span> และเมนู 2 ขั้น 4
+                            กด <span class="btn-ref">บันทึก + ส่งออก DB2</span> แล้วค่อยกลับมาเมนู 3
+                        </div>
+                    </details>
+
+                    <details class="bg-white border border-slate-200 rounded-xl overflow-hidden group">
+                        <summary class="px-5 py-4 cursor-pointer font-semibold text-slate-800 text-sm hover:bg-slate-50 flex items-center justify-between">
+                            <span>แผงไม่ขึ้นบนแผนที่ทั้งที่วาดหลังคาแล้ว</span>
+                            <i class="fa-solid fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
+                        </summary>
+                        <div class="px-5 pb-5 text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-4">
+                            ไล่ดูสามข้อนี้ตามลำดับ — อัปโหลดไฟล์สเปกแผงแล้วหรือยัง เพราะโปรแกรมต้องรู้ขนาดแผงก่อนถึงจะวางได้ /
+                            ระยะ Edge กับ Keepout ตั้งไว้กว้างเกินจนไม่เหลือที่หรือเปล่า /
+                            กด <span class="btn-ref">ปรับระยะ</span> แล้วหรือยัง เพราะการวางแผงไม่ได้เกิดขึ้นเองอัตโนมัติ
+                        </div>
+                    </details>
+
+                    <details class="bg-white border border-slate-200 rounded-xl overflow-hidden group">
+                        <summary class="px-5 py-4 cursor-pointer font-semibold text-slate-800 text-sm hover:bg-slate-50 flex items-center justify-between">
+                            <span>DC/AC Ratio ขึ้นเตือนสีแดงตลอด</span>
+                            <i class="fa-solid fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
+                        </summary>
+                        <div class="px-5 pb-5 text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-4">
+                            แก้ได้สองทาง คือลดจำนวนแผงลงโดยขยายระยะ Edge หรือทางเดิน
+                            หรือเปลี่ยนไปใช้อินเวอร์เตอร์รุ่นที่ใหญ่ขึ้น
+                            ถ้าหลังคามีที่จำกัดจริง ๆ การปล่อยให้เกิน 1.4 เล็กน้อยยังยอมรับได้
+                            แต่ต้องบอกลูกค้าว่าจะเสียไฟบางส่วนตอนแดดจัด
+                        </div>
+                    </details>
+
+                    <details class="bg-white border border-slate-200 rounded-xl overflow-hidden group">
+                        <summary class="px-5 py-4 cursor-pointer font-semibold text-slate-800 text-sm hover:bg-slate-50 flex items-center justify-between">
+                            <span>ยอดค่าไฟที่โปรแกรมคำนวณไม่ตรงกับบิลจริง</span>
+                            <i class="fa-solid fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
+                        </summary>
+                        <div class="px-5 pb-5 text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-4">
+                            เช็กสามอย่าง — ค่า Ft ตรงกับเดือนที่ออกบิลไหม เพราะเปลี่ยนทุก 4 เดือน /
+                            เลือกประเภทผู้ใช้ไฟและอัตราย่อยถูกต้องหรือไม่ ดูที่หัวบิล /
+                            ระดับแรงดันที่เลือกตรงกับที่ระบุบนบิลหรือเปล่า สามข้อนี้ทำให้ยอดเพี้ยนได้มาก
+                        </div>
+                    </details>
+
+                    <details class="bg-white border border-slate-200 rounded-xl overflow-hidden group">
+                        <summary class="px-5 py-4 cursor-pointer font-semibold text-slate-800 text-sm hover:bg-slate-50 flex items-center justify-between">
+                            <span>เปิดโปรเจกต์เก่าแล้วข้อมูลหาย</span>
+                            <i class="fa-solid fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
+                        </summary>
+                        <div class="px-5 pb-5 text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-4">
+                            ข้อมูลเก็บอยู่ในเบราว์เซอร์ของเครื่องนั้น ไม่ได้อยู่บนคลาวด์
+                            ถ้าล้างประวัติเบราว์เซอร์ เปลี่ยนเครื่อง หรือเปิดในโหมดไม่ระบุตัวตน จะไม่เห็นงานเดิม
+                            ป้องกันด้วยการเข้าหน้าแรก ไปที่ Settings แล้วกด
+                            <span class="btn-ref">ดาวน์โหลดไฟล์สำรอง</span> ไว้เป็นระยะ
+                        </div>
+                    </details>
+
+                    <details class="bg-white border border-slate-200 rounded-xl overflow-hidden group">
+                        <summary class="px-5 py-4 cursor-pointer font-semibold text-slate-800 text-sm hover:bg-slate-50 flex items-center justify-between">
+                            <span>Performance Ratio ต่ำผิดปกติ</span>
+                            <i class="fa-solid fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
+                        </summary>
+                        <div class="px-5 pb-5 text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-4">
+                            ค่าปกติอยู่ราว 75–85% ถ้าต่ำกว่านั้นมาก ให้กลับไปเมนู 2 ขั้น 3
+                            แล้วดูค่าสูญเสียแต่ละตัว มักเป็นเพราะพิมพ์ตัวเลข Soiling หรือ Wiring Loss เกินจริง
+                            อีกสาเหตุคือใส่ความยาวสายไว้ยาวเกินไปจนแรงดันตกมาก
+                        </div>
+                    </details>
+                </div>
+            </section>
+
+            <!-- ═══════════ อภิธานศัพท์ ═══════════ -->
+            <section class="mb-10">
+                <h2 id="glossary" class="text-xl font-bold text-slate-900 mb-5">อภิธานศัพท์</h2>
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-sm bg-white">
+                        <tbody class="divide-y divide-slate-100">
+                            <tr><td class="px-5 py-3 font-bold text-slate-800 w-44 align-top">kWp</td><td class="px-4 py-3 text-slate-600">กำลังผลิตสูงสุดของแผงรวมกันในสภาวะมาตรฐาน ใช้บอกขนาดระบบ</td></tr>
+                            <tr><td class="px-5 py-3 font-bold text-slate-800 align-top">DC/AC Ratio</td><td class="px-4 py-3 text-slate-600">กำลังแผงหารด้วยกำลังอินเวอร์เตอร์ ค่าที่ดีคือ 1.20–1.40</td></tr>
+                            <tr><td class="px-5 py-3 font-bold text-slate-800 align-top">String</td><td class="px-4 py-3 text-slate-600">ชุดแผงที่ต่ออนุกรมกันเข้าอินเวอร์เตอร์หนึ่งช่อง จำนวนแผงต่อสตริงกำหนดแรงดันรวม</td></tr>
+                            <tr><td class="px-5 py-3 font-bold text-slate-800 align-top">Clipping</td><td class="px-4 py-3 text-slate-600">ไฟที่แผงผลิตเกินกำลังอินเวอร์เตอร์จนถูกตัดทิ้ง เกิดตอนแดดจัด</td></tr>
+                            <tr><td class="px-5 py-3 font-bold text-slate-800 align-top">Azimuth</td><td class="px-4 py-3 text-slate-600">ทิศที่แผงหันไป ในไทยหันทิศใต้ได้ผลผลิตสูงสุด</td></tr>
+                            <tr><td class="px-5 py-3 font-bold text-slate-800 align-top">Slope / Tilt</td><td class="px-4 py-3 text-slate-600">มุมเอียงของแผงจากแนวราบ ในไทยนิยม 10–15 องศา</td></tr>
+                            <tr><td class="px-5 py-3 font-bold text-slate-800 align-top">Albedo</td><td class="px-4 py-3 text-slate-600">ค่าสะท้อนแสงจากพื้นด้านล่างแผง พื้นสีอ่อนสะท้อนได้มากกว่า</td></tr>
+                            <tr><td class="px-5 py-3 font-bold text-slate-800 align-top">Performance Ratio</td><td class="px-4 py-3 text-slate-600">สัดส่วนไฟที่ผลิตได้จริงต่อค่าตามทฤษฎี ยิ่งสูงยิ่งดี ปกติ 75–85%</td></tr>
+                            <tr><td class="px-5 py-3 font-bold text-slate-800 align-top">P50 / P90</td><td class="px-4 py-3 text-slate-600">ระดับความเชื่อมั่นของผลผลิต P90 คือค่าที่มีโอกาส 90% ว่าจะทำได้ไม่ต่ำกว่านี้ ธนาคารมักดูตัวนี้</td></tr>
+                            <tr><td class="px-5 py-3 font-bold text-slate-800 align-top">BOM</td><td class="px-4 py-3 text-slate-600">รายการวัสดุอุปกรณ์ทั้งระบบพร้อมจำนวน ใช้ทำใบเสนอราคาและสั่งของ</td></tr>
+                            <tr><td class="px-5 py-3 font-bold text-slate-800 align-top">SLD</td><td class="px-4 py-3 text-slate-600">ผังไฟฟ้าเส้นเดียว เอกสารที่ต้องยื่นตอนขออนุญาตเชื่อมต่อกับการไฟฟ้า</td></tr>
+                            <tr><td class="px-5 py-3 font-bold text-slate-800 align-top">TOU</td><td class="px-4 py-3 text-slate-600">อัตราค่าไฟที่คิดต่างกันตามช่วงเวลา กลางวันแพงกว่ากลางคืน โซลาร์คุ้มกว่าในอัตรานี้</td></tr>
+                            <tr><td class="px-5 py-3 font-bold text-slate-800 align-top">AMR</td><td class="px-4 py-3 text-slate-600">มิเตอร์ที่บันทึกการใช้ไฟทุก 15 นาที ขอไฟล์ย้อนหลังจากการไฟฟ้าได้</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <footer class="pt-8 border-t border-slate-200 text-xs text-slate-400">
+                คู่มือนี้อ้างอิงจากปุ่มและหัวข้อที่มีอยู่จริงในโปรแกรม หากหน้าจอไม่ตรงกับที่เขียนไว้ แปลว่ามีการอัปเดตเวอร์ชัน
+            </footer>
+        </div>
+    </main>
+</div>
+
+<script>
+    // ปุ่มลัดไปยังเมนูอื่น — ส่งคำสั่งให้หน้าแม่สลับแท็บ
+    function jumpTo(tab) {
+        try { window.parent.postMessage({ type: 'SWITCH_TAB', tab: tab }, '*'); }
+        catch (e) { /* เปิดไฟล์เดี่ยว ๆ อยู่ ไม่มีหน้าแม่ให้สั่ง */ }
+    }
+
+    // ไฮไลต์หัวข้อในสารบัญตามตำแหน่งที่อ่านอยู่
+    (function () {
+        const links = [...document.querySelectorAll('.toc-link')];
+        const targets = links
+            .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+            .filter(Boolean);
+        if (!targets.length || !('IntersectionObserver' in window)) return;
+
+        const obs = new IntersectionObserver(entries => {
+            entries.forEach(en => {
+                if (!en.isIntersecting) return;
+                links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + en.target.id));
+            });
+        }, { rootMargin: '0px 0px -75% 0px', threshold: 0 });
+
+        targets.forEach(t => obs.observe(t));
+    })();
+</script>
+</body>
+</html>

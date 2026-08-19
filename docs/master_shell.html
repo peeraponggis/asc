@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProInventive Solar Suite — Workspace</title>
+    <!-- 🌟 แทรก Logo บนหัว Browser -->
+    <link rel="icon" href="img/pilogo.png?v=2" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Kanit', 'sans-serif'] } } }
+        }
+    </script>
+    <style>
+        body { overflow: hidden; }
+        .nav-step { transition: all 0.3s ease; position: relative; }
+        .nav-step::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background-color: #3b82f6; transform: scaleX(0); transition: transform 0.3s ease; }
+        .nav-step.active::after { transform: scaleX(1); }
+        .nav-step.active { color: #1e3a8a; font-weight: 600; background-color: #f0f9ff; }
+        .nav-step.active .step-num { background-color: #3b82f6; color: white; border-color: #3b82f6; }
+
+        .workspace-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; opacity: 0; visibility: hidden; transition: opacity 0.3s ease-in-out; }
+        .workspace-iframe.active { opacity: 1; visibility: visible; z-index: 10; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
+    </style>
+</head>
+<body class="bg-slate-100 flex flex-col h-screen text-slate-800">
+
+    <!-- 1. Top Header -->
+    <header class="bg-slate-900 text-white h-14 flex items-center justify-between px-4 shrink-0 shadow-md z-30">
+        <div class="flex items-center space-x-3">
+            <!-- 🌟 โลโก้บริษัท -->
+            <img src="img/pilogo.png" alt="ProInventive" class="w-9 h-9 object-contain rounded bg-white/10 p-0.5"
+                 onerror="this.outerHTML='<div class=&quot;bg-gradient-to-br from-blue-500 to-blue-700 w-8 h-8 rounded flex items-center justify-center shadow-lg&quot;><i class=&quot;fa-solid fa-solar-panel text-white text-sm&quot;></i></div>'">
+            <span class="font-bold text-lg tracking-wide hidden sm:block">PRO<span class="text-blue-400">INVENTIVE</span></span>
+            <div class="h-6 w-px bg-slate-700 mx-2"></div>
+
+            <button onclick="goToDashboard()" title="กลับไปหน้ารายการโปรเจกต์"
+                    class="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded cursor-pointer transition">
+                <i class="fa-solid fa-folder-open text-amber-400 text-sm"></i>
+                <span class="text-sm font-medium" id="project-name">กำลังโหลดข้อมูล...</span>
+            </button>
+        </div>
+
+        <div class="flex items-center space-x-5">
+            <div class="hidden md:flex items-center text-xs text-slate-300">
+                <span id="save-status"><i class="fa-solid fa-cloud text-gray-400 mr-1.5"></i> ตรวจสอบข้อมูล...</span>
+            </div>
+            <div class="flex items-center space-x-2 border-l border-slate-700 pl-4">
+                <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
+                    <span id="user-initial" class="text-slate-200 text-sm font-bold">E</span>
+                </div>
+                <div class="hidden sm:block text-xs">
+                    <div class="font-bold" id="user-name">Engineer_01</div>
+                    <div class="text-slate-400" id="user-plan">Pro Plan</div>
+                </div>
+            </div>
+            <button onclick="goToDashboard()" class="text-slate-400 hover:text-red-400 ml-2 transition" title="กลับหน้าแรก">
+                <i class="fa-solid fa-right-from-bracket text-lg"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- 2. Workflow Stepper -->
+    <nav class="bg-white h-14 shadow-sm flex items-center justify-between px-4 shrink-0 z-20">
+        <div class="flex h-full space-x-1 overflow-x-auto no-scrollbar w-full">
+            <button onclick="switchTab('manual')" id="tab-manual" class="nav-step flex-1 sm:flex-none flex items-center px-4 h-full text-slate-500 hover:bg-slate-50 min-w-max" title="วิธีการใช้งานโปรแกรม">
+                <div class="w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-[10px] mr-2"><i class="fa-solid fa-book"></i></div>
+                <span class="text-sm">วิธีการใช้งาน</span>
+            </button>
+            <div class="flex items-center px-1"><div class="h-6 w-px bg-slate-200"></div></div>
+
+            <button onclick="switchTab('pea')" id="tab-pea" class="nav-step active flex-1 sm:flex-none flex items-center px-4 h-full text-slate-500 hover:bg-slate-50 min-w-max">
+                <div class="step-num w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs font-bold mr-2">1</div>
+                <span class="text-sm">Load Energy Profiling</span>
+            </button>
+            <div class="flex items-center text-slate-300"><i class="fa-solid fa-chevron-right text-[10px]"></i></div>
+
+            <button onclick="switchTab('asc')" id="tab-asc" class="nav-step flex-1 sm:flex-none flex items-center px-4 h-full text-slate-500 hover:bg-slate-50 min-w-max">
+                <div class="step-num w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs font-bold mr-2">2</div>
+                <span class="text-sm">System Design</span>
+            </button>
+            <div class="flex items-center text-slate-300"><i class="fa-solid fa-chevron-right text-[10px]"></i></div>
+
+            <button onclick="switchTab('model3d')" id="tab-model3d" class="nav-step flex-1 sm:flex-none flex items-center px-4 h-full text-slate-500 hover:bg-slate-50 min-w-max">
+                <div class="step-num w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs font-bold mr-2">3</div>
+                <span class="text-sm">3D Model</span>
+            </button>
+            <div class="flex items-center text-slate-300"><i class="fa-solid fa-chevron-right text-[10px]"></i></div>
+
+            <button onclick="switchTab('device')" id="tab-device" class="nav-step flex-1 sm:flex-none flex items-center px-4 h-full text-slate-500 hover:bg-slate-50 min-w-max">
+                <div class="step-num w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs font-bold mr-2">4</div>
+                <span class="text-sm">Device Location</span>
+            </button>
+            <div class="flex items-center text-slate-300"><i class="fa-solid fa-chevron-right text-[10px]"></i></div>
+
+            <button onclick="switchTab('report')" id="tab-report" class="nav-step flex-1 sm:flex-none flex items-center px-4 h-full text-slate-500 hover:bg-slate-50 min-w-max">
+                <div class="step-num w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs font-bold mr-2">5</div>
+                <span class="text-sm">Proposal &amp; Report</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 3. Main Workspace -->
+    <main class="flex-grow relative bg-slate-200">
+        <iframe id="frame-manual" src="manual.html" class="workspace-iframe bg-white"></iframe>
+        <iframe id="frame-pea" src="asc_e_analysis.html" class="workspace-iframe active bg-white"></iframe>
+        <iframe id="frame-asc" src="asc_design.html" class="workspace-iframe bg-white"></iframe>
+        <iframe id="frame-model3d" src="asc_3d.html" class="workspace-iframe bg-white"></iframe>
+        <iframe id="frame-device" src="device_location.html" class="workspace-iframe bg-white"></iframe>
+        <iframe id="frame-report" src="asc_report.html" class="workspace-iframe bg-white"></iframe>
+    </main>
+
+    <!-- 4. Floating Live Metrics Bar — ถอดออกแล้ว เพราะทับแถบสถานะของหน้าออกแบบ -->
+
+    <!-- ========================================== -->
+    <!-- ⚙️ MASTER SHELL LOGIC (ENGINE) ⚙️         -->
+    <!-- ========================================== -->
+    <script>
+        const DB_KEY      = 'proinventive_enterprise_db';
+        const SESSION_KEY = 'proinventive_session';
+
+        let currentProjectId   = null;
+        let currentProjectData = null;
+        let SESSION            = null;
+
+        /* --- 0. ตรวจสิทธิ์ก่อนเข้าใช้งาน --------------------------------- */
+        function requireLogin() {
+            try { SESSION = JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch (e) { SESSION = null; }
+            if (!SESSION || !SESSION.username) {
+                // ยังไม่ได้เข้าสู่ระบบ ส่งกลับหน้าแรกทันที
+                window.location.replace('index.html');
+                return false;
+            }
+            return true;
+        }
+
+        function applyUserToHeader() {
+            const name = SESSION.display || SESSION.username;
+            document.getElementById('user-name').innerText    = name;
+            document.getElementById('user-initial').innerText = name.charAt(0).toUpperCase();
+            document.getElementById('user-plan').innerText    = SESSION.isAdmin ? 'Administrator' : 'Pro Plan';
+        }
+
+        /* --- 1. การจัดการสถาปัตยกรรมข้อมูล (Data Model) & URL Params --- */
+        function initApp() {
+            if (!requireLogin()) return;
+            applyUserToHeader();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            currentProjectId = urlParams.get('id');
+
+            // ไม่มี ID แนบมา แปลว่าเข้ามาผิดทาง ส่งกลับไปเลือกโปรเจกต์ที่หน้าแรก
+            if (!currentProjectId) {
+                window.location.replace('index.html');
+                return;
+            }
+
+            loadProjectFromDB();
+        }
+
+        /* --- 2. โหลด Database (จำลอง Backend Integration) --------------- */
+        function loadProjectFromDB() {
+            let db = null;
+            try { db = JSON.parse(localStorage.getItem(DB_KEY)); } catch (e) { db = null; }
+
+            if (!db)          db = { user_profile: {}, projects: {} };
+            if (!db.projects) db.projects = {};
+
+            // บันทึกผู้ใช้ที่กำลังใช้งานลง user_profile
+            db.user_profile = {
+                uid : SESSION.username,
+                name: SESSION.display || SESSION.username,
+                role: SESSION.isAdmin ? 'System Admin' : 'Engineer'
+            };
+
+            // ถ้าเป็นโปรเจกต์ใหม่ ให้สร้างโครงสร้างเปล่ารอไว้ พร้อมบันทึกเจ้าของ
+            if (!db.projects[currentProjectId]) {
+                db.projects[currentProjectId] = {
+                    meta: {
+                        name: "New Solar Project",
+                        owner: SESSION.username,
+                        ownerName: SESSION.display || SESSION.username,
+                        createdAt: new Date().toISOString(),
+                        lastModified: new Date().toISOString()
+                    },
+                    data: { db0: null, db1: null, db2: null, db3: null }
+                };
+            }
+
+            // โปรเจกต์เก่าที่ยังไม่มีเจ้าของ ให้ผูกกับผู้ใช้ปัจจุบัน
+            const meta = db.projects[currentProjectId].meta;
+            if (!meta.owner) { meta.owner = SESSION.username; meta.ownerName = SESSION.display || SESSION.username; }
+
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+
+            currentProjectData = db.projects[currentProjectId].data;
+
+            document.getElementById('project-name').innerText = meta.name;
+            document.title = meta.name + ' — ProInventive';
+
+            showSaveStatus('<i class="fa-solid fa-cloud-arrow-down text-green-400 mr-1.5"></i> โหลดข้อมูลสำเร็จ');
+
+            // แสดง kWp ล่าสุดถ้าเคยออกแบบไว้แล้ว
+            if (currentProjectData.db1 && currentProjectData.db1.step4_validation_results) {
+                updateLiveKwp(currentProjectData.db1.step4_validation_results.totalDcCapacity_kWp);
+            }
+        }
+
+        /* --- 3. บันทึก Database (Roadmap สู่ Cloud) --------------------- */
+        function saveProjectToDB() {
+            let db = JSON.parse(localStorage.getItem(DB_KEY));
+            if (!db || !db.projects || !db.projects[currentProjectId]) return;
+
+            db.projects[currentProjectId].data = currentProjectData;
+            db.projects[currentProjectId].meta.lastModified = new Date().toISOString();
+
+            // *อนาคต: Firebase.firestore().collection('projects').doc(currentProjectId).set(...)*
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+
+            showSaveStatus('<i class="fa-solid fa-cloud text-green-400 mr-1.5"></i> บันทึกล่าสุด: ' +
+                new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' }) + ' น.');
+        }
+
+        function updateLiveKwp(kwp) {
+            // ป้ายลอยถูกถอดออกแล้ว เก็บฟังก์ชันไว้เผื่ออนาคตอยากเอากลับมา
+            const el = document.getElementById('live-kwp');
+            if (!el) return;
+            const v = parseFloat(kwp) || 0;
+            el.innerHTML = `${v.toFixed(2)} <span class="text-xs font-normal">kWp</span>`;
+        }
+
+        /* --- 4. สื่อสารกับ Iframe (Workflow Data Flow) ------------------ */
+        window.addEventListener('message', function (event) {
+            const data = event.data;
+            if (!data || !data.type) return;
+
+            let needSave = false;
+
+            if (data.type === 'EXPORT_DB0') {
+                currentProjectData.db0 = data.payload;
+                needSave = true;
+                console.log('📥 รับ DB0 เรียบร้อย');
+            }
+            else if (data.type === 'EXPORT_DB1_DB2') {
+                currentProjectData.db1 = data.payload.db1;
+                currentProjectData.db2 = data.payload.db2;
+                needSave = true;
+                console.log('📥 รับ DB1 & DB2 เรียบร้อย');
+
+                if (data.payload.db1 && data.payload.db1.step4_validation_results) {
+                    updateLiveKwp(data.payload.db1.step4_validation_results.totalDcCapacity_kWp);
+                }
+            }
+            else if (data.type === 'EXPORT_DB3') {
+                currentProjectData.db3 = data.payload;
+                needSave = true;
+                console.log('📥 รับ DB3 เรียบร้อย');
+            }
+            // หน้าคู่มือขอสลับไปแท็บอื่น
+            else if (data.type === 'SWITCH_TAB') {
+                if (['manual','pea','asc','model3d','device','report'].includes(data.tab)) switchTab(data.tab);
+                return;
+            }
+            // หน้าลูกขอออกจากระบบ
+            else if (data.type === 'REQUEST_EXIT') {
+                goToDashboard(true);
+                return;
+            }
+            // หน้าลูกขอข้อมูลผู้ใช้/โปรเจกต์
+            else if (data.type === 'REQUEST_SESSION') {
+                broadcastToFrames();
+                return;
+            }
+
+            if (needSave) {
+                showSaveStatus('<i class="fa-solid fa-spinner fa-spin text-blue-400 mr-1.5"></i> กำลังบันทึก...');
+                saveProjectToDB();
+            }
+        });
+
+        /* ส่งข้อมูลผู้ใช้และโปรเจกต์ให้หน้าลูกทุกหน้า */
+        function broadcastToFrames() {
+            const payload = {
+                type: 'SYNC_PROJECT_STATE',
+                user: SESSION,
+                projectId: currentProjectId,
+                payload: currentProjectData
+            };
+            ['frame-manual','frame-pea','frame-asc','frame-model3d','frame-device','frame-report'].forEach(id => {
+                const f = document.getElementById(id);
+                if (f && f.contentWindow) { try { f.contentWindow.postMessage(payload, '*'); } catch (e) {} }
+            });
+        }
+
+        /* --- 5. UI Control & Tab Switching ----------------------------- */
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-step').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+
+            document.querySelectorAll('.workspace-iframe').forEach(frame => frame.classList.remove('active'));
+            const activeFrame = document.getElementById(`frame-${tabId}`);
+            activeFrame.classList.add('active');
+
+            // (ถอดแถบ Floating Metrics ออกแล้ว — ตัวเลข kWp ดูได้จากแถบสถานะในหน้าออกแบบ)
+
+            try {
+                activeFrame.contentWindow.postMessage({
+                    type: 'SYNC_PROJECT_STATE',
+                    user: SESSION,
+                    projectId: currentProjectId,
+                    payload: currentProjectData
+                }, '*');
+            } catch (e) { /* iframe ยังโหลดไม่เสร็จ ข้ามไปก่อน */ }
+        }
+
+        function showSaveStatus(htmlContent) {
+            document.getElementById('save-status').innerHTML = htmlContent;
+        }
+
+        /* --- 6. ปุ่มกลับหน้าแรก: ออกไปที่ index.html เสมอ -------------- */
+        function goToDashboard(skipConfirm) {
+            if (!skipConfirm && !confirm('กลับไปหน้ารายการโปรเจกต์ใช่หรือไม่?\nข้อมูลที่กดบันทึกไว้แล้วจะถูกเก็บไว้ตามปกติ')) return;
+            window.location.href = 'index.html';
+        }
+
+        /* --- 7. เริ่มระบบ ---------------------------------------------- */
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        // ส่ง Session ให้หน้าลูกทันทีที่แต่ละ iframe โหลดเสร็จ
+        ['frame-manual','frame-pea','frame-asc','frame-model3d','frame-device','frame-report'].forEach(id => {
+            const f = document.getElementById(id);
+            if (!f) return;
+            f.addEventListener('load', function () {
+                try { this.contentWindow.document.body.style.backgroundColor = '#ffffff'; } catch (e) {}
+                try {
+                    this.contentWindow.postMessage({
+                        type: 'SYNC_PROJECT_STATE',
+                        user: SESSION,
+                        projectId: currentProjectId,
+                        payload: currentProjectData
+                    }, '*');
+                } catch (e) {}
+            });
+        });
+    </script>
+</body>
+</html>
