@@ -482,6 +482,17 @@
                             <div><dt class="text-slate-500 text-xs mb-1">เข้าสู่ระบบเมื่อ</dt><dd class="font-semibold text-slate-800" id="set-login">-</dd></div>
                             <div><dt class="text-slate-500 text-xs mb-1">โปรเจกต์ที่ถือครอง</dt><dd class="font-semibold text-slate-800" id="set-count">-</dd></div>
                         </dl>
+
+                        <!-- เห็นเฉพาะโหมดคลาวด์ เพราะโหมดเก็บในเครื่องจัดการรหัสผ่านคนละทาง -->
+                        <div id="account-actions" class="hidden mt-5 pt-5 border-t border-slate-100 flex flex-wrap gap-3 items-center">
+                            <button onclick="changeMyPassword()" class="px-4 py-2.5 rounded-lg text-sm font-bold border border-slate-300 hover:bg-slate-50 transition">
+                                <i class="fa-solid fa-key mr-1.5"></i> เปลี่ยนรหัสผ่าน
+                            </button>
+                            <button onclick="changeMyName()" class="px-4 py-2.5 rounded-lg text-sm font-bold border border-slate-300 hover:bg-slate-50 transition">
+                                <i class="fa-solid fa-id-card mr-1.5"></i> เปลี่ยนชื่อที่แสดง
+                            </button>
+                            <span id="account-msg" class="text-xs"></span>
+                        </div>
                     </div>
 
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
@@ -1733,9 +1744,52 @@ function renderSettings() {
         // ซ่อนไว้ดีกว่าปล่อยให้กดแล้วไม่มีผล ซึ่งจะทำให้เข้าใจผิดว่าแก้ไขสำเร็จ
         const card = document.getElementById('admin-users-card');
         if (card) card.classList.add('hidden');
+        const acc = document.getElementById('account-actions');
+        if (acc) acc.classList.remove('hidden');
         renderMigrateCard();
     } else {
         renderUserTable();
+    }
+}
+
+/* ─── จัดการบัญชีตัวเอง (เฉพาะโหมดคลาวด์) ──────────────────────────────── */
+
+function accountMsg(text, ok) {
+    const el = document.getElementById('account-msg');
+    if (!el) return;
+    el.className = 'text-xs ' + (ok ? 'text-emerald-600 font-semibold' : 'text-red-600 font-semibold');
+    el.innerText = text || '';
+}
+
+async function changeMyPassword() {
+    const p1 = prompt('ตั้งรหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)');
+    if (p1 === null) return;
+    if (String(p1).length < 8) { alert('รหัสผ่านสั้นเกินไป ต้องมีอย่างน้อย 8 ตัวอักษร'); return; }
+    const p2 = prompt('พิมพ์รหัสผ่านใหม่อีกครั้งเพื่อยืนยัน');
+    if (p2 === null) return;
+    if (p1 !== p2) { alert('รหัสผ่านสองครั้งไม่ตรงกัน ลองใหม่'); return; }
+    try {
+        await AscCloud.setPassword(p1);
+        accountMsg('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว', true);
+    } catch (e) {
+        accountMsg('เปลี่ยนไม่สำเร็จ : ' + e.message, false);
+    }
+}
+
+async function changeMyName() {
+    const name = prompt('ชื่อที่จะแสดงให้เพื่อนร่วมงานเห็น', SESSION.display || '');
+    if (name === null) return;
+    if (!String(name).trim()) { alert('ชื่อว่างไม่ได้'); return; }
+    try {
+        await AscCloud.updateDisplayName(name);
+        SESSION.display = String(name).trim();
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(SESSION));
+        document.getElementById('user-name').innerText    = SESSION.display;
+        document.getElementById('user-initial').innerText = SESSION.display.charAt(0).toUpperCase();
+        document.getElementById('greet-name').innerText   = SESSION.display;
+        accountMsg('เปลี่ยนชื่อเรียบร้อยแล้ว', true);
+    } catch (e) {
+        accountMsg('เปลี่ยนไม่สำเร็จ : ' + e.message, false);
     }
 }
 
