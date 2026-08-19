@@ -18,5 +18,5 @@
  *  ตราบใดที่ยังไม่ได้ใส่ค่า ระบบจะทำงานแบบเดิม (เก็บในเครื่อง) ต่อไปตามปกติ
  * ========================================================================== */
 
-window.SUPABASE_URL      = 'https://teyoycikvwsybnvsxzvv.supabase.co';
-window.SUPABASE_ANON_KEY = 'sb_publishable_rAwyLR9MWQDO8e-wM9FJXw_mNp8VUth';
+window.SUPABASE_URL      = 'https://rcaslesvgilknupqmwrp.supabase.co';
+window.SUPABASE_ANON_KEY = 'sb_publishable_CI5Y4LzcJ3A8rPinxKmVyA_GvUS0Ba6';

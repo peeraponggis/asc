@@ -24,3 +24,11 @@ capacitor/android/app/src/main/assets/public/
 # ไลบรารีสำหรับสคริปต์นำเข้าผู้ใช้ ติดตั้งใหม่ได้ด้วย npm install
 supabase/node_modules/
 supabase/package-lock.json
+
+# ── Supabase CLI ───────────────────────────────────────────────────────
+# ไฟล์ชั่วคราวของคำสั่ง supabase link/start เก็บรหัสและ ref ของโปรเจกต์
+supabase/.temp/
+supabase/.branches/
+# ไฟล์ตัวแปรลับ เช่น สตริงต่อฐานข้อมูลและคีย์ service_role
+.env
+.env.*
