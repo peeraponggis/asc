@@ -40,10 +40,26 @@
 
     /* แปลงข้อความผิดพลาดของ Supabase เป็นภาษาที่ผู้ใช้เข้าใจ */
     function humanError(e) {
-        const m = String((e && (e.message || e.error_description)) || e || '');
+        // ข้อความผิดพลาดของ Supabase มาได้หลายรูปแบบ message / error_description / msg / error
+        // ถ้าไม่ไล่ให้ครบ จะกลายเป็น [object Object] โผล่ให้ผู้ใช้เห็นแทนสาเหตุจริง
+        const m = String(
+            (e && (e.message || e.error_description || e.msg || e.error_code || e.error)) ||
+            (typeof e === 'string' ? e : '') || ''
+        );
         if (/Invalid login credentials/i.test(m))       return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
         if (/Email not confirmed/i.test(m))             return 'ยังไม่ได้ยืนยันอีเมล กรุณาเปิดลิงก์ในอีเมลที่ส่งไปให้ก่อน';
-        if (/rate limit|too many/i.test(m))             return 'ลองบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่';
+        // แยกให้ชัดจากการกดถี่ทั่วไป เพราะกรณีนี้รอไปก็ไม่หาย ต้องไปตั้งค่า SMTP เอง
+        // บริการอีเมลที่ Supabase แถมมาจำกัดไว้เพียงไม่กี่ฉบับต่อชั่วโมง ใช้งานจริงไม่ได้
+        if (/email_send_rate_limit|email rate limit/i.test(m))
+            return 'ส่งอีเมลไม่ได้ เพราะยังไม่ได้ตั้งค่าบริการอีเมล (SMTP) ของโปรเจกต์\n\n' +
+                   'บริการที่ Supabase แถมมาจำกัดไว้เพียงไม่กี่ฉบับต่อชั่วโมงและตอนนี้เต็มแล้ว\n' +
+                   'ให้ผู้ดูแลระบบตั้งค่า SMTP ก่อน (ดูขั้นที่ 4 ใน supabase/README.md)\n' +
+                   'ระหว่างนี้ให้ติดต่อผู้ดูแลระบบเพื่อขอรหัสผ่านโดยตรง';
+        // Supabase กันการกดซ้ำถี่ ๆ ด้วยข้อความ "For security purposes, you can only request this after N seconds"
+        const cool = m.match(/only request this after (\d+) seconds?/i);
+        if (cool) return 'กดถี่เกินไป กรุณารออีก ' + cool[1] + ' วินาทีแล้วลองใหม่';
+        if (/rate limit|too many|over_request_rate/i.test(m))
+            return 'ลองบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่';
         if (/Failed to fetch|NetworkError|network/i.test(m))
             return 'ติดต่อเซิร์ฟเวอร์ไม่ได้ กรุณาตรวจการเชื่อมต่ออินเทอร์เน็ต';
         if (/row-level security|violates row-level/i.test(m))
