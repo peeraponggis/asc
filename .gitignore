@@ -19,3 +19,8 @@ capacitor/android/app/debug/
 
 # ไฟล์เว็บที่ Capacitor คัดลอกเข้ามา — ต้นฉบับอยู่ที่ docs/
 capacitor/android/app/src/main/assets/public/
+
+# ── Supabase ───────────────────────────────────────────────────────────
+# ไลบรารีสำหรับสคริปต์นำเข้าผู้ใช้ ติดตั้งใหม่ได้ด้วย npm install
+supabase/node_modules/
+supabase/package-lock.json

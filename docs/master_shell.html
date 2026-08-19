@@ -7,6 +7,12 @@
     <!-- 🌟 แทรก Logo บนหัว Browser -->
     <link rel="icon" href="img/pilogo.png?v=2" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- โหมดคลาวด์ (Supabase) — ถ้ายังไม่ได้ตั้งค่าใน supabase-config.js ระบบจะเก็บในเครื่องแบบเดิม -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="asc-cloud.js"></script>
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -132,8 +138,23 @@
         let currentProjectData = null;
         let SESSION            = null;
 
+        /* โหมดคลาวด์ ตั้งค่าแล้วหรือยัง ถ้ายัง ทุกอย่างทำงานแบบเดิม (เก็บในเครื่อง) */
+        const CLOUD = !!(window.AscCloud && window.AscCloud.enabled);
+
+        /* สิทธิ์ที่มีต่อโครงการนี้ในโหมดคลาวด์ : owner | editor | viewer */
+        let myRole = 'owner';
+        const canEdit = () => !CLOUD || myRole === 'owner' || myRole === 'editor' || (SESSION && SESSION.isAdmin);
+
         /* --- 0. ตรวจสิทธิ์ก่อนเข้าใช้งาน --------------------------------- */
-        function requireLogin() {
+        async function requireLogin() {
+            if (CLOUD) {
+                // ต้องถามเซิร์ฟเวอร์ว่าเซสชันยังใช้ได้จริง ไม่ใช่เชื่อค่าที่ค้างใน sessionStorage
+                SESSION = await AscCloud.ready();
+                if (!SESSION) { window.location.replace('index.html'); return false; }
+                sessionStorage.setItem(SESSION_KEY, JSON.stringify(SESSION));
+                return true;
+            }
+
             try { SESSION = JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch (e) { SESSION = null; }
             if (!SESSION || !SESSION.username) {
                 // ยังไม่ได้เข้าสู่ระบบ ส่งกลับหน้าแรกทันที
@@ -151,8 +172,8 @@
         }
 
         /* --- 1. การจัดการสถาปัตยกรรมข้อมูล (Data Model) & URL Params --- */
-        function initApp() {
-            if (!requireLogin()) return;
+        async function initApp() {
+            if (!await requireLogin()) return;
             applyUserToHeader();
 
             const urlParams = new URLSearchParams(window.location.search);
@@ -164,7 +185,53 @@
                 return;
             }
 
-            loadProjectFromDB();
+            if (CLOUD) await loadProjectFromCloud();
+            else       loadProjectFromDB();
+        }
+
+        /* --- 2ค. โหลดโครงการจากคลาวด์ ----------------------------------- */
+        async function loadProjectFromCloud() {
+            showSaveStatus('<i class="fa-solid fa-circle-notch fa-spin text-blue-400 mr-1.5"></i> กำลังโหลดจากคลาวด์...');
+            try {
+                const p = await AscCloud.getProject(currentProjectId);
+                currentProjectData = p.data || { db0: null, db1: null, db2: null, db3: null };
+
+                document.getElementById('project-name').innerText = p.name;
+                document.title = p.name + ' — ProInventive';
+
+                // ดูสิทธิ์ของตัวเองในโครงการนี้ เพื่อบอกให้ชัดว่าแก้ได้หรือดูได้อย่างเดียว
+                const me = AscCloud.currentUser();
+                if (me && p.owner === me.id) myRole = 'owner';
+                else {
+                    try {
+                        const mem = await AscCloud.listMembers(currentProjectId);
+                        const mine = mem.find(m => m.userId === (me && me.id));
+                        myRole = mine ? mine.role : (SESSION.isAdmin ? 'owner' : 'viewer');
+                    } catch (e) { myRole = SESSION.isAdmin ? 'owner' : 'viewer'; }
+                }
+
+                if (!canEdit()) showReadOnlyBanner(p);
+                showSaveStatus('<i class="fa-solid fa-cloud-arrow-down text-green-400 mr-1.5"></i> โหลดจากคลาวด์สำเร็จ');
+
+                if (currentProjectData.db1 && currentProjectData.db1.step4_validation_results) {
+                    updateLiveKwp(currentProjectData.db1.step4_validation_results.totalDcCapacity_kWp);
+                }
+            } catch (e) {
+                console.error(e);
+                showSaveStatus('<i class="fa-solid fa-triangle-exclamation text-red-400 mr-1.5"></i> <span class="text-red-300">โหลดไม่สำเร็จ</span>');
+                alert('เปิดโครงการไม่สำเร็จ : ' + e.message + '\n\nจะพากลับไปหน้ารายการโครงการ');
+                window.location.replace('index.html');
+            }
+        }
+
+        /* บอกให้เห็นชัดว่าเปิดแบบดูอย่างเดียว ไม่งั้นผู้ใช้จะแก้ไปเรื่อยแล้วงงว่าทำไมไม่ถูกบันทึก */
+        function showReadOnlyBanner(p) {
+            const bar = document.createElement('div');
+            bar.className = 'w-full bg-amber-500 text-white text-xs font-bold px-4 py-1.5 text-center';
+            bar.innerHTML = '<i class="fa-solid fa-eye mr-1.5"></i>โหมดดูอย่างเดียว — ' +
+                            'คุณถูกเชิญเข้าโครงการนี้ในสิทธิ์ผู้ชม การแก้ไขจะไม่ถูกบันทึก ' +
+                            'ติดต่อเจ้าของโครงการหากต้องการสิทธิ์แก้ไข';
+            document.body.insertBefore(bar, document.body.firstChild);
         }
 
         /* --- 2. โหลด Database (จำลอง Backend Integration) --------------- */
@@ -298,7 +365,64 @@
                   'ให้ส่งออกไฟล์ DB เก็บไว้ก่อน');
         }
 
+        /* --- 3ค. บันทึกขึ้นคลาวด์ ---------------------------------------
+           หน่วงไว้เล็กน้อยแล้วรวมการบันทึกที่ติด ๆ กันเป็นครั้งเดียว
+           เช่นตอนกดบันทึกที่ส่งทั้ง DB1 และ DB2 มาพร้อมกัน จะได้ไม่ยิงสองรอบ
+           รูปจะถูกอัปโหลดเฉพาะตอนที่ชุดรูปเปลี่ยนจริง ไม่ใช่ทุกครั้งที่บันทึก */
+        let cloudSaveTimer  = null;
+        let cloudSaving     = false;
+        let cloudSaveAgain  = false;
+        let lastImageStamp  = null;
+
+        function imageStamp(data) {
+            const st = data && data.db3 && data.db3.app_state;
+            const im = st && st.projectImagesBase64;
+            if (!Array.isArray(im) || !im.length) return '0';
+            // ใช้จำนวนรูปกับความยาวรวมเป็นลายนิ้วมือ พอแยกได้ว่าเปลี่ยนหรือยังโดยไม่ต้องแฮชทั้งก้อน
+            return im.length + ':' + im.reduce((s, x) => s + (x ? x.length : 0), 0);
+        }
+
+        function saveProjectToCloud() {
+            if (!canEdit()) {
+                showSaveStatus('<i class="fa-solid fa-eye text-amber-400 mr-1.5"></i> <span class="text-amber-300">ดูอย่างเดียว ไม่ได้บันทึก</span>');
+                return;
+            }
+            clearTimeout(cloudSaveTimer);
+            cloudSaveTimer = setTimeout(doCloudSave, 600);
+        }
+
+        async function doCloudSave() {
+            if (cloudSaving) { cloudSaveAgain = true; return; }
+            cloudSaving = true;
+            showSaveStatus('<i class="fa-solid fa-spinner fa-spin text-blue-400 mr-1.5"></i> กำลังบันทึกขึ้นคลาวด์...');
+
+            const stamp = imageStamp(currentProjectData);
+            try {
+                await AscCloud.saveProject(currentProjectId,
+                    { data: currentProjectData },
+                    { skipImages: stamp === lastImageStamp });
+                lastImageStamp = stamp;
+
+                showSaveStatus('<i class="fa-solid fa-cloud text-green-400 mr-1.5"></i> บันทึกขึ้นคลาวด์แล้ว: ' +
+                    new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.');
+            } catch (e) {
+                console.error('บันทึกขึ้นคลาวด์ไม่สำเร็จ', e);
+                showSaveStatus('<i class="fa-solid fa-triangle-exclamation text-red-400 mr-1.5"></i> ' +
+                    '<span class="text-red-300">บันทึกไม่สำเร็จ</span> ' +
+                    '<button onclick="doCloudSave()" class="underline">ลองใหม่</button>');
+                alert('บันทึกขึ้นคลาวด์ไม่สำเร็จ : ' + e.message +
+                      '\n\nงานที่ทำอยู่ยังอยู่บนหน้าจอ อย่าเพิ่งปิดหน้านี้' +
+                      '\nให้ตรวจอินเทอร์เน็ตแล้วกด "ลองใหม่" ที่แถบสถานะด้านบน' +
+                      '\nหรือส่งออกไฟล์ DB เก็บไว้ก่อนเพื่อความปลอดภัย');
+            } finally {
+                cloudSaving = false;
+                if (cloudSaveAgain) { cloudSaveAgain = false; doCloudSave(); }
+            }
+        }
+
         function saveProjectToDB() {
+            if (CLOUD) return saveProjectToCloud();
+
             let db = null;
             try { db = JSON.parse(localStorage.getItem(DB_KEY)); } catch (e) { db = null; }
             if (!db || !db.projects || !db.projects[currentProjectId]) return false;
@@ -388,10 +512,10 @@
         });
 
         /* ส่งข้อมูลผู้ใช้และโปรเจกต์ให้หน้าลูกทุกหน้า */
-        function broadcastToFrames() {
-            // ส่งรูปเท่าที่หน้าลูกใช้จริงเท่านั้น
-            // asc_3d ใช้แค่รูปแรกเป็นภาพดาวเทียมปูพื้น (parseDB3) ที่เหลือไม่มีใครใช้
-            // ถ้าส่งทั้งชุด ข้อมูลหลายเมกะไบต์จะถูกคัดลอกซ้ำตามจำนวน iframe ทุกครั้งที่เรียก
+        /* ตัดรูปที่หน้าลูกไม่ได้ใช้ออกก่อนส่งข้ามเฟรม
+           asc_3d ใช้แค่รูปแรกเป็นภาพดาวเทียมปูพื้น (parseDB3) ที่เหลือไม่มีใครใช้
+           ถ้าส่งทั้งชุด ข้อมูลหลายเมกะไบต์จะถูกคัดลอกซ้ำตามจำนวน iframe ทุกครั้งที่เรียก */
+        function slimProjectData() {
             let slim = currentProjectData;
             const st   = slim && slim.db3 && slim.db3.app_state;
             const imgs = st && st.projectImagesBase64;
@@ -406,12 +530,15 @@
                     });
                 }
             }
+            return slim;
+        }
 
+        function broadcastToFrames() {
             const payload = {
                 type: 'SYNC_PROJECT_STATE',
                 user: SESSION,
                 projectId: currentProjectId,
-                payload: slim
+                payload: slimProjectData()
             };
             ['frame-manual','frame-pea','frame-asc','frame-model3d','frame-device','frame-report'].forEach(id => {
                 const f = document.getElementById(id);
@@ -445,10 +572,23 @@
         }
 
         /* --- 6. ปุ่มกลับหน้าแรก: ออกไปที่ index.html เสมอ -------------- */
-        function goToDashboard(skipConfirm) {
+        async function goToDashboard(skipConfirm) {
             if (!skipConfirm && !confirm('กลับไปหน้ารายการโปรเจกต์ใช่หรือไม่?\nข้อมูลที่กดบันทึกไว้แล้วจะถูกเก็บไว้ตามปกติ')) return;
+
+            // การบันทึกขึ้นคลาวด์ถูกหน่วงไว้ ถ้าออกทันทีงานรอบสุดท้ายจะหาย ต้องส่งให้จบก่อน
+            if (CLOUD && (cloudSaveTimer || cloudSaving)) {
+                clearTimeout(cloudSaveTimer);
+                cloudSaveTimer = null;
+                showSaveStatus('<i class="fa-solid fa-spinner fa-spin text-blue-400 mr-1.5"></i> กำลังบันทึกก่อนออก...');
+                try { await doCloudSave(); } catch (e) { console.warn(e); }
+            }
             window.location.href = 'index.html';
         }
+
+        /* กันปิดแท็บทิ้งระหว่างที่ยังบันทึกไม่เสร็จ */
+        window.addEventListener('beforeunload', function (e) {
+            if (CLOUD && (cloudSaveTimer || cloudSaving)) { e.preventDefault(); e.returnValue = ''; }
+        });
 
         /* --- 7. เริ่มระบบ ---------------------------------------------- */
         document.addEventListener('DOMContentLoaded', initApp);
@@ -464,7 +604,7 @@
                         type: 'SYNC_PROJECT_STATE',
                         user: SESSION,
                         projectId: currentProjectId,
-                        payload: currentProjectData
+                        payload: slimProjectData()
                     }, '*');
                 } catch (e) {}
             });

@@ -13,6 +13,11 @@
     <!-- ฐานข้อมูลผู้ใช้ (แหล่งเดียว) — ถ้าไฟล์นี้หาย ระบบจะพยายามอ่านจาก user.html ให้อัตโนมัติ -->
     <script src="user.js"></script>
 
+    <!-- โหมดคลาวด์ (Supabase) — ถ้ายังไม่ได้ตั้งค่าใน supabase-config.js ระบบจะเก็บในเครื่องแบบเดิม -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="asc-cloud.js"></script>
+
     <script>
         tailwind.config = {
             theme: { extend: { fontFamily: { sans: ['Kanit', 'sans-serif'] } } }
@@ -146,7 +151,7 @@
 
             <div id="userdb-warning" class="hidden mt-6 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-800 leading-relaxed"></div>
 
-            <p class="text-xs text-slate-400 mt-8 text-center">ลืมรหัสผ่าน? ติดต่อผู้ดูแลระบบเพื่อออกรหัสใหม่</p>
+            <p id="login-hint" class="text-xs text-slate-400 mt-8 text-center">ลืมรหัสผ่าน? ติดต่อผู้ดูแลระบบเพื่อออกรหัสใหม่</p>
         </div>
     </div>
 </div>
@@ -497,6 +502,25 @@
                         <p class="text-xs text-slate-500 mt-4" id="set-storage"></p>
                     </div>
 
+                    <!-- ═══ ย้ายข้อมูลเดิมขึ้นคลาวด์ (เห็นเฉพาะโหมดคลาวด์ และเมื่อยังมีข้อมูลค้างในเครื่อง) ═══ -->
+                    <div id="migrate-card" class="hidden bg-white rounded-xl border border-amber-200 shadow-sm p-6">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h3 class="font-bold text-slate-800">ย้ายโครงการเดิมขึ้นคลาวด์</h3>
+                            <span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded">ยังไม่ได้ย้าย</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+                            พบโครงการที่ยังเก็บอยู่ในเบราว์เซอร์เครื่องนี้ ซึ่งคนอื่นมองไม่เห็นและจะหายถ้าล้างข้อมูลเบราว์เซอร์<br>
+                            การส่งขึ้นคลาวด์จะ<b>คัดลอก</b>ขึ้นไปเป็นโครงการใหม่ ของเดิมในเครื่องยังอยู่ครบ ตรวจสอบแล้วค่อยลบเองภายหลัง
+                        </p>
+                        <div id="migrate-list" class="space-y-1.5 mb-4 max-h-56 overflow-y-auto text-sm"></div>
+                        <div class="flex flex-wrap gap-3 items-center">
+                            <button id="migrate-btn" onclick="runMigration()" class="px-4 py-2.5 rounded-lg text-sm font-bold bg-amber-600 text-white hover:bg-amber-700 shadow transition">
+                                <i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> ส่งขึ้นคลาวด์ทั้งหมด
+                            </button>
+                            <span id="migrate-status" class="text-xs text-slate-500"></span>
+                        </div>
+                    </div>
+
                     <!-- ═══ จัดการผู้ใช้ (เห็นเฉพาะผู้ดูแลระบบ) ═══ -->
                     <div id="admin-users-card" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="px-6 py-5 border-b border-slate-100">
@@ -642,9 +666,56 @@
 
         <div class="px-6 py-4 border-t border-slate-200 flex justify-end space-x-3 bg-slate-50 rounded-b-xl">
             <button onclick="closeNewProjectModal()" class="px-5 py-2.5 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-200 transition">ยกเลิก</button>
-            <button onclick="createNewProject()" class="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition flex items-center">
+            <button id="btn-create-project" onclick="createNewProject()" class="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition flex items-center">
                 <i class="fa-solid fa-rocket mr-2"></i> สร้างและเริ่มออกแบบ
             </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- 4. Modal แชร์โครงการ (เฉพาะโหมดคลาวด์)                          -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="share-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 transform scale-95 transition-transform duration-300" id="share-content">
+        <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
+            <div class="min-w-0">
+                <h3 class="text-lg font-bold text-slate-800">แชร์โครงการ</h3>
+                <p class="text-xs text-slate-500 truncate" id="share-proj-name"></p>
+            </div>
+            <button onclick="closeShareModal()" class="text-slate-400 hover:text-red-500 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <div class="p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-1" for="share-email">เชิญเพื่อนร่วมงาน</label>
+                <div class="flex gap-2">
+                    <input list="share-user-list" type="email" id="share-email" placeholder="อีเมลของคนที่ต้องการเชิญ"
+                           class="flex-1 border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    <datalist id="share-user-list"></datalist>
+                    <select id="share-role" class="border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="viewer">ดูอย่างเดียว</option>
+                        <option value="editor">แก้ไขได้</option>
+                    </select>
+                    <button id="share-add-btn" onclick="shareAddMember()" class="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow transition whitespace-nowrap">
+                        <i class="fa-solid fa-plus mr-1"></i> เชิญ
+                    </button>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1.5">คนที่จะเชิญได้ต้องมีบัญชีในระบบและเคยเข้าสู่ระบบมาแล้วอย่างน้อยหนึ่งครั้ง</p>
+            </div>
+
+            <div id="share-error" class="hidden rounded-lg bg-red-50 border border-red-200 px-4 py-2.5 text-sm text-red-700"></div>
+            <div id="share-ok" class="hidden rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-sm text-emerald-700"></div>
+
+            <div>
+                <p class="text-sm font-bold text-slate-700 mb-2">คนที่เข้าถึงโครงการนี้ได้</p>
+                <div id="share-member-list" class="space-y-2 max-h-64 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <div class="px-6 py-4 border-t border-slate-200 flex justify-end bg-slate-50 rounded-b-xl">
+            <button onclick="closeShareModal()" class="px-5 py-2.5 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-200 transition">ปิด</button>
         </div>
     </div>
 </div>
@@ -665,6 +736,16 @@ let SESSION   = null;    // { username, display, isAdmin, loginAt }
 let viewMode  = 'grid';  // grid | list
 let currentView = 'projects';
 const charts  = {};      // เก็บ instance ของ Chart.js ไว้ทำลายก่อนวาดใหม่
+
+/* ─── โหมดคลาวด์ ────────────────────────────────────────────────────────
+   CLOUD = true  เมื่อ supabase-config.js ถูกตั้งค่าแล้วและไลบรารีโหลดสำเร็จ
+   ถ้ายังไม่ได้ตั้งค่า ทุกอย่างจะทำงานแบบเดิม (เก็บในเครื่อง) ไม่มีอะไรเปลี่ยน
+   เขียนแบบนี้เพื่อให้ติดตั้งทีละขั้นได้ ระบบเดิมจะได้ไม่หยุดทำงานระหว่างทาง */
+const CLOUD = !!(window.AscCloud && window.AscCloud.enabled);
+
+/* รายการโครงการจากคลาวด์ เก็บไว้ในรูปเดียวกับของเดิม { id, meta, data }
+   หน้าจอทั้งหมดจึงวาดด้วยโค้ดชุดเดิมโดยไม่ต้องแก้ */
+let CLOUD_PROJECTS = [];
 
 /* ─────────────────────────────────────────────
    1. โหลดฐานข้อมูลผู้ใช้ (user.js → user.html)
@@ -707,6 +788,8 @@ function showLoginError(msg) {
 function hideLoginError() { document.getElementById('login-error').classList.add('hidden'); }
 
 async function initLogin() {
+    if (CLOUD) return await initLoginCloud();
+
     const ok = await ensureUserDatabase();
     if (!ok) {
         const warn = document.getElementById('userdb-warning');
@@ -729,6 +812,93 @@ async function initLogin() {
     }
 }
 
+/* ─── โหมดคลาวด์ : ล็อกอินผ่าน Supabase ───────────────────────────────── */
+
+async function initLoginCloud() {
+    // ปรับข้อความให้ตรงกับความจริง โหมดนี้ใช้อีเมลเท่านั้น
+    const lbl = document.querySelector('label[for="login-user"]');
+    if (lbl) lbl.innerText = 'อีเมล';
+    const inp = document.getElementById('login-user');
+    if (inp) { inp.type = 'email'; inp.setAttribute('autocomplete', 'email'); }
+
+    const hint = document.getElementById('login-hint');
+    if (hint) {
+        hint.innerHTML = 'ลืมรหัสผ่าน? <a href="#" id="link-forgot" class="text-blue-600 hover:underline font-semibold">ขอลิงก์ตั้งรหัสใหม่ทางอีเมล</a>';
+        const a = document.getElementById('link-forgot');
+        if (a) a.addEventListener('click', ev => { ev.preventDefault(); forgotPassword(); });
+    }
+
+    // ผู้ใช้ที่กดลิงก์ในอีเมลจะกลับมาที่หน้านี้พร้อม token ต้องให้ตั้งรหัสใหม่ก่อน
+    if (/type=recovery|type=invite/.test(location.hash)) {
+        await AscCloud.ready();
+        return promptSetPassword();
+    }
+
+    const remembered = localStorage.getItem(REMEMBER_KEY);
+    if (remembered) {
+        document.getElementById('login-user').value = remembered;
+        document.getElementById('login-remember').checked = true;
+    }
+
+    // ถ้าเคยล็อกอินไว้แล้วและเซสชันยังไม่หมดอายุ เข้าได้เลย
+    const me = await AscCloud.ready();
+    if (me) { SESSION = me; sessionStorage.setItem(SESSION_KEY, JSON.stringify(SESSION)); return enterApp(); }
+
+    document.getElementById(remembered ? 'login-pass' : 'login-user').focus();
+}
+
+async function forgotPassword() {
+    const pre = document.getElementById('login-user').value.trim();
+    const email = prompt('กรอกอีเมลที่ใช้เข้าระบบ ระบบจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปให้', pre || '');
+    if (!email) return;
+    try {
+        await AscCloud.sendPasswordReset(email.trim());
+        alert('ส่งลิงก์ไปที่ ' + email.trim() + ' แล้ว\n\nเปิดอีเมลแล้วกดลิงก์ในนั้นเพื่อตั้งรหัสผ่านใหม่\nถ้าไม่พบ ให้ดูในกล่องจดหมายขยะด้วย');
+    } catch (err) {
+        alert('ส่งไม่สำเร็จ : ' + err.message);
+    }
+}
+
+async function promptSetPassword() {
+    const p1 = prompt('ตั้งรหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)');
+    if (p1 === null) return;
+    if (String(p1).length < 8) { alert('รหัสผ่านสั้นเกินไป ต้องมีอย่างน้อย 8 ตัวอักษร'); return promptSetPassword(); }
+    const p2 = prompt('พิมพ์รหัสผ่านใหม่อีกครั้งเพื่อยืนยัน');
+    if (p2 === null) return;
+    if (p1 !== p2) { alert('รหัสผ่านสองครั้งไม่ตรงกัน ลองใหม่'); return promptSetPassword(); }
+
+    try {
+        await AscCloud.setPassword(p1);
+        history.replaceState(null, '', location.pathname + location.search);   // ล้าง token ออกจาก URL
+        alert('ตั้งรหัสผ่านใหม่เรียบร้อยแล้ว');
+        const me = AscCloud.currentUser() || await AscCloud.ready();
+        if (me) { SESSION = me; sessionStorage.setItem(SESSION_KEY, JSON.stringify(SESSION)); return enterApp(); }
+    } catch (err) {
+        alert('ตั้งรหัสผ่านไม่สำเร็จ : ' + err.message + '\n\nลิงก์อาจหมดอายุแล้ว ให้ขอลิงก์ใหม่อีกครั้ง');
+    }
+}
+
+async function doLoginCloud(u, p) {
+    const btn = document.getElementById('login-submit');
+    const old = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> กำลังเข้าสู่ระบบ...';
+    try {
+        SESSION = await AscCloud.signIn(u, p);
+        if (document.getElementById('login-remember').checked) localStorage.setItem(REMEMBER_KEY, u);
+        else localStorage.removeItem(REMEMBER_KEY);
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(SESSION));
+        await enterApp();
+    } catch (err) {
+        showLoginError(err.message);
+        document.getElementById('login-pass').value = '';
+        document.getElementById('login-pass').focus();
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = old;
+    }
+}
+
 function doLogin(e) {
     if (e) e.preventDefault();
     hideLoginError();
@@ -738,6 +908,8 @@ function doLogin(e) {
 
     if (!u) { showLoginError('กรอกชื่อผู้ใช้ก่อนเข้าสู่ระบบ'); document.getElementById('login-user').focus(); return; }
     if (!p) { showLoginError('กรอกรหัสผ่านก่อนเข้าสู่ระบบ'); document.getElementById('login-pass').focus(); return; }
+
+    if (CLOUD) return doLoginCloud(u, p);
 
     if (typeof window.validateUser !== 'function' && Object.keys(loadUserOverrides()).length === 0) {
         showLoginError('ระบบยังอ่านรายชื่อผู้ใช้ไม่ได้ ดูคำแนะนำด้านล่าง');
@@ -766,16 +938,17 @@ function doLogin(e) {
     enterApp();
 }
 
-function logout() {
+async function logout() {
     if (!confirm('ต้องการออกจากระบบใช่หรือไม่?')) return;
     sessionStorage.removeItem(SESSION_KEY);
+    if (CLOUD) { try { await AscCloud.signOut(); } catch (e) { console.warn(e); } }
     location.reload();
 }
 
 /* ─────────────────────────────────────────────
    3. เข้าสู่หน้าหลัก
    ───────────────────────────────────────────── */
-function enterApp() {
+async function enterApp() {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-shell').classList.remove('hidden');
     document.title = 'ASC Cloud — Dashboard';
@@ -795,9 +968,39 @@ function enterApp() {
         document.getElementById('admin-analytics').classList.remove('hidden');
     }
 
-    migrateLegacyProjects();
+    if (CLOUD) {
+        showCloudBadge();
+        await refreshCloudProjects();
+    } else {
+        migrateLegacyProjects();
+    }
     renderDashboard();
     renderNotifications();
+}
+
+/* ป้ายบอกว่ากำลังทำงานกับข้อมูลบนคลาวด์ ไม่ใช่ในเครื่อง ผู้ใช้จะได้ไม่สับสน */
+function showCloudBadge() {
+    const el = document.getElementById('user-plan');
+    if (el) el.innerHTML = (SESSION.isAdmin ? 'Administrator' : 'Pro Plan') +
+        ' <span class="text-emerald-600" title="ข้อมูลถูกเก็บบนคลาวด์และแชร์กับทีมได้">· คลาวด์</span>';
+}
+
+/* ดึงรายการโครงการจากคลาวด์มาเก็บไว้ในหน่วยความจำ
+   แปลงเป็นรูปเดิมแล้วตั้งแต่ใน asc-cloud.js โค้ดวาดหน้าจอจึงใช้ต่อได้ทั้งหมด */
+async function refreshCloudProjects() {
+    try {
+        CLOUD_PROJECTS = await AscCloud.listProjects();
+        return true;
+    } catch (err) {
+        CLOUD_PROJECTS = [];
+        console.error(err);
+        const grid = document.getElementById('project-grid');
+        if (grid) grid.innerHTML =
+            '<div class="col-span-full rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">' +
+            '<i class="fa-solid fa-circle-exclamation mr-1.5"></i>โหลดรายการโครงการไม่สำเร็จ : ' + esc(err.message) +
+            ' <button onclick="refreshCloudProjects().then(renderDashboard)" class="ml-2 underline font-semibold">ลองใหม่</button></div>';
+        return false;
+    }
 }
 
 /* ─────────────────────────────────────────────
@@ -847,8 +1050,12 @@ function migrateLegacyProjects() {
 
 function ownerOf(proj) { return (proj.meta && proj.meta.owner) || 'ไม่ระบุเจ้าของ'; }
 
-/* คืนรายการโปรเจกต์ที่ผู้ใช้ปัจจุบันมีสิทธิ์เห็น */
+/* คืนรายการโปรเจกต์ที่ผู้ใช้ปัจจุบันมีสิทธิ์เห็น
+   โหมดคลาวด์ : สิทธิ์ถูกบังคับที่ฐานข้อมูลด้วย RLS แล้ว สิ่งที่ส่งกลับมาคือสิ่งที่เห็นได้จริง
+   ไม่ต้องกรองซ้ำฝั่งเบราว์เซอร์ (และกรองฝั่งนี้ก็กันอะไรไม่ได้อยู่แล้ว) */
 function visibleProjects() {
+    if (CLOUD) return CLOUD_PROJECTS;
+
     const db = loadDB();
     return Object.keys(db.projects)
         .filter(id => {
@@ -938,8 +1145,18 @@ function renderDashboard() {
         const lastMod = p.meta.lastModified
             ? new Date(p.meta.lastModified).toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })
             : '-';
-        const ownerBadge = SESSION.isAdmin
-            ? `<span class="inline-flex items-center text-[10px] bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded mb-2"><i class="fa-solid fa-user text-[9px] mr-1"></i>${esc(prettyName(ownerOf(p)))}</span>`
+        const c = p.cloud || {};
+        // ในโหมดคลาวด์ ผู้ใช้เห็นทั้งโครงการของตัวเองและที่ถูกเชิญ จึงต้องบอกให้ชัดว่าอันไหนเป็นอะไร
+        const ownerBadge = (SESSION.isAdmin || (CLOUD && !c.isMine))
+            ? `<span class="inline-flex items-center text-[10px] ${CLOUD && !c.isMine ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-purple-50 text-purple-700 border-purple-200'} border px-2 py-0.5 rounded mb-2"><i class="fa-solid fa-user text-[9px] mr-1"></i>${esc(prettyName(ownerOf(p)))}${CLOUD && !c.isMine ? ' · ' + (c.myRole === 'editor' ? 'แก้ไขได้' : 'ดูอย่างเดียว') : ''}</span>`
+            : '';
+
+        const shareBadge = (CLOUD && c.isMine && c.memberCount > 0)
+            ? `<span class="inline-flex items-center text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded mb-2 ml-1"><i class="fa-solid fa-users text-[9px] mr-1"></i>แชร์ ${c.memberCount} คน</span>`
+            : '';
+
+        const shareBtn = (CLOUD && (c.isMine || SESSION.isAdmin))
+            ? `<button onclick="event.stopPropagation(); openShareModal('${p.id}')" class="text-slate-300 hover:text-emerald-600 transition mr-2" title="แชร์โครงการนี้ให้เพื่อนร่วมงาน"><i class="fa-solid fa-user-plus"></i></button>`
             : '';
 
         return `
@@ -949,11 +1166,14 @@ function renderDashboard() {
                 <div class="flex-1 min-w-0">
                     <div class="flex justify-between items-start mb-2">
                         <span class="inline-block px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${stage.cls}">${stage.label}</span>
+                        <span class="flex items-center">
+                        ${shareBtn}
                         <button onclick="event.stopPropagation(); deleteProject('${p.id}')" class="text-slate-300 hover:text-red-500 transition" title="ลบโปรเจกต์">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
+                        </span>
                     </div>
-                    ${ownerBadge}
+                    ${ownerBadge}${shareBadge}
                     <h3 class="text-lg font-bold text-slate-800 mb-1 truncate" title="${esc(p.meta.name)}">${esc(p.meta.name)}</h3>
                     <p class="text-xs text-slate-500 mb-4 flex items-center truncate"><i class="fa-solid fa-location-dot mr-1.5 text-slate-400"></i> ${esc(p.meta.location || 'ไม่ระบุสถานที่')}</p>
                 </div>
@@ -1024,7 +1244,7 @@ function closeNewProjectModal() {
     }, 300);
 }
 
-function createNewProject() {
+async function createNewProject() {
     const name = document.getElementById('new-proj-name').value.trim();
     const loc  = document.getElementById('new-proj-loc').value.trim();
     const note = document.getElementById('new-proj-note').value.trim();
@@ -1034,6 +1254,22 @@ function createNewProject() {
         err.innerText = 'ระบุชื่อโปรเจกต์ก่อนสร้าง';
         err.classList.remove('hidden');
         document.getElementById('new-proj-name').focus();
+        return;
+    }
+
+    if (CLOUD) {
+        const btn = document.getElementById('btn-create-project');
+        const old = btn ? btn.innerHTML : '';
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> กำลังสร้าง...'; }
+        try {
+            const id = await AscCloud.createProject(name, loc, note);
+            window.location.href = `master_shell.html?id=${id}`;
+        } catch (e2) {
+            err.innerText = 'สร้างโครงการไม่สำเร็จ : ' + e2.message;
+            err.classList.remove('hidden');
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = old; }
+        }
         return;
     }
 
@@ -1060,7 +1296,151 @@ function createNewProject() {
 
 function openProject(id) { window.location.href = `master_shell.html?id=${id}`; }
 
-function deleteProject(id) {
+/* ─────────────────────────────────────────────
+   6.5 แชร์โครงการ (เฉพาะโหมดคลาวด์)
+   ───────────────────────────────────────────── */
+let shareProjectId = null;
+
+async function openShareModal(id) {
+    shareProjectId = id;
+    const p = CLOUD_PROJECTS.find(x => x.id === id);
+    document.getElementById('share-proj-name').innerText = p ? p.meta.name : '';
+    document.getElementById('share-email').value = '';
+    document.getElementById('share-role').value  = 'viewer';
+    shareMsg('', '');
+
+    const modal = document.getElementById('share-modal');
+    const box   = document.getElementById('share-content');
+    modal.classList.remove('hidden'); modal.classList.add('flex');
+    setTimeout(() => { modal.classList.remove('opacity-0'); box.classList.remove('scale-95'); }, 10);
+
+    document.getElementById('share-member-list').innerHTML =
+        '<p class="text-sm text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังโหลด...</p>';
+
+    // เติมรายชื่อผู้ใช้ในระบบให้เลือกได้ ไม่ต้องพิมพ์อีเมลเองทั้งหมด
+    try {
+        const users = await AscCloud.listUsers();
+        document.getElementById('share-user-list').innerHTML =
+            users.map(u => `<option value="${esc(u.email)}">${esc(u.display_name || u.email)}</option>`).join('');
+    } catch (e) { console.warn('โหลดรายชื่อผู้ใช้ไม่สำเร็จ', e); }
+
+    await renderShareMembers();
+}
+
+function closeShareModal() {
+    const modal = document.getElementById('share-modal');
+    const box   = document.getElementById('share-content');
+    modal.classList.add('opacity-0'); box.classList.add('scale-95');
+    setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
+    shareProjectId = null;
+}
+
+function shareMsg(err, ok) {
+    const e = document.getElementById('share-error');
+    const o = document.getElementById('share-ok');
+    e.classList.toggle('hidden', !err); e.innerText = err || '';
+    o.classList.toggle('hidden', !ok);  o.innerText = ok  || '';
+}
+
+async function renderShareMembers() {
+    const box = document.getElementById('share-member-list');
+    const p   = CLOUD_PROJECTS.find(x => x.id === shareProjectId);
+    const ownerRow = `
+        <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+            <div class="min-w-0">
+                <p class="text-sm font-semibold text-slate-800 truncate">${esc(p ? (p.meta.ownerName || p.meta.owner) : '')}</p>
+                <p class="text-[11px] text-slate-500 truncate">${esc(p ? p.meta.owner : '')}</p>
+            </div>
+            <span class="text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-1 rounded whitespace-nowrap">เจ้าของ</span>
+        </div>`;
+
+    try {
+        const members = await AscCloud.listMembers(shareProjectId);
+        box.innerHTML = ownerRow + (members.length ? members.map(m => `
+            <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2">
+                <div class="min-w-0">
+                    <p class="text-sm font-semibold text-slate-800 truncate">${esc(m.display || m.email)}</p>
+                    <p class="text-[11px] text-slate-500 truncate">${esc(m.email)}</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <select onchange="shareSetRole('${m.userId}', this.value)"
+                            class="text-[11px] border border-slate-300 rounded px-1.5 py-1 bg-white">
+                        <option value="viewer" ${m.role === 'viewer' ? 'selected' : ''}>ดูอย่างเดียว</option>
+                        <option value="editor" ${m.role === 'editor' ? 'selected' : ''}>แก้ไขได้</option>
+                    </select>
+                    <button onclick="shareRemove('${m.userId}', '${esc(m.email)}')" class="text-slate-300 hover:text-red-500 transition" title="ถอดออกจากโครงการ">
+                        <i class="fa-solid fa-user-minus"></i>
+                    </button>
+                </div>
+            </div>`).join('')
+            : '<p class="text-sm text-slate-400 px-1">ยังไม่ได้แชร์ให้ใคร</p>');
+    } catch (e) {
+        box.innerHTML = ownerRow + '<p class="text-sm text-red-600 px-1">โหลดรายชื่อไม่สำเร็จ : ' + esc(e.message) + '</p>';
+    }
+}
+
+async function shareAddMember() {
+    const email = document.getElementById('share-email').value.trim();
+    const role  = document.getElementById('share-role').value;
+    if (!email) { shareMsg('กรอกอีเมลของคนที่ต้องการเชิญก่อน', ''); return; }
+
+    const btn = document.getElementById('share-add-btn');
+    const old = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+    try {
+        await AscCloud.addMember(shareProjectId, email, role);
+        document.getElementById('share-email').value = '';
+        shareMsg('', 'เชิญ ' + email + ' เรียบร้อยแล้ว');
+        await renderShareMembers();
+        await refreshCloudProjects();
+        renderDashboard();
+    } catch (e) {
+        shareMsg(e.message, '');
+    } finally {
+        btn.disabled = false; btn.innerHTML = old;
+    }
+}
+
+async function shareSetRole(userId, role) {
+    try {
+        await AscCloud.setMemberRole(shareProjectId, userId, role);
+        shareMsg('', 'เปลี่ยนสิทธิ์เรียบร้อยแล้ว');
+    } catch (e) { shareMsg(e.message, ''); await renderShareMembers(); }
+}
+
+async function shareRemove(userId, email) {
+    if (!confirm('ถอด ' + email + ' ออกจากโครงการนี้หรือไม่?')) return;
+    try {
+        await AscCloud.removeMember(shareProjectId, userId);
+        shareMsg('', 'ถอด ' + email + ' ออกแล้ว');
+        await renderShareMembers();
+        await refreshCloudProjects();
+        renderDashboard();
+    } catch (e) { shareMsg(e.message, ''); }
+}
+
+async function deleteProject(id) {
+    if (CLOUD) {
+        const p = CLOUD_PROJECTS.find(x => x.id === id);
+        if (!p) return;
+        if (!p.cloud.isMine && !SESSION.isAdmin) {
+            alert('ลบไม่ได้ โครงการนี้เป็นของ ' + (p.meta.ownerName || p.meta.owner) +
+                  '\nคุณถูกเชิญเข้ามาเท่านั้น ถ้าไม่ต้องการเห็นแล้วให้กด "ออกจากโครงการ" ในหน้าแชร์');
+            return;
+        }
+        if (!confirm(`ลบโครงการ "${p.meta.name}" อย่างถาวรหรือไม่?\n\nข้อมูลจะหายจากคลาวด์และทุกคนที่ถูกแชร์จะไม่เห็นอีก กู้คืนไม่ได้`)) return;
+        try {
+            await AscCloud.deleteProject(id);
+            await refreshCloudProjects();
+            renderDashboard();
+            renderNotifications();
+            if (currentView === 'analytics') renderAnalytics();
+        } catch (e) {
+            alert('ลบไม่สำเร็จ : ' + e.message);
+        }
+        return;
+    }
+
     const db = loadDB();
     const p  = db.projects[id];
     if (!p) return;
@@ -1341,15 +1721,80 @@ function renderSettings() {
         }
     }
     const totalKb = dbKb + imgKb;
-    document.getElementById('set-storage').innerText =
-        `ขนาดข้อมูลที่เก็บอยู่ตอนนี้ประมาณ ${totalKb.toFixed(1)} KB ` +
-        `(ข้อมูลโครงการ ${dbKb.toFixed(1)} KB + รูปภาพ ${imgKb.toFixed(1)} KB) ` +
-        `เบราว์เซอร์จำกัดไว้ราว 5,000 KB ต่อโดเมน`;
+    document.getElementById('set-storage').innerText = CLOUD
+        ? `โครงการทั้งหมดเก็บอยู่บนคลาวด์แล้ว ข้อมูลที่ยังค้างในเบราว์เซอร์เครื่องนี้มีประมาณ ${totalKb.toFixed(1)} KB ` +
+          `(ข้อมูลโครงการ ${dbKb.toFixed(1)} KB + รูปภาพ ${imgKb.toFixed(1)} KB)`
+        : `ขนาดข้อมูลที่เก็บอยู่ตอนนี้ประมาณ ${totalKb.toFixed(1)} KB ` +
+          `(ข้อมูลโครงการ ${dbKb.toFixed(1)} KB + รูปภาพ ${imgKb.toFixed(1)} KB) ` +
+          `เบราว์เซอร์จำกัดไว้ราว 5,000 KB ต่อโดเมน`;
 
-    renderUserTable();
+    if (CLOUD) {
+        // ในโหมดคลาวด์ บัญชีผู้ใช้ถูกจัดการที่ Supabase แล้ว ตารางผู้ใช้ในหน้านี้ใช้ไม่ได้อีก
+        // ซ่อนไว้ดีกว่าปล่อยให้กดแล้วไม่มีผล ซึ่งจะทำให้เข้าใจผิดว่าแก้ไขสำเร็จ
+        const card = document.getElementById('admin-users-card');
+        if (card) card.classList.add('hidden');
+        renderMigrateCard();
+    } else {
+        renderUserTable();
+    }
 }
 
-function exportBackup() {
+/* ─── ย้ายข้อมูลเดิมขึ้นคลาวด์ ──────────────────────────────────────────── */
+
+function renderMigrateCard() {
+    const card = document.getElementById('migrate-card');
+    if (!card) return;
+
+    const list = AscCloud.readLocalProjects();
+    if (!list.length) { card.classList.add('hidden'); return; }
+
+    card.classList.remove('hidden');
+    document.getElementById('migrate-list').innerHTML = list.map(it => `
+        <div class="flex justify-between items-center gap-3 border-b border-slate-100 pb-1.5">
+            <span class="truncate text-slate-700">${esc(it.name)}</span>
+            <span class="text-[11px] text-slate-400 whitespace-nowrap">
+                ${(it.bytes / 1024).toFixed(0)} KB${it.images ? ' · รูป ' + it.images + ' ใบ' : ''}
+            </span>
+        </div>`).join('');
+    document.getElementById('migrate-status').innerText = 'พบ ' + list.length + ' โครงการในเครื่องนี้';
+}
+
+async function runMigration() {
+    const list = AscCloud.readLocalProjects();
+    if (!list.length) return;
+    if (!confirm('ส่ง ' + list.length + ' โครงการขึ้นคลาวด์หรือไม่?\n\nของเดิมในเครื่องจะยังอยู่ครบ ไม่ถูกลบ')) return;
+
+    const btn    = document.getElementById('migrate-btn');
+    const status = document.getElementById('migrate-status');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1.5"></i> กำลังส่ง...';
+
+    const result = await AscCloud.migrateLocalProjects(list, (i, n, name) => {
+        status.innerText = `กำลังส่ง ${i}/${n} : ${name}`;
+    });
+
+    const ok   = result.filter(r => r.ok).length;
+    const bad  = result.filter(r => !r.ok);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> ส่งขึ้นคลาวด์ทั้งหมด';
+    status.innerText = `ส่งสำเร็จ ${ok} จาก ${result.length} โครงการ`;
+
+    await refreshCloudProjects();
+    renderDashboard();
+
+    if (bad.length) {
+        alert('ส่งสำเร็จ ' + ok + ' โครงการ\nไม่สำเร็จ ' + bad.length + ' โครงการ :\n\n' +
+              bad.map(b => '· ' + b.name + ' → ' + b.error).join('\n'));
+    } else {
+        alert('ส่งขึ้นคลาวด์ครบทั้ง ' + ok + ' โครงการแล้ว\n\n' +
+              'ข้อมูลเดิมในเครื่องยังอยู่ ตรวจสอบบนคลาวด์ให้เรียบร้อยก่อน ' +
+              'แล้วค่อยกดปุ่มลบโปรเจกต์ในเครื่องทีหลัง');
+    }
+}
+
+async function exportBackup() {
+    if (CLOUD) return await exportBackupCloud();
+
     const db = loadDB();
 
     // รูปถูกแยกไปเก็บคนละคีย์ ต้องดึงกลับมาใส่ในไฟล์สำรองด้วย ไม่งั้นสำรองไม่ครบ
@@ -1370,7 +1815,57 @@ function exportBackup() {
     URL.revokeObjectURL(a.href);
 }
 
-function wipeMyProjects() {
+/* สำรองข้อมูลจากคลาวด์ ต้องดึงทีละโครงการเพราะรายการรวมไม่ได้พ่วง data มาด้วย */
+async function exportBackupCloud() {
+    const list = CLOUD_PROJECTS.filter(p => p.cloud.isMine || SESSION.isAdmin);
+    if (!list.length) { alert('ยังไม่มีโครงการให้สำรอง'); return; }
+    if (!confirm('ดาวน์โหลดไฟล์สำรองของ ' + list.length + ' โครงการ?\n\nต้องดึงข้อมูลทีละโครงการ อาจใช้เวลาสักครู่')) return;
+
+    const out = { exportedAt: new Date().toISOString(), source: 'cloud', user_profile: {}, projects: {} };
+    let failed = 0;
+
+    for (const p of list) {
+        try {
+            const full = await AscCloud.getProject(p.id);
+            out.projects[p.id] = {
+                meta: { name: full.name, location: full.location, note: full.note,
+                        owner: p.meta.owner, ownerName: p.meta.ownerName,
+                        createdAt: full.createdAt, lastModified: full.updatedAt },
+                data: full.data
+            };
+        } catch (e) { failed++; console.warn('สำรอง ' + p.meta.name + ' ไม่สำเร็จ', e); }
+    }
+
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `asc_backup_cloud_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+
+    if (failed) alert('สำรองเสร็จแล้ว แต่มี ' + failed + ' โครงการที่ดึงข้อมูลไม่ได้ ดูรายละเอียดใน Console');
+}
+
+async function wipeMyProjects() {
+    if (CLOUD) {
+        const mine = CLOUD_PROJECTS.filter(p => p.cloud.isMine);
+        if (!mine.length) { alert('คุณยังไม่มีโครงการของตัวเองบนคลาวด์'); return; }
+        const shared = mine.filter(p => p.cloud.memberCount > 0).length;
+        if (!confirm('ลบโครงการของคุณบนคลาวด์ทั้ง ' + mine.length + ' โครงการอย่างถาวรหรือไม่?\n\n' +
+                     (shared ? 'ใน ' + shared + ' โครงการมีคนอื่นถูกแชร์อยู่ พวกเขาจะไม่เห็นอีกเช่นกัน\n\n' : '') +
+                     'กู้คืนไม่ได้ แนะนำให้ดาวน์โหลดไฟล์สำรองไว้ก่อน')) return;
+        if (!confirm('ยืนยันอีกครั้ง : จะลบ ' + mine.length + ' โครงการออกจากคลาวด์อย่างถาวร')) return;
+
+        let bad = 0;
+        for (const p of mine) {
+            try { await AscCloud.deleteProject(p.id); } catch (e) { bad++; console.warn(e); }
+        }
+        await refreshCloudProjects();
+        renderDashboard(); renderNotifications(); renderSettings();
+        alert(bad ? 'ลบเสร็จแล้ว แต่มี ' + bad + ' โครงการที่ลบไม่ได้' : 'ลบโครงการบนคลาวด์เรียบร้อยแล้ว');
+        return;
+    }
+
     if (!confirm('ลบโปรเจกต์ของคุณทั้งหมดอย่างถาวรหรือไม่? แนะนำให้ดาวน์โหลดไฟล์สำรองไว้ก่อน')) return;
     const db = loadDB();
     Object.keys(db.projects).forEach(id => {
@@ -1790,14 +2285,21 @@ document.addEventListener('DOMContentLoaded', () => {
     setViewMode(localStorage.getItem('proinventive_viewmode') || 'grid');
     switchView('projects');
 
-    const saved = sessionStorage.getItem(SESSION_KEY);
-    if (saved) {
-        try { SESSION = JSON.parse(saved); } catch (e) { SESSION = null; }
-    }
-    if (SESSION && SESSION.username) {
-        enterApp();
-    } else {
+    if (CLOUD) {
+        // โหมดคลาวด์ต้องถามเซิร์ฟเวอร์ว่าเซสชันยังใช้ได้จริงหรือไม่
+        // เชื่อค่าใน sessionStorage อย่างเดียวไม่ได้ เพราะโทเคนอาจหมดอายุไปแล้ว
+        // ถ้าเข้าหน้าหลักทั้งที่โทเคนหมดอายุ ทุกปุ่มจะกดแล้วขึ้น error โดยไม่รู้สาเหตุ
         initLogin();
+    } else {
+        const saved = sessionStorage.getItem(SESSION_KEY);
+        if (saved) {
+            try { SESSION = JSON.parse(saved); } catch (e) { SESSION = null; }
+        }
+        if (SESSION && SESSION.username) {
+            enterApp();
+        } else {
+            initLogin();
+        }
     }
 });
 </script>

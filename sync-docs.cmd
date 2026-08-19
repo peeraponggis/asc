@@ -26,6 +26,8 @@ for %%F in (
   asc_report.html
   asc_3d.html
   device_location.html
+  asc-cloud.js
+  supabase-config.js
 ) do (
   if exist "%%F" (
     copy /Y "%%F" "docs\%%F" >nul && echo     ok  %%F
