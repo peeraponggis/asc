@@ -12,7 +12,7 @@
       ไม่งั้นเครื่องที่ติดตั้งไว้แล้วจะยังใช้ของเก่าต่อไป
    ========================================================================== */
 
-const VERSION = 'mobi-v6';
+const VERSION = 'mobi-v7';
 /* แคชเฉพาะไฟล์ของแอปมือถือ
    หน้ารากตอนนี้เป็นหน้าล็อกอินของ ASC ซึ่งเป็นคนละโปรแกรมและไม่ต้องใช้ออฟไลน์ */
 const SHELL = [
@@ -44,12 +44,18 @@ self.addEventListener('activate', e => {
   );
 });
 
+/* ขอบเขตของ service worker ครอบทั้งโฟลเดอร์ ซึ่งมีโปรแกรม ASC อยู่ด้วย
+   ถ้าดักทุกคำขอ หน้าของ ASC จะถูกแคชไปด้วยและผู้ใช้จะได้เวอร์ชันเก่าค้างอยู่
+   จึงดักเฉพาะไฟล์ของแอปมือถือที่ระบุไว้เท่านั้น คำขออื่นปล่อยผ่านตามปกติ */
+const SHELL_PATHS = SHELL.map(p => new URL(p, self.location.href).pathname);
+
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;   // ไม่ยุ่งกับปลายทางภายนอก
+  if (SHELL_PATHS.indexOf(url.pathname) < 0) return; // ไม่ใช่ไฟล์ของแอปมือถือ ปล่อยผ่าน
 
   e.respondWith(
     caches.open(VERSION).then(cache =>
@@ -59,9 +65,8 @@ self.addEventListener('fetch', e => {
           return res;
         }).catch(() => null);
 
-        /* มีในแคชก็ส่งทันที ไม่ต้องรอเน็ต — ถ้าไม่มีค่อยรอ
-           กรณีออฟไลน์และไม่มีในแคช ให้ตกไปที่หน้าแอปเป็นทางสุดท้าย */
-        return hit || net.then(r => r || cache.match('./mobi.html'));
+        /* มีในแคชก็ส่งทันที ไม่ต้องรอเน็ต — ถ้าไม่มีค่อยรอผลจากเครือข่าย */
+        return hit || net;
       })
     )
   );
