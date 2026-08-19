@@ -117,7 +117,7 @@ insert into public.allowed_emails (email, note) values
     ('montri123a@gmail.com', 'จาก user.js'),
     ('passonjumleanphaiboonphon@gmail.com', 'จาก user.js'),
     ('sanitphanthawas@gmail.com', 'จาก user.js'),
-    ('giskku@gmail.com', 'lpee — ผู้ดูแลระบบ'),
+    ('giskku@gmail.com', 'อีเมลสำรองของผู้ดูแลระบบ ยังไม่มีบัญชี'),
     ('lungpee0945@gmail.com', 'ผู้ดูแลระบบ บัญชีที่ใช้งานจริงอยู่แล้ว')
 on conflict (email) do nothing;
 
