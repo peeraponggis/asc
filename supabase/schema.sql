@@ -286,6 +286,61 @@ grant select on public.project_list to authenticated;
 
 
 -- ────────────────────────────────────────────────────────────────────────────
+--  6.5 รายชื่ออีเมลที่อนุมัติให้สมัครได้
+--
+--      ตาราง allowed_emails กับทริกเกอร์ enforce_invite_only เป็นด่านจริง
+--      บล็อกที่ระดับฐานข้อมูล ต่อให้เปิดให้สมัครเองก็เข้าไม่ได้ถ้าไม่มีชื่อ
+--      ส่วนนี้เพิ่มเฉพาะตัวช่วยให้หน้าสมัครบอกสาเหตุได้ล่วงหน้า
+--      ไม่งั้นผู้ใช้จะเจอแต่ "Database error saving new user" ซึ่งไม่สื่ออะไรเลย
+-- ────────────────────────────────────────────────────────────────────────────
+create table if not exists public.allowed_emails (
+    email      text primary key,
+    note       text        not null default '',
+    created_at timestamptz not null default now()
+);
+alter table public.allowed_emails enable row level security;
+
+-- ตอบแค่ใช่หรือไม่ใช่สำหรับอีเมลที่ถามมาหนึ่งอีเมล ไม่เปิดให้ดึงรายชื่อทั้งหมด
+-- คนที่ยังไม่ล็อกอินก็เรียกได้ เพราะต้องใช้ตอนกรอกฟอร์มสมัคร
+create or replace function public.is_email_allowed(p_email text)
+returns boolean language sql stable security definer set search_path = public as $$
+    select exists (select 1 from public.allowed_emails
+                    where email = lower(trim(p_email)));
+$$;
+
+grant execute on function public.is_email_allowed(text) to anon, authenticated;
+
+-- อ่านและแก้รายชื่อได้เฉพาะผู้ดูแลระบบ (หน้าจัดการในแอปใช้สองนโยบายนี้)
+drop policy if exists allowed_emails_select on public.allowed_emails;
+create policy allowed_emails_select on public.allowed_emails
+    for select to authenticated using (public.is_admin());
+
+drop policy if exists allowed_emails_write on public.allowed_emails;
+create policy allowed_emails_write on public.allowed_emails
+    for all to authenticated
+    using (public.is_admin()) with check (public.is_admin());
+
+-- ด่านบังคับตอนสร้างบัญชีใหม่
+create or replace function public.enforce_invite_only()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+    if new.email is null
+       or not exists (select 1 from public.allowed_emails a
+                      where a.email = lower(trim(new.email))) then
+        raise exception 'อีเมลนี้ไม่อยู่ในรายชื่อที่ได้รับเชิญ ติดต่อผู้ดูแลระบบ (%)', new.email
+            using errcode = 'check_violation';
+    end if;
+    return new;
+end;
+$$;
+
+drop trigger if exists enforce_invite_only on auth.users;
+create trigger enforce_invite_only
+    before insert on auth.users
+    for each row execute function public.enforce_invite_only();
+
+
+-- ────────────────────────────────────────────────────────────────────────────
 --  7. ตั้งผู้ดูแลระบบ
 --     แก้อีเมลข้างล่างเป็นอีเมลของคุณ แล้วรันบรรทัดนี้ "หลังจาก" สร้างบัญชีนั้นแล้ว
 -- ────────────────────────────────────────────────────────────────────────────

@@ -69,6 +69,18 @@
         if (/multiple \(or no\) rows|no rows|Results contain 0 rows|Cannot coerce the result|PGRST116/i.test(m))
             return 'ไม่พบโครงการนี้ หรือคุณไม่มีสิทธิ์เข้าถึง';
         if (/duplicate key|already exists/i.test(m))    return 'มีรายการนี้อยู่แล้ว';
+        // ทริกเกอร์ enforce_invite_only โยนข้อความไทยออกมา แต่ GoTrue ห่อทับด้วยข้อความกลาง ๆ
+        if (/ไม่อยู่ในรายชื่อที่ได้รับเชิญ/.test(m))
+            return 'อีเมลนี้ยังไม่ได้รับอนุมัติให้ใช้งาน กรุณาติดต่อผู้ดูแลระบบเพื่อขอเพิ่มรายชื่อก่อน';
+        if (/Database error saving new user|unexpected_failure/i.test(m))
+            return 'สมัครไม่สำเร็จ อีเมลนี้อาจยังไม่ได้รับอนุมัติให้ใช้งาน กรุณาติดต่อผู้ดูแลระบบ';
+        // Supabase ปฏิเสธโดเมนที่ไม่ใช่โดเมนจริง เช่น .local .test .invalid
+        if (/Email address .* is invalid|email_address_invalid/i.test(m))
+            return 'อีเมลนี้ใช้ไม่ได้ ระบบรับเฉพาะอีเมลที่ใช้งานได้จริง เช่น @gmail.com';
+        if (/Password should be at least|weak.?password/i.test(m))
+            return 'รหัสผ่านสั้นหรือคาดเดาง่ายเกินไป กรุณาตั้งใหม่ให้ยาวขึ้น';
+        if (/Signups not allowed|signup_disabled/i.test(m))
+            return 'ระบบปิดการสมัครใช้งานอยู่ กรุณาติดต่อผู้ดูแลระบบ';
         if (/JWT expired|session/i.test(m))             return 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่';
         // สองกรณีนี้ข้อความของ PostgREST มีคำว่า schema cache เหมือนกัน แต่คนละสาเหตุ
         // ต้องแยกให้ออก ไม่งั้นจะไล่ผิดทางว่ายังไม่ได้สร้างตารางทั้งที่สร้างไปแล้ว
@@ -297,6 +309,101 @@
                 .update({ display_name: String(name || '').trim() }).eq('id', u.id);
             if (error) throw fail(error);
             _profile.display = String(name || '').trim();
+            return true;
+        },
+
+
+        /* ── สมัครใช้งานเอง ─────────────────────────────────────────────
+           เปิดให้สมัครได้ แต่ด่านจริงคือทริกเกอร์ enforce_invite_only ในฐานข้อมูล
+           อีเมลที่ไม่อยู่ในรายชื่ออนุมัติจะถูกปฏิเสธตั้งแต่ตอนเขียนแถว */
+
+        /* ถามล่วงหน้าว่าอีเมลนี้อนุมัติไว้หรือยัง จะได้บอกสาเหตุก่อนกดสมัคร
+           ไม่งั้นผู้ใช้จะเจอแต่ "Database error saving new user" ซึ่งไม่สื่ออะไร
+           ฟังก์ชันนี้ตอบแค่ใช่หรือไม่ใช่ ไม่เปิดให้ดึงรายชื่อทั้งหมดออกไป */
+        async isEmailAllowed(email) {
+            need();
+            const { data, error } = await sb.rpc('is_email_allowed', { p_email: String(email || '').trim().toLowerCase() });
+            if (error) throw fail(error);
+            return data === true;
+        },
+
+        async signUp(email, password, displayName, redirectTo) {
+            need();
+            const mail = String(email || '').trim().toLowerCase();
+
+            // ตรวจก่อนเรียกสมัคร เพื่อให้ข้อความที่ผู้ใช้เห็นตรงกับสาเหตุจริง
+            let allowed = true;
+            try { allowed = await this.isEmailAllowed(mail); } catch (e) { /* ถามไม่ได้ก็ปล่อยให้ด่านจริงตัดสิน */ }
+            if (!allowed) {
+                throw new Error('อีเมลนี้ยังไม่ได้รับอนุมัติให้ใช้งาน กรุณาติดต่อผู้ดูแลระบบเพื่อขอเพิ่มรายชื่อก่อน');
+            }
+
+            const { data, error } = await sb.auth.signUp({
+                email: mail,
+                password: String(password || ''),
+                options: {
+                    data: { display_name: String(displayName || '').trim() || mail.split('@')[0] },
+                    emailRedirectTo: redirectTo || (location.origin + location.pathname)
+                }
+            });
+            if (error) throw fail(error);
+
+            // ถ้าโปรเจกต์ตั้งให้ต้องยืนยันอีเมล จะยังไม่มี session กลับมา
+            return {
+                user           : data.user,
+                needConfirm    : !data.session,
+                alreadyExisted : !!(data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0)
+            };
+        },
+
+
+        /* ── รายชื่ออีเมลที่อนุมัติ (เฉพาะผู้ดูแลระบบ) ──────────────────── */
+
+        async listAllowedEmails() {
+            need();
+            const { data, error } = await sb.from('allowed_emails')
+                .select('email, note, created_at').order('email');
+            if (error) throw fail(error);
+
+            // เทียบกับโปรไฟล์ เพื่อบอกว่าใครสมัครแล้วใครยัง
+            let signed = {};
+            try {
+                const { data: pr } = await sb.from('profiles').select('email, display_name, is_admin');
+                (pr || []).forEach(p => { signed[String(p.email).toLowerCase()] = p; });
+            } catch (e) { console.warn('อ่านโปรไฟล์เพื่อเทียบสถานะไม่สำเร็จ', e); }
+
+            return (data || []).map(r => {
+                const p = signed[String(r.email).toLowerCase()];
+                return {
+                    email     : r.email,
+                    note      : r.note || '',
+                    createdAt : r.created_at,
+                    registered: !!p,
+                    display   : p ? p.display_name : '',
+                    isAdmin   : !!(p && p.is_admin)
+                };
+            });
+        },
+
+        async addAllowedEmail(email, note) {
+            need();
+            const mail = String(email || '').trim().toLowerCase();
+            if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) throw new Error('รูปแบบอีเมลไม่ถูกต้อง');
+            const { error } = await sb.from('allowed_emails')
+                .upsert({ email: mail, note: String(note || '').trim() }, { onConflict: 'email' });
+            if (error) throw fail(error);
+            return mail;
+        },
+
+        async removeAllowedEmail(email) {
+            need();
+            const mail = String(email || '').trim().toLowerCase();
+            const { data: rows, error } = await sb.from('allowed_emails')
+                .delete().eq('email', mail).select('email');
+            if (error) throw fail(error);
+            if (!rows || rows.length === 0) {
+                throw new Error('ลบไม่สำเร็จ เฉพาะผู้ดูแลระบบเท่านั้นที่แก้รายชื่อได้');
+            }
             return true;
         },
 

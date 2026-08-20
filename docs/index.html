@@ -98,7 +98,7 @@
 
     <!-- ฝั่งขวา: ฟอร์ม -->
     <div class="w-full lg:w-1/2 bg-white flex items-center justify-center px-6 py-10 overflow-y-auto">
-        <div class="w-full max-w-sm fade-in">
+        <div id="login-card" class="w-full max-w-sm fade-in">
 
             <div class="lg:hidden flex items-center gap-3 mb-8">
                 <img src="img/pilogo.png" alt="" class="h-10 w-10 object-contain"
@@ -152,6 +152,54 @@
             <div id="userdb-warning" class="hidden mt-6 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-800 leading-relaxed"></div>
 
             <p id="login-hint" class="text-xs text-slate-400 mt-8 text-center">ลืมรหัสผ่าน? ติดต่อผู้ดูแลระบบเพื่อออกรหัสใหม่</p>
+
+            <!-- ทางเข้าหน้าสมัคร แสดงเฉพาะโหมดคลาวด์ -->
+            <p id="signup-hint" class="hidden text-xs text-slate-500 mt-3 text-center">
+                ยังไม่มีบัญชี? <a href="#" id="link-signup" class="text-blue-600 hover:underline font-semibold">สมัครใช้งาน</a>
+                <span class="block text-slate-400 mt-1">ใช้ได้เฉพาะอีเมลที่ผู้ดูแลระบบอนุมัติไว้แล้ว</span>
+            </p>
+        </div>
+
+        <!-- ══ ฟอร์มสมัครใช้งาน (ซ่อนไว้ สลับกับฟอร์มเข้าสู่ระบบ) ══ -->
+        <div id="signup-card" class="hidden w-full max-w-sm fade-in">
+            <h2 class="text-2xl font-bold text-slate-900 mb-1">สมัครใช้งาน</h2>
+            <p class="text-sm text-slate-500 mb-8">กรอกอีเมลที่ได้รับอนุมัติจากผู้ดูแลระบบ แล้วตั้งรหัสผ่านของคุณเอง</p>
+
+            <form id="signup-form" novalidate>
+                <div class="mb-4">
+                    <label for="su-email" class="block text-sm font-semibold text-slate-700 mb-1.5">อีเมล</label>
+                    <input id="su-email" type="email" autocomplete="email" spellcheck="false" placeholder="name@gmail.com"
+                           class="w-full border border-slate-300 rounded-lg py-3 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    <p id="su-email-check" class="text-[11px] mt-1.5 min-h-[1rem]"></p>
+                </div>
+                <div class="mb-4">
+                    <label for="su-name" class="block text-sm font-semibold text-slate-700 mb-1.5">ชื่อที่จะแสดงให้เพื่อนร่วมงานเห็น</label>
+                    <input id="su-name" type="text" placeholder="เช่น สมชาย ใจดี"
+                           class="w-full border border-slate-300 rounded-lg py-3 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+                <div class="mb-4">
+                    <label for="su-pass" class="block text-sm font-semibold text-slate-700 mb-1.5">ตั้งรหัสผ่าน (อย่างน้อย 8 ตัวอักษร)</label>
+                    <input id="su-pass" type="password" autocomplete="new-password" placeholder="••••••••"
+                           class="w-full border border-slate-300 rounded-lg py-3 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+                <div class="mb-6">
+                    <label for="su-pass2" class="block text-sm font-semibold text-slate-700 mb-1.5">พิมพ์รหัสผ่านอีกครั้ง</label>
+                    <input id="su-pass2" type="password" autocomplete="new-password" placeholder="••••••••"
+                           class="w-full border border-slate-300 rounded-lg py-3 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+
+                <div id="signup-error" class="hidden mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"></div>
+                <div id="signup-ok" class="hidden mb-4 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700"></div>
+
+                <button type="submit" id="signup-submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-bold py-3 rounded-lg shadow-md transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-user-plus"></i> สมัครใช้งาน
+                </button>
+            </form>
+
+            <p class="text-xs text-slate-400 mt-8 text-center">
+                มีบัญชีแล้ว? <a href="#" id="link-back-login" class="text-blue-600 hover:underline font-semibold">กลับไปหน้าเข้าสู่ระบบ</a>
+            </p>
         </div>
     </div>
 </div>
@@ -513,6 +561,53 @@
                         <p class="text-xs text-slate-500 mt-4" id="set-storage"></p>
                     </div>
 
+                    <!-- ═══ รายชื่ออีเมลที่อนุมัติ (เห็นเฉพาะผู้ดูแลระบบในโหมดคลาวด์) ═══ -->
+                    <div id="allowlist-card" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="px-6 py-5 border-b border-slate-100">
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold text-slate-800">รายชื่อผู้มีสิทธิ์ใช้งาน</h3>
+                                <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded">ADMIN</span>
+                            </div>
+                            <p class="text-xs text-slate-500 leading-relaxed">
+                                เฉพาะอีเมลในรายการนี้เท่านั้นที่สมัครใช้งานได้ ระบบบังคับที่ฐานข้อมูลโดยตรง<br>
+                                เพิ่มอีเมลแล้วบอกเจ้าตัวให้ไปกด <b>สมัครใช้งาน</b> ที่หน้าเข้าสู่ระบบ เขาจะตั้งรหัสผ่านเอง
+                            </p>
+                        </div>
+
+                        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                            <div class="flex flex-wrap gap-2">
+                                <input type="email" id="al-email" placeholder="อีเมลที่ต้องการเพิ่ม"
+                                       class="flex-1 min-w-[200px] border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <input type="text" id="al-note" placeholder="หมายเหตุ (ไม่บังคับ)"
+                                       class="flex-1 min-w-[140px] border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <button id="al-add-btn" onclick="allowlistAdd()" class="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow transition whitespace-nowrap">
+                                    <i class="fa-solid fa-plus mr-1"></i> เพิ่มรายชื่อ
+                                </button>
+                            </div>
+                            <div id="al-msg" class="text-xs mt-2"></div>
+                        </div>
+
+                        <div class="px-6 py-3 border-b border-slate-100 flex flex-wrap gap-3 items-center">
+                            <input type="text" id="al-search" placeholder="ค้นหาอีเมล..." oninput="renderAllowlist()"
+                                   class="flex-1 min-w-[160px] border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <span id="al-count" class="text-xs text-slate-500"></span>
+                        </div>
+
+                        <div class="max-h-96 overflow-y-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-slate-50 sticky top-0">
+                                    <tr class="text-left text-xs text-slate-500">
+                                        <th class="px-6 py-2 font-semibold">อีเมล</th>
+                                        <th class="px-3 py-2 font-semibold">สถานะ</th>
+                                        <th class="px-3 py-2 font-semibold hidden sm:table-cell">หมายเหตุ</th>
+                                        <th class="px-3 py-2"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="al-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <!-- ═══ ย้ายข้อมูลเดิมขึ้นคลาวด์ (เห็นเฉพาะโหมดคลาวด์ และเมื่อยังมีข้อมูลค้างในเครื่อง) ═══ -->
                     <div id="migrate-card" class="hidden bg-white rounded-xl border border-amber-200 shadow-sm p-6">
                         <div class="flex items-center gap-2 mb-1">
@@ -841,6 +936,13 @@ async function initLoginCloud() {
         if (a) a.addEventListener('click', ev => { ev.preventDefault(); forgotPassword(); });
     }
 
+    // เปิดทางเข้าหน้าสมัคร พร้อมผูกปุ่มทั้งหมดของฟอร์มสมัคร
+    document.getElementById('signup-hint').classList.remove('hidden');
+    document.getElementById('link-signup').addEventListener('click', ev => { ev.preventDefault(); showSignup(true); });
+    document.getElementById('link-back-login').addEventListener('click', ev => { ev.preventDefault(); showSignup(false); });
+    document.getElementById('signup-form').addEventListener('submit', doSignup);
+    document.getElementById('su-email').addEventListener('input', checkSignupEmail);
+
     // ผู้ใช้ที่กดลิงก์ในอีเมลจะกลับมาที่หน้านี้พร้อม token ต้องให้ตั้งรหัสใหม่ก่อน
     if (/type=recovery|type=invite/.test(location.hash)) {
         await AscCloud.ready();
@@ -858,6 +960,92 @@ async function initLoginCloud() {
     if (me) { SESSION = me; sessionStorage.setItem(SESSION_KEY, JSON.stringify(SESSION)); return enterApp(); }
 
     document.getElementById(remembered ? 'login-pass' : 'login-user').focus();
+}
+
+/* ─── สมัครใช้งานเอง ───────────────────────────────────────────────────
+   ด่านจริงอยู่ที่ฐานข้อมูล อีเมลที่ไม่อยู่ในรายชื่ออนุมัติจะถูกปฏิเสธเสมอ
+   ฝั่งนี้แค่ถามล่วงหน้าเพื่อบอกผู้ใช้ก่อนกดส่ง จะได้ไม่ต้องกรอกทั้งฟอร์มแล้วเสียเที่ยว */
+
+function showSignup(on) {
+    document.getElementById('login-card').classList.toggle('hidden', !!on);
+    document.getElementById('signup-card').classList.toggle('hidden', !on);
+    if (on) setTimeout(() => document.getElementById('su-email').focus(), 50);
+}
+
+function signupMsg(err, ok) {
+    const e = document.getElementById('signup-error');
+    const o = document.getElementById('signup-ok');
+    e.classList.toggle('hidden', !err); e.innerText = err || '';
+    o.classList.toggle('hidden', !ok);  o.innerText = ok  || '';
+}
+
+/* ตรวจอีเมลตอนผู้ใช้พิมพ์เสร็จ บอกทันทีว่าได้รับอนุมัติหรือยัง */
+let suCheckTimer = null;
+function checkSignupEmail() {
+    clearTimeout(suCheckTimer);
+    const box  = document.getElementById('su-email-check');
+    const mail = document.getElementById('su-email').value.trim();
+    box.innerText = '';
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return;
+
+    box.className = 'text-[11px] mt-1.5 min-h-[1rem] text-slate-400';
+    box.innerText = 'กำลังตรวจสอบ...';
+    suCheckTimer = setTimeout(async () => {
+        try {
+            const ok = await AscCloud.isEmailAllowed(mail);
+            box.className = 'text-[11px] mt-1.5 min-h-[1rem] ' + (ok ? 'text-emerald-600 font-semibold' : 'text-red-600 font-semibold');
+            box.innerText = ok ? '✓ อีเมลนี้ได้รับอนุมัติแล้ว สมัครได้เลย'
+                               : '✗ อีเมลนี้ยังไม่ได้รับอนุมัติ กรุณาติดต่อผู้ดูแลระบบ';
+        } catch (e) {
+            box.className = 'text-[11px] mt-1.5 min-h-[1rem] text-slate-400';
+            box.innerText = '';
+        }
+    }, 500);
+}
+
+async function doSignup(ev) {
+    if (ev) ev.preventDefault();
+    signupMsg('', '');
+
+    const mail = document.getElementById('su-email').value.trim();
+    const name = document.getElementById('su-name').value.trim();
+    const p1   = document.getElementById('su-pass').value;
+    const p2   = document.getElementById('su-pass2').value;
+
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) { signupMsg('กรอกอีเมลให้ถูกต้อง', ''); return; }
+    if (p1.length < 8)  { signupMsg('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร', ''); return; }
+    if (p1 !== p2)      { signupMsg('รหัสผ่านสองช่องไม่ตรงกัน', ''); return; }
+
+    const btn = document.getElementById('signup-submit');
+    const old = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> กำลังสมัคร...';
+    try {
+        const r = await AscCloud.signUp(mail, p1, name);
+
+        if (r.alreadyExisted) {
+            signupMsg('อีเมลนี้มีบัญชีอยู่แล้ว กรุณากลับไปหน้าเข้าสู่ระบบ หรือขอลิงก์ตั้งรหัสใหม่', '');
+        } else if (r.needConfirm) {
+            signupMsg('', 'สมัครเรียบร้อยแล้ว\n\nระบบส่งอีเมลยืนยันไปที่ ' + mail +
+                          '\nเปิดอีเมลแล้วกดลิงก์ยืนยัน จากนั้นจึงเข้าสู่ระบบได้\nถ้าไม่พบ ให้ดูในกล่องจดหมายขยะด้วย');
+            document.getElementById('signup-form').reset();
+            document.getElementById('su-email-check').innerText = '';
+        } else {
+            // โปรเจกต์ที่ไม่บังคับยืนยันอีเมล จะได้เซสชันกลับมาเลย
+            SESSION = AscCloud.currentUser() || await AscCloud.ready();
+            if (SESSION) {
+                sessionStorage.setItem(SESSION_KEY, JSON.stringify(SESSION));
+                showSignup(false);
+                return enterApp();
+            }
+            signupMsg('', 'สมัครเรียบร้อยแล้ว กรุณาเข้าสู่ระบบ');
+        }
+    } catch (e) {
+        signupMsg(e.message, '');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = old;
+    }
 }
 
 async function forgotPassword() {
@@ -1757,6 +1945,7 @@ function renderSettings() {
         if (card) card.classList.add('hidden');
         const acc = document.getElementById('account-actions');
         if (acc) acc.classList.remove('hidden');
+        if (SESSION.isAdmin) loadAllowlist();
         renderMigrateCard();
     } else {
         renderUserTable();
@@ -1801,6 +1990,101 @@ async function changeMyName() {
         accountMsg('เปลี่ยนชื่อเรียบร้อยแล้ว', true);
     } catch (e) {
         accountMsg('เปลี่ยนไม่สำเร็จ : ' + e.message, false);
+    }
+}
+
+/* ─── รายชื่ออีเมลที่อนุมัติ (ผู้ดูแลระบบ) ──────────────────────────────── */
+
+let ALLOWLIST = [];
+
+function allowMsg(text, ok) {
+    const el = document.getElementById('al-msg');
+    if (!el) return;
+    el.className = 'text-xs mt-2 ' + (ok ? 'text-emerald-600 font-semibold' : 'text-red-600 font-semibold');
+    el.innerText = text || '';
+}
+
+async function loadAllowlist() {
+    const card = document.getElementById('allowlist-card');
+    if (!card) return;
+    card.classList.remove('hidden');
+    document.getElementById('al-tbody').innerHTML =
+        '<tr><td colspan="4" class="px-6 py-4 text-sm text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังโหลด...</td></tr>';
+    try {
+        ALLOWLIST = await AscCloud.listAllowedEmails();
+        renderAllowlist();
+    } catch (e) {
+        document.getElementById('al-tbody').innerHTML =
+            '<tr><td colspan="4" class="px-6 py-4 text-sm text-red-600">โหลดรายชื่อไม่สำเร็จ : ' + esc(e.message) + '</td></tr>';
+    }
+}
+
+function renderAllowlist() {
+    const term = (document.getElementById('al-search').value || '').trim().toLowerCase();
+    const list = term ? ALLOWLIST.filter(x => x.email.toLowerCase().includes(term) ||
+                                              (x.note || '').toLowerCase().includes(term))
+                      : ALLOWLIST;
+
+    const done = ALLOWLIST.filter(x => x.registered).length;
+    document.getElementById('al-count').innerText =
+        'ทั้งหมด ' + ALLOWLIST.length + ' รายชื่อ · สมัครแล้ว ' + done + ' · ยังไม่สมัคร ' + (ALLOWLIST.length - done) +
+        (term ? '  (แสดง ' + list.length + ')' : '');
+
+    document.getElementById('al-tbody').innerHTML = list.length ? list.map(x => `
+        <tr class="border-t border-slate-100 hover:bg-slate-50">
+            <td class="px-6 py-2.5">
+                <div class="font-medium text-slate-800 break-all">${esc(x.email)}</div>
+                ${x.display ? '<div class="text-[11px] text-slate-500">' + esc(x.display) + (x.isAdmin ? ' · ผู้ดูแลระบบ' : '') + '</div>' : ''}
+            </td>
+            <td class="px-3 py-2.5 whitespace-nowrap">
+                ${x.registered
+                    ? '<span class="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded">สมัครแล้ว</span>'
+                    : '<span class="text-[11px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded">ยังไม่สมัคร</span>'}
+            </td>
+            <td class="px-3 py-2.5 text-xs text-slate-500 hidden sm:table-cell">${esc(x.note || '')}</td>
+            <td class="px-3 py-2.5 text-right">
+                <button onclick="allowlistRemove('${esc(x.email)}')" class="text-slate-300 hover:text-red-500 transition" title="ถอดออกจากรายชื่อ">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </td>
+        </tr>`).join('')
+        : '<tr><td colspan="4" class="px-6 py-4 text-sm text-slate-400">ไม่พบรายชื่อที่ตรงกับคำค้นหา</td></tr>';
+}
+
+async function allowlistAdd() {
+    const mail = document.getElementById('al-email').value.trim();
+    const note = document.getElementById('al-note').value.trim();
+    if (!mail) { allowMsg('กรอกอีเมลก่อน', false); return; }
+
+    const btn = document.getElementById('al-add-btn');
+    const old = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+    try {
+        await AscCloud.addAllowedEmail(mail, note);
+        document.getElementById('al-email').value = '';
+        document.getElementById('al-note').value  = '';
+        allowMsg('เพิ่ม ' + mail.toLowerCase() + ' แล้ว — บอกให้เขาไปกด "สมัครใช้งาน" ที่หน้าเข้าสู่ระบบได้เลย', true);
+        await loadAllowlist();
+    } catch (e) {
+        allowMsg(e.message, false);
+    } finally {
+        btn.disabled = false; btn.innerHTML = old;
+    }
+}
+
+async function allowlistRemove(email) {
+    const row = ALLOWLIST.find(x => x.email === email);
+    // ถอดออกจากรายชื่อไม่ได้ลบบัญชีที่สมัครไปแล้ว ต้องบอกให้ชัดว่าคนละเรื่องกัน
+    const warn = row && row.registered
+        ? '\n\n⚠ คนนี้สมัครไปแล้ว การถอดชื่อออกจะกันแค่การสมัครใหม่เท่านั้น\nบัญชีเดิมยังเข้าใช้งานได้ตามปกติ ถ้าต้องการปิดบัญชีต้องไปลบที่ Supabase Dashboard'
+        : '';
+    if (!confirm('ถอด ' + email + ' ออกจากรายชื่อผู้มีสิทธิ์ใช้งานหรือไม่?' + warn)) return;
+    try {
+        await AscCloud.removeAllowedEmail(email);
+        allowMsg('ถอด ' + email + ' ออกแล้ว', true);
+        await loadAllowlist();
+    } catch (e) {
+        allowMsg(e.message, false);
     }
 }
 
