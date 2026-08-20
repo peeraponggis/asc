@@ -1,4 +1,4 @@
-master_shellOLD.html
+bin/master_shellOLD.html
 
 # ── Capacitor / Android ────────────────────────────────────────────────
 # node_modules ติดตั้งใหม่ได้ด้วย npm install จึงไม่ต้องเก็บ (27 MB)
