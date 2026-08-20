@@ -4,15 +4,15 @@
  *  สคริปต์นี้รันบนเครื่องคุณเท่านั้น ห้ามเอาขึ้นเว็บ เพราะต้องใช้คีย์ service_role
  *  ซึ่งข้ามระบบสิทธิ์ได้ทั้งหมด
  *
- *  วิธีใช้ (PowerShell)
- *      cd supabase
- *      npm install @supabase/supabase-js
- *      $env:SUPABASE_URL = "https://xxxx.supabase.co"
- *      $env:SUPABASE_SERVICE_KEY = "คีย์ service_role"
- *      node invite-users.mjs --dry-run     # ดูรายชื่อก่อน ยังไม่ส่งจริง
- *      node invite-users.mjs               # ส่งจริง
- *      node invite-users.mjs --check       # ถามเซิร์ฟเวอร์ว่าใครถูกเชิญไปแล้วบ้าง ไม่ส่งอีเมล
- *      node invite-users.mjs --only a@b.com    # ทดสอบทีละคน
+ *  วิธีใช้ — ตั้งคีย์ครั้งเดียวจบ
+ *      1. npm install @supabase/supabase-js   (รันในโฟลเดอร์ supabase ครั้งเดียว)
+ *      2. เปิดไฟล์  supabase/.env  วางคีย์ service_role ต่อท้าย SUPABASE_SERVICE_KEY=
+ *         ไฟล์นั้นถูก .gitignore ไว้แล้ว และไม่ต้องใส่ SUPABASE_URL เพราะอ่านเองจาก supabase-config.js
+ *      3. รันคำสั่งข้างล่างจากรากของโปรเจกต์ได้เลย ไม่ต้องตั้งตัวแปรใหม่ทุกครั้ง
+ *      node supabase/invite-users.mjs --dry-run     # ดูรายชื่อก่อน ยังไม่ส่งจริง
+ *      node supabase/invite-users.mjs               # ส่งจริง
+ *      node supabase/invite-users.mjs --check       # ถามเซิร์ฟเวอร์ว่าใครถูกเชิญไปแล้วบ้าง ไม่ส่งอีเมล
+ *      node supabase/invite-users.mjs --only a@b.com    # ทดสอบทีละคน
  *
  *  ⚠ ก่อนส่งจริง ต้องตั้งค่า SMTP ของตัวเองก่อน
  *    Supabase Dashboard > Project Settings > Authentication > SMTP Settings
@@ -21,7 +21,7 @@
  * ========================================================================== */
 
 // โหลด @supabase/supabase-js ตอนจะส่งจริงเท่านั้น โหมด --dry-run จะได้ใช้ได้เลยโดยไม่ต้อง npm install
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -35,12 +35,58 @@ const ONLY    = ONLY_AT === -1 ? null : (process.argv[ONLY_AT + 1] || '').trim()
 const CHECK  = process.argv.includes('--check');
 const DELAY  = 2500;   // เว้นระยะระหว่างฉบับ กัน rate limit ของผู้ให้บริการอีเมล
 
-const URL_ = process.env.SUPABASE_URL;
-const KEY  = process.env.SUPABASE_SERVICE_KEY;
+/* ── หาค่าเชื่อมต่อ ───────────────────────────────────────────────────────
+   ลำดับการหา  1. ตัวแปรสภาพแวดล้อมที่ตั้งไว้ในหน้าต่างคำสั่ง
+               2. ไฟล์ supabase/.env  (ถูก .gitignore ไว้แล้ว ไม่ขึ้น GitHub)
+               3. เฉพาะ URL ถ้ายังไม่มี จะอ่านจาก supabase-config.js ให้เอง
+   ตั้งครั้งเดียวในไฟล์ .env แล้วไม่ต้องตั้งใหม่ทุกครั้งที่เปิดหน้าต่างคำสั่ง */
+const CR = String.fromCharCode(13), LF = String.fromCharCode(10);
+
+function readEnvFile() {
+    const out = {};
+    for (const p of [join(HERE, '.env'), join(HERE, '..', '.env')]) {
+        if (!existsSync(p)) continue;
+        for (const raw of readFileSync(p, 'utf8').split(LF)) {
+            const line = raw.split(CR).join('').trim();
+            if (!line || line.startsWith('#')) continue;
+            const at = line.indexOf('=');
+            if (at < 1) continue;
+            let v = line.slice(at + 1).trim();
+            if (v.length > 1 && (v[0] === v[v.length - 1]) && (v[0] === '"' || v[0] === "'")) v = v.slice(1, -1);
+            out[line.slice(0, at).trim()] = v;
+        }
+    }
+    return out;
+}
+const FILE_ENV = readEnvFile();
+
+/* ดึง URL จาก supabase-config.js โดยไม่ต้องพึ่ง regex */
+function urlFromConfig() {
+    try {
+        const cfg  = readFileSync(join(HERE, '..', 'supabase-config.js'), 'utf8');
+        const at   = cfg.lastIndexOf('SUPABASE_URL');
+        if (at === -1) return null;
+        const tail = cfg.slice(at);
+        const a    = tail.indexOf("'");
+        const b    = a === -1 ? -1 : tail.indexOf("'", a + 1);
+        const val  = a === -1 || b === -1 ? '' : tail.slice(a + 1, b);
+        return val.startsWith('http') ? val : null;
+    } catch { return null; }
+}
+
+const URL_ = process.env.SUPABASE_URL || FILE_ENV.SUPABASE_URL || urlFromConfig();
+const KEY  = process.env.SUPABASE_SERVICE_KEY || FILE_ENV.SUPABASE_SERVICE_KEY;
 
 if (!URL_ || !KEY) {
-    console.error('✗ ยังไม่ได้ตั้ง SUPABASE_URL หรือ SUPABASE_SERVICE_KEY');
-    console.error('  ดูวิธีตั้งค่าในหัวไฟล์นี้');
+    console.error('✗ ยังไม่มีคีย์ service_role');
+    console.error('');
+    console.error('  ตั้งครั้งเดียวจบ — สร้างไฟล์  supabase/.env  แล้วใส่บรรทัดนี้');
+    console.error('');
+    console.error('      SUPABASE_SERVICE_KEY=คีย์ service_role ของคุณ');
+    console.error('');
+    console.error('  หาคีย์ได้ที่ Supabase Dashboard > Project Settings > API > service_role');
+    console.error('  ไฟล์ .env ถูก .gitignore ไว้แล้ว จะไม่ถูก commit ขึ้น GitHub');
+    if (URL_) { console.error(''); console.error('  (SUPABASE_URL อ่านได้เองแล้ว : ' + URL_ + ')'); }
     process.exit(1);
 }
 if (KEY.length < 40) {
