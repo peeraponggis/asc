@@ -11,6 +11,7 @@
  *      $env:SUPABASE_SERVICE_KEY = "คีย์ service_role"
  *      node invite-users.mjs --dry-run     # ดูรายชื่อก่อน ยังไม่ส่งจริง
  *      node invite-users.mjs               # ส่งจริง
+ *      node invite-users.mjs --only a@b.com    # ทดสอบทีละคน
  *
  *  ⚠ ก่อนส่งจริง ต้องตั้งค่า SMTP ของตัวเองก่อน
  *    Supabase Dashboard > Project Settings > Authentication > SMTP Settings
@@ -25,6 +26,10 @@ import { dirname, join } from 'node:path';
 
 const HERE   = dirname(fileURLToPath(import.meta.url));
 const DRYRUN = process.argv.includes('--dry-run');
+/* --only <อีเมล> : ทำกับอีเมลเดียว ใช้ทดสอบก่อนส่งจริงทั้งชุด
+   อีเมลที่ไม่มีใน user.js ก็ใส่ได้ เช่นบัญชีทดสอบของตัวเอง */
+const ONLY_AT = process.argv.indexOf('--only');
+const ONLY    = ONLY_AT === -1 ? null : (process.argv[ONLY_AT + 1] || '').trim().toLowerCase() || null;
 const DELAY  = 2500;   // เว้นระยะระหว่างฉบับ กัน rate limit ของผู้ให้บริการอีเมล
 
 const URL_ = process.env.SUPABASE_URL;
@@ -88,6 +93,14 @@ for (const acc of accounts) {
     const email = acc.includes('@') ? acc : (MANUAL[acc] || null);
     if (!email) continue;
     targets.push({ account: acc, email: email.toLowerCase(), display: displayOf(acc), isAdmin: admins.includes(acc) });
+}
+
+if (ONLY) {
+    const found = targets.find(t => t.email === ONLY);
+    targets.length = 0;
+    targets.push(found || { account: ONLY, email: ONLY, display: ONLY.split('@')[0], isAdmin: false });
+    console.log('โหมด --only : ทำกับ ' + ONLY + (found ? '' : '  (ไม่มีในรายชื่อ user.js ถือเป็นบัญชีทดสอบ)'));
+    console.log('');
 }
 
 console.log('── จะดำเนินการกับ ' + targets.length + ' บัญชี ──');
