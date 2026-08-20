@@ -11,6 +11,7 @@
  *      $env:SUPABASE_SERVICE_KEY = "คีย์ service_role"
  *      node invite-users.mjs --dry-run     # ดูรายชื่อก่อน ยังไม่ส่งจริง
  *      node invite-users.mjs               # ส่งจริง
+ *      node invite-users.mjs --check       # ถามเซิร์ฟเวอร์ว่าใครถูกเชิญไปแล้วบ้าง ไม่ส่งอีเมล
  *      node invite-users.mjs --only a@b.com    # ทดสอบทีละคน
  *
  *  ⚠ ก่อนส่งจริง ต้องตั้งค่า SMTP ของตัวเองก่อน
@@ -30,6 +31,8 @@ const DRYRUN = process.argv.includes('--dry-run');
    อีเมลที่ไม่มีใน user.js ก็ใส่ได้ เช่นบัญชีทดสอบของตัวเอง */
 const ONLY_AT = process.argv.indexOf('--only');
 const ONLY    = ONLY_AT === -1 ? null : (process.argv[ONLY_AT + 1] || '').trim().toLowerCase() || null;
+/* --check : ถามเซิร์ฟเวอร์ว่าใครถูกเชิญไปแล้วบ้าง ไม่ส่งอีเมลออกไปสักฉบับ */
+const CHECK  = process.argv.includes('--check');
 const DELAY  = 2500;   // เว้นระยะระหว่างฉบับ กัน rate limit ของผู้ให้บริการอีเมล
 
 const URL_ = process.env.SUPABASE_URL;
@@ -108,7 +111,11 @@ targets.forEach((t, i) =>
     console.log('   ' + String(i + 1).padStart(2) + '. ' + t.email.padEnd(38) + t.display + (t.isAdmin ? '   [ผู้ดูแลระบบ]' : '')));
 console.log('');
 
-if (DRYRUN) { console.log('โหมดทดลอง ยังไม่ได้ส่งอะไรออกไป  ถอด --dry-run ออกเมื่อพร้อมส่งจริง'); process.exit(0); }
+if (DRYRUN) {
+    console.log('โหมดทดลอง อ่านรายชื่อจาก user.js เท่านั้น ยังไม่ได้ถามเซิร์ฟเวอร์และไม่ได้ส่งอะไรออกไป');
+    console.log('อยากรู้ว่าใครถูกเชิญไปแล้วบ้าง ให้ใช้  --check  แทน');
+    process.exit(0);
+}
 
 /* ── ส่งจริง ────────────────────────────────────────────────────────────── */
 let createClient;
@@ -121,6 +128,45 @@ try {
 }
 
 const sb = createClient(URL_, KEY, { auth: { autoRefreshToken: false, persistSession: false } });
+
+/* ── โหมด --check : รายงานสถานะจริงจากเซิร์ฟเวอร์ ไม่ส่งอีเมลสักฉบับ ────── */
+if (CHECK) {
+    const existing = new Map();
+    for (let page = 1; ; page++) {
+        const { data, error } = await sb.auth.admin.listUsers({ page, perPage: 200 });
+        if (error) { console.error('✗ อ่านรายชื่อผู้ใช้ไม่สำเร็จ : ' + error.message); process.exit(1); }
+        for (const u of data.users) existing.set((u.email || '').toLowerCase(), u);
+        if (data.users.length < 200) break;
+    }
+
+    console.log('── สถานะจริงบนเซิร์ฟเวอร์ (มีบัญชีทั้งหมด ' + existing.size + ') ──');
+    let none = 0, invited = 0, active = 0;
+    for (const t of targets) {
+        const u = existing.get(t.email);
+        let mark;
+        if (!u)                     { mark = '✗ ยังไม่มีบัญชี ยังไม่ถูกเชิญ';  none++; }
+        else if (u.last_sign_in_at) { mark = '✓ ใช้งานแล้ว  เข้าล่าสุด ' + String(u.last_sign_in_at).slice(0, 16).replace('T', ' '); active++; }
+        else                        { mark = '• เชิญแล้ว ยังไม่ได้ตั้งรหัสผ่าน'; invited++; }
+        console.log('   ' + t.email.padEnd(38) + mark);
+    }
+
+    const extra = [...existing.keys()].filter(e => e && !targets.some(t => t.email === e));
+    if (extra.length) {
+        console.log('');
+        console.log('   บัญชีที่ไม่อยู่ในรายชื่อ ' + extra.length + ' : ' + extra.join(', '));
+    }
+
+    console.log('');
+    console.log('── สรุป ──');
+    console.log('   ยังไม่ถูกเชิญ           : ' + none);
+    console.log('   เชิญแล้ว รอตั้งรหัสผ่าน : ' + invited);
+    console.log('   ใช้งานแล้ว              : ' + active);
+    console.log('');
+    if (none === targets.length)  console.log('   → ยังไม่ได้ส่งคำเชิญเลยสักฉบับ พร้อมรัน  node supabase/invite-users.mjs  ได้');
+    else if (none === 0)          console.log('   → ส่งครบทุกคนแล้ว ไม่ต้องรันซ้ำ');
+    else                          console.log('   → ส่งไปแล้วบางส่วน รันซ้ำได้ คนที่มีบัญชีแล้วจะถูกข้ามเอง');
+    process.exit(0);
+}
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let ok = 0, existed = 0, failed = 0;
