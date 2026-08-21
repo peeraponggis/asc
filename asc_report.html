@@ -205,7 +205,43 @@
             .pdf-page [class*="leading-relaxed"] { line-height: 1.45 !important; }
             /* กล่องคำอธิบาย (Pee Analysis) ใน PDF */
             .pdf-page [id^="prt-desc-"] { padding: 6px 10px !important; margin-top: 6px !important; font-size: 10.5px !important; }
+            /* สมการในหน้า PDF ย่อลงเล็กน้อยให้พอดีคอลัมน์ */
+            .pdf-page .asc-eq { font-size: 11.5px !important; margin: 4px 0 !important; line-height: 1.7 !important; }
         }
+
+        /* ══════════════════════════════════════════════════════════════
+           การแสดงผลสมการ
+           เขียนด้วย HTML+CSS ล้วน ไม่พึ่งไลบรารีคณิตศาสตร์จากภายนอก
+           เพราะรายงานนี้ต้องแปลงเป็นภาพเพื่อทำ PDF และต้องเปิดแบบออฟไลน์ได้
+           ฟอนต์เฉพาะของ KaTeX/MathJax มักหลุดตอนแปลงเป็นภาพ กลายเป็นกล่องว่าง
+           ══════════════════════════════════════════════════════════════ */
+        .asc-eq {
+            display: block;
+            text-align: center;
+            margin: 0.55em 0;
+            padding: 0.15em 0;
+            font-family: "Cambria Math", "Times New Roman", Georgia, serif;
+            font-size: 1.15em;
+            font-style: italic;
+            line-height: 2.1;
+            color: #1e293b;
+        }
+        .asc-eq-i {
+            font-family: "Cambria Math", "Times New Roman", Georgia, serif;
+            font-style: italic;
+            white-space: nowrap;
+        }
+        /* เศษส่วนใช้ inline-block ซ้อนกัน ไม่ใช้ flex เพราะ flex เพี้ยนตอนแปลงเป็นภาพ */
+        .asc-frac {
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+            margin: 0 0.15em;
+        }
+        .asc-frac-n { display: block; border-bottom: 1px solid currentColor; padding: 0 0.4em; }
+        .asc-frac-d { display: block; padding: 0.05em 0.4em 0; }
+        .asc-eq sub, .asc-eq sup,
+        .asc-eq-i sub, .asc-eq-i sup { font-style: normal; font-size: 0.7em; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -400,7 +436,7 @@
                                 <h4 class="text-xs font-bold text-orange-700 mb-1">3. การแปลงความเข้มแสง (POA)</h4>
                                 <div class="text-sm flex justify-between"><span>แสงตรงหน้าแผง (Beam Irradiance):</span> <span id="sim-poa-beam" class="font-bold text-gray-800">-</span></div>
                                 <div class="text-sm flex justify-between"><span>แสงรวมหน้าแผง (POA Total):</span> <span id="sim-poa-tot" class="font-bold text-gray-800">-</span></div>
-								<div class="text-[9px] flex justify-between"><span>Plane of Array Total Irradiance คือ ค่าปริมาณความเข้มของรังสีดวงอาทิตย์รวมทั้งหมดที่ตกลงกระทบลงบนระนาบผิวหน้าของแผงโซล่าร์เซลล์พอดี มีหน่วยวัดเป็นวัตต์ต่อตารางเมตร (W/m2)</div>
+								<div class="text-[9px] flex justify-between"><span>Plane of Array Total Irradiance คือ ค่าปริมาณความเข้มของรังสีดวงอาทิตย์รวมทั้งหมดที่ตกลงกระทบลงบนระนาบผิวหน้าของแผงโซล่าร์เซลล์พอดี มีหน่วยวัดเป็นวัตต์ต่อตารางเมตร (W/m²)</div>
 							</div>
 
                             <div class="bg-green-50 p-3 rounded border border-green-100">
@@ -578,7 +614,7 @@
 
                     <div class="chart-container avoid-break" id="env-container">
                         <h3 class="font-bold text-lg mb-4 text-green-700"><i class="fa-solid fa-leaf"></i></i> 2. Environmental Impact (แบบจำลองด้านสิ่งแวดล้อม)</h3><div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-green-50 p-4 rounded border border-green-200 text-center">
-                            <div><p class="text-xs text-gray-500">ลดการปล่อย CO2 (ตัน/ปี)</p><p class="text-2xl font-bold text-gray-700" id="env-co2">-</p></div>
+                            <div><p class="text-xs text-gray-500">ลดการปล่อย CO₂ (ตัน/ปี)</p><p class="text-2xl font-bold text-gray-700" id="env-co2">-</p></div>
                             <div><p class="text-xs text-gray-500">เทียบเท่าปลูกต้นไม้ (ต้น/ปี)</p><p class="text-2xl font-bold text-green-600" id="env-tree">-</p></div>
                             <div><p class="text-xs text-gray-500">ลดการใช้ถ่านหิน (ตัน/ปี)</p><p class="text-2xl font-bold text-gray-700" id="env-coal">-</p></div>
                             <div><p class="text-xs text-gray-500">เทียบเท่าประหยัดน้ำมัน (ลิตร/ปี)</p><p class="text-2xl font-bold text-orange-600" id="env-oil">-</p></div>
@@ -943,7 +979,7 @@
                 <div id="prt-sec-env">
                     <h2 class="pdf-heading" style="margin-top: 6px !important;">ASC Environmental Impact</h2>
                     <div class="flex space-x-4 text-center border p-2 bg-green-50 rounded mt-1">
-                        <div class="w-1/4 border-r border-green-200"><p class="text-[9px] text-gray-500 leading-none mb-1">ลด CO2 (ตัน/ปี)</p><p class="text-[13px] font-bold text-gray-700 leading-none" id="prt-env-co2">-</p></div>
+                        <div class="w-1/4 border-r border-green-200"><p class="text-[9px] text-gray-500 leading-none mb-1">ลด CO₂ (ตัน/ปี)</p><p class="text-[13px] font-bold text-gray-700 leading-none" id="prt-env-co2">-</p></div>
                         <div class="w-1/4 border-r border-green-200"><p class="text-[9px] text-gray-500 leading-none mb-1">ปลูกต้นไม้ (ต้น)</p><p class="text-[13px] font-bold text-green-600 leading-none" id="prt-env-tree">-</p></div>
                         <div class="w-1/4 border-r border-green-200"><p class="text-[9px] text-gray-500 leading-none mb-1">ลดถ่านหิน (ตัน)</p><p class="text-[13px] font-bold text-gray-700 leading-none" id="prt-env-coal">-</p></div>
                         <div class="w-1/4"><p class="text-[9px] text-gray-500 leading-none mb-1">ประหยัดน้ำมัน (ลิตร)</p><p class="text-[13px] font-bold text-orange-600 leading-none" id="prt-env-oil">-</p></div>
@@ -1199,6 +1235,123 @@
         let projectImagesBase64 = []; 
         
         const formatNum = (num, dec=2) => { return Number(num).toLocaleString('en-US', {minimumFractionDigits: dec, maximumFractionDigits: dec}); };
+
+        /* ══════════════════════════════════════════════════════════════════════
+           แปลงสมการที่เขียนแบบ LaTeX ให้เป็นสมการจริงบนหน้าจอ
+
+           เดิมข้อความอย่าง  $$PR = \frac{E_{Grid}}{E_0 \times (H_{POA}/H_0)}$$
+           ถูกพิมพ์ออกมาดิบ ๆ ทั้งบรรทัด เพราะไม่มีตัวเรนเดอร์สมการโหลดอยู่เลย
+           ผู้อ่านจึงเห็นเครื่องหมายดอลลาร์กับคำสั่ง \frac แทนที่จะเห็นเศษส่วน
+
+           เลือกแปลงเป็น HTML+CSS เองแทนการโหลด KaTeX/MathJax จาก CDN เพราะ
+             1. รายงานถูกแปลงเป็นภาพเพื่อประกอบ PDF  ฟอนต์เฉพาะของไลบรารีเหล่านั้น
+                มักโหลดไม่ทันหรือฝังไม่ได้ กลายเป็นกล่องว่างในไฟล์ที่ส่งลูกค้า
+             2. ไฟล์นี้ต้องเปิดแบบออฟไลน์ (file://) ได้ด้วย
+           รองรับเท่าที่รายงานนี้ใช้จริง คือ \frac \sum \int \times \Delta \in
+           กับตัวห้อย _ และตัวยก ^
+           ══════════════════════════════════════════════════════════════════════ */
+        const ASC_TEX_SYM = {
+            '\\sum':'∑', '\\int':'∫', '\\times':'×', '\\div':'÷', '\\Delta':'Δ',
+            '\\delta':'δ', '\\in':'∈', '\\cdot':'·', '\\le':'≤', '\\ge':'≥',
+            '\\neq':'≠', '\\approx':'≈', '\\pm':'±', '\\eta':'η', '\\alpha':'α',
+            '\\beta':'β', '\\theta':'θ', '\\Sigma':'Σ', '\\infty':'∞', '\\sqrt':'√'
+        };
+        /* ตัวดำเนินการที่ต้องมีช่องว่างขนาบสองข้าง ต่างจาก ∑ ∫ Δ ที่เกาะติดตัวถัดไป */
+        const ASC_TEX_BINARY = ['\\times', '\\div', '\\in', '\\cdot',
+                                '\\le', '\\ge', '\\neq', '\\approx', '\\pm'];
+
+        function ascTexToHtml(tex) {
+            const escChar = ch => ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch === '>' ? '&gt;' : ch;
+
+            // อ่านวงเล็บปีกกาแบบนับชั้น รองรับ {E_{Grid}} ที่ซ้อนกัน
+            const group = (s, i) => {
+                let depth = 0, j = i;
+                for (; j < s.length; j++) {
+                    if (s[j] === '{') depth++;
+                    else if (s[j] === '}') { depth--; if (depth === 0) break; }
+                }
+                return { body: s.slice(i + 1, j), end: j + 1 };
+            };
+
+            const walk = (s) => {
+                let out = '', i = 0;
+                while (i < s.length) {
+                    const c = s[i];
+
+                    if (c === '\\') {
+                        // อักขระที่ถูก escape ไว้ เช่น \_ \& \%
+                        if ('_&%${}'.indexOf(s[i + 1]) >= 0) { out += escChar(s[i + 1]); i += 2; continue; }
+                        const m = /^\\[a-zA-Z]+/.exec(s.slice(i));
+                        if (!m) { out += '\\'; i++; continue; }
+                        const cmd = m[0];
+
+                        if (cmd === '\\frac') {
+                            let k = i + cmd.length;
+                            while (s[k] === ' ') k++;
+                            if (s[k] !== '{') { out += 'frac'; i = k; continue; }
+                            const num = group(s, k);
+                            let k2 = num.end;
+                            while (s[k2] === ' ') k2++;
+                            if (s[k2] !== '{') { out += walk(num.body); i = k2; continue; }
+                            const den = group(s, k2);
+                            out += '<span class="asc-frac">' +
+                                     '<span class="asc-frac-n">' + walk(num.body) + '</span>' +
+                                     '<span class="asc-frac-d">' + walk(den.body) + '</span>' +
+                                   '</span>';
+                            i = den.end;
+                            continue;
+                        }
+
+                        const sym = ASC_TEX_SYM[cmd] || cmd.slice(1);
+                        i += cmd.length;
+                        if (s[i] === ' ') i++;   // LaTeX กินช่องว่างหนึ่งตัวหลังคำสั่ง
+
+                        // LaTeX เว้นระยะรอบเครื่องหมายให้เองตามชนิดของสัญลักษณ์
+                        // แต่ HTML ล้วนไม่มีกลไกนั้น ถ้าปล่อยไว้จะได้ "E₀ ×(H" ติดกันจนอ่านยาก
+                        // จึงคืนช่องว่างให้เฉพาะตัวดำเนินการสองข้าง ส่วน ∑ ∫ Δ ปล่อยติดตัวถัดไปตามปกติ
+                        if (ASC_TEX_BINARY.indexOf(cmd) >= 0) {
+                            if (!/\s$/.test(out)) out += ' ';
+                            out += sym + ' ';
+                        } else {
+                            out += sym;
+                        }
+                        continue;
+                    }
+
+                    if (c === '_' || c === '^') {
+                        const tag = (c === '_') ? 'sub' : 'sup';
+                        let body, next;
+                        if (s[i + 1] === '{') { const g = group(s, i + 1); body = g.body; next = g.end; }
+                        else { body = s[i + 1] || ''; next = i + 2; }
+                        out += '<' + tag + '>' + walk(body) + '</' + tag + '>';
+                        i = next;
+                        continue;
+                    }
+
+                    if (c === '{' || c === '}') { i++; continue; }
+
+                    out += escChar(c);
+                    i++;
+                }
+                return out;
+            };
+
+            return walk(tex);
+        }
+
+        function ascRenderMath(html) {
+            if (!html || html.indexOf('$') < 0) return html;
+
+            // สมการแบบขึ้นบรรทัดของตัวเอง ต้องแปลงก่อนแบบแทรกในประโยคเสมอ
+            html = html.replace(/\$\$([\s\S]+?)\$\$\s*(<br\s*\/?>)?/g,
+                (m, body) => '<span class="asc-eq">' + ascTexToHtml(body.trim()) + '</span>');
+
+            // สมการสั้น ๆ ที่แทรกอยู่ในประโยค เช่น $E_0$
+            html = html.replace(/\$([^$<>\n]{1,60}?)\$/g,
+                (m, body) => '<span class="asc-eq-i">' + ascTexToHtml(body.trim()) + '</span>');
+
+            return html;
+        }
 
         document.addEventListener("DOMContentLoaded", () => {
             init24hGrid(); calcBill(); initApexChart();
@@ -2519,6 +2672,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
 			
             // 🌟 1. Helper Function รูปแบบใหม่ (ดักจับสถานะ Checkbox จากทั้ง DOM และ DB3 Cache ป้องกันบั๊กโหลดไฟล์)
             const getDescHtml = (id, title, data, benefit, glossary, detailedText) => {
+                detailedText = ascRenderMath(detailedText);
                 let chkId = `chk-detail-${id}`;
                 let isChecked = false;
                 let existingChk = document.getElementById(chkId);
@@ -2553,7 +2707,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
             // 🌟 2. อัปเดตคำอธิบายทีละกราฟ (เจาะจงข้อมูล Dynamic)
             let descEnv = document.getElementById('desc-env');
             let dtlEnv = `<p>กราฟนี้แสดงผลกระทบเชิงบวกต่อสิ่งแวดล้อมจากการติดตั้งระบบโซลาร์เซลล์ขนาด <b>${formatNum(r.pnom, 2)} kWp</b> ซึ่งสามารถผลิตพลังงานสะอาดได้ <b>${formatNum(r.totalEGrid, 2)} kWh/ปี</b></p><p>พลังงานดังกล่าวเทียบเท่ากับการลดการปล่อยก๊าซคาร์บอนไดออกไซด์ <b>${formatNum((r.totalEGrid * 0.475) / 1000, 2)} ตันต่อปี</b> หรือคิดเป็นการปลูกต้นไม้ถึง <b>${formatNum((r.totalEGrid * 0.475) / 9, 0)} ต้น</b> ข้อมูลนี้สามารถนำไปใช้อ้างอิงในรายงานความยั่งยืนขององค์กร (ESG Report) ได้โดยตรง</p>`;
-            if(descEnv) descEnv.innerHTML = getDescHtml("env", "Environmental Impact (ผลกระทบด้านสิ่งแวดล้อม)", "ปริมาณก๊าซเรือนกระจกที่ลดได้ จำนวนปลูกต้นไม้เทียบเท่า และปริมาณพลังงานฟอสซิลที่ประหยัดได้", "ใช้สนับสนุนรายงานความยั่งยืนขององค์กร (ESG Report) และชี้วัดความคุ้มค่าทางสังคม", "<li><b>CO2 Emission Reduction:</b> การลดการปล่อยก๊าซคาร์บอนไดออกไซด์ (ก๊าซเรือนกระจกหลักที่ทำให้เกิดภาวะโลกร้อน)</li><li><b>Fossil Fuel Savings:</b> การลดการพึ่งพาเชื้อเพลิงฟอสซิล (ช่วยลดมลพิษทางอากาศ PM2.5, SOx, NOx)</li><li><b>ESG (Environmental, Social, and Governance):</b> แนวคิดการดำเนินธุรกิจอย่างยั่งยืน</li>", dtlEnv);
+            if(descEnv) descEnv.innerHTML = getDescHtml("env", "Environmental Impact (ผลกระทบด้านสิ่งแวดล้อม)", "ปริมาณก๊าซเรือนกระจกที่ลดได้ จำนวนปลูกต้นไม้เทียบเท่า และปริมาณพลังงานฟอสซิลที่ประหยัดได้", "ใช้สนับสนุนรายงานความยั่งยืนขององค์กร (ESG Report) และชี้วัดความคุ้มค่าทางสังคม", "<li><b>CO₂ Emission Reduction:</b> การลดการปล่อยก๊าซคาร์บอนไดออกไซด์ (ก๊าซเรือนกระจกหลักที่ทำให้เกิดภาวะโลกร้อน)</li><li><b>Fossil Fuel Savings:</b> การลดการพึ่งพาเชื้อเพลิงฟอสซิล (ช่วยลดมลพิษทางอากาศ PM2.5, SOx, NOx)</li><li><b>ESG (Environmental, Social, and Governance):</b> แนวคิดการดำเนินธุรกิจอย่างยั่งยืน</li>", dtlEnv);
 
             let descWaterfall = document.getElementById('desc-waterfall');
             if(descWaterfall && r) {
