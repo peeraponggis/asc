@@ -2554,20 +2554,18 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                     htmlBOM += makeRow("Mounting", mountCol, "Ground Lug", "Standard", bMount.ground_lug_qty || 0, "ตัว");
                     htmlBOM += makeRow("Structure", strCol, "Walkway", "ZAM/FRP/Aluminum/Steel", bMount.walkway_sqm || 0, "ม.");
 
-				// 🌟🌟 เริ่ม: ดึงและคำนวณข้อมูลบันไดเซอร์วิสอัตโนมัติ (BOQ จัดซื้อ) 🌟🌟
+				// 🌟🌟 เริ่ม: บันไดเซอร์วิส (BOQ จัดซื้อ) 🌟🌟
+                    //
+                    // ยึดตามที่ผู้ใช้เลือกไว้ในหน้าออกแบบเท่านั้น
+                    // ถ้าเลือก "ไม่ติดตั้ง" asc_design จะส่ง service_ladder.required = false มาให้
+                    // รายงานต้องไม่แสดงบันไดเลย และต้องไม่คิดราคาเหล็กเข้า BOQ
+                    //
+                    // ⚠ เดิมตรงนี้มีโค้ดที่เมื่อ required เป็น false จะสร้างบันไดขึ้นมาเองจาก
+                    //   AppState.pipeLength ซึ่งคือ "ระยะท่อเมนปั๊มน้ำ" (ค่าเริ่มต้น 30)
+                    //   ไม่ใช่ความสูงอาคารแม้แต่น้อย ผลคือได้บันไดสูง 30 เมตร พร้อมกรงกันตก
+                    //   และชานพัก 3 จุด โผล่ในใบเสนอราคาทั้งที่ผู้ใช้สั่งไม่ติดตั้ง
+                    //   ถอดออกแล้ว อย่านำกลับมา
                     let bLadder = b.service_ladder || {};
-                    let pLen = AppState.pipeLength || 0;
-                    
-                    if (!bLadder.required && pLen > 0) {
-                        bLadder = {
-                            required: true,
-                            building_height_m: pLen,
-                            ladder_rungs: Math.floor(pLen / 0.3),
-                            safety_cage_required: pLen > 5,
-                            safety_cage_length_m: pLen > 5 ? (pLen - 2.2) : 0,
-                            rest_platforms: Math.floor((pLen - 0.1) / 9)
-                        };
-                    }
 
                     if (bLadder.required && bLadder.building_height_m > 0) {
                         let ladCol = "text-orange-600";
