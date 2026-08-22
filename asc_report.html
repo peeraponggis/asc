@@ -1236,6 +1236,22 @@
         
         const formatNum = (num, dec=2) => { return Number(num).toLocaleString('en-US', {minimumFractionDigits: dec, maximumFractionDigits: dec}); };
 
+        /* แสดงเฉพาะค่าที่ออกแบบไว้จริง ถ้าไม่มีให้ขึ้นขีด อย่าเดาแทน
+
+           เดิมกระจายอยู่ทั่วไฟล์ในรูป  prot.ac_breaker_amp || 160  หรือ  sizing.pv_cable_sqmm || "6"
+           เมื่อข้อมูลขาด ทั้งตาราง BOM แผนภาพเส้นเดี่ยว และแปลน CAD จะพิมพ์ตัวเลขชุดนี้ออกมา
+           เหมือนเป็นค่าที่วิศวกรกำหนดไว้ ทั้งที่เป็นตัวเลขที่โค้ดเดาเอง
+           ถ้ามีคนเอาไปสั่งของหรือยื่นขออนุญาตตามนั้นจะเสียหาย
+
+           คืนหน่วยมาพร้อมกับค่าด้วย เพื่อให้กรณีไม่มีข้อมูลได้ "-" เดี่ยว ๆ
+           ไม่ใช่ "-A" หรือ "- Sq.mm" ซึ่งอ่านแล้วสับสน */
+        function ascSpec(v, unit) {
+            if (v === null || v === undefined || v === '' || Number(v) === 0 || Number.isNaN(Number(v))) {
+                return (typeof v === 'string' && v.trim() !== '' && Number.isNaN(Number(v))) ? v : '-';
+            }
+            return String(v) + (unit || '');
+        }
+
         /* ══════════════════════════════════════════════════════════════════════
            แปลงสมการที่เขียนแบบ LaTeX ให้เป็นสมการจริงบนหน้าจอ
 
@@ -2519,14 +2535,9 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                         return `<tr><td class="border p-2 text-center font-bold ${catColorClass}">${category}</td><td class="border p-2 text-gray-700">${name}</td><td class="border p-2 font-medium text-gray-600">${spec}</td><td class="border p-2 text-center text-gray-800"><b>${qty}</b> ${unit}</td></tr>`;
                     }
 
-                    /* แสดงเฉพาะค่าที่ออกแบบไว้จริง ถ้าไม่มีให้ขึ้นขีด อย่าเดาแทน
-                       เดิมเขียนเป็น  bProt.ac_breaker_amp || '160'  ซึ่งเมื่อข้อมูลขาด
-                       รายงานจะพิมพ์ "เบรกเกอร์ 160A" ออกมาเหมือนเป็นค่าที่วิศวกรกำหนดไว้
-                       ทั้งที่เป็นตัวเลขที่โค้ดเดาเอง ถ้ามีคนเอาไปสั่งของจะเสียหาย */
-                    const specOf = (v, unit) => {
-                        if (v === null || v === undefined || v === '' || Number(v) === 0) return '-';
-                        return String(v) + (unit || '');
-                    };
+                    // ใช้ ascSpec() ตัวกลาง เพื่อให้ตาราง BOM แผนภาพเส้นเดี่ยว และแปลน CAD
+                    // แสดงค่าที่ขาดหายไปด้วยรูปแบบเดียวกันทั้งหมด
+                    const specOf = ascSpec;
 
                     let htmlBOM = ""; let mainCol = "text-blue-600";
 					// 🌟 ดึงข้อมูลแรงสูงมาแสดงถ้ามี
@@ -2661,7 +2672,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                     if(document.getElementById('wiring-container')) document.getElementById('wiring-container').style.display = 'block';
                     if(document.getElementById('sld-container')) document.getElementById('sld-container').style.display = 'block';
 
-                    let dcBreaker = bProt.dc_breaker_amp || 25; let acBreaker = bProt.ac_breaker_amp || 160;
+                    let dcBreaker = ascSpec(bProt.dc_breaker_amp, 'A'); let acBreaker = ascSpec(bProt.ac_breaker_amp, 'A');
                     let pName = getStr('inp-proj', 'Project'); let locName = getStr('inp-loc', '-'); let totalKwp = (document.getElementById('display-pnom') ? document.getElementById('display-pnom').innerText : '0.00') + ' kWp';
 
                     if (typeof generateWiringSVG === "function" && document.getElementById('diagram-wiring')) { document.getElementById('diagram-wiring').innerHTML = generateWiringSVG(dcBreaker, acBreaker); }
@@ -5595,7 +5606,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 
                 <rect x="100" y="220" width="60" height="150" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
                 <text x="130" y="210" font-size="12" font-weight="bold" text-anchor="middle">Terminal</text><text x="130" y="260" font-size="10" text-anchor="middle">DC+</text><text x="130" y="320" font-size="10" text-anchor="middle">DC-</text>
-                <use href="#mcb-pole" x="220" y="220"/><use href="#mcb-pole" x="250" y="220"/><text x="250" y="205" font-size="12" font-weight="bold" text-anchor="middle">DC FUSE ${dcBreaker}A</text>
+                <use href="#mcb-pole" x="220" y="220"/><use href="#mcb-pole" x="250" y="220"/><text x="250" y="205" font-size="12" font-weight="bold" text-anchor="middle">DC FUSE ${dcBreaker}</text>
                 <use href="#spd-pole" x="330" y="220"/><use href="#spd-pole" x="360" y="220"/><text x="360" y="205" font-size="12" font-weight="bold" text-anchor="middle">DC SPD (Type 2)</text>
 
                 <path d="M 160 250 L 235 250 M 235 250 L 235 220" fill="none" stroke="#dc2626" stroke-width="3"/><path d="M 235 300 L 235 340 L 345 340 L 345 300" fill="none" stroke="#dc2626" stroke-width="3"/><path d="M 235 340 L 235 480" fill="none" stroke="#dc2626" stroke-width="3"/>
@@ -5607,7 +5618,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 
                 <rect x="540" y="220" width="60" height="150" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
                 <text x="570" y="210" font-size="12" font-weight="bold" text-anchor="middle">From Inverter</text><text x="570" y="250" font-size="10" text-anchor="middle">L1/L2/L3</text><text x="570" y="320" font-size="10" text-anchor="middle">N</text>
-                <use href="#mcb-pole" x="650" y="220"/><use href="#mcb-pole" x="680" y="220"/><use href="#mcb-pole" x="710" y="220"/><use href="#mcb-pole" x="740" y="220"/><text x="710" y="205" font-size="12" font-weight="bold" text-anchor="middle">AC MCB ${acBreaker}A</text>
+                <use href="#mcb-pole" x="650" y="220"/><use href="#mcb-pole" x="680" y="220"/><use href="#mcb-pole" x="710" y="220"/><use href="#mcb-pole" x="740" y="220"/><text x="710" y="205" font-size="12" font-weight="bold" text-anchor="middle">AC MCB ${acBreaker}</text>
                 <use href="#spd-pole" x="810" y="220"/><use href="#spd-pole" x="840" y="220"/><use href="#spd-pole" x="870" y="220"/><text x="855" y="205" font-size="12" font-weight="bold" text-anchor="middle">AC SPD (Type 2)</text>
 
                 <path d="M 600 240 L 665 240 M 665 240 L 665 220" fill="none" stroke="#78350f" stroke-width="3"/><path d="M 665 300 L 665 360 M 665 360 L 665 480" fill="none" stroke="#78350f" stroke-width="3"/><path d="M 665 360 L 825 360 L 825 300" fill="none" stroke="#78350f" stroke-width="3"/>
@@ -5624,10 +5635,10 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
         function generateSLDSVG(bom, eq, pName, locName, totalKwp) {
             bom = bom || {}; eq = eq || {};
             let sizing = bom.calculated_sizing || {}; let prot = bom.protection || {}; let counts = eq.counts || {}; let pv = eq.pv || {}; let inv1 = eq.inv1 || {}; let ind = eq.industrial_settings || {};
-            let dcCable = sizing.pv_cable_sqmm || "6"; let acCable = sizing.ac_cable_sqmm || "16"; let gndCable = sizing.gnd_cable_sqmm || "25"; let conduitType = sizing.conduit_or_wireway || "Wireway/Conduit";
-            let acBreaker = prot.ac_breaker_amp || 160; let dcBreaker = prot.dc_breaker_amp || 25;
-            let trKva = ind.transformerRatingKva || 250; let mdbAmp = ind.targetMdbAmps || 800; let ctRatio = ind.ctRatio || "500/5A"; let meterBrand = ind.meterBrand || "Smart Meter";
-            let totalPanels = counts.totalPanels || 0; let invKw = inv1.Rated_AC_Output_Power_kW || 100;
+            let dcCable = ascSpec(sizing.pv_cable_sqmm, ' Sq.mm'); let acCable = ascSpec(sizing.ac_cable_sqmm, ' Sq.mm'); let gndCable = ascSpec(sizing.gnd_cable_sqmm, ' Sq.mm'); let conduitType = ascSpec(sizing.conduit_or_wireway);
+            let acBreaker = ascSpec(prot.ac_breaker_amp, 'A'); let dcBreaker = ascSpec(prot.dc_breaker_amp, 'A');
+            let trKva = ascSpec(ind.transformerRatingKva, ' kVA'); let mdbAmp = ascSpec(ind.targetMdbAmps, 'A'); let ctRatio = ascSpec(ind.ctRatio); let meterBrand = ind.meterBrand || "Smart Meter";
+            let totalPanels = counts.totalPanels || 0; let invKw = ascSpec(inv1.Rated_AC_Output_Power_kW, 'kW');
             let pvSpec = `${pv.Manufacturer || '-'} ${pv.Model_Name || '-'}`; let invSpec = `${inv1.Manufacturer || '-'} ${inv1.Model_Name || '-'}`;
             let dateStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });
             let shortName = pName.length > 45 ? pName.substring(0, 45) + '...' : pName;
@@ -5670,7 +5681,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                     <line x1="${x}" y1="670" x2="${x}" y2="850" stroke="#000" stroke-width="1.5"/>
                     <rect x="${x-6}" y="690" width="12" height="24" fill="#fff" stroke="#000" stroke-width="1.5"/>
                     <line x1="${x-6}" y1="690" x2="${x+6}" y2="714" stroke="#000" stroke-width="1.5"/>
-                    <text x="${x+10}" y="700" font-size="8">2xFuse ${dcBreaker}A</text><text x="${x+10}" y="710" font-size="8">1100 Vdc</text>
+                    <text x="${x+10}" y="700" font-size="8">2xFuse ${dcBreaker}</text><text x="${x+10}" y="710" font-size="8">1100 Vdc</text>
                     ${i % 2 === 0 ? `
                         <line x1="${x}" y1="730" x2="${x+25}" y2="730" stroke="#000" stroke-width="1"/>
                         <rect x="${x+20}" y="730" width="10" height="16" fill="#fff" stroke="#ff0000" stroke-width="1.5"/>
@@ -5696,18 +5707,18 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 <text x="100" y="115" font-size="12" font-weight="bold">TO PEA</text><line x1="150" y1="110" x2="350" y2="110" stroke="#000" stroke-width="2"/><text x="180" y="100" font-size="10">22 kV OVER HEAD LINE</text>
                 <line x1="250" y1="110" x2="250" y2="160" stroke="#000" stroke-width="1.5"/><text x="260" y="140" font-size="10">3x1C-50 Sq.mm SAC</text><text x="260" y="152" font-size="10">OVER HEAD</text>
                 <use href="#sym-dof" x="250" y="180"/><text x="270" y="185" font-size="10">Drop out fuse 22kV.</text><line x1="250" y1="200" x2="250" y2="240" stroke="#000" stroke-width="1.5"/>
-                <rect x="210" y="240" width="80" height="90" fill="none" stroke="#000" stroke-width="1.5"/><use href="#sym-tr" x="250" y="285"/><text x="300" y="255" font-size="10" font-weight="bold">TR.1</text><text x="300" y="270" font-size="10">TRANSFORMER OIL TYPE</text><text x="300" y="285" font-size="10">${trKva} kVA</text><text x="300" y="300" font-size="10">HV. 22kV / LV.400/230V</text><text x="300" y="315" font-size="10">Z = 6% DYN 11</text>
+                <rect x="210" y="240" width="80" height="90" fill="none" stroke="#000" stroke-width="1.5"/><use href="#sym-tr" x="250" y="285"/><text x="300" y="255" font-size="10" font-weight="bold">TR.1</text><text x="300" y="270" font-size="10">TRANSFORMER OIL TYPE</text><text x="300" y="285" font-size="10">${trKva}</text><text x="300" y="300" font-size="10">HV. 22kV / LV.400/230V</text><text x="300" y="315" font-size="10">Z = 6% DYN 11</text>
                 <line x1="250" y1="330" x2="250" y2="390" stroke="#000" stroke-width="2"/><text x="260" y="360" font-size="10">1x(4-300 Sq.mm THW)</text><text x="260" y="375" font-size="10">IN CONDUIT</text>
                 <rect x="220" y="390" width="60" height="30" fill="#fff" stroke="#00b050" stroke-width="1.5"/><text x="250" y="410" font-size="12" font-weight="bold" fill="#00b050" text-anchor="middle">AMI</text><text x="285" y="405" font-size="10">มิเตอร์การไฟฟ้า PEA</text><circle cx="250" cy="380" r="5" fill="none" stroke="#000" stroke-width="1.5"/><line x1="240" y1="380" x2="260" y2="380" stroke="#000" stroke-width="1.5"/><text x="180" y="383" font-size="10">3xCT 500/5A</text>
                 <line x1="250" y1="420" x2="250" y2="470" stroke="#000" stroke-width="2"/>
                 <rect x="150" y="470" width="220" height="120" fill="none" stroke="#ff0000" stroke-width="2" stroke-dasharray="8,4"/><text x="260" y="460" font-size="12" font-weight="bold">Zero Export Controller</text>
                 <rect x="220" y="520" width="40" height="30" fill="#fff" stroke="#00b050" stroke-width="1.5"/><text x="240" y="540" font-size="10" font-weight="bold" fill="#00b050" text-anchor="middle">DPM</text><text x="240" y="560" font-size="8" text-anchor="middle">${meterBrand}</text>
                 <rect x="280" y="520" width="60" height="30" fill="#fff" stroke="#00b050" stroke-width="1.5"/><text x="310" y="535" font-size="9" fill="#00b050" text-anchor="middle">RS485 To</text><text x="310" y="545" font-size="9" fill="#00b050" text-anchor="middle">Fiber Optic</text><line x1="260" y1="535" x2="280" y2="535" stroke="#000" stroke-width="1"/><circle cx="250" cy="490" r="5" fill="none" stroke="#000" stroke-width="1.5"/><line x1="250" y1="490" x2="250" y2="520" stroke="#000" stroke-width="1"/><text x="180" y="495" font-size="10">3xCT ${ctRatio}</text><text x="255" y="505" font-size="9">3xFUSE 6A</text>
-                <line x1="250" y1="590" x2="250" y2="630" stroke="#000" stroke-width="2"/><text x="260" y="615" font-size="10">1C(4x${acCable} Sq.mm THW)</text>
+                <line x1="250" y1="590" x2="250" y2="630" stroke="#000" stroke-width="2"/><text x="260" y="615" font-size="10">1C(4x${acCable} THW)</text>
                 <circle cx="250" cy="630" r="4" fill="#000"/><line x1="250" y1="630" x2="400" y2="630" stroke="#000" stroke-width="2"/><line x1="400" y1="630" x2="400" y2="670" stroke="#000" stroke-width="2"/><line x1="400" y1="670" x2="480" y2="670" stroke="#000" stroke-width="2"/> 
                 <line x1="250" y1="630" x2="250" y2="680" stroke="#000" stroke-width="2"/><use href="#sym-dof" x="250" y="700"/><text x="270" y="705" font-size="10">Drop out fuse 400A 400/230V</text>
                 <line x1="250" y1="720" x2="250" y2="760" stroke="#000" stroke-width="2"/><circle cx="250" cy="760" r="4" fill="#000"/><text x="180" y="765" font-size="10">จุดแท็บสาย</text><line x1="250" y1="760" x2="350" y2="760" stroke="#000" stroke-width="1.5"/><rect x="335" y="770" width="30" height="20" fill="#fff" stroke="#000" stroke-width="1.5"/><text x="350" y="805" font-size="10" text-anchor="middle">อาคาร 1</text>
-                <line x1="250" y1="760" x2="250" y2="820" stroke="#000" stroke-width="2"/><circle cx="250" cy="820" r="4" fill="#000"/><text x="180" y="825" font-size="10">จุดแท็บสาย</text><line x1="250" y1="820" x2="150" y2="820" stroke="#000" stroke-width="1.5"/><rect x="135" y="830" width="30" height="20" fill="#fff" stroke="#000" stroke-width="1.5"/><text x="150" y="865" font-size="10" text-anchor="middle">อาคาร 2</text><text x="260" y="790" font-size="10">1C(4x${acCable} Sq.mm THW)</text>
+                <line x1="250" y1="760" x2="250" y2="820" stroke="#000" stroke-width="2"/><circle cx="250" cy="820" r="4" fill="#000"/><text x="180" y="825" font-size="10">จุดแท็บสาย</text><line x1="250" y1="820" x2="150" y2="820" stroke="#000" stroke-width="1.5"/><rect x="135" y="830" width="30" height="20" fill="#fff" stroke="#000" stroke-width="1.5"/><text x="150" y="865" font-size="10" text-anchor="middle">อาคาร 2</text><text x="260" y="790" font-size="10">1C(4x${acCable} THW)</text>
                 <line x1="250" y1="820" x2="250" y2="900" stroke="#000" stroke-width="2"/><line x1="250" y1="900" x2="250" y2="920" stroke="#16a34a" stroke-width="2"/><line x1="235" y1="920" x2="265" y2="920" stroke="#16a34a" stroke-width="2"/><line x1="240" y1="925" x2="260" y2="925" stroke="#16a34a" stroke-width="2"/><line x1="245" y1="930" x2="255" y2="930" stroke="#16a34a" stroke-width="2"/><text x="270" y="920" font-size="10">GND</text>
 
                 <!-- ฝั่ง SMDB (AC Combiner & Comms) -->
@@ -5720,16 +5731,16 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 <polyline points="340,535 440,535 440,50 1100,50 1100,240" fill="none" stroke="#0000ff" stroke-width="1.5"/><text x="800" y="40" font-size="10" font-weight="bold">Fiberoptic 4C</text><line x1="1005" y1="265" x2="1005" y2="280" stroke="#000" stroke-width="1" stroke-dasharray="2,2"/><line x1="1040" y1="292" x2="1060" y2="292" stroke="#000" stroke-width="1" stroke-dasharray="2,2"/><text x="1050" y="288" font-size="7">LAN</text>
                 
                 <line x1="680" y1="180" x2="900" y2="180" stroke="#00b050" stroke-width="3"/><circle cx="820" cy="180" r="4" fill="#000"/> <text x="820" y="195" font-size="8" text-anchor="middle">L1</text><circle cx="850" cy="180" r="4" fill="#000"/> <text x="850" y="195" font-size="8" text-anchor="middle">L2</text><circle cx="880" cy="180" r="4" fill="#000"/> <text x="880" y="195" font-size="8" text-anchor="middle">L3</text>
-                <line x1="720" y1="180" x2="720" y2="230" stroke="#000" stroke-width="2"/><use href="#sym-mccb" x="720" y="255"/><text x="740" y="250" font-size="9" font-weight="bold">MCCB 3P</text><text x="740" y="260" font-size="9" font-weight="bold">${acBreaker} AT</text><text x="740" y="270" font-size="8">Ic > 25kA</text><line x1="720" y1="280" x2="720" y2="350" stroke="#000" stroke-width="2"/>
+                <line x1="720" y1="180" x2="720" y2="230" stroke="#000" stroke-width="2"/><use href="#sym-mccb" x="720" y="255"/><text x="740" y="250" font-size="9" font-weight="bold">MCCB 3P</text><text x="740" y="260" font-size="9" font-weight="bold">${acBreaker}T</text><text x="740" y="270" font-size="8">Ic > 25kA</text><line x1="720" y1="280" x2="720" y2="350" stroke="#000" stroke-width="2"/>
                 <line x1="720" y1="350" x2="1080" y2="350" stroke="#ff00ff" stroke-width="4"/><text x="730" y="345" font-size="9" fill="#ff00ff" font-weight="bold">Cu BUSBAR 400V, WITH 100% N, 25% G</text>
                 <rect x="800" y="270" width="40" height="20" fill="#fff" stroke="#00b050" stroke-width="1.5"/><text x="820" y="283" font-size="9" font-weight="bold" fill="#00b050" text-anchor="middle">DPM</text><circle cx="720" cy="210" r="4" fill="none" stroke="#000" stroke-width="1.5"/><line x1="725" y1="210" x2="820" y2="210" stroke="#000" stroke-width="1"/><line x1="820" y1="210" x2="820" y2="270" stroke="#000" stroke-width="1"/><text x="680" y="215" font-size="8">3xCT</text>
                 <line x1="840" y1="280" x2="1005" y2="280" stroke="#0000ff" stroke-width="1" stroke-dasharray="3,3"/><text x="900" y="275" font-size="8" fill="#0000ff">LAN</text>
-                <line x1="680" y1="180" x2="480" y2="180" stroke="#000" stroke-width="2"/><line x1="480" y1="180" x2="480" y2="670" stroke="#000" stroke-width="2"/><text x="500" y="170" font-size="10">1C(4x${acCable} Sq.mm THW)</text>
+                <line x1="680" y1="180" x2="480" y2="180" stroke="#000" stroke-width="2"/><line x1="480" y1="180" x2="480" y2="670" stroke="#000" stroke-width="2"/><text x="500" y="170" font-size="10">1C(4x${acCable} THW)</text>
 
                 <!-- Inverter -->
                 <rect x="650" y="520" width="550" height="70" fill="#f0fdf4" stroke="#00b050" stroke-width="2"/>
-                <text x="925" y="545" font-size="12" font-weight="bold" fill="#00b050" text-anchor="middle">INVERTER</text><text x="925" y="560" font-size="10" text-anchor="middle">${invSpec} (${invKw}kW)</text><text x="925" y="575" font-size="10" text-anchor="middle">DC to AC</text>
-                <line x1="720" y1="520" x2="720" y2="350" stroke="#000" stroke-width="3"/><text x="730" y="420" font-size="10">1C(4x${acCable} Sq.mm CV-FD)</text><text x="730" y="435" font-size="10">IN CABLE TRAY หรือ ${conduitType}</text><text x="660" y="505" font-size="10">INV ${invKw}kW</text><text x="660" y="515" font-size="16" fill="#00b050">~</text>
+                <text x="925" y="545" font-size="12" font-weight="bold" fill="#00b050" text-anchor="middle">INVERTER</text><text x="925" y="560" font-size="10" text-anchor="middle">${invSpec} (${invKw})</text><text x="925" y="575" font-size="10" text-anchor="middle">DC to AC</text>
+                <line x1="720" y1="520" x2="720" y2="350" stroke="#000" stroke-width="3"/><text x="730" y="420" font-size="10">1C(4x${acCable} CV-FD)</text><text x="730" y="435" font-size="10">IN CABLE TRAY หรือ ${conduitType}</text><text x="660" y="505" font-size="10">INV ${invKw}</text><text x="660" y="515" font-size="16" fill="#00b050">~</text>
                 <polyline points="1200,555 1250,555 1250,292 1130,292" fill="none" stroke="#0000ff" stroke-width="1.5" stroke-dasharray="5,5"/><text x="1260" y="450" font-size="10" fill="#0000ff" font-weight="bold">RS485</text>
 
                 <!-- DC Combiner Box & PV Strings -->
@@ -5752,7 +5763,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 <line x1="1360" y1="1050" x2="1360" y2="1120" stroke="#00b050" stroke-width="1.5"/>
                 <line x1="1350" y1="1120" x2="1370" y2="1120" stroke="#00b050" stroke-width="1.5"/>
                 <line x1="1355" y1="1125" x2="1365" y2="1125" stroke="#00b050" stroke-width="1.5"/>
-                <text x="1370" y="1090" font-size="9" fill="#00b050" transform="rotate(90 1370,1090)">1C-${gndCable} Sq.mm THW</text>
+                <text x="1370" y="1090" font-size="9" fill="#00b050" transform="rotate(90 1370,1090)">1C-${gndCable} THW</text>
 
                 <!-- Legend Box -->
                 <rect x="1350" y="50" width="150" height="100" fill="#fff" stroke="#000" stroke-width="1.5"/>
@@ -5984,9 +5995,9 @@ function renderCADLayout() {
         let bom = AppState.bomData || {};
         let bSize = bom.calculated_sizing || {};
         let bMount = bom.mounting_structure || {};
-        let dcCable = bSize.pv_cable_sqmm ? `${bSize.pv_cable_sqmm} sq.mm` : '6 sq.mm';
-        let acCable = bSize.ac_cable_sqmm ? `${bSize.ac_cable_sqmm} sq.mm` : '16 sq.mm';
-        let conduit = bSize.conduit_or_wireway || 'Wireway 50x50 มม.';
+        let dcCable = ascSpec(bSize.pv_cable_sqmm, ' sq.mm');
+        let acCable = ascSpec(bSize.ac_cable_sqmm, ' sq.mm');
+        let conduit = ascSpec(bSize.conduit_or_wireway);
         let walkwaySpec = bMount.walkway_sqm ? 'Walkway FRP/Aluminum' : 'WALKWAY 400 mm.';
 
         let titleBlockHtml = `
