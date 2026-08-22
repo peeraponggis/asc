@@ -2441,7 +2441,11 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
             AppState.equipData.counts.optQty = getVal('inp-opt-qty', AppState.equipData.counts.optQty || 0);
             AppState.equipData.counts.batQty = getVal('inp-bat-qty', AppState.equipData.counts.batQty || 0);
 
-            if (!AppState.bomData) AppState.bomData = { calculated_sizing: { pv_cable_sqmm: 6, ac_cable_sqmm: 16, gnd_cable_sqmm: 25, conduit_or_wireway: "Wireway 50x50 มม." }, protection: { dc_breaker_amp: 25, ac_breaker_amp: 160 }, distances: { dc_m: 30, ac_m: 15, gnd_m: 20 }, routing_strategy: "wireway", mounting_structure: {} };
+            /* โครงเปล่าไว้กันโค้ดอื่นพัง แต่ต้องไม่ใส่ตัวเลขสมมติลงไป
+               เดิมตรงนี้เติมสายไฟ 6/16/25 sq.mm เบรกเกอร์ 25/160A และระยะสาย 30/15/20 ม. ให้เอง
+               เมื่อยังไม่ได้นำเข้า DB1 รายงานจึงพิมพ์ตัวเลขชุดนี้ออกมาเหมือนเป็นผลการออกแบบจริง
+               ตอนนี้ปล่อยว่างไว้ ตาราง BOM จะขึ้นขีดแทน ซึ่งบอกตรง ๆ ว่ายังไม่มีข้อมูล */
+            if (!AppState.bomData) AppState.bomData = { calculated_sizing: {}, protection: {}, distances: {}, routing_strategy: "", mounting_structure: {} };
 
             let totalEnergy = r.totalEGrid || 0; 
             if(document.getElementById('env-co2')) {
@@ -2506,9 +2510,23 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                     let routingRaw = b.routing_strategy || ''; let isWireway = routingRaw.includes('wireway') || routingRaw === 'wireway';
                     let conduitStr = bSize.conduit_or_wireway || '-';
 
+                    /* ซ่อนรายการที่จำนวนเป็นศูนย์ ไม่ให้ไปโผล่ในใบเสนอราคาลูกค้า
+                       เช่นโครงการที่ไม่มีออปติไมเซอร์หรือแบตเตอรี่ เดิมจะขึ้นแถว "0 ตัว" ค้างไว้
+                       ทำให้ลูกค้าสงสัยว่าตกหล่นหรือเปล่า */
                     function makeRow(category, catColorClass, name, spec, qty, unit) {
+                        const n = Number(String(qty).replace(/,/g, ''));
+                        if (!isNaN(n) && n === 0) return '';
                         return `<tr><td class="border p-2 text-center font-bold ${catColorClass}">${category}</td><td class="border p-2 text-gray-700">${name}</td><td class="border p-2 font-medium text-gray-600">${spec}</td><td class="border p-2 text-center text-gray-800"><b>${qty}</b> ${unit}</td></tr>`;
                     }
+
+                    /* แสดงเฉพาะค่าที่ออกแบบไว้จริง ถ้าไม่มีให้ขึ้นขีด อย่าเดาแทน
+                       เดิมเขียนเป็น  bProt.ac_breaker_amp || '160'  ซึ่งเมื่อข้อมูลขาด
+                       รายงานจะพิมพ์ "เบรกเกอร์ 160A" ออกมาเหมือนเป็นค่าที่วิศวกรกำหนดไว้
+                       ทั้งที่เป็นตัวเลขที่โค้ดเดาเอง ถ้ามีคนเอาไปสั่งของจะเสียหาย */
+                    const specOf = (v, unit) => {
+                        if (v === null || v === undefined || v === '' || Number(v) === 0) return '-';
+                        return String(v) + (unit || '');
+                    };
 
                     let htmlBOM = ""; let mainCol = "text-blue-600";
 					// 🌟 ดึงข้อมูลแรงสูงมาแสดงถ้ามี
@@ -2525,11 +2543,11 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
 
                     let dcCol = "text-orange-500"; let numStrings = eq.numStrings || 1;
                     htmlBOM += makeRow("DC Box", dcCol, "DC Disconnect Switch", "พิกัด &ge; 1100Vdc (Non-Polarity)", numStrings, "ตัว");
-                    htmlBOM += makeRow("DC Box", dcCol, "DC Breaker / Fuse", `พิกัด ${bProt.dc_breaker_amp || '25'}A / 1000Vdc`, numStrings, "ชุด");
+                    htmlBOM += makeRow("DC Box", dcCol, "DC Breaker / Fuse", `พิกัด ${specOf(bProt.dc_breaker_amp, 'A')} / 1000Vdc`, numStrings, "ชุด");
                     htmlBOM += makeRow("DC Box", dcCol, "DC Surge Protection (SPD)", "Type 2, &ge; 1100Vdc, Imax &ge; 20kA", (c.inv1Qty||0) + (c.inv2Qty||0), "ตัว");
 
                     let acCol = "text-emerald-500";
-                    htmlBOM += makeRow("AC Box", acCol, "AC Breaker (MCB/MCCB)", `พิกัด ${bProt.ac_breaker_amp || '160'}A / 400V (3-Phase)`, 1, "ตัว");
+                    htmlBOM += makeRow("AC Box", acCol, "AC Breaker (MCB/MCCB)", `พิกัด ${specOf(bProt.ac_breaker_amp, 'A')} / 400V (3-Phase)`, 1, "ตัว");
                     htmlBOM += makeRow("AC Box", acCol, "เครื่องตัดไฟรั่ว (RCD)", "Type B, ป้องกันกระแสรั่ว &le; 30mA", 1, "ตัว");
                     htmlBOM += makeRow("AC Box", acCol, "AC Surge Protection (SPD)", "Type 2, 275Vac/400Vac", 1, "ตัว");
                     let brandInv = eq.inv1.model ? eq.inv1.model.split(' ')[0] : 'Inverter';
@@ -2537,9 +2555,9 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
 
                     let cabCol = "text-gray-500"; let dcCableLength = bDist.dc_m || 0; let acCableLength = bDist.ac_m || 0; 
                     let dcRoute = numStrings > 0 ? Math.ceil(dcCableLength / (2 * numStrings)) : 0; let routeLength = dcRoute + acCableLength;
-                    htmlBOM += makeRow("Cable", cabCol, "สายไฟ DC (PV1-F)", `ขนาด <b>${bSize.pv_cable_sqmm || '6'} sq.mm</b> (V-Drop &le; 3%)`, dcCableLength, "เมตร");
-                    htmlBOM += makeRow("Cable", cabCol, "สายไฟ AC (THW/CV)", `ขนาด <b>${bSize.ac_cable_sqmm || '16'} sq.mm</b> (4 Core)`, acCableLength, "เมตร");
-                    htmlBOM += makeRow("Cable", cabCol, "สายดินหลัก (Grounding)", `ชนิด THW สีเขียว-เหลือง ขนาด <b>${bSize.gnd_cable_sqmm || '25'} sq.mm</b>`, bDist.gnd_m || 0, "เมตร");
+                    htmlBOM += makeRow("Cable", cabCol, "สายไฟ DC (PV1-F)", `ขนาด <b>${specOf(bSize.pv_cable_sqmm, ' sq.mm')}</b> (V-Drop &le; 3%)`, dcCableLength, "เมตร");
+                    htmlBOM += makeRow("Cable", cabCol, "สายไฟ AC (THW/CV)", `ขนาด <b>${specOf(bSize.ac_cable_sqmm, ' sq.mm')}</b> (4 Core)`, acCableLength, "เมตร");
+                    htmlBOM += makeRow("Cable", cabCol, "สายดินหลัก (Grounding)", `ชนิด THW สีเขียว-เหลือง ขนาด <b>${specOf(bSize.gnd_cable_sqmm, ' sq.mm')}</b>`, bDist.gnd_m || 0, "เมตร");
 
                     let routeCol = "text-gray-500"; let conduitDisplay = isWireway ? `ราง <span class="text-sky-500 font-bold">Wireway 50x50 มม.</span> (เผื่อระบายความร้อน)` : `ท่อ <span class="text-sky-500 font-bold">${conduitStr}</span>`;
                     htmlBOM += makeRow("Routing", routeCol, "ท่อร้อยสาย / รางสายไฟ", conduitDisplay, routeLength, "เมตร");
