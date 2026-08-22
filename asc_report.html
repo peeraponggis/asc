@@ -1245,6 +1245,27 @@
 
            คืนหน่วยมาพร้อมกับค่าด้วย เพื่อให้กรณีไม่มีข้อมูลได้ "-" เดี่ยว ๆ
            ไม่ใช่ "-A" หรือ "- Sq.mm" ซึ่งอ่านแล้วสับสน */
+        /* ชื่อไฟล์กลางของทั้งชุดโปรแกรม : ชื่อโครงการ_ประเภทงาน_YYYYMMDD_HHMM
+
+           asc_e_analysis ใช้ eBill · asc_design ใช้ design · asc_report ใช้ report
+           ตัดอักขระที่ Windows ห้ามใช้ในชื่อไฟล์ออก แต่คงตัวอักษรไทยไว้
+
+           การนำเข้าไฟล์ของทุกโปรแกรมตรวจชนิดจากคีย์ในเนื้อ JSON
+           (base_layout_db1 / simulation_params_db2 / is_asc_db3) ไม่ได้ดูชื่อไฟล์เลย
+           การเปลี่ยนชื่อจึงไม่กระทบการนำเข้าส่งออกใด ๆ */
+        function ascFileStamp(projectName, kind) {
+            let name = String(projectName || '').trim()
+                         .replace(/[\\/:*?"<>|]/g, '_')
+                         .replace(/\s+/g, '_')
+                         .replace(/_+/g, '_')
+                         .replace(/^_|_$/g, '');
+            if (!name) name = 'Project';
+            const d = new Date();
+            const p = (n) => String(n).padStart(2, '0');
+            const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
+            return `${name}_${kind}_${stamp}`;
+        }
+
         function ascSpec(v, unit) {
             if (v === null || v === undefined || v === '' || Number(v) === 0 || Number.isNaN(Number(v))) {
                 return (typeof v === 'string' && v.trim() !== '' && Number.isNaN(Number(v))) ? v : '-';
@@ -2417,8 +2438,8 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
             } catch (e) { console.warn('ส่งข้อมูลให้หน้าหลักไม่สำเร็จ', e); }
 
             let projName = getStr('inp-proj', 'Project');
-            let dObj = new Date(); let dateStr = dObj.getFullYear().toString() + (dObj.getMonth()+1).toString().padStart(2, '0') + dObj.getDate().toString().padStart(2, '0') + "_" + dObj.getHours().toString().padStart(2, '0') + dObj.getMinutes().toString().padStart(2, '0');
-            let fileName = `DB3_Report_${projName}_${dateStr}.txt`.replace(/\s+/g, '_');
+            // ชื่อไฟล์รูปแบบเดียวกันทั้งชุดโปรแกรม : ชื่อโครงการ_report_YYYYMMDD_HHMM
+            let fileName = `${ascFileStamp(projName, 'report')}.txt`;
             const blob = new Blob([JSON.stringify(db3Obj, null, 2)], { type: 'text/plain;charset=utf-8' }); 
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = fileName; a.click(); URL.revokeObjectURL(url);
@@ -5498,16 +5519,12 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             if(document.getElementById('txt-irr')) document.getElementById('prt-irr').innerText = document.getElementById('txt-irr').innerText; 
             if(document.getElementById('txt-npv')) document.getElementById('prt-npv').innerText = document.getElementById('txt-npv').innerText;
 
-            // 🌟 1. ดึงชื่อโปรเจกต์ และทำความสะอาดชื่อไฟล์
-            let rawProjName = getStr('inp-proj', 'Project');
-            let projName = rawProjName.replace(/[^a-zA-Z0-9\u0E00-\u0E7F]/g, '_');
-            if (!projName || projName === '_' || projName === '-') { projName = 'Solar_Report'; }
+            // 🌟 1. ดึงชื่อโปรเจกต์ (การทำความสะอาดชื่อไฟล์รวมอยู่ใน ascFileStamp ที่เดียว)
+            let projName = getStr('inp-proj', 'Project');
 
             // 🌟 2. สร้างวันที่และเวลา
-            let dObj = new Date(); 
-            let dateStr = dObj.getFullYear().toString() + (dObj.getMonth()+1).toString().padStart(2, '0') + dObj.getDate().toString().padStart(2, '0') + "_" + dObj.getHours().toString().padStart(2, '0') + dObj.getMinutes().toString().padStart(2, '0');
-            
-            let fileName = projName + "_" + dateStr;
+            // ชื่อไฟล์ PDF ใช้รูปแบบเดียวกับไฟล์ txt เพราะเบราว์เซอร์ตั้งชื่อไฟล์ที่บันทึกจาก document.title
+            let fileName = ascFileStamp(projName, 'report');
             let originalTitle = document.title; 
             
             document.title = fileName;

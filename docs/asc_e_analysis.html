@@ -1003,8 +1003,9 @@
         let jsonStr = JSON.stringify(dataToExport, null, 2);
         let blob = new Blob([jsonStr], { type: "text/plain;charset=utf-8" });
         
-        let dateStr = new Date().toISOString().replace(/T/, '_').replace(/:/g, '-').split('.')[0];
-        let filename = `DB0_${custName.replace(/\s+/g, '_')}_${dateStr}.txt`;
+        // ชื่อไฟล์รูปแบบเดียวกันทั้งชุดโปรแกรม : ชื่อโครงการ_ประเภทงาน_วันเวลา
+        // การนำเข้าทุกโปรแกรมดูจากคีย์ในเนื้อ JSON ไม่ได้ดูชื่อไฟล์ เปลี่ยนชื่อจึงไม่กระทบ
+        let filename = `${ascFileStamp(custName, 'eBill')}.txt`;
 
         let link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
@@ -2160,12 +2161,30 @@ function drawAMRDaily24hChart() {
         return true;
     }
 
+    /* ชื่อไฟล์กลางของทั้งชุดโปรแกรม : ชื่อโครงการ_ประเภทงาน_YYYYMMDD_HHMM
+
+       asc_e_analysis ใช้ eBill · asc_design ใช้ design · asc_report ใช้ report
+       ตัดอักขระที่ Windows ห้ามใช้ในชื่อไฟล์ออก แต่คงตัวอักษรไทยไว้
+
+       การนำเข้าไฟล์ของทุกโปรแกรมตรวจชนิดจากคีย์ในเนื้อ JSON
+       (base_layout_db1 / simulation_params_db2 / is_asc_db3) ไม่ได้ดูชื่อไฟล์เลย
+       การเปลี่ยนชื่อจึงไม่กระทบการนำเข้าส่งออกใด ๆ */
+    function ascFileStamp(projectName, kind) {
+        let name = String(projectName || '').trim()
+                     .replace(/[\\/:*?"<>|]/g, '_')
+                     .replace(/\s+/g, '_')
+                     .replace(/_+/g, '_')
+                     .replace(/^_|_$/g, '');
+        if (!name) name = 'Project';
+        const d = new Date();
+        const p = (n) => String(n).padStart(2, '0');
+        const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
+        return `${name}_${kind}_${stamp}`;
+    }
+
     function reportFilename(type, ext) {
-        let name = (document.getElementById('global_name').value || 'Unknown').trim().replace(/\s+/g, '_');
-        let d = new Date();
-        let stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`
-                  + `_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;
-        return `รายงานค่าไฟ_${name}_ประเภท${type}_${stamp}.${ext}`;
+        const base = ascFileStamp(document.getElementById('global_name').value, 'eBill');
+        return ext ? `${base}.${ext}` : base;
     }
 
     // --- 📄 ดาวน์โหลด PDF ทันที (html2canvas + jsPDF) ---

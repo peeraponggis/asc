@@ -5370,6 +5370,27 @@ function generateDB2() {
             }
             alert(alertMsg);
         });
+/* ชื่อไฟล์กลางของทั้งชุดโปรแกรม : ชื่อโครงการ_ประเภทงาน_YYYYMMDD_HHMM
+
+   asc_e_analysis ใช้ eBill · asc_design ใช้ design · asc_report ใช้ report
+   ตัดอักขระที่ Windows ห้ามใช้ในชื่อไฟล์ออก แต่คงตัวอักษรไทยไว้
+
+   การนำเข้าไฟล์ของทุกโปรแกรมตรวจชนิดจากคีย์ในเนื้อ JSON
+   (base_layout_db1 / simulation_params_db2 / is_asc_db3) ไม่ได้ดูชื่อไฟล์เลย
+   การเปลี่ยนชื่อจึงไม่กระทบการนำเข้าส่งออกใด ๆ */
+function ascFileStamp(projectName, kind) {
+    let name = String(projectName || '').trim()
+                 .replace(/[\\/:*?"<>|]/g, '_')
+                 .replace(/\s+/g, '_')
+                 .replace(/_+/g, '_')
+                 .replace(/^_|_$/g, '');
+    if (!name) name = 'Project';
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, '0');
+    const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
+    return `${name}_${kind}_${stamp}`;
+}
+
  function downloadTXT(content, filename) {
     try {
         // ลองสั่งดาวน์โหลดปกติก่อน (สำหรับคนที่รัน Local หรือ โฮสต์ปกติ)
@@ -5612,17 +5633,9 @@ function generateDB2() {
         pName = pName.replace(/^Project\s*:\s*/i, '').trim() || 'Project';
         
         // เริ่ม: โค้ดสร้างชุดตัวเลข วัน-เวลา (Datetime) ปัจจุบัน
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const date = String(now.getDate()).padStart(2, '0');
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        const dateTimeStr = `${year}${month}${date}_${hours}${minutes}${seconds}`;
-
-        // เปลี่ยนชื่อไฟล์รูปแบบ [ชื่อโครงการ]aSc[วันเวลา].txt
-        downloadTXT(JSON.stringify(db2Full, null, 2), `${pName}aSc${dateTimeStr}.txt`);
+        // ชื่อไฟล์รูปแบบเดียวกันทั้งชุดโปรแกรม : ชื่อโครงการ_design_YYYYMMDD_HHMM
+        // การนำเข้าของทุกโปรแกรมดูจากคีย์ในเนื้อ JSON ไม่ได้ดูชื่อไฟล์ เปลี่ยนชื่อจึงไม่กระทบ
+        downloadTXT(JSON.stringify(db2Full, null, 2), `${ascFileStamp(pName, 'design')}.txt`);
         
         // 🌟 เฟส 16: ยกเลิกการถ่ายภาพ PNG 2K อัตโนมัติตอนบันทึก — ใช้ปุ่ม "บันทึกรูป (Capture Proj.)" แทน
 
