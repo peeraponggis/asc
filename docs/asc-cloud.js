@@ -313,6 +313,72 @@
         },
 
 
+        /* ── ข้อมูลบริษัทผู้เสนอ ─────────────────────────────────────────
+           เก็บในโปรไฟล์ผู้ใช้ กรอกครั้งเดียวใช้ได้ทุกโครงการ
+           ใช้ทั้งในหัวรายงาน asc_report และในเอกสารข้อเสนอ */
+
+        // ชื่อคอลัมน์ที่เกี่ยวกับบริษัท รวมไว้ที่เดียวกันเผื่อเพิ่มภายหลัง
+        get companyFields() {
+            return ['company_name', 'company_address', 'company_tax_id', 'company_phone',
+                    'company_email', 'company_website', 'company_logo_url',
+                    'signer_name', 'signer_title', 'company_profile'];
+        },
+
+        async getCompany() {
+            need();
+            const u = _profile;
+            if (!u) throw new Error('ยังไม่ได้เข้าสู่ระบบ');
+            const { data, error } = await sb.from('profiles')
+                .select(this.companyFields.join(',')).eq('id', u.id).single();
+            if (error) throw fail(error);
+            return data || {};
+        },
+
+        async saveCompany(info) {
+            need();
+            const u = _profile;
+            if (!u) throw new Error('ยังไม่ได้เข้าสู่ระบบ');
+            const patch = {};
+            this.companyFields.forEach(k => {
+                if (info[k] === undefined) return;
+                patch[k] = (k === 'company_profile') ? (info[k] || {}) : String(info[k] || '').trim();
+            });
+            if (Object.keys(patch).length === 0) return true;
+
+            // ขอแถวกลับมาด้วย เพื่อไม่ให้เกิดกรณี "บันทึกสำเร็จ" ทั้งที่ถูกกรองทิ้ง
+            const { data: rows, error } = await sb.from('profiles')
+                .update(patch).eq('id', u.id).select('id');
+            if (error) throw fail(error);
+            if (!rows || rows.length === 0) throw new Error('บันทึกไม่สำเร็จ กรุณาเข้าสู่ระบบใหม่แล้วลองอีกครั้ง');
+            return true;
+        },
+
+        /* อัปโหลดโลโก้ไปยัง bucket company-logos โฟลเดอร์ตามรหัสผู้ใช้
+           bucket ตั้งเป็น public จึงได้ URL ที่ใส่ใน <img src> ได้ตรง ๆ
+           ไม่ต้องขอลิงก์ลงนามใหม่ทุกครั้งที่เปิดรายงาน */
+        async uploadLogo(file) {
+            need();
+            const u = _profile;
+            if (!u) throw new Error('ยังไม่ได้เข้าสู่ระบบ');
+            if (!file) throw new Error('ยังไม่ได้เลือกไฟล์');
+            if (!/^image\//.test(file.type)) throw new Error('ต้องเป็นไฟล์รูปภาพเท่านั้น');
+            if (file.size > 2 * 1024 * 1024) throw new Error('ไฟล์ใหญ่เกิน 2 MB กรุณาย่อขนาดก่อน');
+
+            const ext  = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const path = u.id + '/logo.' + (ext || 'png');
+
+            const { error } = await sb.storage.from('company-logos')
+                .upload(path, file, { upsert: true, contentType: file.type });
+            if (error) throw fail(error);
+
+            const { data } = sb.storage.from('company-logos').getPublicUrl(path);
+            // ต่อเวลาไว้ท้าย URL เพื่อให้เบราว์เซอร์ไม่หยิบรูปเก่าจากแคชมาแสดง
+            const url = data.publicUrl + '?v=' + Date.now();
+            await this.saveCompany({ company_logo_url: url });
+            return url;
+        },
+
+
         /* ── สมัครใช้งานเอง ─────────────────────────────────────────────
            เปิดให้สมัครได้ แต่ด่านจริงคือทริกเกอร์ enforce_invite_only ในฐานข้อมูล
            อีเมลที่ไม่อยู่ในรายชื่ออนุมัติจะถูกปฏิเสธตั้งแต่ตอนเขียนแถว */

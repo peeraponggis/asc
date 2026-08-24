@@ -24,6 +24,22 @@ create table if not exists public.profiles (
     created_at   timestamptz not null default now()
 );
 
+-- ── ข้อมูลบริษัทผู้เสนอ ─────────────────────────────────────────────────
+--    ใช้ในหัวรายงานและในเอกสารข้อเสนอ กรอกครั้งเดียวใช้ได้ทุกโครงการ
+--    โลโก้เก็บเป็น URL ที่ชี้ไปยัง Supabase Storage ไม่เก็บ base64 ในตาราง
+--    เพราะจะทำให้การอ่านโปรไฟล์ช้าลงทุกครั้งที่เรียก
+alter table public.profiles add column if not exists company_name    text not null default '';
+alter table public.profiles add column if not exists company_address text not null default '';
+alter table public.profiles add column if not exists company_tax_id  text not null default '';
+alter table public.profiles add column if not exists company_phone   text not null default '';
+alter table public.profiles add column if not exists company_email   text not null default '';
+alter table public.profiles add column if not exists company_website text not null default '';
+alter table public.profiles add column if not exists company_logo_url text not null default '';
+alter table public.profiles add column if not exists signer_name     text not null default '';
+alter table public.profiles add column if not exists signer_title    text not null default '';
+-- ตัวเลขประกอบหน้า "ทำไมต้องเรา" และเงื่อนไขมาตรฐานที่ใช้ซ้ำทุกข้อเสนอ
+alter table public.profiles add column if not exists company_profile jsonb not null default '{}'::jsonb;
+
 comment on table public.profiles is 'ข้อมูลผู้ใช้ที่แสดงผลได้ คู่กับ auth.users';
 
 -- สร้างโปรไฟล์อัตโนมัติทุกครั้งที่มีบัญชีใหม่
@@ -283,6 +299,45 @@ from public.projects p
 left join public.profiles pr on pr.id = p.owner;
 
 grant select on public.project_list to authenticated;
+
+
+-- ────────────────────────────────────────────────────────────────────────────
+--  5.5 ที่เก็บโลโก้บริษัท
+--
+--      แยก bucket ออกจาก project-images เพราะสิทธิ์คนละแบบ
+--      project-images ตัดสินสิทธิ์จาก project_id ในโฟลเดอร์ชั้นแรก
+--      ส่วนโลโก้เป็นของผู้ใช้ ไม่ผูกกับโครงการใด จึงใช้ user_id เป็นโฟลเดอร์แทน
+--
+--      ตั้งเป็น public เพราะโลโก้ไม่ใช่ความลับ และทำให้ใส่ใน <img src> ได้ตรง ๆ
+--      ไม่ต้องขอลิงก์ลงนามทุกครั้งที่เปิดรายงาน
+-- ────────────────────────────────────────────────────────────────────────────
+insert into storage.buckets (id, name, public)
+values ('company-logos', 'company-logos', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists logos_select on storage.objects;
+create policy logos_select on storage.objects
+    for select to authenticated, anon
+    using (bucket_id = 'company-logos');
+
+-- เขียนได้เฉพาะในโฟลเดอร์ที่ชื่อตรงกับรหัสผู้ใช้ของตัวเอง
+drop policy if exists logos_insert on storage.objects;
+create policy logos_insert on storage.objects
+    for insert to authenticated
+    with check (bucket_id = 'company-logos'
+                and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists logos_update on storage.objects;
+create policy logos_update on storage.objects
+    for update to authenticated
+    using (bucket_id = 'company-logos'
+           and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists logos_delete on storage.objects;
+create policy logos_delete on storage.objects
+    for delete to authenticated
+    using (bucket_id = 'company-logos'
+           and (storage.foldername(name))[1] = auth.uid()::text);
 
 
 -- ────────────────────────────────────────────────────────────────────────────

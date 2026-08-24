@@ -561,6 +561,110 @@
                         <p class="text-xs text-slate-500 mt-4" id="set-storage"></p>
                     </div>
 
+                    <!-- ═══ ข้อมูลบริษัทผู้เสนอ (โหมดคลาวด์) ═══
+                         กรอกครั้งเดียว ใช้ในหัวรายงานและเอกสารข้อเสนอทุกโครงการ -->
+                    <div id="company-card" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="px-6 py-5 border-b border-slate-100">
+                            <h3 class="font-bold text-slate-800 mb-1">ข้อมูลบริษัทของคุณ</h3>
+                            <p class="text-xs text-slate-500 leading-relaxed">
+                                ใช้แสดงในหัวรายงานและในเอกสารข้อเสนอที่ส่งให้ลูกค้า กรอกครั้งเดียวใช้ได้ทุกโครงการ<br>
+                                ข้อมูลนี้เก็บในโปรไฟล์ของคุณบนคลาวด์ ไม่ผูกกับโครงการใดโครงการหนึ่ง
+                            </p>
+                        </div>
+
+                        <div class="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2 flex flex-wrap items-center gap-4 pb-4 border-b border-slate-100">
+                                <img id="co-logo-img" alt="" class="hidden h-16 w-auto max-w-[180px] object-contain border border-slate-200 rounded bg-white p-1">
+                                <div id="co-logo-none" class="h-16 w-28 rounded border border-dashed border-slate-300 flex items-center justify-center text-[11px] text-slate-400">ยังไม่มีโลโก้</div>
+                                <div>
+                                    <input type="file" id="co-logo-file" accept="image/*" class="hidden" onchange="uploadCompanyLogo(this)">
+                                    <button onclick="document.getElementById('co-logo-file').click()"
+                                            class="px-4 py-2 rounded-lg text-sm font-bold border border-slate-300 hover:bg-slate-50 transition">
+                                        <i class="fa-solid fa-image mr-1.5"></i> อัปโหลดโลโก้
+                                    </button>
+                                    <p class="text-[11px] text-slate-400 mt-1.5">PNG หรือ JPG ไม่เกิน 2 MB · แนะนำพื้นหลังโปร่งใส</p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="co-name" class="block text-xs font-semibold text-slate-600 mb-1.5">ชื่อบริษัท</label>
+                                <input id="co-name" type="text" placeholder="บริษัท โปรอินเวนทีฟ จำกัด"
+                                       class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="co-tax" class="block text-xs font-semibold text-slate-600 mb-1.5">เลขประจำตัวผู้เสียภาษี</label>
+                                <input id="co-tax" type="text" placeholder="0-1055-xxxxx-xx-x"
+                                       class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="co-addr" class="block text-xs font-semibold text-slate-600 mb-1.5">ที่อยู่</label>
+                                <textarea id="co-addr" rows="2" placeholder="เลขที่ ถนน แขวง เขต จังหวัด รหัสไปรษณีย์"
+                                          class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            </div>
+                            <div>
+                                <label for="co-phone" class="block text-xs font-semibold text-slate-600 mb-1.5">โทรศัพท์</label>
+                                <input id="co-phone" type="text" placeholder="0XX-XXX-XXXX"
+                                       class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="co-email" class="block text-xs font-semibold text-slate-600 mb-1.5">อีเมลบริษัท</label>
+                                <input id="co-email" type="email" placeholder="info@company.co.th"
+                                       class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="co-web" class="block text-xs font-semibold text-slate-600 mb-1.5">เว็บไซต์</label>
+                                <input id="co-web" type="text" placeholder="www.company.co.th"
+                                       class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div></div>
+
+                            <div>
+                                <label for="co-signer" class="block text-xs font-semibold text-slate-600 mb-1.5">ผู้ลงนามในข้อเสนอ</label>
+                                <input id="co-signer" type="text" placeholder="ชื่อ-นามสกุล"
+                                       class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="co-title" class="block text-xs font-semibold text-slate-600 mb-1.5">ตำแหน่ง</label>
+                                <input id="co-title" type="text" placeholder="กรรมการผู้จัดการ"
+                                       class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div class="md:col-span-2 pt-3 mt-1 border-t border-slate-100">
+                                <p class="text-xs font-semibold text-slate-600 mb-2.5">ตัวเลขประกอบข้อเสนอ (ไม่บังคับ)</p>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    <div>
+                                        <label for="co-years" class="block text-[11px] text-slate-500 mb-1">ประสบการณ์ (ปี)</label>
+                                        <input id="co-years" type="number" min="0" placeholder="12"
+                                               class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label for="co-projects" class="block text-[11px] text-slate-500 mb-1">โครงการที่ส่งมอบ</label>
+                                        <input id="co-projects" type="number" min="0" placeholder="180"
+                                               class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label for="co-mw" class="block text-[11px] text-slate-500 mb-1">กำลังติดตั้งสะสม (MW)</label>
+                                        <input id="co-mw" type="number" min="0" step="0.1" placeholder="24"
+                                               class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label for="co-valid" class="block text-[11px] text-slate-500 mb-1">ยืนราคา (วัน)</label>
+                                        <input id="co-valid" type="number" min="1" placeholder="30"
+                                               class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center gap-3">
+                            <button id="co-save-btn" onclick="saveCompanyInfo()"
+                                    class="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow transition">
+                                <i class="fa-solid fa-floppy-disk mr-1.5"></i> บันทึกข้อมูลบริษัท
+                            </button>
+                            <span id="co-msg" class="text-xs"></span>
+                        </div>
+                    </div>
+
                     <!-- ═══ รายชื่ออีเมลที่อนุมัติ (เห็นเฉพาะผู้ดูแลระบบในโหมดคลาวด์) ═══ -->
                     <div id="allowlist-card" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="px-6 py-5 border-b border-slate-100">
@@ -1945,6 +2049,7 @@ function renderSettings() {
         if (card) card.classList.add('hidden');
         const acc = document.getElementById('account-actions');
         if (acc) acc.classList.remove('hidden');
+        loadCompanyInfo();
         if (SESSION.isAdmin) loadAllowlist();
         renderMigrateCard();
     } else {
@@ -1990,6 +2095,110 @@ async function changeMyName() {
         accountMsg('เปลี่ยนชื่อเรียบร้อยแล้ว', true);
     } catch (e) {
         accountMsg('เปลี่ยนไม่สำเร็จ : ' + e.message, false);
+    }
+}
+
+/* ─── ข้อมูลบริษัทผู้เสนอ ────────────────────────────────────────────────
+   เก็บในโปรไฟล์ผู้ใช้บนคลาวด์ ใช้ในหัวรายงานและเอกสารข้อเสนอทุกโครงการ
+
+   เก็บสำเนาไว้ใน localStorage ด้วย เพราะ asc_report ทำงานแบบออฟไลน์ได้
+   และบางครั้งถูกเปิดเดี่ยว ๆ นอกหน้าหลัก จึงต้องมีที่ให้หยิบข้อมูลได้เสมอ */
+const COMPANY_CACHE_KEY = 'proinventive_company';
+
+const CO_FIELDS = {
+    'co-name'  : 'company_name',   'co-tax'   : 'company_tax_id',
+    'co-addr'  : 'company_address', 'co-phone' : 'company_phone',
+    'co-email' : 'company_email',  'co-web'   : 'company_website',
+    'co-signer': 'signer_name',    'co-title' : 'signer_title'
+};
+const CO_PROFILE_FIELDS = { 'co-years':'years', 'co-projects':'projects', 'co-mw':'mw', 'co-valid':'validityDays' };
+
+function companyMsg(text, ok) {
+    const el = document.getElementById('co-msg');
+    if (!el) return;
+    el.className = 'text-xs ' + (ok ? 'text-emerald-600 font-semibold' : 'text-red-600 font-semibold');
+    el.innerText = text || '';
+}
+
+function paintLogo(url) {
+    const img = document.getElementById('co-logo-img');
+    const none = document.getElementById('co-logo-none');
+    if (!img || !none) return;
+    if (url) { img.src = url; img.classList.remove('hidden'); none.classList.add('hidden'); }
+    else     { img.removeAttribute('src'); img.classList.add('hidden'); none.classList.remove('hidden'); }
+}
+
+async function loadCompanyInfo() {
+    const card = document.getElementById('company-card');
+    if (!card) return;
+    card.classList.remove('hidden');
+    try {
+        const c = await AscCloud.getCompany();
+        Object.entries(CO_FIELDS).forEach(([id, key]) => {
+            const el = document.getElementById(id);
+            if (el) el.value = c[key] || '';
+        });
+        const p = c.company_profile || {};
+        Object.entries(CO_PROFILE_FIELDS).forEach(([id, key]) => {
+            const el = document.getElementById(id);
+            if (el) el.value = (p[key] === undefined || p[key] === null) ? '' : p[key];
+        });
+        paintLogo(c.company_logo_url || '');
+        cacheCompany(c);
+    } catch (e) {
+        companyMsg('โหลดข้อมูลบริษัทไม่สำเร็จ : ' + e.message, false);
+    }
+}
+
+/* เก็บสำเนาไว้ให้หน้ารายงานหยิบไปใช้ได้ แม้เปิดแบบออฟไลน์ */
+function cacheCompany(c) {
+    try { localStorage.setItem(COMPANY_CACHE_KEY, JSON.stringify(c || {})); } catch (e) {}
+}
+
+async function saveCompanyInfo() {
+    const patch = {};
+    Object.entries(CO_FIELDS).forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        if (el) patch[key] = el.value;
+    });
+    const prof = {};
+    Object.entries(CO_PROFILE_FIELDS).forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        if (el && String(el.value).trim() !== '') prof[key] = Number(el.value);
+    });
+    patch.company_profile = prof;
+
+    const btn = document.getElementById('co-save-btn');
+    const old = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> กำลังบันทึก...';
+    try {
+        await AscCloud.saveCompany(patch);
+        const img = document.getElementById('co-logo-img');
+        cacheCompany(Object.assign({}, patch, { company_logo_url: (img && !img.classList.contains('hidden')) ? img.src : '' }));
+        companyMsg('บันทึกเรียบร้อยแล้ว — ข้อมูลนี้จะขึ้นในรายงานและข้อเสนอทุกโครงการ', true);
+    } catch (e) {
+        companyMsg(e.message, false);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = old;
+    }
+}
+
+async function uploadCompanyLogo(input) {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    companyMsg('กำลังอัปโหลดโลโก้...', true);
+    try {
+        const url = await AscCloud.uploadLogo(file);
+        paintLogo(url);
+        const cached = JSON.parse(localStorage.getItem(COMPANY_CACHE_KEY) || '{}');
+        cached.company_logo_url = url;
+        cacheCompany(cached);
+        companyMsg('อัปโหลดโลโก้เรียบร้อยแล้ว', true);
+    } catch (e) {
+        companyMsg(e.message, false);
     }
 }
 
