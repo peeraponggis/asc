@@ -40,8 +40,16 @@
 
     const ascAuthStorage = {
         getItem(k) {
-            const v = localStorage.getItem(k);
-            return (v !== null) ? v : sessionStorage.getItem(k);
+            // ถ้าไม่มีธง แปลว่าผู้ใช้ไม่ได้สั่งให้จำ จึงต้องมองไม่เห็นเซสชันใน localStorage
+            //
+            // ข้อนี้สำคัญกับเครื่องที่เคยล็อกอินไว้ก่อนมีการแก้นี้ เซสชันเก่ายังค้างอยู่
+            // ถ้าอ่านเจอก็จะกู้คืนแล้วพาเข้าระบบทันทีเหมือนเดิม ผู้ใช้จะต้องกดออกจากระบบ
+            // ด้วยตัวเองก่อนถึงจะหาย ซึ่งไม่มีใครรู้ว่าต้องทำ
+            if (localStorage.getItem(REMEMBER_FLAG) === '1') {
+                const v = localStorage.getItem(k);
+                if (v !== null) return v;
+            }
+            return sessionStorage.getItem(k);
         },
         setItem(k, v) {
             if (localStorage.getItem(REMEMBER_FLAG) === '1') {
@@ -323,6 +331,10 @@
             if (!enabled) return;
             await sb.auth.signOut();
             _profile = null;
+            // ล้างธงด้วย ไม่งั้นครั้งถัดไปที่ล็อกอินโดยไม่ติ๊ก จะยังถูกจำไว้จากธงเก่า
+            localStorage.removeItem(REMEMBER_FLAG);
+            localStorage.removeItem('asc_supabase_auth');
+            sessionStorage.removeItem('asc_supabase_auth');
         },
 
         /* ส่งลิงก์ตั้งรหัสผ่านใหม่ ใช้ทั้งตอนลืมรหัส และตอนเชิญผู้ใช้เข้าระบบครั้งแรก */

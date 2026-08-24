@@ -46,13 +46,19 @@
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
+    <style>
+        /* ระหว่างตรวจว่ามีเซสชันค้างอยู่หรือไม่ ให้ซ่อนหน้าล็อกอินไว้ก่อน
+           ไม่งั้นผู้ใช้จะเห็นหน้าล็อกอินแวบหนึ่งแล้วเด้งเข้าหน้าหลัก ซึ่งดูเหมือนระบบรวน
+           ตัวคลาสนี้ถูกถอดออกทันทีที่รู้ผล ไม่ว่าผลจะเป็นอย่างไร */
+        #login-screen.asc-booting { visibility: hidden; }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen overflow-hidden">
 
 <!-- ══════════════════════════════════════════════════════════════ -->
 <!-- 1. หน้าเข้าสู่ระบบ (Login)                                     -->
 <!-- ══════════════════════════════════════════════════════════════ -->
-<div id="login-screen" class="fixed inset-0 z-[100] flex">
+<div id="login-screen" class="fixed inset-0 z-[100] flex asc-booting">
 
     <!-- ฝั่งซ้าย: แบรนด์ -->
     <div class="login-art hidden lg:flex w-1/2 relative overflow-hidden flex-col justify-between p-12 text-white">
@@ -999,6 +1005,15 @@ function showLoginError(msg, extraHtml) {
 }
 function hideLoginError() { document.getElementById('login-error').classList.add('hidden'); }
 
+/* แสดงหน้าล็อกอินได้แล้ว เรียกซ้ำได้ไม่มีผลข้างเคียง
+   ต้องอยู่ระดับนอก เพราะถูกเรียกทั้งจาก initLogin และ initLoginCloud */
+function showLoginScreen() {
+    const el = document.getElementById('login-screen');
+    if (el) el.classList.remove('asc-booting');
+}
+// กันพลาด ถ้าเส้นทางไหนหลุดไม่ได้เรียก หน้าล็อกอินต้องไม่ซ่อนค้างจนใช้งานไม่ได้
+setTimeout(showLoginScreen, 4000);
+
 async function initLogin() {
     if (CLOUD) return await initLoginCloud();
 
@@ -1013,7 +1028,6 @@ async function initLogin() {
         document.getElementById('login-submit').disabled = true;
     }
 
-    // เติมชื่อผู้ใช้ที่เคยจำไว้
     const remembered = localStorage.getItem(REMEMBER_KEY);
     if (remembered) {
         document.getElementById('login-user').value = remembered;
@@ -1050,6 +1064,7 @@ async function initLoginCloud() {
     // ผู้ใช้ที่กดลิงก์ในอีเมลจะกลับมาที่หน้านี้พร้อม token ต้องให้ตั้งรหัสใหม่ก่อน
     if (/type=recovery|type=invite/.test(location.hash)) {
         await AscCloud.ready();
+        showLoginScreen();
         return promptSetPassword();
     }
 
@@ -1063,6 +1078,8 @@ async function initLoginCloud() {
     const me = await AscCloud.ready();
     if (me) { SESSION = me; sessionStorage.setItem(SESSION_KEY, JSON.stringify(SESSION)); return enterApp(); }
 
+    // รู้ผลแล้วว่าไม่มีเซสชัน จึงแสดงหน้าล็อกอินได้
+    showLoginScreen();
     document.getElementById(remembered ? 'login-pass' : 'login-user').focus();
 }
 
