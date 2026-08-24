@@ -215,6 +215,134 @@
            เพราะรายงานนี้ต้องแปลงเป็นภาพเพื่อทำ PDF และต้องเปิดแบบออฟไลน์ได้
            ฟอนต์เฉพาะของ KaTeX/MathJax มักหลุดตอนแปลงเป็นภาพ กลายเป็นกล่องว่าง
            ══════════════════════════════════════════════════════════════ */
+        /* ══════════════════════════════════════════════════════════════════
+           เอกสารข้อเสนอสำหรับลูกค้า
+
+           ใช้โทนคนละแบบกับรายงาน เพราะคนอ่านคนละกลุ่ม
+           รายงานเป็นเอกสารทางเทคนิค ข้อเสนอเป็นเอกสารทางการค้า
+
+           สี      กรมท่าลึกเป็นหลัก ทองเหลืองหม่นใช้เฉพาะตัวเลขสำคัญ
+                   เลี่ยงทองสว่างจัดเพราะจะดูเหมือนโบรชัวร์ขายของ
+           ฟอนต์   Kanit สำหรับหัวข้อ Sarabun สำหรับเนื้อความ
+                   Sarabun เป็นฟอนต์เอกสารราชการ อ่านสบายกว่ามากในงานพิมพ์
+           ขนาด    ทุกอย่างอิงความกว้างแผ่นด้วย cqw จึงย่อขยายได้พอดีเหมือนหน้าพิมพ์จริง
+           ══════════════════════════════════════════════════════════════════ */
+        .pp-stack{ display:flex; flex-direction:column; align-items:center; gap:26px; padding-bottom:40px; }
+        .pp-sheet{
+            width:100%; max-width:794px; aspect-ratio:210/297; background:#FBFAF7; color:#0B2233;
+            box-shadow:0 1px 2px rgba(11,34,51,.14),0 12px 30px rgba(11,34,51,.14);
+            position:relative; overflow:hidden; container-type:inline-size;
+            font-family:'Sarabun','Kanit',sans-serif;
+        }
+        .pp-empty{ padding:40px; text-align:center; color:#94a3b8; font-size:14px;
+                   border:2px dashed #cbd5e1; border-radius:10px; }
+        .pp-pad{ padding:8.4cqw 8.4cqw 0; }
+
+        .pp-brand{ display:flex; align-items:center; gap:2.4cqw; }
+        .pp-brand img{ height:5.6cqw; width:auto; max-width:22cqw; object-fit:contain; }
+        .pp-bn{ font-family:'Kanit',sans-serif; font-weight:700; font-size:2.3cqw; line-height:1.2; }
+        .pp-bs{ font-size:1.4cqw; color:#5A6B78; margin-top:.3cqw; }
+        .pp-rule{ height:2px; background:#0B2233; margin:6cqw 0 4.2cqw; }
+        .pp-eyebrow{ font-size:1.35cqw; letter-spacing:.3em; text-transform:uppercase;
+                     color:#B8862F; margin:0 0 2.2cqw; font-weight:600; }
+        .pp-title{ font-family:'Kanit',sans-serif; font-weight:600; font-size:4.9cqw;
+                   line-height:1.26; margin:0 0 2.6cqw; text-wrap:balance; }
+        .pp-lede{ font-size:2cqw; line-height:1.62; color:#16394F; max-width:44ch; margin:0; }
+        .pp-client{ margin-top:6cqw; }
+        .pp-lbl{ font-size:1.2cqw; letter-spacing:.2em; text-transform:uppercase;
+                 color:#5A6B78; display:block; margin-bottom:1cqw; }
+        .pp-who{ font-family:'Kanit',sans-serif; font-weight:500; font-size:2.8cqw; line-height:1.3; }
+        .pp-where{ font-size:1.8cqw; color:#5A6B78; margin-top:.5cqw; }
+
+        /* แถบข้อมูลเอกสารท้ายหน้าปก ยืมรูปแบบมาจาก title block ของแบบแปลนวิศวกรรม
+           ซึ่งเป็นของที่มีอยู่จริงในสายงานนี้ ไม่ใช่ลวดลายที่แปะเข้าไป */
+        .pp-tb{ position:absolute; left:0; right:0; bottom:0; margin:0;
+                border-top:2px solid #0B2233; display:grid; grid-template-columns:repeat(4,1fr); }
+        .pp-tb div{ padding:2.5cqw 2.1cqw; border-right:1px solid #D9DFE4; }
+        .pp-tb div:last-child{ border-right:0; }
+        .pp-tb dt{ font-size:1.05cqw; letter-spacing:.14em; text-transform:uppercase;
+                   color:#5A6B78; margin:0 0 .8cqw; }
+        .pp-tb dd{ margin:0; font-family:'Kanit',sans-serif; font-weight:500;
+                   font-size:1.8cqw; font-variant-numeric:tabular-nums; }
+
+        .pp-hd{ display:flex; align-items:baseline; justify-content:space-between; gap:3cqw;
+                border-bottom:2px solid #0B2233; padding-bottom:1.7cqw; margin-bottom:4cqw; }
+        .pp-hd h3{ font-family:'Kanit',sans-serif; font-weight:600; font-size:3.1cqw; margin:0; }
+        .pp-pg{ font-size:1.2cqw; letter-spacing:.14em; color:#5A6B78; white-space:nowrap; }
+        .pp-foot{ position:absolute; left:8.4cqw; right:8.4cqw; bottom:4.2cqw;
+                  display:flex; justify-content:space-between; gap:2cqw;
+                  border-top:1px solid #D9DFE4; padding-top:1.5cqw;
+                  font-size:1.05cqw; letter-spacing:.08em; color:#5A6B78; }
+
+        .pp-figs{ display:grid; grid-template-columns:repeat(4,1fr); gap:2.3cqw; margin-bottom:4.2cqw; }
+        .pp-fig{ border-top:3px solid #B8862F; padding-top:1.6cqw; }
+        .pp-v{ font-family:'Kanit',sans-serif; font-weight:600; font-size:3.4cqw; line-height:1.05;
+               font-variant-numeric:tabular-nums; }
+        .pp-v em{ font-style:normal; font-size:.5em; font-weight:500; color:#5A6B78; margin-left:.28em; }
+        .pp-k{ font-size:1.45cqw; color:#5A6B78; margin-top:.8cqw; line-height:1.4; }
+
+        .pp-body{ font-size:1.78cqw; line-height:1.72; color:#16394F; }
+        .pp-body p{ margin:0 0 1.6cqw; }
+        .pp-body p:last-child{ margin-bottom:0; }
+        .pp-body strong{ color:#0B2233; font-weight:600; }
+        .pp-cols{ column-count:2; column-gap:4.2cqw; }
+        .pp-leadin{ font-size:2cqw; line-height:1.64; color:#0B2233; margin:0 0 3.2cqw; max-width:52ch; }
+        .pp-note{ font-size:1.45cqw; color:#5A6B78; margin-top:2.6cqw; }
+
+        .pp-tbl{ width:100%; border-collapse:collapse; font-size:1.62cqw; }
+        .pp-tbl thead th{ font-size:1.08cqw; letter-spacing:.13em; text-transform:uppercase;
+                          color:#5A6B78; text-align:left; font-weight:400;
+                          padding:0 0 1.1cqw; border-bottom:1.5px solid #0B2233; }
+        .pp-tbl tbody td{ padding:1.3cqw 0; border-bottom:1px solid #D9DFE4; vertical-align:top; }
+        .pp-tbl tbody tr:last-child td{ border-bottom:0; }
+        .pp-tbl td.n, .pp-tbl th.n{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+        .pp-tbl td.it{ font-family:'Kanit',sans-serif; font-weight:500; color:#0B2233; }
+        .pp-tbl td.hi{ color:#B8862F; font-family:'Kanit',sans-serif; font-weight:600; }
+
+        .pp-chart{ margin:1cqw 0 0; border:1px solid #D9DFE4; background:#fff; padding:1.6cqw; }
+        .pp-chart img{ width:100%; height:auto; display:block; }
+
+        .pp-bars{ display:grid; grid-template-columns:repeat(12,1fr); gap:1cqw;
+                  align-items:end; height:24cqw; }
+        .pp-b{ display:flex; flex-direction:column; justify-content:flex-end; height:100%; gap:.6cqw; }
+        .pp-b i{ display:block; background:#B8862F; }
+        .pp-b b{ font-size:.95cqw; font-weight:400; color:#5A6B78; text-align:center;
+                 font-variant-numeric:tabular-nums; }
+        .pp-months{ display:grid; grid-template-columns:repeat(12,1fr); gap:1cqw; margin-top:1cqw;
+                    border-top:1px solid #D9DFE4; padding-top:.9cqw; }
+        .pp-months span{ font-size:1.15cqw; color:#5A6B78; text-align:center; }
+
+        /* กราฟกระแสเงินสดที่วาดเอง ใช้โทนสีของเอกสารข้อเสนอ ไม่ใช่สีของแดชบอร์ด */
+        .pp-cash svg{ width:100%; height:auto; display:block; }
+        .pp-cash .g{ stroke:#D9DFE4; stroke-width:.7; }
+        .pp-cash .z{ stroke:#0B2233; stroke-width:1; }
+        .pp-cash .l{ fill:none; stroke:#B8862F; stroke-width:2.2; }
+        .pp-cash .a{ fill:#F2E6CE; opacity:.75; }
+        .pp-cash .p{ fill:#0B2233; }
+        .pp-cash text{ font-family:'Sarabun',sans-serif; font-size:10px; fill:#5A6B78; }
+
+        .pp-lang{ background:#fff; color:#1e40af; }
+        .pp-lang[aria-pressed="true"]{ background:#1d4ed8; color:#fff; }
+
+        /* ── ตอนสั่งพิมพ์ข้อเสนอ ต้องซ่อนหน้ารายงานทั้งหมด ────────────────
+           ไม่งั้นจะได้ทั้งข้อเสนอและรายงาน 25 หน้าออกมาในไฟล์เดียวกัน */
+        @media print {
+            body.pp-printing #app-shell,
+            body.pp-printing .pdf-page,
+            body.pp-printing .pdf-page-landscape,
+            body.pp-printing #pdf-cover-page { display:none !important; }
+            body.pp-printing .pp-stack{ display:block !important; padding:0 !important; }
+            body.pp-printing .pp-sheet{
+                display:block !important; max-width:none !important; width:100% !important;
+                aspect-ratio:auto !important; height:auto !important; min-height:0 !important;
+                box-shadow:none !important; page-break-after:always; break-after:page;
+                container-type:inline-size;
+            }
+            body.pp-printing .pp-sheet:last-child{ page-break-after:auto; break-after:auto; }
+            body.pp-printing #menu-proposal{ display:block !important; }
+            body.pp-printing .no-print{ display:none !important; }
+        }
+
         /* ปุ่มชุดสำเร็จรูป — ชุดที่เลือกอยู่จะทึบ ชุดอื่นเป็นเส้นขอบ */
         .preset-btn{ background:#fff; color:#1e40af; border-color:#bfdbfe; }
         .preset-btn:hover{ background:#eff6ff; }
@@ -292,6 +420,7 @@
             <a href="#" onclick="switchMenu('menu-load', this)" class="sidebar-menu-item">⚡ 2.วิเคราะห์ระบบ(Simulation)</a>
             <a href="#" onclick="switchMenu('menu-finance', this)" class="sidebar-menu-item">💰 3.การเงิน(Finance)</a>
             <a href="#" id="btn-menu-dashboard" onclick="switchMenu('menu-dashboard', this)" class="sidebar-menu-item">📊 4.Dashboard & Report</a>
+            <a href="#" id="btn-menu-proposal" onclick="switchMenu('menu-proposal', this)" class="sidebar-menu-item">📄 5.ข้อเสนอลูกค้า(Proposal)</a>
         </div>
         <div class="p-4 border-t space-y-2">
             <button onclick="clearState()" class="w-full text-red-600 hover:bg-red-50 py-2 rounded text-sm font-bold border border-red-200">ล้างข้อมูลทั้งหมด</button>
@@ -890,6 +1019,43 @@
                     </div>
                 </div>
                 </div>
+
+            <!-- ══════════════════════════════════════════════════════════════
+                 เมนู 5 · เอกสารข้อเสนอสำหรับลูกค้า
+
+                 อยู่ในหน้าเดียวกับรายงานเพราะใช้ตัวเลขชุดเดียวกันทั้งหมด
+                 และดึงกราฟจาก canvas ที่รายงานวาดไว้แล้ว จึงไม่มีทางที่ตัวเลข
+                 สองเอกสารจะไม่ตรงกัน
+                 ══════════════════════════════════════════════════════════════ -->
+            <div id="menu-proposal" class="tab-content max-w-5xl mx-auto">
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-blue-200 mb-6 no-print">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 border-b pb-2 gap-3">
+                        <div>
+                            <h3 class="font-bold text-blue-800"><i class="fa-solid fa-file-contract mr-2"></i>เอกสารข้อเสนอสำหรับลูกค้า</h3>
+                            <p class="text-xs text-gray-500 mt-1">เอกสาร 6 หน้า เน้นผลลัพธ์และผลตอบแทน สำหรับผู้บริหารที่ตัดสินใจซื้อ</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <div class="flex border border-blue-300 rounded overflow-hidden">
+                                <button id="pp-lang-th" aria-pressed="true"  onclick="ppSetLang('th')" class="pp-lang text-xs font-bold py-1.5 px-3">ไทย</button>
+                                <button id="pp-lang-en" aria-pressed="false" onclick="ppSetLang('en')" class="pp-lang text-xs font-bold py-1.5 px-3">English</button>
+                            </div>
+                            <button onclick="AscProposal.exportPDF()" class="text-xs bg-red-600 hover:bg-red-700 text-white py-1.5 px-3 rounded font-bold shadow-sm">
+                                <i class="fa-solid fa-file-pdf mr-1"></i> ส่งออก PDF
+                            </button>
+                            <button id="pp-docx-btn" onclick="AscProposal.exportDOCX()" class="text-xs bg-sky-700 hover:bg-sky-800 text-white py-1.5 px-3 rounded font-bold shadow-sm">
+                                <i class="fa-solid fa-file-word mr-1"></i> ส่งออก Word
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-gray-400">
+                        ตัวเลขและกราฟทั้งหมดดึงจากผลการประมวลผลในเมนูที่ 4 โดยตรง ถ้ายังไม่ได้กดประมวลผล เอกสารจะยังว่าง<br>
+                        ข้อมูลบริษัทผู้เสนอกรอกได้ที่หน้า Settings ของ ASC Cloud แล้วจะขึ้นบนหน้าปกอัตโนมัติ
+                    </p>
+                </div>
+
+                <div id="pp-pages" class="pp-stack"></div>
+            </div>
+
             </div>
         </div>
     </div>
@@ -1567,6 +1733,17 @@
         // 🌟 เพิ่มตัวแปรหน่วงเวลา
         let renderTimer = null;
 
+
+        /* ── ตัวช่วยของเมนูข้อเสนอ ───────────────────────────────────────── */
+        function global_AscProposalReady() { return typeof AscProposal !== 'undefined'; }
+
+        function ppSetLang(l) {
+            if (!global_AscProposalReady()) return;
+            AscProposal.setLang(l);
+            document.getElementById('pp-lang-th').setAttribute('aria-pressed', String(l === 'th'));
+            document.getElementById('pp-lang-en').setAttribute('aria-pressed', String(l === 'en'));
+        }
+
         function switchMenu(menuId, el) {
             document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
             document.getElementById(menuId).classList.add('active');
@@ -1582,6 +1759,9 @@
             document.getElementById('header-title').innerText = newTitle;
             
             if(menuId === 'menu-dashboard') { setTimeout(() => window.dispatchEvent(new Event('resize')), 100); }
+        
+            // เข้าเมนูข้อเสนอเมื่อไร ให้สร้างเอกสารใหม่จากตัวเลขล่าสุดเสมอ
+            if (menuId === 'menu-proposal' && global_AscProposalReady()) AscProposal.render();
         }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
@@ -6347,5 +6527,8 @@ function renderCADLayout() {
     <!-- จบ: โค้ดป้องกัน -->
 </body>
 </html>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="asc-proposal.js"></script>
+<script src="asc-proposal-docx.js"></script>
 </body>
 </html>
