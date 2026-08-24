@@ -27,8 +27,42 @@
     if (!URL_ || !ANONKEY)               disabledReason = 'ยังไม่ได้ใส่ค่าใน supabase-config.js';
     else if (!lib || !lib.createClient)  disabledReason = 'โหลดไลบรารี supabase-js ไม่สำเร็จ (ตรวจอินเทอร์เน็ตหรือตัวบล็อกโฆษณา)';
 
+    /* ── ที่เก็บเซสชัน ────────────────────────────────────────────────────────
+   ให้ช่อง "จำการเข้าสู่ระบบไว้ในเครื่องนี้" ที่หน้าล็อกอินคุมได้จริง
+
+   ติ๊กไว้   เก็บใน localStorage  ปิดเบราว์เซอร์แล้วเปิดใหม่ยังอยู่ในระบบ
+   ไม่ติ๊ก   เก็บใน sessionStorage  ปิดแท็บแล้วต้องเข้าสู่ระบบใหม่
+
+   เดิมตั้ง persistSession เป็น true ตายตัว ทำให้ทุกคนถูกจำไว้เสมอ
+   ไม่ว่าจะติ๊กหรือไม่ ซึ่งไม่ตรงกับที่ช่องนั้นบอก และบนเครื่องที่ใช้ร่วมกัน
+   คนถัดไปที่เปิดเว็บจะเข้าถึงบัญชีของคนก่อนหน้าได้ทันที                      */
+    const REMEMBER_FLAG = 'asc_remember_session';
+
+    const ascAuthStorage = {
+        getItem(k) {
+            const v = localStorage.getItem(k);
+            return (v !== null) ? v : sessionStorage.getItem(k);
+        },
+        setItem(k, v) {
+            if (localStorage.getItem(REMEMBER_FLAG) === '1') {
+                sessionStorage.removeItem(k);
+                localStorage.setItem(k, v);
+            } else {
+                localStorage.removeItem(k);
+                sessionStorage.setItem(k, v);
+            }
+        },
+        removeItem(k) {
+            localStorage.removeItem(k);
+            sessionStorage.removeItem(k);
+        }
+    };
+
     const sb = enabled ? lib.createClient(URL_, ANONKEY, {
-        auth: { persistSession: true, autoRefreshToken: true, storageKey: 'asc_supabase_auth' }
+        auth: {
+            persistSession: true, autoRefreshToken: true,
+            storageKey: 'asc_supabase_auth', storage: ascAuthStorage
+        }
     }) : null;
 
 
@@ -266,8 +300,17 @@
             return () => { try { data.subscription.unsubscribe(); } catch (e) {} };
         },
 
-        async signIn(email, password) {
+        /* remember : true = จำไว้ข้ามการปิดเบราว์เซอร์ · false = อยู่แค่แท็บนี้
+           ต้องตั้งธงก่อนเรียกเข้าสู่ระบบ เพราะ supabase-js จะเขียนเซสชันทันที
+           ที่ล็อกอินสำเร็จ ถ้าตั้งทีหลังจะไปเขียนผิดที่แล้ว */
+        setRemember(remember) {
+            if (remember) localStorage.setItem(REMEMBER_FLAG, '1');
+            else localStorage.removeItem(REMEMBER_FLAG);
+        },
+
+        async signIn(email, password, remember) {
             need();
+            if (remember !== undefined) this.setRemember(remember);
             const { data, error } = await sb.auth.signInWithPassword({
                 email: String(email || '').trim().toLowerCase(),
                 password: String(password || '')

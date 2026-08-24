@@ -136,7 +136,7 @@
 
                 <label class="flex items-center gap-2 mb-6 cursor-pointer select-none">
                     <input type="checkbox" id="login-remember" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                    <span class="text-sm text-slate-600">จำชื่อผู้ใช้ไว้ในเครื่องนี้</span>
+                    <span class="text-sm text-slate-600">จำการเข้าสู่ระบบไว้ในเครื่องนี้</span>
                 </label>
 
                 <div id="login-error" class="hidden mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
@@ -1189,8 +1189,9 @@ async function doLoginCloud(u, p) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> กำลังเข้าสู่ระบบ...';
     try {
-        SESSION = await AscCloud.signIn(u, p);
-        if (document.getElementById('login-remember').checked) localStorage.setItem(REMEMBER_KEY, u);
+        const remember = document.getElementById('login-remember').checked;
+        SESSION = await AscCloud.signIn(u, p, remember);
+        if (remember) localStorage.setItem(REMEMBER_KEY, u);
         else localStorage.removeItem(REMEMBER_KEY);
         sessionStorage.setItem(SESSION_KEY, JSON.stringify(SESSION));
         await enterApp();
