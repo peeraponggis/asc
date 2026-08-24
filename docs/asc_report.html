@@ -1256,6 +1256,54 @@
 
            คืนหน่วยมาพร้อมกับค่าด้วย เพื่อให้กรณีไม่มีข้อมูลได้ "-" เดี่ยว ๆ
            ไม่ใช่ "-A" หรือ "- Sq.mm" ซึ่งอ่านแล้วสับสน */
+        /* ══════════════════════════════════════════════════════════════════════
+           ข้อมูลบริษัทผู้เสนอ
+
+           กรอกครั้งเดียวในหน้า Settings ของ ASC Cloud แล้วใช้ได้ทุกโครงการ
+           หน้านี้รับข้อมูลได้สองทาง
+
+             1. ข้อความ SYNC_PROJECT_STATE จากหน้าหลัก เมื่อเปิดผ่าน master_shell
+             2. สำเนาใน localStorage เมื่อเปิดหน้านี้เดี่ยว ๆ หรือทำงานออฟไลน์
+
+           เดิมหน้านี้ตัดขาดจากทุกอย่าง ไม่มีทั้ง message listener localStorage
+           และตัวเชื่อมคลาวด์ รับข้อมูลทางเดียวคือไฟล์ DB ที่นำเข้าด้วยมือ
+           จึงต้องเดินสายใหม่ แต่ยังคงหลักการเดิมไว้ คือเปิดออฟไลน์ก็ต้องใช้งานได้
+           ══════════════════════════════════════════════════════════════════════ */
+        const ASC_COMPANY_KEY = 'proinventive_company';
+        let ASC_COMPANY = {};
+
+        try {
+            ASC_COMPANY = JSON.parse(localStorage.getItem(ASC_COMPANY_KEY) || '{}');
+        } catch (e) { ASC_COMPANY = {}; }
+
+        window.addEventListener('message', function (ev) {
+            const d = ev.data;
+            if (!d || d.type !== 'SYNC_PROJECT_STATE') return;
+            if (d.company && Object.keys(d.company).length) {
+                ASC_COMPANY = d.company;
+                try { localStorage.setItem(ASC_COMPANY_KEY, JSON.stringify(d.company)); } catch (e) {}
+                if (typeof paintCompanyHeader === 'function') paintCompanyHeader();
+            }
+        });
+
+        /* ขอข้อมูลบริษัทกลับมาในรูปที่พร้อมใช้ ค่าที่ไม่มีให้เป็นสตริงว่าง
+           ผู้เรียกจึงไม่ต้องเช็ค undefined เอง */
+        function ascCompany() {
+            const c = ASC_COMPANY || {};
+            return {
+                name:    c.company_name    || '',
+                address: c.company_address || '',
+                taxId:   c.company_tax_id  || '',
+                phone:   c.company_phone   || '',
+                email:   c.company_email   || '',
+                website: c.company_website || '',
+                logo:    c.company_logo_url|| '',
+                signer:  c.signer_name     || '',
+                title:   c.signer_title    || '',
+                profile: c.company_profile || {}
+            };
+        }
+
         /* ชื่อไฟล์กลางของทั้งชุดโปรแกรม : ชื่อโครงการ_ประเภทงาน_YYYYMMDD_HHMM
 
            asc_e_analysis ใช้ eBill · asc_design ใช้ design · asc_report ใช้ report
@@ -5413,7 +5461,26 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 let location = getStr('inp-loc', '-');
                 let capacity = AppState.results.pnom ? formatNum(AppState.results.pnom, 2) + ' kWp' : '- kWp';
                 
-                let coverHtml = `
+                // แถบหัวกระดาษของผู้เสนอ ขึ้นเฉพาะเมื่อกรอกข้อมูลบริษัทไว้แล้ว
+                // ถ้ายังไม่ได้กรอก หน้าปกจะเหมือนเดิมทุกประการ ไม่มีช่องว่างโผล่
+                const co = ascCompany();
+                let coverHtml = '';
+                if (co.name || co.logo) {
+                    coverHtml += `
+                    <div style="width:100%; display:flex; align-items:center; gap:14px; padding:0 0 12px;
+                                border-bottom:2px solid #1e3a8a; margin-bottom:6px;">
+                        ${co.logo ? `<img src="${co.logo}" alt="" style="height:46px; width:auto; max-width:170px; object-fit:contain;">` : ''}
+                        <div style="text-align:left; line-height:1.45;">
+                            ${co.name ? `<div style="font-size:14px; font-weight:700; color:#0f172a; font-family:'Kanit',sans-serif;">${co.name}</div>` : ''}
+                            ${co.address ? `<div style="font-size:10px; color:#64748b;">${co.address}</div>` : ''}
+                            <div style="font-size:10px; color:#64748b;">
+                                ${co.phone ? 'โทร. ' + co.phone : ''}${co.phone && co.email ? ' · ' : ''}${co.email || ''}${(co.phone || co.email) && co.website ? ' · ' : ''}${co.website || ''}
+                            </div>
+                        </div>
+                    </div>`;
+                }
+
+                coverHtml += `
                     <div style="width: 100%; text-align: center; margin-bottom: 25px; margin-top: 40px;">
                         <h1 style="font-size: 20px; font-weight: bold; color: #1e3a8a; margin-bottom: 12px; font-family: 'Kanit', sans-serif;">รายงานการประเมินศักยภาพเชิงวิศวกรรมและเศรษฐศาสตร์</h1>
 						<h1 style="font-size: 18px; font-weight: bold; color: #1e3a8a; margin-bottom: 10px; font-family: 'Kanit', sans-serif;">Engineering and Economic Potential Assessment of Solar Power Systems</h1>

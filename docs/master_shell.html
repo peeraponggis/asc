@@ -534,9 +534,16 @@
         }
 
         function broadcastToFrames() {
+            // ข้อมูลบริษัทผู้เสนอ กรอกไว้ในหน้า Settings ของ ASC Cloud
+            // ส่งไปพร้อมกันเพื่อให้หน้ารายงานและข้อเสนอเอาไปขึ้นหัวเอกสารได้
+            // โดยไม่ต้องต่อคลาวด์เอง (asc_report ออกแบบมาให้ทำงานออฟไลน์ได้)
+            let company = {};
+            try { company = JSON.parse(localStorage.getItem('proinventive_company') || '{}'); } catch (e) {}
+
             const payload = {
                 type: 'SYNC_PROJECT_STATE',
                 user: SESSION,
+                company: company,
                 projectId: currentProjectId,
                 payload: slimProjectData()
             };
