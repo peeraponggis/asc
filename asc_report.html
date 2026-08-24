@@ -204,7 +204,7 @@
             .pdf-page [class*="mt-4"] { margin-top: 6px !important; }
             .pdf-page [class*="leading-relaxed"] { line-height: 1.45 !important; }
             /* กล่องคำอธิบาย (Pee Analysis) ใน PDF */
-            .pdf-page [id^="prt-desc-"] { padding: 6px 10px !important; margin-top: 6px !important; font-size: 10.5px !important; }
+            .pdf-page [id^="prt-desc-"] { padding: 7px 11px !important; margin-top: 6px !important; font-size: 12px !important; line-height: 1.5 !important; }
             /* สมการในหน้า PDF ย่อลงเล็กน้อยให้พอดีคอลัมน์ */
             .pdf-page .asc-eq { font-size: 11.5px !important; margin: 4px 0 !important; line-height: 1.7 !important; }
         }
@@ -215,6 +215,11 @@
            เพราะรายงานนี้ต้องแปลงเป็นภาพเพื่อทำ PDF และต้องเปิดแบบออฟไลน์ได้
            ฟอนต์เฉพาะของ KaTeX/MathJax มักหลุดตอนแปลงเป็นภาพ กลายเป็นกล่องว่าง
            ══════════════════════════════════════════════════════════════ */
+        /* ปุ่มชุดสำเร็จรูป — ชุดที่เลือกอยู่จะทึบ ชุดอื่นเป็นเส้นขอบ */
+        .preset-btn{ background:#fff; color:#1e40af; border-color:#bfdbfe; }
+        .preset-btn:hover{ background:#eff6ff; }
+        .preset-btn[aria-pressed="true"]{ background:#1d4ed8; color:#fff; border-color:#1d4ed8; }
+
         .asc-eq {
             display: block;
             text-align: center;
@@ -572,9 +577,15 @@
                     <div class="bg-white p-5 rounded-lg shadow-sm border border-blue-200 mb-6 avoid-break no-print">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 border-b pb-2 gap-2">
                             <h3 class="font-bold text-blue-800"><i class="fa-solid fa-list-check mr-2"></i>เลือกข้อมูลที่จะแสดงในรายงาน PDF และ Dashboard</h3>
-                            <div class="flex space-x-2">
-                                <button onclick="checkDefaultSections()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 px-3 rounded border border-gray-300 font-bold transition shadow-sm">🔄 แสดงค่าเริ่มต้น</button>
-                                <button onclick="checkAllSections()" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 py-1.5 px-3 rounded border border-blue-300 font-bold transition shadow-sm">☑️ เลือกทั้งหมด</button>
+                            <div class="flex flex-wrap gap-2 items-center">
+                                <span class="text-[11px] text-gray-400 font-bold uppercase tracking-wider mr-1">ชุดสำเร็จรูป</span>
+                                <button data-preset="customer" aria-pressed="true" onclick="applyPreset('customer')"
+                                        class="preset-btn text-xs py-1.5 px-3 rounded border font-bold transition shadow-sm">สำหรับลูกค้า</button>
+                                <button data-preset="bank" aria-pressed="false" onclick="applyPreset('bank')"
+                                        class="preset-btn text-xs py-1.5 px-3 rounded border font-bold transition shadow-sm">สำหรับธนาคาร</button>
+                                <button data-preset="engineer" aria-pressed="false" onclick="applyPreset('engineer')"
+                                        class="preset-btn text-xs py-1.5 px-3 rounded border font-bold transition shadow-sm">วิศวกรรม (ทั้งหมด)</button>
+                                <span id="pdf-page-estimate" class="text-xs text-blue-700 font-semibold ml-1"></span>
                             </div>
                         </div>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
@@ -5609,6 +5620,8 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             });
             // 🌟 [เพิ่มใหม่] อัปเดตหน้าภาคผนวกใน PDF ทันทีที่มีการเปิด/ปิดเช็คบ็อกซ์ (รวมถึงตอนโหลด DB3)
             if(typeof updatePDFAppendix === 'function') updatePDFAppendix();
+        
+            updatePageEstimate();
         }
         // --- ฟังก์ชันวาด Wiring Diagram ---
         function generateWiringSVG(dcBreaker, acBreaker) {
@@ -6209,20 +6222,59 @@ function renderCADLayout() {
             }
         }
 		// 🌟 ฟังก์ชันเลือกกลับไปใช้ค่าเริ่มต้น (5 รายการหลัก)
-        function checkDefaultSections() {
-            const defaultChecked = ['chk-sec-exec', 'chk-sec-overview', 'chk-sec-env', 'chk-sec-shading-dash', 'chk-sec-daily', 'chk-sec-monthly', 'chk-sec-powercurve', 'chk-sec-finance']; // 🌟 ค่าแนะนำ ASC
-            document.querySelectorAll('input[type="checkbox"][id^="chk-sec-"]').forEach(chk => {
-                chk.checked = defaultChecked.includes(chk.id);
+        /* ══════════════════════════════════════════════════════════════════
+           ชุดสำเร็จรูปตามคนอ่าน
+
+           เดิมมีแค่ "ค่าเริ่มต้น" กับ "เลือกทั้งหมด" ซึ่งไม่บอกว่าชุดไหนเหมาะกับใคร
+           ผู้ใช้ส่วนใหญ่จึงกดเลือกทั้งหมดเพราะง่ายกว่า แล้วได้ PDF 25 หน้าไปเสนอลูกค้า
+
+           ที่สำคัญกว่านั้น ค่าเริ่มต้นเดิมไม่ติ๊กหน้าการเงินไว้ แปลว่า PDF ที่ออกมา
+           โดยไม่แตะอะไรเลย ไม่มีระยะคืนทุน ไม่มี IRR ไม่มี NPV ซึ่งเป็นสิ่งเดียว
+           ที่ลูกค้าอยากรู้จริง ๆ ชุด "สำหรับลูกค้า" ด้านล่างแก้จุดนี้
+           ══════════════════════════════════════════════════════════════════ */
+        const ASC_PRESETS = {
+            // เน้นผลลัพธ์และเงิน ตัดรายละเอียดวิศวกรรมออกทั้งหมด
+            customer: ['chk-sec-exec', 'chk-sec-overview', 'chk-sec-monthly',
+                       'chk-sec-finance', 'chk-sec-env'],
+
+            // เพิ่มความเสี่ยงและความมั่นใจของผลผลิตระยะยาว สำหรับยื่นขอสินเชื่อ
+            bank:     ['chk-sec-exec', 'chk-sec-overview', 'chk-sec-monthly',
+                       'chk-sec-finance', 'chk-sec-env',
+                       'chk-sec-bell', 'chk-sec-aging', 'chk-sec-balances'],
+
+            // ครบทุกอย่าง สำหรับวิศวกรและการยื่นแบบ
+            engineer: null   // null = ติ๊กทั้งหมด
+        };
+
+        function applyPreset(name) {
+            var list = ASC_PRESETS[name];
+            document.querySelectorAll('input[type="checkbox"][id^="chk-sec-"]').forEach(function (chk) {
+                chk.checked = (list === null) ? true : list.indexOf(chk.id) >= 0;
             });
             if (typeof toggleSections === 'function') toggleSections();
+            document.querySelectorAll('[data-preset]').forEach(function (b) {
+                b.setAttribute('aria-pressed', String(b.dataset.preset === name));
+            });
+            updatePageEstimate();
         }
 
-        // 🌟 ฟังก์ชันเลือกแสดงผลกราฟและเนื้อหาทั้งหมด 100%
-        function checkAllSections() {
-            document.querySelectorAll('input[type="checkbox"][id^="chk-sec-"]').forEach(chk => {
-                chk.checked = true;
-            });
-            if (typeof toggleSections === 'function') toggleSections();
+        function checkDefaultSections() { applyPreset('customer'); }
+        function checkAllSections()     { applyPreset('engineer'); }
+
+        /* ── ตัวบอกจำนวนหน้าโดยประมาณ ─────────────────────────────────────
+           นับหน้าที่ยังไม่ถูกซ่อน เป็นค่าประมาณเพราะเบราว์เซอร์ตัดหน้าเองตอนพิมพ์
+           ตารางยาวอย่าง BOM อาจกินมากกว่าหนึ่งหน้า จึงบอกว่า "ประมาณ" */
+        function updatePageEstimate() {
+            var el = document.getElementById('pdf-page-estimate');
+            if (!el) return;
+            var n = [].slice.call(document.querySelectorAll('.pdf-page, .pdf-page-landscape'))
+                .filter(function (p) {
+                    var cs = getComputedStyle(p);
+                    return cs.display !== 'none' && cs.visibility !== 'hidden';
+                }).length;
+            el.innerHTML = n
+                ? '<i class="fa-solid fa-file-lines mr-1"></i> จะได้ PDF ประมาณ <b>' + n + '</b> หน้า'
+                : '<i class="fa-solid fa-triangle-exclamation mr-1"></i> ยังไม่ได้เลือกเนื้อหา';
         }
     </script>
     <!-- จบ: โค้ดป้องกัน -->
