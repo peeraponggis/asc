@@ -58,8 +58,10 @@ setTimeout(function () {
   .row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
   .row label{color:var(--dim);font-size:12px;flex:1;line-height:1.35}
   .row .ctl{display:flex;align-items:center;gap:5px;flex-shrink:0}
+  /* กว้างพอสำหรับเลขหลักร้อยที่มีทศนิยมสองตำแหน่ง เช่น 123.45 ซึ่งเดิมโดนตัดหายไป
+     ปุ่มลูกศรเพิ่ม/ลดของ input number กินที่ทางขวาอีกราว 14 px จึงต้องเผื่อไว้ด้วย */
   input[type=number]{
-    width:74px;background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    width:98px;background:var(--panel2);border:1px solid var(--line);color:var(--text);
     border-radius:6px;padding:5px 7px;font-family:inherit;font-size:12px;text-align:right;
   }
   input[type=number]:focus{outline:none;border-color:var(--accent)}

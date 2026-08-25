@@ -261,7 +261,9 @@
         .setting-row:last-child { border-bottom: none; }
         .setting-row .sr-label { font-weight: 700; color: var(--ink-700); }
         .setting-row .sr-ctrl { display: flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--ink-700); flex-shrink: 0; }
-        .setting-row .sr-ctrl input[type="number"] { width: 52px; padding: 2px 4px; text-align: center; }
+        /* กว้างพอสำหรับเลขหลักร้อยที่มีทศนิยมสองตำแหน่ง เช่น 123.45 ซึ่งเดิมโดนตัดหายไป
+           ปุ่มลูกศรเพิ่ม/ลดของ input number กินที่ไปอีกราว 14 px จึงต้องเผื่อไว้ด้วย */
+        .setting-row .sr-ctrl input[type="number"] { width: 84px; padding: 2px 4px; text-align: center; }
         .setting-row .sr-ctrl select { width: auto; max-width: 230px; padding: 4px 6px; }
         .accordion-icon { transition: transform 0.3s ease; font-size: 0.75em; color: var(--ink-500); }
         .accordion.open .accordion-icon { transform: rotate(180deg); color: var(--accent, var(--primary)); }
@@ -648,7 +650,7 @@
                                 <label for="drawWalkway" style="color: #10b981; font-weight: bold; margin: 0; white-space: nowrap;">🟢 ทางเดิน</label>
                             </div>
                             <div style="font-size: 0.8em; color: #475569; display: flex; align-items: center; margin-top: 6px; padding-left: 20px;">
-                                กว้าง <input type="number" id="manualWalkwayWidth" value="40" step="1" min="10" style="width: 50px; padding: 2px 4px; margin: 0 4px; border: 1px solid #10b981; border-radius: 4px; text-align: center;"> ซม.
+                                กว้าง <input type="number" id="manualWalkwayWidth" value="40" step="1" min="10" style="width: 70px; padding: 2px 4px; margin: 0 4px; border: 1px solid #10b981; border-radius: 4px; text-align: center;"> ซม.
                             </div>
                         </div>
 
@@ -658,7 +660,7 @@
                                 <label for="drawKeepout" style="color: #dc2626; font-weight: bold; margin: 0; white-space: nowrap;">🔴 สิ่งกีดขวาง</label>
                             </div>
                             <div style="font-size: 0.8em; color: #475569; display: flex; align-items: center; margin-top: 6px; padding-left: 20px;">
-                                สูง <input type="number" id="keepoutHeightM" value="1.0" step="0.1" min="0" style="width: 50px; padding: 2px 4px; margin: 0 4px; border: 1px solid #dc2626; border-radius: 4px; text-align: center;"> ม.
+                                สูง <input type="number" id="keepoutHeightM" value="1.0" step="0.1" min="0" style="width: 70px; padding: 2px 4px; margin: 0 4px; border: 1px solid #dc2626; border-radius: 4px; text-align: center;"> ม.
                             </div>
                         </div>
 
@@ -681,9 +683,9 @@
                             <button type="button" id="btnPlaceTree" style="background: #f0fdf4; color: #15803d; border: 1px solid #15803d; border-radius: 5px; padding: 4px 10px; font-size: 0.82em; font-weight: bold; cursor: pointer; white-space: nowrap;">🌳 วางต้นไม้</button>
                         </div>
                         <div style="font-size: 0.8em; color: #475569; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-top: 8px;">
-                            ทรงพุ่ม R <input type="number" id="treeCanopyR" value="3" step="0.5" min="0.3" style="width: 46px; padding: 2px 4px; border: 1px solid #86efac; border-radius: 4px; text-align: center;"> ม.
-                            สูง <input type="number" id="treeHeightM" value="8" step="0.5" min="0.3" style="width: 46px; padding: 2px 4px; border: 1px solid #86efac; border-radius: 4px; text-align: center;"> ม.
-                            เผื่อโต <input type="number" id="treeGrowthM" value="0" step="0.5" min="0" style="width: 46px; padding: 2px 4px; border: 1px solid #86efac; border-radius: 4px; text-align: center;"> ม.
+                            ทรงพุ่ม R <input type="number" id="treeCanopyR" value="3" step="0.5" min="0.3" style="width: 68px; padding: 2px 4px; border: 1px solid #86efac; border-radius: 4px; text-align: center;"> ม.
+                            สูง <input type="number" id="treeHeightM" value="8" step="0.5" min="0.3" style="width: 68px; padding: 2px 4px; border: 1px solid #86efac; border-radius: 4px; text-align: center;"> ม.
+                            เผื่อโต <input type="number" id="treeGrowthM" value="0" step="0.5" min="0" style="width: 68px; padding: 2px 4px; border: 1px solid #86efac; border-radius: 4px; text-align: center;"> ม.
                         </div>
                         <div id="treeStatusBox" style="font-size: 0.78em; line-height: 1.5; margin-top: 8px; color: #166534;">
                             <span style="color:#64748b;">ยังไม่มีต้นไม้ในไซต์</span>
@@ -817,8 +819,8 @@
                         <div class="setting-group">
                             <div class="setting-row"><span class="sr-label">เว้นขอบพื้นที่ด้านใน (Edge):</span><span class="sr-ctrl"><input type="number" id="innerEdgeGapCm" value="100" min="0"> ซม.</span></div>
                             <div class="setting-row"><span class="sr-label" style="color: #dc2626;">เว้นพื้นที่กีดขวาง (Keepout):</span><span class="sr-ctrl"><input type="number" id="keepoutGapCm" value="0" min="0"> ซม.</span></div>
-                            <div class="setting-row"><span class="sr-label">ทางเดินแกน Y:</span><span class="sr-ctrl">กลุ่มละ <input type="number" id="rowsPerGroup" value="10" min="1" style="width: 52px;"> แผง, เว้น <input type="number" id="rowWalkwayGapCm" value="80" min="0" style="width: 52px;"> ซม.</span></div>
-                            <div class="setting-row"><span class="sr-label">ทางเดินแกน X:</span><span class="sr-ctrl">กลุ่มละ <input type="number" id="colsPerGroup" value="2" min="1" style="width: 52px;"> แผง, เว้น <input type="number" id="colWalkwayGapCm" value="80" min="0" style="width: 52px;"> ซม.</span></div>
+                            <div class="setting-row"><span class="sr-label">ทางเดินแกน Y:</span><span class="sr-ctrl">กลุ่มละ <input type="number" id="rowsPerGroup" value="10" min="1" style="width: 66px;"> แผง, เว้น <input type="number" id="rowWalkwayGapCm" value="80" min="0" style="width: 74px;"> ซม.</span></div>
+                            <div class="setting-row"><span class="sr-label">ทางเดินแกน X:</span><span class="sr-ctrl">กลุ่มละ <input type="number" id="colsPerGroup" value="2" min="1" style="width: 66px;"> แผง, เว้น <input type="number" id="colWalkwayGapCm" value="80" min="0" style="width: 74px;"> ซม.</span></div>
                         </div>
                     </div>
 
@@ -1431,6 +1433,7 @@ const INDUSTRIAL_SOLAR_CONFIG = {
                                     layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
                                 } else if (layer.drawMode === 'pvzone') {
                                     layer.setStyle(ASC_PVZONE_STYLE);
+                                    if (feature.properties.zoneConfig) layer.zoneConfig = feature.properties.zoneConfig;
                                     layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
                                 } else if (layer.drawMode === 'mdb') {
                                     // 🌟 ดึงข้อมูลหมุด MDB จากไฟล์ DB1 กลับมาแสดง
@@ -2614,6 +2617,13 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     }
                 }
                 
+                /* คลิกเลือกพื้นที่วางแผง ให้หัวข้อ 3 แสดงค่าของกรอบนั้น
+                   ผู้ใช้จะได้แก้การจัดกลุ่มและทางเดินของแต่ละกรอบแยกกันได้ */
+                if (layer.drawMode === 'pvzone') {
+                    if (!layer.zoneConfig) layer.zoneConfig = ascReadLayoutFields();
+                    ascWriteLayoutFields(layer.zoneConfig);
+                }
+
                 // 🌟 โหลดระยะความยาวด้านให้ทำงานกับวัตถุทุกประเภท
                 loadEdgeLengths(layer);
             }
@@ -3674,6 +3684,8 @@ processPolygonsAndPanels = function() {
                 layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
             } else if (drawMode === 'pvzone') {
                 layer.setStyle(ASC_PVZONE_STYLE);
+                // เก็บค่าการวางแผงที่ตั้งไว้บนหน้าจอ ณ ตอนวาด เป็นค่าเริ่มต้นของกรอบนี้
+                layer.zoneConfig = ascReadLayoutFields();
                 layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
             } else if (drawMode === 'walkway') { // 🌟 สีของทางเดิน 🌟
                 layer.setStyle({ color: '#4b5563', weight: 1, fillColor: '#9ca3af', fillOpacity: 0.7, dashArray: 'none' }); 
@@ -4166,7 +4178,9 @@ processPolygonsAndPanels = function() {
                     keepoutPolys.push(geojson);
                 } else if (mode === 'pvzone') {
                     /* พื้นที่วางแผงเป็นการบอกแบบ "บวก" ตรงข้ามกับสิ่งกีดขวางที่บอกแบบ "ลบ"
-                       จึงต้องเก็บแยกกอง ห้ามปนกับ keepoutPolys เด็ดขาด */
+                       จึงต้องเก็บแยกกอง ห้ามปนกับ keepoutPolys เด็ดขาด
+                       ค่าการวางแผงของกรอบติดไปด้วย เพื่อให้แต่ละกรอบจัดแถวของตัวเองได้ */
+                    if (layer.zoneConfig) geojson.properties.zoneConfig = layer.zoneConfig;
                     pvZonePolys.push(geojson);
                 } else if (mode === 'roof') {
                     // นับเฉพาะโหมดวาดหลังคาจริงๆ เท่านั้น
@@ -4330,7 +4344,21 @@ processPolygonsAndPanels = function() {
                     try { return turf.booleanIntersects(z, geojson); } catch (e) { return false; }
                 });
 
-                state.allPossiblePanelsGeoJSON = state.allPossiblePanelsGeoJSON.concat(generatePanelGrid(geojson, center, finalAzimuth, state.pvWid/1000, state.pvLen/1000, keepoutPolys, config, zonesForRoof));
+                if (zonesForRoof.length) {
+                    /* วางแผงทีละกรอบ โดยใช้ค่าการวางแผงของกรอบนั้นเอง
+                       การจัดกลุ่มและทางเดินจึงเริ่มนับใหม่ในแต่ละกรอบ ซึ่งเป็นสิ่งที่ต้องการ
+                       เพราะแต่ละกรอบคือแถวแผงคนละชุด จะตั้งแนวตั้ง/แนวนอนหรือกลุ่มละกี่แผง
+                       ต่างกันก็ได้ ส่วนรูปหลังคา ทิศ และจุดกำเนิดพิกัดยังเป็นของหลังคาผืนเดิม
+                       ผังที่ส่งออกจึงอ้างอิงระบบเดียวกับที่ asc_3d และ asc_report ใช้ */
+                    zonesForRoof.forEach(z => {
+                        const zc = (z.properties && z.properties.zoneConfig) || null;
+                        const cfg = zc ? Object.assign({}, config, zc) : config;
+                        state.allPossiblePanelsGeoJSON = state.allPossiblePanelsGeoJSON.concat(
+                            generatePanelGrid(geojson, center, finalAzimuth, state.pvWid/1000, state.pvLen/1000, keepoutPolys, cfg, [z]));
+                    });
+                } else {
+                    state.allPossiblePanelsGeoJSON = state.allPossiblePanelsGeoJSON.concat(generatePanelGrid(geojson, center, finalAzimuth, state.pvWid/1000, state.pvLen/1000, keepoutPolys, config, zonesForRoof));
+                }
             });
             
             // 🌟 รูปหลังคา/ทิศเปลี่ยน → ระยะไหลเปลี่ยน → คำนวณความสูงสันหลังคาใหม่โดยคงความชันไว้
@@ -5120,7 +5148,49 @@ function updateFinalDcLength() {
         document.getElementById('optQty').addEventListener('input', e => { state.optQty = parseInt(e.target.value) || 0; updateSystemStatus(); });
         document.getElementById('evQty').addEventListener('input', e => { state.evQty = parseInt(e.target.value) || 0; updateSystemStatus(); });
 
+        /* อ่านค่าในหัวข้อ 3 (การเว้นระยะและการวางแผง) จากหน้าจอ ณ ขณะนั้น
+           ใช้ร่วมกันทั้งหลังคาและพื้นที่วางแผง เพราะทั้งสองอย่างใช้ชุดค่าเดียวกัน */
+        function ascReadLayoutFields() {
+            return {
+                ori: document.querySelector('input[name="panelOrientation"]:checked').value,
+                rowsPerGroup: parseInt(document.getElementById('rowsPerGroup').value) || 1,
+                colsPerGroup: parseInt(document.getElementById('colsPerGroup').value) || 1,
+                rowWalkwayM: (parseFloat(document.getElementById('rowWalkwayGapCm').value) || 0) / 100,
+                colWalkwayM: (parseFloat(document.getElementById('colWalkwayGapCm').value) || 0) / 100,
+                innerEdgeGapM: (parseFloat(document.getElementById('innerEdgeGapCm').value) || 0) / 100,
+                keepoutGapM: (parseFloat(document.getElementById('keepoutGapCm').value) || 0) / 100
+            };
+        }
+
+        /* เขียนค่าชุดเดียวกันกลับลงหน้าจอ ใช้ตอนคลิกเลือกวัตถุแล้วต้องโชว์ค่าของวัตถุนั้น */
+        function ascWriteLayoutFields(c) {
+            if (!c) return;
+            const el = document.querySelector(`input[name="panelOrientation"][value="${c.ori || 'P'}"]`);
+            if (el) el.checked = true;
+            document.getElementById('rowsPerGroup').value = c.rowsPerGroup;
+            document.getElementById('colsPerGroup').value = c.colsPerGroup;
+            document.getElementById('rowWalkwayGapCm').value = Math.round((c.rowWalkwayM || 0) * 100);
+            document.getElementById('colWalkwayGapCm').value = Math.round((c.colWalkwayM || 0) * 100);
+            document.getElementById('innerEdgeGapCm').value = Math.round((c.innerEdgeGapM || 0) * 100);
+            document.getElementById('keepoutGapCm').value = Math.round((c.keepoutGapM || 0) * 100);
+        }
+
         function syncActiveConfig() {
+            /* พื้นที่วางแผงมีชุดค่าการวางแผงของตัวเอง จะได้จัดกลุ่มและเว้นทางเดิน
+               ต่างจากหลังคาที่มันวางอยู่ เช่นโซนหนึ่งวางแนวตั้ง อีกโซนวางแนวนอน
+               เดิมโค้ดส่วนนี้อ้าง panelConfig ตรงๆ ซึ่งพื้นที่วางแผงไม่มี จึงพังทันที
+               ที่ผู้ใช้คลิกเลือกกรอบแล้วไปแก้ค่าในหัวข้อ 3 */
+            if (activeRoofLayer && activeRoofLayer.drawMode === 'pvzone') {
+                activeRoofLayer.zoneConfig = ascReadLayoutFields();
+                processPolygonsAndPanels();
+                saveMapState();
+                return;
+            }
+            if (activeRoofLayer && !activeRoofLayer.panelConfig) {   // ทางเดิน สิ่งกีดขวาง ต้นไม้ ไม่มีค่าการวางแผง
+                processPolygonsAndPanels();
+                return;
+            }
+
             if(activeRoofLayer) {
                 activeRoofLayer.panelConfig.ori = document.querySelector('input[name="panelOrientation"]:checked').value;
                 activeRoofLayer.panelConfig.stringOri = document.querySelector('input[name="stringOrientation"]:checked').value; // 🌟 บันทึกการจัดสตริง
@@ -5298,6 +5368,10 @@ function updateFinalDcLength() {
                        ต้องฝังลงคุณสมบัติเอง ไม่งั้นเปิดไฟล์กลับมาแล้วเงาหายหมด */
                     if (layer.drawMode === 'tree') {
                         f.properties.treeData = JSON.parse(JSON.stringify(layer.treeData || {}));
+                    }
+                    // ค่าการวางแผงของกรอบพื้นที่วางแผง ต้องติดไปกับไฟล์ ไม่งั้นเปิดกลับมาแล้วผังเปลี่ยน
+                    if (layer.drawMode === 'pvzone' && layer.zoneConfig) {
+                        f.properties.zoneConfig = JSON.parse(JSON.stringify(layer.zoneConfig));
                     }
                     // 🌟 เฟส 5: ฝัง panelConfig ของแต่ละหลังคาลงไฟล์ด้วย เพื่อให้ import กลับมาได้ 100% (slope/ทิศ/ระยะเว้นรายหลังคา)
                     if (layer.drawMode === 'roof' && layer.panelConfig) {
@@ -7188,6 +7262,7 @@ document.addEventListener('keydown', function(e) {
                         layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
                     } else if (layer.drawMode === 'pvzone') {
                         layer.setStyle(ASC_PVZONE_STYLE);
+                        if (feature.properties.zoneConfig) layer.zoneConfig = feature.properties.zoneConfig;
                         layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
                     } else if (layer.drawMode === 'mdb') {
                         // ลบ MDB เดิมทิ้งถ้ามี (มีได้แค่ 1 จุด)
