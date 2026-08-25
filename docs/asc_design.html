@@ -3053,6 +3053,10 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                         const savedPanels = db1.step4_validation_results.equipmentCounts.totalPanels;
                         if (savedPanels !== undefined) {
                             document.getElementById('finalPanelCount').value = savedPanels;
+                            /* จำนวนที่มากับไฟล์ถือเป็นค่าที่ผู้ใช้เลือกไว้แล้ว ต้องไม่ถูกทับ
+                               ตอนที่ระบบคำนวณใหม่ ไม่งั้นเปิดไฟล์เก่ามาแก้นิดเดียว
+                               จำนวนแผงก็เปลี่ยนไปจากที่เคยเสนอลูกค้าไว้ */
+                            document.getElementById('finalPanelCount').dataset.userSet = '1';
                             if (typeof updateOptQty === 'function') updateOptQty(); // คำนวณ Optimizer ตามจำนวนแผงจริง
                             calculateStringSizing();
                             renderPanels(savedPanels);
@@ -4397,13 +4401,35 @@ processPolygonsAndPanels = function() {
                 polyListDiv.style.display = 'none';
             }
 
-            // 🌟 แก้ไขใหม่: ปลดล็อคระบบ Capping จำนวนแผงอัตโนมัติ
-            // เมื่อคัดลอกหรือวาดหลังคาใหม่ ให้ระบบวาดแผง "เต็มพื้นที่สูงสุด" เสมอ เพื่อให้ผู้ใช้มองเห็นแผงบนหลังคาทุกชิ้น
-            let finalCount = state.allPossiblePanelsGeoJSON.length;
-            
-            document.getElementById('finalPanelCount').value = finalCount;
-            updateOptQty(); 
-            calculateStringSizing(); 
+            /* จำนวนแผงที่จะใช้จริง
+
+               เดิมตั้งเป็นค่าสูงสุดทุกครั้งที่คำนวณใหม่ ซึ่งทับค่าที่ผู้ใช้ตั้งไว้เองแบบเงียบๆ
+               ผู้ใช้ที่ลดจำนวนแผงให้พอดีกับอินเวอร์เตอร์ แล้วไปขยับต้นไม้หรือแก้ความชัน
+               จะพบว่าจำนวนแผงเด้งกลับเป็นสูงสุดโดยไม่มีอะไรบอก ทำให้ผังบนแผนที่
+               ไฟล์ที่ส่งออก และภาพใน 3 มิติกับรายงาน กลายเป็นคนละจำนวนกันโดยไม่รู้ตัว
+
+               ตอนนี้ถ้าผู้ใช้เคยตั้งค่าเอง จะคงค่านั้นไว้ เพียงแต่หดลงมาถ้าพื้นที่ลดจนใส่ไม่พอ
+               และแจ้งให้ทราบเมื่อถูกหด ส่วนกรณีที่ยังไม่เคยตั้งเอง ให้เต็มพื้นที่เหมือนเดิม */
+            const maxCount = state.allPossiblePanelsGeoJSON.length;
+            const pcEl = document.getElementById('finalPanelCount');
+            const wasUserSet = pcEl.dataset.userSet === '1';
+            const prev = parseInt(pcEl.value) || 0;
+            let finalCount = maxCount;
+
+            if (wasUserSet && prev > 0) {
+                finalCount = Math.min(prev, maxCount);
+                if (finalCount < prev) {
+                    ascPanelCountNote('พื้นที่วางแผงลดลง จำนวนแผงจึงถูกหดจาก ' + prev + ' เหลือ ' + finalCount + ' แผง');
+                } else {
+                    ascPanelCountNote('');
+                }
+            } else {
+                ascPanelCountNote('');
+            }
+
+            pcEl.value = finalCount;
+            updateOptQty();
+            calculateStringSizing();
         }
 
 function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM, keepouts, config, pvZones) {
@@ -4712,8 +4738,61 @@ function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM,
             return { stroke: true, weight: 0.35, fillOpacity: 1, matchFill: false };                      // เล็ก: เส้นขาวบางมาก (SVG เรนเดอร์ subpixel ได้เนียน)
         }
 
+        /* เลือกแผงที่จะใช้จริง เมื่อจำนวนที่ต้องการน้อยกว่าที่วางได้ทั้งหมด
+
+           เดิมใช้วิธีตัดเอาลำดับต้นๆ ตรงๆ ซึ่งแผงถูกสร้างไล่ทีละหลังคาจนจบผืนหนึ่ง
+           แล้วค่อยขึ้นผืนถัดไป การตัดแบบนี้จึงเติมหลังคาผืนแรกจนเต็ม แล้วเหลือเศษ
+           ให้ผืนสุดท้ายไม่กี่แผ่น วัดกับไฟล์จริงตอนตั้ง 272 จาก 513 ได้หลังคา 1
+           เต็ม 247 แผ่น ส่วนหลังคา 2 เหลือ 25 แผ่น ซึ่งไม่มีวิศวกรคนไหนออกแบบแบบนั้น
+           และเป็นเหตุให้ภาพในแบบจำลองกับในรายงานดูไม่ตรงกับที่ตั้งใจ
+
+           เปลี่ยนเป็นลดตามสัดส่วนของแต่ละหลังคา ลดรวม 10 เปอร์เซ็นต์
+           ทุกหลังคาก็ลดลงราว 10 เปอร์เซ็นต์เท่ากัน ตรงกับที่ผู้ใช้คาดหวัง */
+        function ascActivePanels(count) {
+            const all = state.allPossiblePanelsGeoJSON;
+            if (!(count >= 0)) count = all.length;
+            if (count >= all.length) return all.slice();
+
+            const byRoof = new Map();
+            all.forEach(p => {
+                const id = (p.properties && p.properties.roofId) || 0;
+                if (!byRoof.has(id)) byRoof.set(id, 0);
+                byRoof.set(id, byRoof.get(id) + 1);
+            });
+
+            const ids = Array.from(byRoof.keys());
+            const quota = new Map();
+            let assigned = 0;
+            const frac = [];
+            ids.forEach(id => {
+                const share = byRoof.get(id) / all.length * count;
+                const base = Math.floor(share);
+                quota.set(id, base); assigned += base;
+                frac.push({ id: id, f: share - base });
+            });
+            // แจกเศษที่เหลือให้หลังคาที่มีเศษมากที่สุดก่อน
+            frac.sort((a, b) => b.f - a.f);
+            for (let i = 0; assigned < count && i < frac.length; i++) {
+                const id = frac[i].id;
+                if (quota.get(id) < byRoof.get(id)) { quota.set(id, quota.get(id) + 1); assigned++; }
+            }
+            // เผื่อกรณีที่ยังไม่ครบ วนเติมให้ผืนที่ยังมีที่ว่าง
+            for (let g = 0; assigned < count && g < ids.length * 4096; g++) {
+                const id = ids[g % ids.length];
+                if (quota.get(id) < byRoof.get(id)) { quota.set(id, quota.get(id) + 1); assigned++; }
+            }
+
+            const out = [];
+            all.forEach(p => {
+                const id = (p.properties && p.properties.roofId) || 0;
+                const q = quota.get(id) || 0;
+                if (q > 0) { out.push(p); quota.set(id, q - 1); }
+            });
+            return out;
+        }
+
         function renderPanels(countToDraw) {
-            panelItems.clearLayers(); const panelsToDraw = state.allPossiblePanelsGeoJSON.slice(0, countToDraw);
+            panelItems.clearLayers(); const panelsToDraw = ascActivePanels(countToDraw);
             const lod = panelStrokeForZoom();
 			
             const strSize = state.maxPanelsPerString > 0 ? state.maxPanelsPerString : 15;
@@ -5283,9 +5362,28 @@ function updateFinalDcLength() {
         document.querySelectorAll('input[name="stringOrientation"]').forEach(radio => radio.addEventListener('change', syncActiveConfig)); // 🌟 สั่งอัปเดตเมื่อเปลี่ยนจัดสตริง
 
         document.getElementById('finalPanelCount').addEventListener('input', e => {
-            let req = parseInt(e.target.value) || 0; if (req > state.allPossiblePanelsGeoJSON.length) { req = state.allPossiblePanelsGeoJSON.length; e.target.value = req; } 
-            updateOptQty(); calculateStringSizing(); renderPanels(req); 
+            let req = parseInt(e.target.value) || 0; if (req > state.allPossiblePanelsGeoJSON.length) { req = state.allPossiblePanelsGeoJSON.length; e.target.value = req; }
+            // จำไว้ว่าผู้ใช้ตั้งเอง การคำนวณรอบถัดไปจะได้ไม่ทับค่านี้
+            e.target.dataset.userSet = '1';
+            updateOptQty(); calculateStringSizing(); renderPanels(req);
+            ascPanelCountNote('');
         });
+
+        /* ข้อความกำกับใต้ช่องจำนวนแผง ใช้บอกเมื่อระบบหดจำนวนให้เอง
+           เพราะการเปลี่ยนตัวเลขนี้เงียบๆ คือต้นเหตุที่ทำให้ผัง ไฟล์ และภาพ 3 มิติ ไม่ตรงกัน */
+        function ascPanelCountNote(msg) {
+            let el = document.getElementById('panelCountNote');
+            if (!el) {
+                const host = document.getElementById('finalPanelCount');
+                if (!host || !host.parentElement) return;
+                el = document.createElement('div');
+                el.id = 'panelCountNote';
+                el.style.cssText = 'font-size:0.76em; line-height:1.4; color:#b45309; margin-top:3px;';
+                host.parentElement.appendChild(el);
+            }
+            el.innerText = msg || '';
+            el.style.display = msg ? 'block' : 'none';
+        }
 
         document.querySelectorAll('input[name="renderMode"]').forEach(radio => radio.addEventListener('change', () => renderPanels(parseInt(document.getElementById('finalPanelCount').value)||0)));
 
@@ -5430,7 +5528,8 @@ function updateFinalDcLength() {
 
             // 🌟 สร้าง Layout X, Y ของแต่ละกลุ่มแผง เพื่อบันทึกลง DB
             const totalPanelsCount = parseInt(document.getElementById('finalPanelCount').value) || 0;
-            const activePanels = state.allPossiblePanelsGeoJSON.slice(0, totalPanelsCount);
+            // ใช้ตัวเลือกชุดเดียวกับที่วาดบนแผนที่ ไฟล์ที่ส่งออกจึงตรงกับที่เห็นเสมอ
+            const activePanels = ascActivePanels(totalPanelsCount);
             
             let exportedRoofPolygons = JSON.parse(JSON.stringify(state.roofPolygonsData));
             exportedRoofPolygons.forEach(roof => {
