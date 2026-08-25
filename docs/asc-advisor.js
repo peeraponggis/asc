@@ -42,6 +42,7 @@
                 projectName: s1.projectName || '',
                 coords: String(s1.coordinates || ''),
                 pv: s2.pv || {}, inv1: s2.inv1 || {}, inv2: s2.inv2 || {}, opt: s2.opt || {},
+                industrial: s2.industrial_settings || {},
                 polys: s3.roofPolygons || [],
                 mapFeatures: (b.mapGeoJSON && b.mapGeoJSON.features) || [],
                 counts: s4.equipmentCounts || {},
@@ -63,6 +64,7 @@
             inv1: (src.equipData && src.equipData.inv1) || {},
             inv2: (src.equipData && src.equipData.inv2) || {},
             opt: (src.equipData && src.equipData.opt) || {},
+            industrial: (src.equipData && src.equipData.industrial_settings) || {},
             polys: src.sysPolygons || [],
             mapFeatures: [],
             counts: src.counts || {},
@@ -458,6 +460,235 @@
                 evidence: ev, fix: ['ปรับจำนวนลงเหลือ ' + need + ' ตัว'], kb: 'shading-loss' };
             return { level: 'ok', title: 'จำนวน Power Optimizer สอดคล้องกับจำนวนแผง',
                 detail: q + ' ตัว สำหรับ ' + panels + ' แผง', evidence: ev, kb: 'shading-loss' };
+        }
+    },
+
+    {
+        id: 'mppt-current',
+        run(d) {
+            if (num(d.opt.qty, 0) > 0) return null;      // ออปติไมเซอร์ควบคุมกระแสเอง
+            const isc = num(d.pv.Isc_A), imax = num(d.inv1.Max_Input_Current_MPPT_A);
+            const mppts = num(d.inv1.Number_of_MPPTs) * Math.max(num(d.inv1.qty, 1), 1);
+            const nStr = parseInt(String(d.strings.totalStringsUsed || '').replace(/[^\d]/g, ''), 10);
+            if (!isc || !imax || !mppts || !nStr) return null;
+            const perM = nStr / mppts;
+            const cur = Math.ceil(perM) * isc;
+            const ev = nStr + ' สตริง ÷ ' + mppts + ' ช่อง MPPT = ' + fmt(perM, 1) +
+                       ' สตริงต่อช่อง × Isc ' + fmt(isc) + ' A = ' + fmt(cur, 1) + ' A เทียบพิกัด ' + fmt(imax, 1) + ' A';
+            if (cur > imax) return { level: 'error', title: 'กระแสขาเข้าต่อช่อง MPPT เกินพิกัดอินเวอร์เตอร์',
+                detail: 'ต่อสตริงขนานเข้าช่องเดียวกันมากเกินไป กระแสรวม ' + fmt(cur, 1) + ' A เกิน ' + fmt(imax, 1) + ' A',
+                evidence: ev,
+                fix: ['ลดจำนวนสตริงต่อช่องเหลือไม่เกิน ' + Math.floor(imax / isc) + ' สตริง',
+                      'หรือเพิ่มจำนวนอินเวอร์เตอร์เพื่อให้มีช่อง MPPT มากขึ้น'], kb: 'mppt-current' };
+            if (Math.abs(perM - Math.round(perM)) > 0.01) return { level: 'info', title: 'จำนวนสตริงกระจายลงช่อง MPPT ไม่เท่ากัน',
+                detail: 'ช่องที่รับสตริงมากกว่าจะร้อนกว่าและเป็นตัวจำกัดสมรรถนะของทั้งเครื่อง',
+                evidence: ev, fix: ['ปรับจำนวนสตริงให้หารลงตัวกับจำนวนช่อง MPPT ถ้าทำได้'], kb: 'mppt-current' };
+            return { level: 'ok', title: 'กระแสขาเข้าต่อช่อง MPPT อยู่ในพิกัด',
+                detail: fmt(cur, 1) + ' A จากพิกัด ' + fmt(imax, 1) + ' A', evidence: ev, kb: 'mppt-current' };
+        }
+    },
+
+    {
+        id: 'ac-breaker',
+        run(d) {
+            const iac = num(d.inv1.Max_AC_Output_Current_A) * Math.max(num(d.inv1.qty, 1), 1);
+            const brk = num(d.bom.protection && d.bom.protection.ac_breaker_amp);
+            if (!iac || !brk) return null;
+            const need = iac * 1.25;
+            const ev = 'กระแสขาออกอินเวอร์เตอร์ ' + fmt(iac, 0) + ' A × 1.25 = ต้องใช้อย่างน้อย ' +
+                       fmt(need, 0) + ' A · เลือกไว้ ' + fmt(brk, 0) + ' A';
+            if (brk < need) return { level: 'error', title: 'เบรกเกอร์ฝั่งไฟสลับเล็กกว่าที่มาตรฐานกำหนด',
+                detail: 'ระบบโซลาร์จัดเป็นโหลดต่อเนื่อง ต้องใช้ตัวคูณ 1.25 เบรกเกอร์จะตัดขณะใช้งานปกติ',
+                evidence: ev, fix: ['เปลี่ยนเป็นเบรกเกอร์ขนาดอย่างน้อย ' + fmt(Math.ceil(need / 5) * 5, 0) + ' A'],
+                kb: 'breaker-sizing' };
+            if (brk > need * 1.6) return { level: 'warn', title: 'เบรกเกอร์ฝั่งไฟสลับใหญ่เกินไป',
+                detail: 'เบรกเกอร์ที่ใหญ่เกินจะไม่ตัดวงจรก่อนที่สายจะร้อนเกินพิกัด ต้องตรวจว่าสายรับกระแสได้ถึงพิกัดเบรกเกอร์',
+                evidence: ev, fix: ['ตรวจความสามารถนำกระแสของสายเทียบกับพิกัดเบรกเกอร์'], kb: 'breaker-sizing' };
+            return { level: 'ok', title: 'ขนาดเบรกเกอร์ฝั่งไฟสลับเหมาะสม',
+                detail: fmt(brk, 0) + ' A จากที่ต้องการอย่างน้อย ' + fmt(need, 0) + ' A', evidence: ev, kb: 'breaker-sizing' };
+        }
+    },
+
+    {
+        id: 'dc-breaker',
+        run(d) {
+            const isc = num(d.pv.Isc_A);
+            const brk = num(d.bom.protection && d.bom.protection.dc_breaker_amp);
+            if (!isc || !brk) return null;
+            const need = isc * 1.25;
+            const ev = 'Isc ของแผง ' + fmt(isc) + ' A × 1.25 = ต้องใช้อย่างน้อย ' + fmt(need, 1) +
+                       ' A · เลือกไว้ ' + fmt(brk, 0) + ' A';
+            if (brk < need) return { level: 'error', title: 'อุปกรณ์ป้องกันฝั่งไฟตรงเล็กกว่าที่มาตรฐานกำหนด',
+                detail: 'ต้องไม่น้อยกว่า 1.25 เท่าของกระแสลัดวงจรของแผง',
+                evidence: ev, fix: ['เปลี่ยนเป็นขนาดอย่างน้อย ' + Math.ceil(need) + ' A'], kb: 'breaker-sizing' };
+            return { level: 'ok', title: 'ขนาดอุปกรณ์ป้องกันฝั่งไฟตรงเหมาะสม',
+                detail: fmt(brk, 0) + ' A จากที่ต้องการอย่างน้อย ' + fmt(need, 1) + ' A', evidence: ev, kb: 'breaker-sizing' };
+        }
+    },
+
+    {
+        id: 'transformer',
+        run(d) {
+            const ind = d.industrial || {};
+            const kva = num(ind.transformerRatingKva) * Math.max(num(ind.transformerQty, 1), 1);
+            const ac = num(d.inv1.Rated_AC_Output_Power_kW, 0) * Math.max(num(d.inv1.qty, 1), 1)
+                     + num(d.inv2.Rated_AC_Output_Power_kW, 0) * num(d.inv2.qty, 0);
+            if (!kva || !ac) return null;
+            const pct = ac / kva * 100;
+            const ev = 'กำลังฝั่งไฟสลับ ' + fmt(ac, 1) + ' kW ÷ หม้อแปลง ' + fmt(kva, 0) + ' kVA = ' + fmt(pct, 1) + ' %';
+            if (pct > 100) return { level: 'error', title: 'กำลังที่จ่ายออกเกินพิกัดหม้อแปลง',
+                detail: 'ใช้ไปแล้ว ' + fmt(pct, 1) + ' % ของพิกัด หม้อแปลงจะร้อนเกินและการไฟฟ้าจะไม่อนุมัติการเชื่อมต่อ',
+                evidence: ev, fix: ['ลดขนาดระบบ หรือเปลี่ยนหม้อแปลงให้ใหญ่ขึ้น'], kb: 'transformer' };
+            if (pct > 80) return { level: 'warn', title: 'กำลังที่จ่ายออกเกิน 80 % ของพิกัดหม้อแปลง',
+                detail: 'ใช้ไป ' + fmt(pct, 1) + ' % แนวปฏิบัติทั่วไปคือไม่ควรเกิน 80 % เพื่อเผื่อโหลดปกติและความร้อนสะสม',
+                evidence: ev, fix: ['ตรวจกับการไฟฟ้าว่ายอมรับได้หรือไม่ก่อนสั่งอุปกรณ์'], kb: 'transformer' };
+            return { level: 'ok', title: 'ขนาดหม้อแปลงรองรับได้',
+                detail: 'ใช้ไป ' + fmt(pct, 1) + ' % ของพิกัด', evidence: ev, kb: 'transformer' };
+        }
+    },
+
+    {
+        id: 'grid-code',
+        run(d) {
+            const yes = v => String(v).toLowerCase() === 'true';
+            const anti = d.inv1.Active_Anti_Islanding, lvrt = d.inv1.LVRT_HVRT_Supported;
+            if (anti === undefined && lvrt === undefined) return null;
+            const ev = 'Anti-islanding: ' + (anti === undefined ? 'ไม่ระบุ' : anti) +
+                       ' · LVRT/HVRT: ' + (lvrt === undefined ? 'ไม่ระบุ' : lvrt);
+            if (anti !== undefined && !yes(anti)) return { level: 'error', title: 'อินเวอร์เตอร์ไม่มีระบบป้องกันการจ่ายไฟขณะไฟดับ',
+                detail: 'Anti-islanding เป็นข้อบังคับทุกกรณี เพื่อความปลอดภัยของเจ้าหน้าที่ที่ทำงานบนสายขณะไฟดับ จะไม่ได้รับอนุมัติให้เชื่อมต่อ',
+                evidence: ev, fix: ['เปลี่ยนเป็นอินเวอร์เตอร์รุ่นที่อยู่ในรายชื่อที่การไฟฟ้ารับรอง'], kb: 'grid-code' };
+            if (lvrt !== undefined && !yes(lvrt)) return { level: 'warn', title: 'อินเวอร์เตอร์ไม่รองรับ LVRT/HVRT',
+                detail: 'จำเป็นสำหรับระบบขนาดใหญ่ ตรวจกับการไฟฟ้าว่าขนาดระบบนี้ต้องการหรือไม่',
+                evidence: ev, fix: ['ตรวจข้อกำหนดของการไฟฟ้าสำหรับขนาดระบบนี้'], kb: 'grid-code' };
+            return { level: 'ok', title: 'อินเวอร์เตอร์ผ่านข้อกำหนดพื้นฐานของการไฟฟ้า', detail: '', evidence: ev, kb: 'grid-code' };
+        }
+    },
+
+    {
+        id: 'phase',
+        run(d) {
+            const ph = String(d.inv1.Phase_Type || '');
+            const ac = num(d.inv1.Rated_AC_Output_Power_kW, 0) * Math.max(num(d.inv1.qty, 1), 1);
+            if (!ph || !ac) return null;
+            const single = /1[\s-]*phase|single/i.test(ph);
+            const ev = 'ชนิดเฟส ' + ph + ' · กำลังฝั่งไฟสลับรวม ' + fmt(ac, 1) + ' kW';
+            if (single && ac > 5) return { level: 'warn', title: 'ระบบหนึ่งเฟสแต่ขนาดเกิน 5 กิโลวัตต์',
+                detail: 'โดยทั่วไปการไฟฟ้าจำกัดระบบหนึ่งเฟสไว้ไม่เกิน 5 กิโลวัตต์ ใหญ่กว่านั้นต้องใช้สามเฟส',
+                evidence: ev, fix: ['เปลี่ยนเป็นอินเวอร์เตอร์สามเฟส หรือตรวจข้อกำหนดกับการไฟฟ้าในพื้นที่'], kb: 'grid-code' };
+            return { level: 'ok', title: 'ชนิดเฟสสอดคล้องกับขนาดระบบ', detail: ph, evidence: ev, kb: 'grid-code' };
+        }
+    },
+
+    {
+        id: 'roof-load',
+        run(d) {
+            const w = num(d.pv.Weight_kg), n = num(d.counts.totalPanels);
+            const area = d.polys.reduce((s, p) => s + num(p.area, 0), 0);
+            if (!w || !n || !area) return null;
+            const panelLoad = w * n / area;
+            const MOUNT = 4;                              // โครงยึดโดยประมาณ 3–6 กก./ตร.ม.
+            const total = panelLoad + MOUNT;
+            const ev = 'แผง ' + fmt(w, 1) + ' กก. × ' + n + ' แผ่น ÷ ' + fmt(area, 0) + ' ตร.ม. = ' +
+                       fmt(panelLoad, 1) + ' + โครงยึดประมาณ ' + MOUNT + ' = ' + fmt(total, 1) + ' กก./ตร.ม.';
+            const common = ['ให้วิศวกรโครงสร้างตรวจสอบและรับรอง โดยเฉพาะอาคารเก่าหรืออาคารที่เคยดัดแปลง',
+                            'น้ำหนักไม่ได้กระจายสม่ำเสมอ จุดที่ขายึดถ่ายลงแปรับแรงเป็นจุด ต้องตรวจแยกจากค่าเฉลี่ย'];
+            if (total > 25) return { level: 'error', title: 'น้ำหนักที่เพิ่มบนหลังคาสูงมาก',
+                detail: fmt(total, 1) + ' กก./ตร.ม. เกินเกณฑ์คัดกรอง 25 กก./ตร.ม. โดยทั่วไปต้องเสริมโครงสร้าง',
+                evidence: ev, fix: ['เสริมโครงสร้างรองรับ', 'หรือลดจำนวนแผง'].concat(common), kb: 'roof-load' };
+            if (total > 15) return { level: 'warn', title: 'น้ำหนักที่เพิ่มบนหลังคาต้องให้วิศวกรโครงสร้างตรวจ',
+                detail: fmt(total, 1) + ' กก./ตร.ม. อยู่ในช่วงที่ต้องตรวจสอบก่อน',
+                evidence: ev, fix: common, kb: 'roof-load' };
+            return { level: 'ok', title: 'น้ำหนักที่เพิ่มบนหลังคาอยู่ในเกณฑ์คัดกรอง',
+                detail: fmt(total, 1) + ' กก./ตร.ม. ต่ำกว่า 15 ซึ่งหลังคาเหล็กรีดลอนตามมาตรฐานมักรับได้ แต่ยังต้องให้วิศวกรโครงสร้างรับรอง',
+                evidence: ev, kb: 'roof-load' };
+        }
+    },
+
+    {
+        id: 'inverter-eff',
+        run(d) {
+            const used = num(d.simParams.invEfficiency), max = num(d.inv1.Max_Efficiency_Pct);
+            const euro = num(d.inv1.Euro_CEC_Efficiency_Pct);
+            if (!used || !max) return null;
+            const ev = 'ค่าที่ใช้จำลอง ' + fmt(used, 2) + ' % · สูงสุดตามสเปก ' + fmt(max, 2) + ' %' +
+                       (euro ? ' · ถ่วงน้ำหนัก ' + fmt(euro, 2) + ' %' : '');
+            if (used > max) return { level: 'error', title: 'ประสิทธิภาพอินเวอร์เตอร์ที่ใช้จำลองสูงกว่าค่าสูงสุดตามสเปก',
+                detail: 'กรอกไว้ ' + fmt(used, 2) + ' % ซึ่งสูงกว่าค่าสูงสุด ' + fmt(max, 2) + ' % เป็นไปไม่ได้ทางกายภาพ ตัวเลขผลผลิตในรายงานจะสูงกว่าความเป็นจริง',
+                evidence: ev,
+                fix: [euro ? 'ใช้ค่าถ่วงน้ำหนัก ' + fmt(euro, 2) + ' % ซึ่งเป็นค่าที่ควรใช้ในการจำลอง'
+                           : 'ลดลงมาไม่เกินค่าสูงสุด และควรใช้ค่าถ่วงน้ำหนัก (Euro หรือ CEC) แทน'],
+                kb: 'inverter-efficiency' };
+            if (euro && used > euro + 0.5) return { level: 'warn', title: 'ใช้ประสิทธิภาพอินเวอร์เตอร์สูงกว่าค่าถ่วงน้ำหนัก',
+                detail: 'ค่าที่ควรใช้ในการจำลองคือค่าถ่วงน้ำหนัก ' + fmt(euro, 2) + ' % ซึ่งสะท้อนการใช้งานจริง',
+                evidence: ev, fix: ['เปลี่ยนมาใช้ ' + fmt(euro, 2) + ' %'], kb: 'inverter-efficiency' };
+            return { level: 'ok', title: 'ประสิทธิภาพอินเวอร์เตอร์ที่ใช้จำลองสมเหตุสมผล',
+                detail: fmt(used, 2) + ' %', evidence: ev, kb: 'inverter-efficiency' };
+        }
+    },
+
+    {
+        id: 'wiring-loss',
+        run(d) {
+            const w = num(d.simParams.wiringLoss);
+            if (w === null) return null;
+            const dc = num(d.bom.distances && d.bom.distances.dc_m);
+            const ev = 'ค่าสูญเสียในสายที่กรอก ' + fmt(w, 2) + ' %' + (dc ? ' · ระยะสายไฟตรงรวม ' + fmt(dc, 0) + ' ม.' : '');
+            if (w > 3) return { level: 'warn', title: 'ค่าสูญเสียในสายสูง สายอาจเล็กเกินไป',
+                detail: fmt(w, 2) + ' % สูงกว่าเกณฑ์ที่ยอมรับกันคือไม่เกิน 3 % การเพิ่มขนาดสายมักคุ้มกว่าการยอมสูญเสียตลอด 25 ปี',
+                evidence: ev, fix: ['เพิ่มขนาดสาย หรือลดระยะเดินสายโดยย้ายตำแหน่งตู้ให้ใกล้ขึ้น'], kb: 'wiring-loss' };
+            if (w < 0.3 && dc && dc > 500) return { level: 'warn', title: 'ค่าสูญเสียในสายต่ำผิดปกติเมื่อเทียบกับระยะเดินสาย',
+                detail: 'ระยะสายรวม ' + fmt(dc, 0) + ' ม. แต่ตั้งค่าสูญเสียไว้เพียง ' + fmt(w, 2) + ' % ตัวเลขผลผลิตจะสูงเกินจริง',
+                evidence: ev, fix: ['ตรวจค่าที่กรอกให้สอดคล้องกับระยะและขนาดสายจริง'], kb: 'wiring-loss' };
+            return { level: 'ok', title: 'ค่าสูญเสียในสายอยู่ในเกณฑ์', detail: fmt(w, 2) + ' %', evidence: ev, kb: 'wiring-loss' };
+        }
+    },
+
+    {
+        id: 'uncertainty',
+        run(d) {
+            const m = num(d.simParams.uncertMeteo), e = num(d.simParams.uncertEquip);
+            if (m === null && e === null) return null;
+            const ev = 'ความแปรปรวนสภาพอากาศ ' + fmt(m, 1) + ' % · ความคลาดเคลื่อนอุปกรณ์ ' + fmt(e, 1) + ' %';
+            if (!m && !e) return { level: 'warn', title: 'ค่าความไม่แน่นอนเป็นศูนย์ ทำให้ P90 ไม่มีความหมาย',
+                detail: 'ถ้าไม่ใส่ค่าความไม่แน่นอน ตัวเลข P90 จะเท่ากับ P50 ซึ่งจะถูกตั้งคำถามทันทีเมื่อยื่นขอสินเชื่อ',
+                evidence: ev, fix: ['ใส่ความแปรปรวนสภาพอากาศ 3–6 % และความคลาดเคลื่อนอุปกรณ์ 2–3 %'], kb: 'uncertainty' };
+            if (m !== null && (m < 2 || m > 8)) return { level: 'info', title: 'ค่าความแปรปรวนสภาพอากาศอยู่นอกช่วงที่พบทั่วไป',
+                detail: 'ค่าที่ใช้กันทั่วไปคือ 3–6 % ค่าที่ตั้งไว้คือ ' + fmt(m, 1) + ' %',
+                evidence: ev, kb: 'uncertainty' };
+            return { level: 'ok', title: 'ค่าความไม่แน่นอนอยู่ในช่วงที่ใช้กันทั่วไป', detail: ev, evidence: ev, kb: 'uncertainty' };
+        }
+    },
+
+    {
+        id: 'roof-usage',
+        run(d) {
+            const n = num(d.counts.totalPanels);
+            const pw = num(d.pv.Width_mm), pl = num(d.pv.Length_mm);
+            const area = d.polys.reduce((s, p) => s + num(p.area, 0), 0);
+            if (!n || !pw || !pl || !area) return null;
+            const pvArea = n * (pw / 1000) * (pl / 1000);
+            const pct = pvArea / area * 100;
+            const ev = 'พื้นที่แผงรวม ' + fmt(pvArea, 0) + ' ตร.ม. ÷ พื้นที่หลังคา ' + fmt(area, 0) + ' ตร.ม. = ' + fmt(pct, 1) + ' %';
+            if (pct < 35) return { level: 'info', title: 'ยังใช้พื้นที่หลังคาไม่มาก',
+                detail: 'ใช้ไป ' + fmt(pct, 1) + ' % ถ้าไม่ได้ตั้งใจแบ่งเฟสหรือติดขัดสิ่งกีดขวาง ยังเพิ่มแผงได้อีก',
+                evidence: ev, fix: ['ตรวจว่ามีกรอบพื้นที่วางแผงหรือสิ่งกีดขวางที่จำกัดไว้เกินจำเป็นหรือไม่'], kb: 'pvzone' };
+            return { level: 'ok', title: 'การใช้พื้นที่หลังคาอยู่ในเกณฑ์ปกติ',
+                detail: 'ใช้ไป ' + fmt(pct, 1) + ' % ของพื้นที่หลังคา', evidence: ev, kb: 'pvzone' };
+        }
+    },
+
+    {
+        id: 'walkway',
+        run(d) {
+            const area = d.polys.reduce((s, p) => s + num(p.area, 0), 0);
+            const wk = num(d.bom.mounting_structure && d.bom.mounting_structure.walkway_sqm);
+            if (!area || wk === null) return null;
+            const ev = 'ทางเดินบนหลังคา ' + fmt(wk, 0) + ' ตร.ม. จากพื้นที่หลังคา ' + fmt(area, 0) + ' ตร.ม.';
+            if (area > 500 && wk <= 0) return { level: 'warn', title: 'หลังคาขนาดใหญ่แต่ไม่มีทางเดิน',
+                detail: 'พื้นที่ ' + fmt(area, 0) + ' ตร.ม. ควรมีทางเดินสำหรับตรวจสอบ บำรุงรักษา และการเข้าถึงเพื่อดับเพลิง',
+                evidence: ev, fix: ['วาดทางเดินในหน้าออกแบบ ด้วยโหมดวาดทางเดิน'], kb: 'edge-setback' };
+            return { level: 'ok', title: 'มีทางเดินบนหลังคาแล้ว', detail: fmt(wk, 0) + ' ตร.ม.', evidence: ev, kb: 'edge-setback' };
         }
     },
 
