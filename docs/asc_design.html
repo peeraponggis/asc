@@ -5875,7 +5875,21 @@ function ascFileStamp(projectName, kind) {
                     if (layer._shadow) layer._shadow.style.display = 'none';
                     if (layer.getTooltip() && layer.getTooltip()._container) layer.getTooltip()._container.style.display = 'none';
                 }
+                /* กรอบพื้นที่วางแผงเป็นเส้นช่วยตอนออกแบบ ไม่ใช่ของที่มีอยู่จริงหน้างาน
+                   เหมือนกรอบหลังคาสีส้มที่ซ่อนอยู่แล้ว ภาพที่ส่งให้ลูกค้าจึงไม่ควรมีเส้นนี้ */
+                if (layer.drawMode === 'pvzone') {
+                    layer._origRoofStyle = { opacity: layer.options.opacity, fillOpacity: layer.options.fillOpacity,
+                                             stroke: layer.options.stroke, weight: layer.options.weight };
+                    layer.setStyle({ opacity: 0, fillOpacity: 0, stroke: false, weight: 0 });
+                }
             });
+
+            /* ลูกศรทิศลาดหลังคาก็เป็นเส้นช่วยเช่นกัน ซ่อนทั้งชั้นแล้วค่อยเปิดคืนหลังถ่ายเสร็จ */
+            const dirWasOn = !!(document.getElementById('chkRoofDir') && document.getElementById('chkRoofDir').checked);
+            if (dirWasOn && window.AscRoofDir) {
+                document.getElementById('chkRoofDir').checked = false;
+                AscRoofDir.redraw();
+            }
 
             // 2. นำเส้นขอบสีเทาเข้มมาใช้กับแผง (Grid Style)
             panelItems.eachLayer(layer => {
@@ -6001,6 +6015,13 @@ function ascFileStamp(projectName, kind) {
                         if (layer.getTooltip() && layer.getTooltip()._container) layer.getTooltip()._container.style.display = '';
                     }
                 });
+
+                // เปิดลูกศรทิศลาดกลับมา ถ้าเดิมเปิดอยู่
+                if (dirWasOn && window.AscRoofDir) {
+                    const c = document.getElementById('chkRoofDir');
+                    if (c) c.checked = true;
+                    AscRoofDir.redraw();
+                }
 
                 panelItems.eachLayer(layer => {
                     if (layer._origStyle) { layer.setStyle(layer._origStyle); delete layer._origStyle; }
