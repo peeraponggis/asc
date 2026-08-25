@@ -7048,12 +7048,6 @@ function renderCADLayout() {
    หน้าจอของตัวตรวจแบบและคู่มือ
    ตัวตรวจอ่านข้อมูลจาก AppState ที่หน้ารายงานถืออยู่แล้ว จึงไม่ต้องนำเข้าไฟล์ซ้ำ
    ========================================================================== */
-const ADV_STYLE = {
-    error: { bg:'#fef2f2', bd:'#fca5a5', fg:'#991b1b', icon:'fa-circle-exclamation', label:'ต้องแก้' },
-    warn:  { bg:'#fffbeb', bd:'#fcd34d', fg:'#92400e', icon:'fa-triangle-exclamation', label:'ควรตรวจสอบ' },
-    info:  { bg:'#eff6ff', bd:'#93c5fd', fg:'#1e40af', icon:'fa-circle-info', label:'ข้อสังเกต' },
-    ok:    { bg:'#f0fdf4', bd:'#86efac', fg:'#166534', icon:'fa-circle-check', label:'ผ่าน' }
-};
 let ADV_LAST = null;
 
 /* รวบรวมข้อมูลที่ตัวตรวจต้องใช้จากสิ่งที่หน้ารายงานมีอยู่ */
@@ -7090,36 +7084,18 @@ function runAdvisor() {
         return;
     }
     ADV_LAST = AscAdvisor.analyze(advCollect());
-    if (sum) {
-        const s = ADV_LAST.summary;
-        sum.innerHTML = 'ตรวจ ' + s.checked + ' จาก ' + s.total + ' ข้อ · ' +
-            '<b style="color:#991b1b">ต้องแก้ ' + s.error + '</b> · ' +
-            '<b style="color:#92400e">ควรตรวจ ' + s.warn + '</b> · ' +
-            '<b style="color:#166534">ผ่าน ' + s.ok + '</b>';
-    }
+    if (sum) sum.innerHTML = AscAdvisor.summaryHTML(ADV_LAST.summary);
     advRender();
 }
 
+/* ใช้ตัววาดกลางใน asc-advisor.js ร่วมกับหน้าออกแบบ จะได้ไม่มีสองชุดที่เพี้ยนจากกัน */
 function advRender() {
     const box = document.getElementById('adv-list');
     if (!box || !ADV_LAST) return;
     const on = lv => { const e = document.getElementById('adv-f-' + lv); return e ? e.checked : true; };
-    const list = ADV_LAST.findings.filter(f => on(f.level));
-    if (!list.length) { box.innerHTML = '<div class="text-gray-400 text-sm p-3">ไม่มีรายการตามตัวกรองที่เลือก</div>'; return; }
-    box.innerHTML = list.map(f => {
-        const st = ADV_STYLE[f.level] || ADV_STYLE.info;
-        const fixes = (f.fix || []).map(x => '<li>' + esc2(x) + '</li>').join('');
-        const kb = f.kb && window.AscKB && AscKB.get(f.kb)
-            ? '<button onclick="kbOpen(\'' + f.kb + '\')" class="text-[11px] underline font-semibold" style="color:' + st.fg + '">อ่าน: ' + esc2(AscKB.get(f.kb).title) + '</button>' : '';
-        return '<div style="background:' + st.bg + ';border:1px solid ' + st.bd + ';border-radius:6px;padding:9px 11px;">' +
-            '<div style="color:' + st.fg + ';font-weight:700;font-size:0.92em;">' +
-                '<i class="fa-solid ' + st.icon + ' mr-1.5"></i>[' + st.label + '] ' + esc2(f.title) + '</div>' +
-            (f.detail ? '<div class="text-gray-700 mt-1" style="font-size:0.88em;line-height:1.55;">' + esc2(f.detail) + '</div>' : '') +
-            (f.evidence ? '<div class="text-gray-500 mt-1" style="font-size:0.8em;font-family:monospace;">' + esc2(f.evidence) + '</div>' : '') +
-            (fixes ? '<ul class="list-disc pl-5 mt-1.5 text-gray-700" style="font-size:0.85em;line-height:1.5;">' + fixes + '</ul>' : '') +
-            (kb ? '<div class="mt-1.5">' + kb + '</div>' : '') +
-        '</div>';
-    }).join('');
+    box.innerHTML = AscAdvisor.renderHTML(ADV_LAST.findings, {
+        levels: { error: on('error'), warn: on('warn'), info: on('info'), ok: on('ok') }
+    });
 }
 
 function esc2(s) {

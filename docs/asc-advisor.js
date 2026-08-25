@@ -540,6 +540,51 @@
         };
     }
 
-    global.AscAdvisor = { analyze, _rules: RULES, _normalize: normalize };
+    /* ── วาดผลตรวจเป็น HTML ─────────────────────────────────────────────
+       อยู่ในโมดูลนี้เพื่อให้หน้าออกแบบและหน้ารายงานใช้ตัวเดียวกัน
+       ถ้าแยกกันเขียนสองที่ หน้าตาและถ้อยคำจะค่อยๆ เพี้ยนออกจากกันจนสับสน */
+    const STYLE = {
+        error: { bg: '#fef2f2', bd: '#fca5a5', fg: '#991b1b', mark: '🔴', label: 'ต้องแก้' },
+        warn:  { bg: '#fffbeb', bd: '#fcd34d', fg: '#92400e', mark: '🟡', label: 'ควรตรวจสอบ' },
+        info:  { bg: '#eff6ff', bd: '#93c5fd', fg: '#1e40af', mark: '🔵', label: 'ข้อสังเกต' },
+        ok:    { bg: '#f0fdf4', bd: '#86efac', fg: '#166534', mark: '🟢', label: 'ผ่าน' }
+    };
+
+    const esc = s => String(s === undefined || s === null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    function renderHTML(findings, opts) {
+        const o = opts || {};
+        const show = o.levels || { error: true, warn: true, info: true, ok: false };
+        const list = (findings || []).filter(f => show[f.level]);
+        if (!list.length) return '<div style="color:#94a3b8;font-size:0.86em;padding:8px;">ไม่มีรายการตามตัวกรองที่เลือก</div>';
+        return list.map(f => {
+            const st = STYLE[f.level] || STYLE.info;
+            const fixes = (f.fix || []).map(x => '<li>' + esc(x) + '</li>').join('');
+            const kb = (f.kb && global.AscKB && AscKB.get(f.kb))
+                ? '<div style="margin-top:5px;"><button type="button" onclick="AscKB.open(\'' + f.kb + '\')" ' +
+                  'style="background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;font-weight:600;font-size:0.8em;color:' +
+                  st.fg + ';">อ่าน: ' + esc(AscKB.get(f.kb).title) + '</button></div>' : '';
+            return '<div style="background:' + st.bg + ';border:1px solid ' + st.bd + ';border-radius:6px;padding:8px 10px;margin-bottom:7px;">' +
+                '<div style="color:' + st.fg + ';font-weight:700;font-size:0.88em;line-height:1.4;">' +
+                    st.mark + ' [' + st.label + '] ' + esc(f.title) + '</div>' +
+                (f.detail ? '<div style="color:#334155;font-size:0.83em;line-height:1.55;margin-top:3px;">' + esc(f.detail) + '</div>' : '') +
+                (f.evidence ? '<div style="color:#64748b;font-size:0.76em;font-family:monospace;margin-top:3px;word-break:break-word;">' + esc(f.evidence) + '</div>' : '') +
+                (fixes ? '<ul style="list-style:disc;padding-left:18px;margin-top:5px;color:#334155;font-size:0.8em;line-height:1.5;">' + fixes + '</ul>' : '') +
+                kb +
+            '</div>';
+        }).join('');
+    }
+
+    function summaryHTML(s) {
+        if (!s) return '';
+        return 'ตรวจ ' + s.checked + ' จาก ' + s.total + ' ข้อ · ' +
+            '<b style="color:#991b1b">ต้องแก้ ' + s.error + '</b> · ' +
+            '<b style="color:#92400e">ควรตรวจ ' + s.warn + '</b> · ' +
+            '<b style="color:#1e40af">ข้อสังเกต ' + s.info + '</b> · ' +
+            '<b style="color:#166534">ผ่าน ' + s.ok + '</b>';
+    }
+
+    global.AscAdvisor = { analyze, renderHTML, summaryHTML, _rules: RULES, _normalize: normalize, _style: STYLE };
 
 })(window);

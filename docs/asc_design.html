@@ -1171,6 +1171,7 @@
 
                     <div class="section-header">บันทึกฐานข้อมูล (Save to Database)</div>
                     <div style="display: flex; gap: 10px;">
+                        <button class="btn-search" id="btnCheckDesign" type="button" style="flex: 1; margin-top: 0; background:#d97706; color:#fff;" title="ตรวจแบบด้วยกฎ 18 ข้อ ก่อนส่งงาน"><i class="fa-solid fa-stethoscope"></i> ตรวจแบบ</button>
                         <button class="btn-save" id="btnSaveDb2" style="flex: 2; margin-top: 0;"><i class="fa-solid fa-floppy-disk"></i> บันทึก + ส่งออก DB2</button>
                         <button class="btn-save" id="btnExportDb2" style="flex: 1; background: #64748b; margin-top: 0; display: none;">Export DB2</button>
                     </div>
@@ -7519,5 +7520,81 @@ function applyEdgeChanges() {
 <script src="asc-ridge.js"></script>
 <script src="asc-tree.js"></script>
 <script src="asc-roofdir.js"></script>
+<script src="asc-kb.js"></script>
+<script src="asc-advisor.js"></script>
+
+<!-- กล่องผลตรวจแบบ วางเป็นชั้นลอยเพราะแถบเครื่องมือด้านซ้ายแน่นแล้ว
+     และผลตรวจมักยาวหลายรายการ อ่านในกล่องเต็มจอสะดวกกว่าเบียดลงในแถบ -->
+<div id="advOverlay" style="display:none; position:fixed; inset:0; z-index:4000; background:rgba(15,23,42,.55);">
+  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:min(720px,94vw); max-height:88vh; display:flex; flex-direction:column; background:#fff; border-radius:10px; box-shadow:0 18px 50px rgba(0,0,0,.4); overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px; border-bottom:1px solid #e2e8f0; background:#fffbeb;">
+      <div>
+        <div style="font-weight:800; color:#92400e; font-size:1.02em;">🩺 ตรวจแบบก่อนส่งออก</div>
+        <div id="advDsSummary" style="font-size:0.78em; color:#64748b; margin-top:2px;"></div>
+      </div>
+      <button type="button" onclick="document.getElementById('advOverlay').style.display='none'"
+              style="background:#e2e8f0; border:0; border-radius:6px; padding:5px 12px; cursor:pointer; font-weight:700; color:#475569;">ปิด</button>
+    </div>
+    <div style="display:flex; flex-wrap:wrap; gap:12px; padding:8px 16px; border-bottom:1px solid #f1f5f9; font-size:0.78em;">
+      <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="advDs-error" checked style="width:auto;margin:0;"><span style="color:#991b1b;font-weight:700;">ต้องแก้</span></label>
+      <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="advDs-warn" checked style="width:auto;margin:0;"><span style="color:#92400e;font-weight:700;">ควรตรวจสอบ</span></label>
+      <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="advDs-info" checked style="width:auto;margin:0;"><span style="color:#1e40af;font-weight:700;">ข้อสังเกต</span></label>
+      <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="advDs-ok" style="width:auto;margin:0;"><span style="color:#166534;font-weight:700;">ผ่านแล้ว</span></label>
+      <span style="margin-left:auto; color:#94a3b8;">ทุกข้อคำนวณจากตัวเลขในแบบ ไม่ได้ใช้ AI</span>
+    </div>
+    <div id="advDsList" style="padding:12px 16px; overflow:auto;"></div>
+  </div>
+</div>
+
+<script>
+/* ตรวจแบบจากสถานะที่กำลังวาดอยู่จริง โดยสร้างชุดข้อมูล DB2 ขึ้นมาจากของจริง
+   แล้วส่งเข้าตัวตรวจตัวเดียวกับที่หน้ารายงานใช้ ผลจึงตรงกันทั้งสองหน้าเสมอ
+
+   กฎที่ต้องใช้ผลการจำลอง เช่น Performance Ratio จะเงียบไปเองในหน้านี้
+   เพราะยังไม่มีข้อมูลนั้น ซึ่งเป็นพฤติกรรมที่ถูกต้อง ไม่ใช่ข้อบกพร่อง */
+function ascDesignAdvisor() {
+    const box = document.getElementById('advDsList');
+    const sum = document.getElementById('advDsSummary');
+    document.getElementById('advOverlay').style.display = 'block';
+    if (!editableItems.getLayers().filter(l => l.drawMode === 'roof').length) {
+        box.innerHTML = '<div style="color:#64748b;padding:10px;">ยังไม่ได้วาดหลังคา จึงยังไม่มีอะไรให้ตรวจ</div>';
+        if (sum) sum.innerHTML = '';
+        return;
+    }
+    let db2;
+    try { db2 = generateDB2(); }
+    catch (e) {
+        box.innerHTML = '<div style="color:#991b1b;padding:10px;">เตรียมข้อมูลเพื่อตรวจไม่สำเร็จ : ' + e.message + '</div>';
+        return;
+    }
+    window.__advDsLast = AscAdvisor.analyze(db2);
+    if (sum) sum.innerHTML = AscAdvisor.summaryHTML(window.__advDsLast.summary);
+    ascDesignAdvisorRender();
+}
+
+function ascDesignAdvisorRender() {
+    const box = document.getElementById('advDsList');
+    const r = window.__advDsLast;
+    if (!box || !r) return;
+    const on = lv => { const e = document.getElementById('advDs-' + lv); return e ? e.checked : true; };
+    box.innerHTML = AscAdvisor.renderHTML(r.findings, {
+        levels: { error: on('error'), warn: on('warn'), info: on('info'), ok: on('ok') }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('btnCheckDesign');
+    if (btn) btn.addEventListener('click', ascDesignAdvisor);
+    ['error', 'warn', 'info', 'ok'].forEach(lv => {
+        const e = document.getElementById('advDs-' + lv);
+        if (e) e.addEventListener('change', ascDesignAdvisorRender);
+    });
+    const ov = document.getElementById('advOverlay');
+    if (ov) ov.addEventListener('click', ev => { if (ev.target === ov) ov.style.display = 'none'; });
+    document.addEventListener('keydown', ev => {
+        if (ev.key === 'Escape' && ov && ov.style.display === 'block') ov.style.display = 'none';
+    });
+});
+</script>
 </body>
 </html>

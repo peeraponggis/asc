@@ -289,11 +289,23 @@
         return limit ? hits.slice(0, limit) : hits;
     }
 
+    /* เปิดอ่านหัวข้อ ใช้ร่วมกันทุกหน้าในชุดโปรแกรม
+       ใช้กล่องข้อความมาตรฐานของเบราว์เซอร์ เพราะไม่ต้องพึ่งโครงสร้างหน้าเว็บใดๆ
+       จึงเรียกได้เหมือนกันหมดทั้งหน้าออกแบบและหน้ารายงาน */
+    function open(id) {
+        const a = KB[id];
+        if (!a) return false;
+        const refs = (a.refs || []).map(r => '  • ' + r).join('\n');
+        alert(a.title + '\n' + '─'.repeat(46) + '\n\n' + a.body + (refs ? '\n\nที่มา\n' + refs : ''));
+        return true;
+    }
+
     global.AscKB = {
         articles: KB,
         get: id => KB[id] || null,
         ids: () => Object.keys(KB),
-        search: search
+        search: search,
+        open: open
     };
 
 })(window);
