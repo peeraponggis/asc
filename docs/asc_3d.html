@@ -220,6 +220,13 @@ setTimeout(function () {
         <button class="btn mini" data-cam="top">⬓ มุมสูง (Top)</button>
         <button class="btn mini" data-cam="front">▭ ด้านหน้าอาคาร</button>
       </div>
+      <!-- มุมที่ล็อกกับทิศของหลังคาที่เลือกอยู่ อาคารที่วางเฉียงจะได้ไม่ต้องหมุนกล้องหาเอง -->
+      <div class="grid2" style="margin-top:6px">
+        <button class="btn mini" data-cam="face" title="มองจากด้านที่แผงหันไป ตั้งฉากกับหน้าแผงพอดี ใช้ดูว่าแผงหันถูกทิศตามที่ออกแบบไว้หรือไม่">⊥ ตั้งฉากหน้าแผง</button>
+        <button class="btn mini" data-cam="ridge" title="มองตามแนวสันหลังคา เห็นความชันและความสูงสันเป็นภาพด้านข้าง">═ ขนานสัน</button>
+      </div>
+      <button class="btn mini" data-cam="isoface" style="width:100%;margin-top:6px" title="มุมเฉียงที่หมุนตามอาคาร ไม่ใช่ตามเข็มทิศ">◪ เฉียงตามอาคาร</button>
+      <div id="camAlignNote" style="font-size:11px;color:#8b95a3;margin-top:6px;line-height:1.45"></div>
       <label class="chk" style="margin-top:10px"><input type="checkbox" id="cGrid" checked>เส้นตารางพื้น</label>
       <label class="chk"><input type="checkbox" id="cLabel" checked>ป้ายกำกับระนาบหลังคา</label>
       <label class="chk"><input type="checkbox" id="cLabelMdb">ป้ายกำกับ MDB / Inverter</label>
@@ -970,6 +977,19 @@ function updateSun() {
 /* ============================================================================
    5. มุมกล้อง
    ============================================================================ */
+/* มุมกล้องที่ล็อกกับทิศของหลังคา ไม่ใช่ทิศเข็มทิศ
+   ------------------------------------------------------------
+   มุมสำเร็จรูปเดิม (NE/SE/SW/NW/front) อิงเข็มทิศล้วน อาคารที่วางเฉียงกับแนวเหนือใต้
+   จึงดูบิดในทุกมุม ต้องลากหมุนกล้องหาเอาเองทุกครั้งกว่าจะได้ภาพที่เทียบกับผังที่วาดไว้ได้
+   สามมุมนี้คำนวณจากทิศของหลังคาที่กำลังเลือกอยู่ จึงได้ภาพตรงหน้าแผงทันที
+
+   แกนของฉาก: x = ตะวันออก, y = สูง, z = ลบของทิศเหนือ
+   ทิศเข็มทิศ A จึงเป็นเวกเตอร์ (sin A, -cos A) บนระนาบพื้น */
+function camVecFromAzimuth(aziDeg) {
+  const a = aziDeg * Math.PI / 180;
+  return { x: Math.sin(a), z: -Math.cos(a) };
+}
+
 function setCam(mode) {
   const c = S.center || new THREE.Vector3();
   const d = Math.max(siteRadius * 2.6, 26);
@@ -981,7 +1001,34 @@ function setCam(mode) {
     top:[ 0.001,    d * 1.65, 0.001],
     front:[0,       d * .28,  d * 1.05]
   };
-  const P = TBL[mode] || TBL.ne;
+
+  let P = TBL[mode];
+  const note = $('#camAlignNote');
+
+  if (!P && (mode === 'face' || mode === 'ridge' || mode === 'isoface')) {
+    const r = (S.roofs || [])[S.activeRoof];
+    if (!r) { P = TBL.ne; }
+    else {
+      const azi = ((r.azi % 360) + 360) % 360;
+      /* face  = ยืนอยู่ฝั่งที่แผงหันไป แล้วหันกลับมามองอาคาร
+         ridge = ยืนที่ปลายสัน มองตามแนวสัน ซึ่งตั้งฉากกับทิศแผง
+         isoface = มุมเฉียง 45 องศาจากหน้าแผง เทียบเท่า ISO แต่หมุนตามอาคาร */
+      const useAzi = mode === 'ridge' ? (azi + 90) : (mode === 'isoface' ? (azi + 45) : azi);
+      const v = camVecFromAzimuth(useAzi);
+      const h = mode === 'ridge' ? d * .30 : (mode === 'isoface' ? d * .62 : d * .42);
+      const rad = mode === 'isoface' ? d * .90 : d * 1.00;
+      P = [v.x * rad, h, v.z * rad];
+      if (note) {
+        const nm = mode === 'face' ? 'ตั้งฉากหน้าแผง' : (mode === 'ridge' ? 'ขนานสัน' : 'เฉียงตามอาคาร');
+        note.textContent = 'มุม "' + nm + '" ล็อกกับหลังคา ' + r.id + ' ที่หันทิศ ' + Math.round(azi) + '° · เปลี่ยนหลังคาที่เลือกแล้วกดซ้ำเพื่อจัดมุมใหม่';
+      }
+    }
+  } else if (note) {
+    note.textContent = '';
+  }
+
+  P = P || TBL.ne;
+  S.lastCam = mode;          // จำไว้เพื่อจัดมุมใหม่ให้เองเมื่อสลับหลังคาที่เลือก
   camera.position.set(c.x + P[0], P[1], c.z + P[2]);
   controls.target.copy(c);
   controls.update();
@@ -1126,7 +1173,13 @@ function bindForm() {
     resetRoofToDB(r); syncForm(); rebuild();
   };
 
-  $('#roofSel').onchange = e => { S.activeRoof = parseInt(e.target.value, 10) || 0; syncForm(); };
+  $('#roofSel').onchange = e => {
+    S.activeRoof = parseInt(e.target.value, 10) || 0;
+    syncForm();
+    /* มุมที่ล็อกกับทิศหลังคา ต้องจัดใหม่ให้เองเมื่อสลับไปหลังคาที่หันคนละทาง
+       ไม่งั้นผู้ใช้จะเห็นภาพค้างอยู่ที่มุมของหลังคาผืนก่อนหน้าโดยไม่รู้ตัว */
+    if (['face', 'ridge', 'isoface'].indexOf(S.lastCam) >= 0) setCam(S.lastCam);
+  };
 
   ['#sMonth', '#sHour'].forEach(id => $(id).addEventListener('input', updateSun));
   $('#cShadow').onchange = updateSun;
