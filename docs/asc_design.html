@@ -2620,8 +2620,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 /* คลิกเลือกพื้นที่วางแผง ให้หัวข้อ 3 แสดงค่าของกรอบนั้น
                    ผู้ใช้จะได้แก้การจัดกลุ่มและทางเดินของแต่ละกรอบแยกกันได้ */
                 if (layer.drawMode === 'pvzone') {
-                    if (!layer.zoneConfig) layer.zoneConfig = ascReadLayoutFields();
-                    ascWriteLayoutFields(layer.zoneConfig);
+                    ascWriteLayoutFields(layer.zoneConfig || ascZoneInherited(layer));
                 }
 
                 // 🌟 โหลดระยะความยาวด้านให้ทำงานกับวัตถุทุกประเภท
@@ -3684,8 +3683,9 @@ processPolygonsAndPanels = function() {
                 layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
             } else if (drawMode === 'pvzone') {
                 layer.setStyle(ASC_PVZONE_STYLE);
-                // เก็บค่าการวางแผงที่ตั้งไว้บนหน้าจอ ณ ตอนวาด เป็นค่าเริ่มต้นของกรอบนี้
-                layer.zoneConfig = ascReadLayoutFields();
+                /* ยังไม่ตั้งค่าการวางแผงให้กรอบ ปล่อยว่างไว้แปลว่าสืบทอดจากหลังคาที่มันวางอยู่
+                   การวาดกรอบจึงเปลี่ยนแค่ขอบเขต ไม่ไปเปลี่ยนวิธีวางแผงโดยที่ผู้ใช้ไม่ได้สั่ง
+                   กรอบจะมีค่าของตัวเองก็ต่อเมื่อผู้ใช้คลิกเลือกกรอบแล้วแก้ค่าในหัวข้อ 3 เอง */
                 layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
             } else if (drawMode === 'walkway') { // 🌟 สีของทางเดิน 🌟
                 layer.setStyle({ color: '#4b5563', weight: 1, fillColor: '#9ca3af', fillOpacity: 0.7, dashArray: 'none' }); 
@@ -5160,6 +5160,22 @@ function updateFinalDcLength() {
                 innerEdgeGapM: (parseFloat(document.getElementById('innerEdgeGapCm').value) || 0) / 100,
                 keepoutGapM: (parseFloat(document.getElementById('keepoutGapCm').value) || 0) / 100
             };
+        }
+
+        /* ค่าการวางแผงที่กรอบสืบทอดมาจากหลังคาที่มันวางทับอยู่
+           ใช้ตอนคลิกเลือกกรอบที่ยังไม่เคยตั้งค่าเอง หน้าจอจะได้แสดงค่าที่ใช้งานอยู่จริง
+           ไม่ใช่ค่าค้างของวัตถุที่เลือกก่อนหน้า */
+        function ascZoneInherited(zoneLayer) {
+            try {
+                const zg = zoneLayer.toGeoJSON();
+                let hit = null;
+                editableItems.eachLayer(l => {
+                    if (hit || l.drawMode !== 'roof' || !l.panelConfig) return;
+                    if (turf.booleanIntersects(zg, l.toGeoJSON())) hit = l;
+                });
+                if (hit) return hit.panelConfig;
+            } catch (e) {}
+            return ascReadLayoutFields();
         }
 
         /* เขียนค่าชุดเดียวกันกลับลงหน้าจอ ใช้ตอนคลิกเลือกวัตถุแล้วต้องโชว์ค่าของวัตถุนั้น */
