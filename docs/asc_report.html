@@ -3794,11 +3794,26 @@ const ShadingEngine = (function () {
         return pts;
     }
 
+    /* แปลงมุมทิศจาก "แบบเข็มทิศ" ที่ผู้ใช้กรอกและที่ asc_design ส่งมา
+       (0 เหนือ · 90 ออก · -90 ตก · ±180 ใต้ — ตรงตามป้ายกำกับในหน้ากรอกข้อมูล)
+       ไปเป็น "แบบดวงอาทิตย์" ที่ SunCalc คืนค่ามาและเครื่องคำนวณนี้ใช้ภายใน
+       (0 ใต้ · 90 ตก · -90 ออก · ±180 เหนือ) ต่างกันพอดี 180 องศา
+
+       เดิมไม่มีการแปลงตรงนี้ ทำให้สิ่งกีดขวางไปโผล่ฟากฟ้าตรงข้าม และการ
+       ตรวจ "ดวงอาทิตย์อยู่หลังระนาบ" กลับด้าน หลังคาหันทิศใต้จึงถูกรายงาน
+       ว่าโดนบัง 100% ตอนแดดบ่ายทางใต้ แต่กลับได้แดดเต็มตอนแดดอยู่ทางเหนือ */
+    const compassToSolarAzi = a => normAzi(a + 180);
+
     // เลือกเส้นขอบฟ้าของ "หลังคาหนึ่งหลัง" ตามลำดับ: ของตัวเอง → ค่ากลางไซต์ → ค่า default
     function resolvePolygonHorizon(poly, globalHorizonStr) {
-        return parseHorizon(poly && poly.horizonProfile)   // [D] schema ใหม่: poly.horizonProfile
-            || parseHorizon(globalHorizonStr)              // fallback ค่ากลางเดิมของไซต์
-            || CONFIG.defaultHorizon.map(p => ({ ...p })); // fallback สุดท้าย
+        let pts = parseHorizon(poly && poly.horizonProfile)   // [D] schema ใหม่: poly.horizonProfile
+               || parseHorizon(globalHorizonStr);             // fallback ค่ากลางเดิมของไซต์
+        if (!pts) return CONFIG.defaultHorizon.map(p => ({ ...p })); // fallback สุดท้าย (ราบเรียบ ไม่ต้องแปลง)
+        // ข้อมูลจากผู้ใช้เป็นแบบเข็มทิศ ต้องหมุนเข้าระบบของเครื่องคำนวณก่อนใช้
+        pts = pts.map(p => ({ x: compassToSolarAzi(p.x), y: p.y })).sort((a, b) => a.x - b.x);
+        if (pts[0].x > -180) pts.unshift({ x: -180, y: pts[pts.length - 1].y });
+        if (pts[pts.length - 1].x < 180) pts.push({ x: 180, y: pts[0].y });
+        return pts;
     }
 
     // interpolate ความสูงขอบฟ้า ณ azimuth ใดๆ
@@ -3879,6 +3894,8 @@ const ShadingEngine = (function () {
 
         groups.forEach(g => {
             g.horizon = g._horizons.length === 1 ? g._horizons[0] : mergeHorizonsMax(g._horizons);
+            // g.azi คงไว้แบบเข็มทิศเพื่อแสดงบนป้ายกำกับ ส่วนการคำนวณใช้ aziSolar
+            g.aziSolar = compassToSolarAzi(g.azi);
             g.label = `แนวการวางแผง #${g.id} (Tilt ${g.tilt}° / Azi ${g.azi}° | ${g.members.length} หลังคา | ${g.kwp.toFixed(1)} kWp)`;
             delete g._horizons; delete g._wTilt; delete g._wAzi;
         });
@@ -3896,7 +3913,11 @@ const ShadingEngine = (function () {
 
     function shadingLossAt(sunAzi, sunAlt, group) {
         if (sunAlt <= 0) return null;                                    // กลางคืน
-        if (sunAlt < behindPlaneElevation(group.tilt, group.azi, sunAzi)) return 1.0; // หลังระนาบ
+        /* ทิศของระนาบแผงต้องอยู่ในระบบเดียวกับดวงอาทิตย์ก่อนนำมาเทียบกัน
+           กลุ่มที่สร้างผ่าน buildOrientationGroups จะมี aziSolar แปลงไว้ให้แล้ว
+           ส่วนกลุ่มที่ประกอบเองในชุดทดสอบไม่มี ให้ใช้ค่าที่ส่งมาตรงๆ */
+        const planeAzi = (group.aziSolar === undefined || group.aziSolar === null) ? group.azi : group.aziSolar;
+        if (sunAlt < behindPlaneElevation(group.tilt, planeAzi, sunAzi)) return 1.0; // หลังระนาบ
         let hEdge = horizonElevationAt(group.horizon, sunAzi);
         let dAlt = sunAlt - hEdge;
         if (dAlt <= 0) return 1.0;                                       // ต่ำกว่าขอบ obstruction
@@ -4096,8 +4117,19 @@ const ShadingEngine = (function () {
             { slope: 15, azimuth: 0, customLayout: new Array(10) } // ไม่มี → fallback global
         ];
         let g2 = buildOrientationGroups(polys2, { panelWp: 600, globalHorizon: "0,5" });
-        let mergedE = horizonElevationAt(g2[0].horizon, 0);
+        /* "0,30" ผู้ใช้กรอกแบบเข็มทิศ = สิ่งกีดขวางทางทิศเหนือ
+           ในระบบของเครื่องคำนวณทิศเหนืออยู่ที่ 180 จึงต้องไปโผล่ตรงนั้น */
+        let mergedE = horizonElevationAt(g2[0].horizon, 180);
         assert('[D] merge horizon เอาค่าสูงสุด (30°)', Math.abs(mergedE - 30) < 1, `ได้ ${mergedE}`);
+
+        /* [D2] สิ่งกีดขวางต้องไปอยู่ฟากฟ้าที่ถูกต้อง ไม่ใช่ฟากตรงข้าม
+           ต้องใช้โปรไฟล์หลายจุด เพราะจุดเดียวจะถูกวนปิดหัวท้ายจนราบเท่ากันทั้งท้องฟ้า
+           "0,30" คือมีอาคารสูง 30° ทางทิศเหนือ ส่วนออกกับตกโล่ง */
+        let hzN = resolvePolygonHorizon({ horizonProfile: "0,30\n90,0\n-90,0" }, "");
+        assert('[D2] อาคารทางเหนือ → เครื่องคำนวณต้องเห็นที่ทิศเหนือ',
+            Math.abs(horizonElevationAt(hzN, 180) - 30) < 1, `ที่ทิศเหนือได้ ${horizonElevationAt(hzN, 180)}°`);
+        assert('[D2] ฟ้าทางทิศใต้ต้องโล่ง',
+            horizonElevationAt(hzN, 0) < 1, `ที่ทิศใต้ได้ ${horizonElevationAt(hzN, 0)}°`);
 
         // 4) shadingLossAt: ฟิสิกส์ต้องถูกทิศ
         let gTest = { tilt: 15, azi: 0, horizon: parseHorizon("0,20") };
@@ -4113,6 +4145,20 @@ const ShadingEngine = (function () {
         let gB = { tilt: 30, azi: 0, horizon: CONFIG.defaultHorizon };
         assert('หลังระนาบ → loss 100%', shadingLossAt(180, 10, gB) === 1.0);
         assert('หน้าระนาบมุมสูง → ไม่ติด behind', shadingLossAt(180, 45, gB) < 1.0);
+
+        /* 4b) ทิศของระนาบต้องถูกแปลงเข้าระบบเดียวกับดวงอาทิตย์
+               หลังคาหันทิศใต้ (azimuth 180 แบบเข็มทิศ) ต้องได้แดดเต็มตอนแดดอยู่ทางใต้
+               และต้องถูกนับว่าอยู่หลังระนาบตอนแดดต่ำทางเหนือ ไม่ใช่สลับกัน */
+        let gSouth = buildOrientationGroups([{ slope: 30, azimuth: 180, customLayout: new Array(10) }], { panelWp: 600 })[0];
+        assert('[E] หลังคาหันใต้ แดดต่ำทางใต้ → ไม่ใช่หลังระนาบ', shadingLossAt(0, 10, gSouth) < 1.0,
+            `ได้ ${shadingLossAt(0, 10, gSouth)}`);
+        assert('[E] หลังคาหันใต้ แดดต่ำทางเหนือ → หลังระนาบ', shadingLossAt(180, 10, gSouth) === 1.0,
+            `ได้ ${shadingLossAt(180, 10, gSouth)}`);
+        let gNorth = buildOrientationGroups([{ slope: 30, azimuth: 0, customLayout: new Array(10) }], { panelWp: 600 })[0];
+        assert('[E] หลังคาหันเหนือ แดดต่ำทางเหนือ → ไม่ใช่หลังระนาบ', shadingLossAt(180, 10, gNorth) < 1.0,
+            `ได้ ${shadingLossAt(180, 10, gNorth)}`);
+        assert('[E] หลังคาหันเหนือ แดดต่ำทางใต้ → หลังระนาบ', shadingLossAt(0, 10, gNorth) === 1.0,
+            `ได้ ${shadingLossAt(0, 10, gNorth)}`);
 
         // 5) Heatmap + Stats + [C] Weighted (ต้องมี SunCalc)
         const SC = sunCalcRef || (typeof SunCalc !== 'undefined' ? SunCalc : null);
