@@ -4574,6 +4574,24 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                     opts += `<option value="all">🌐 ทั้งหมด ${ctx.groups.length} กลุ่ม (ถ่วงน้ำหนัก ${totKwp.toFixed(1)} kWp)</option>`;
                 }
                 ctx.groups.forEach(g => { opts += `<option value="${g.id}">${g.label}</option>`; });
+
+                /* เพิ่มตัวเลือกรายหลังคา
+                   การจัดกลุ่มรวมหลังคาที่วางระนาบเดียวกันไว้ด้วยกัน ซึ่งถูกต้องในเชิงวิศวกรรม
+                   เพราะหลังคาที่เอียงและหันเท่ากันย่อมโดนเงาเหมือนกันทุกประการ แต่ทำให้ผู้ใช้
+                   ที่วาดหลังคาไว้ 4 ผืนแล้วเห็นเพียง 2 กลุ่ม เข้าใจว่าข้อมูลหายไป
+                   จึงเปิดให้เจาะดูทีละผืนได้ด้วย ตัวเลขเป็นชุดเดียวกัน ไม่ใช่การคำนวณคนละทาง */
+                const polysAll = AppState.sysPolygons || [];
+                if (polysAll.length > 1) {
+                    opts += `<option disabled>──────── เจาะดูทีละหลังคา ────────</option>`;
+                    polysAll.forEach((p, i) => {
+                        const gOf = ctx.groups.find(g => g.members.some(m => m.index === i));
+                        const kwp = gOf ? (gOf.members.find(m => m.index === i) || {}).kwp : 0;
+                        opts += `<option value="r:${i}">หลังคา ${i + 1} — ${(parseFloat(p.slope) || 0).toFixed(1)}° / ` +
+                                `${(((parseFloat(p.azimuth) || 0) % 360) + 360) % 360}°` +
+                                (kwp ? ` | ${kwp.toFixed(1)} kWp` : '') +
+                                (gOf ? ` (อยู่ในกลุ่ม #${gOf.id})` : '') + `</option>`;
+                    });
+                }
                 sel.innerHTML = opts;
                 if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
                 st.group = sel.value;
@@ -4595,7 +4613,22 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
 
             // เลือกขอบเขตข้อมูล: กลุ่มเดียว หรือ ถ่วงน้ำหนักทั้งไซต์ [C]
             let isAll = (st.group === 'all' && ctx.groups.length > 1);
-            let scopeGroup = isAll ? null : (ctx.groups.find(g => String(g.id) === String(st.group)) || ctx.groups[0]);
+            let scopeGroup;
+            if (!isAll && String(st.group).indexOf('r:') === 0) {
+                /* เจาะดูหลังคาผืนเดียว สร้างกลุ่มชั่วคราวที่มีสมาชิกผืนนั้นผืนเดียว
+                   ผ่านฟังก์ชันเดิมทั้งหมด ตัวเลขจึงมาจากเครื่องคำนวณชุดเดียวกับกลุ่มปกติ */
+                const ri = parseInt(String(st.group).slice(2), 10) || 0;
+                const poly = (AppState.sysPolygons || [])[ri];
+                if (poly) {
+                    scopeGroup = ShadingEngine.buildOrientationGroups([poly],
+                        { panelWp: ctx.panelWp, globalHorizon: AppState.horizonProfile || '' })[0];
+                    if (scopeGroup) {
+                        scopeGroup._roofIdx = ri;
+                        scopeGroup.label = `หลังคา ${ri + 1} (Tilt ${scopeGroup.tilt}° / Azi ${scopeGroup.azi}° | ${scopeGroup.kwp.toFixed(1)} kWp)`;
+                    }
+                }
+            }
+            if (!scopeGroup) scopeGroup = isAll ? null : (ctx.groups.find(g => String(g.id) === String(st.group)) || ctx.groups[0]);
             let weighted = (ctx.groups.length > 1) ? ShadingEngine.computeWeightedStats(ctx.groups, ctx.lat, ctx.lon, SunCalc, ctx.tz) : null;
 
             let stats, scopeLabel, titleText;
@@ -4937,7 +4970,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                         spanM = Math.max(...xAll) - Math.min(...xAll);
                     }
 
-                    roofs.push({ groupId: g.id, tilt: g.tilt, azi: g.azi, pts, mods,
+                    roofs.push({ groupId: g.id, roofIdx: idx, tilt: g.tilt, azi: g.azi, pts, mods,
                                  eaveM: eaveM, eaveBM: eaveBM, ridgeM: ridgeM, runM: runM, spanM: spanM,
                                  basis: useWorld ? _basis : null,
                                  label: `หลังคา ${idx + 1} (กลุ่ม #${g.id})` });
@@ -4987,7 +5020,12 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             g2.fillStyle = '#ffffff'; g2.fillRect(0, 0, W, H);
 
             let site = sdashCollectSiteGeometry(ctx);
-            let roofs = onlyGroup ? site.roofs.filter(r => r.groupId === onlyGroup.id) : site.roofs;
+            // เจาะดูทีละหลังคาจะมี _roofIdx มาด้วย ไม่งั้นกรองตามกลุ่มเหมือนเดิม
+            let roofs = onlyGroup
+                ? (onlyGroup._roofIdx !== undefined && onlyGroup._roofIdx !== null
+                    ? site.roofs.filter(r => r.roofIdx === onlyGroup._roofIdx)
+                    : site.roofs.filter(r => r.groupId === onlyGroup.id))
+                : site.roofs;
             if (!roofs.length) roofs = site.roofs;
 
             /* ขนาดของภาพต้องคิดจากหลังคาที่วาดจริง ไม่ใช่ทั้งไซต์
