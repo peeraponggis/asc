@@ -708,7 +708,8 @@
                     <!-- 🌟 กลุ่มความสูง/ความชันหลังคา — เรียงตามลำดับที่ผู้ใช้กรอกจริงหน้างาน
                          วัดความสูง 2 ค่าด้วยเลเซอร์ แล้วให้โปรแกรมคำนวณ Slope ให้ -->
                     <div class="setting-group">
-                        <div class="setting-row"><span class="sr-label" style="color: #dc2626;">ความสูงอาคาร (ชายคา):</span><span class="sr-ctrl"><input type="number" id="roofHeightM" value="10" step="0.1" min="0"> ม.</span></div>
+                        <div class="setting-row"><span class="sr-label" style="color: #dc2626;" title="ค่านี้เป็นของหลังคาผืนที่เลือกอยู่ ถ้าไม่ได้เลือกผืนไหน จะใช้กับทุกผืน อาคารคนละหลังที่สูงไม่เท่ากัน ให้คลิกเลือกทีละผืนแล้วกรอกแยกกัน">ความสูงอาคาร (ชายคา):</span><span class="sr-ctrl"><input type="number" id="roofHeightM" value="10" step="0.1" min="0"> ม.</span></div>
+                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="font-size:0.78em; color:#64748b;">ค่านี้เป็นของหลังคาผืนที่เลือก</span><span class="sr-ctrl"><button type="button" id="btnEaveToAll" style="background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; border-radius:5px; padding:3px 8px; font-size:0.78em; font-weight:bold; cursor:pointer; white-space:nowrap;">ใช้ค่านี้กับทุกหลังคา</button></span></div>
                         <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.92em; color:#64748b;" title="อาคารทรงโมเดิร์นที่ชายคาสองปลายไม่เท่ากัน ถ้าเท่ากันปล่อยไว้เท่าเดิม">↳ ชายคาอีกปลายหนึ่ง:</span><span class="sr-ctrl"><input type="number" id="eaveHeightBM" value="10" step="0.1" min="0"> ม.</span></div>
                         <div class="setting-row"><span class="sr-label" style="color: #dc2626;" title="ความสูงของขอบหลังคาด้านที่สูงที่สุด ถ้าหลังคาผืนนี้เป็นเพิงแหงน ค่านี้คือชายคาด้านสูง ถ้าตัดเป็นจั่วด้วยเครื่องมือวาดสันแล้ว ค่านี้คือความสูงสันจั่ว">ความสูงด้านสูงของหลังคา:</span><span class="sr-ctrl"><input type="number" id="ridgeHeightM" value="10" step="0.1" min="0"> ม.</span></div>
                         <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.88em; color:#64748b;">↳ หลังคาจั่ว/เพิงแหงนซ้อน:</span><span class="sr-ctrl"><button type="button" id="btnDrawRidge" onclick="AscRidge.start(activeRoofLayer)" style="font-size:0.85em; padding:3px 10px; border:1px solid #dc2626; background:#fff; color:#dc2626; border-radius:4px; cursor:pointer; font-weight:600;">✂ วาดเส้นสันหลังคา</button></span></div>
@@ -2571,6 +2572,21 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     document.getElementById('innerEdgeGapCm').value = layer.panelConfig.innerEdgeGapM * 100;
                     document.getElementById('keepoutGapCm').value = layer.panelConfig.keepoutGapM * 100;
                     if (layer.panelConfig.slope !== undefined) document.getElementById('sysSlope').value = layer.panelConfig.slope;
+
+                    /* ความสูงชายคาของหลังคาผืนที่เพิ่งคลิกเลือก ต้องขึ้นมาแสดงบนช่องกรอกด้วย
+                       ไม่งั้นผู้ใช้จะเห็นค่าของหลังคาผืนก่อนหน้าค้างอยู่ แล้วเข้าใจผิดว่าทุกผืนสูงเท่ากัน */
+                    if (isFinite(parseFloat(layer.panelConfig.eaveHeight_m))) {
+                        document.getElementById('roofHeightM').value = Number(layer.panelConfig.eaveHeight_m).toFixed(2).replace(/\.00$/, '');
+                    }
+                    const ebSel = document.getElementById('eaveHeightBM');
+                    if (ebSel) {
+                        if (isFinite(parseFloat(layer.panelConfig.eaveHeightB_m))) {
+                            ebSel.value = Number(layer.panelConfig.eaveHeightB_m).toFixed(2).replace(/\.00$/, '');
+                            ebSel.dataset.userEdited = '1';
+                        } else {
+                            delete ebSel.dataset.userEdited;
+                        }
+                    }
                     /* 🌟 ไฟล์เก่าไม่มี ridgeHeight_m — ascRefreshRoofGeom() คำนวณย้อนจากความชันให้เอง ผลเท่าเดิมทุกประการ */
                     
                     if (layer.panelConfig.customAzimuth !== null && layer.panelConfig.customAzimuth !== undefined) {
@@ -4037,9 +4053,29 @@ processPolygonsAndPanels = function() {
             this.dataset.userEdited = '1';
         });
 
+        /* ไซต์ที่อาคารทุกหลังสูงเท่ากัน จะได้ไม่ต้องคลิกเลือกทีละผืนแล้วกรอกซ้ำ */
+        if (document.getElementById('btnEaveToAll')) {
+            document.getElementById('btnEaveToAll').addEventListener('click', () => {
+                const h = parseFloat(document.getElementById('roofHeightM').value) || 0;
+                let n = 0;
+                editableItems.eachLayer(l => {
+                    if (l.panelConfig && (l.drawMode || 'roof') === 'roof') { l.panelConfig.eaveHeight_m = h; n++; }
+                });
+                processPolygonsAndPanels();
+                if (window.AscTree) AscTree.recompute();   // มุมบังต้นไม้ขึ้นกับความสูงหลังคา
+                saveMapState();
+                ascFlash('roofHeightM');
+                alert('ตั้งความสูงชายคา ' + h + ' ม. ให้หลังคาทั้งหมด ' + n + ' ผืนแล้ว');
+            });
+        }
+
         // 🌟 ฟังก์ชันลิงก์ความสูงหลังคาเข้ากับตัวแปรทั้งหมดและคำนวณสายไฟ
         document.getElementById('roofHeightM').addEventListener('input', e => {
             const h = parseFloat(e.target.value) || 0;
+
+            /* 0. เก็บค่าลงหลังคาที่กำลังเลือกอยู่ ถ้าไม่ได้เลือกผืนไหนไว้ให้ใช้กับทุกผืน
+                  พฤติกรรมเดียวกับช่องความชันและช่องทิศ ซึ่งเป็นค่ารายหลังคาอยู่แล้ว */
+            ascApplyToRoofs(pc => { pc.eaveHeight_m = h; });
 
             // 1. ความสูงสันหลังคา/ระยะหลังแผงถึงพื้น คำนวณใหม่โดยคงความชันเดิมไว้
             ascRefreshRoofGeom('ridgeHeightM');
@@ -4094,6 +4130,22 @@ processPolygonsAndPanels = function() {
             });
 
             // ❌ เอา globalSlope ออก เปลี่ยนไปดึงอิสระจาก config ของหลังคานั้นๆ
+
+            /* จุดอ้างอิงไซต์ร่วมกันของหลังคาทุกผืน
+               localBoundary ที่ส่งเข้า DB2 เป็นพิกัดของหลังคาแต่ละผืนเอง หมุนตามทิศของผืนนั้น
+               และเริ่มนับที่ศูนย์เหมือนกันหมด ปลายทางจึงไม่มีทางรู้ว่าอาคารจริงวางตัวอย่างไร
+               ต้องส่งขอบเขตในพิกัดจริงไปด้วย รายงานกับแบบจำลองจะได้วาดผังให้ตรงกับที่วาดไว้ */
+            let siteOrigin = null;
+            if (roofLayers.length) {
+                let sumLat = 0, sumLng = 0, n = 0;
+                roofLayers.forEach(l => {
+                    const cc = l.getBounds().getCenter();
+                    sumLat += cc.lat; sumLng += cc.lng; n++;
+                });
+                siteOrigin = { lat: sumLat / n, lng: sumLng / n };
+                siteOrigin.mPerLng = 111320 * Math.cos(siteOrigin.lat * Math.PI / 180);
+            }
+            state.siteOrigin = siteOrigin;
 
             roofLayers.forEach(function(layer, index) {
                 // 🌟 กำหนดค่า default เผื่อโหลดไฟล์เก่า
@@ -4179,7 +4231,13 @@ processPolygonsAndPanels = function() {
                 layer.panelConfig.roofRunM  = roofRunM;
                 layer.panelConfig.roofSpanM = roofSpanM;
 
-                const eaveNow  = parseFloat(document.getElementById('roofHeightM').value) || 0;
+                /* ความสูงชายคาเป็นค่ารายหลังคา ไม่ใช่ค่ากลางของไซต์
+                   เดิมอ่านจากช่องกรอกช่องเดียวแล้วเขียนทับทุกผืน อาคารสองหลังที่สูงไม่เท่ากัน
+                   หรือหลังคาที่ถูกตัดเป็นจั่วแล้วตั้งชายคาคนละค่า จึงเก็บค่าไว้ไม่ได้เลย
+                   ตอนนี้ใช้ค่าที่ติดอยู่กับหลังคาผืนนั้นก่อน ช่องกรอกเป็นเพียงค่าตั้งต้น
+                   สำหรับหลังคาที่ยังไม่เคยกำหนดค่าของตัวเอง */
+                let eaveNow = parseFloat(layer.panelConfig.eaveHeight_m);
+                if (!isFinite(eaveNow)) eaveNow = parseFloat(document.getElementById('roofHeightM').value) || 0;
                 const ridgeNow = Number((eaveNow + roofRunM * Math.tan(currentSlope * Math.PI / 180)).toFixed(3));
                 /* ชายคาปลายที่สอง: ค่ารายหลังคาถ้าเคยตั้งไว้ ไม่งั้นใช้ช่องกรอก ไม่งั้นเท่าปลายแรก */
                 let eaveBNow = layer.panelConfig.eaveHeightB_m;
@@ -4208,6 +4266,15 @@ processPolygonsAndPanels = function() {
                        ShadingEngine ใน asc_report อ่านช่องนี้เป็นรายหลังคาอยู่แล้ว
                        ไม่มีต้นไม้ = ไม่มีช่องนี้ = ระบบใช้ค่ากลางของไซต์เหมือนเดิม */
                     horizonProfile: layer.panelConfig.horizonProfile || undefined,
+                    /* ขอบเขตหลังคาในพิกัดจริงของไซต์ หน่วยเมตร x=ตะวันออก y=เหนือ
+                       อ้างจากจุดกึ่งกลางของหลังคาทุกผืนรวมกัน ปลายทางจึงวางอาคารได้ตรงตำแหน่ง
+                       และหันหน้าตรงกับที่วาดไว้จริง ไม่ต้องเดาว่าอาคารไหนอยู่ตรงไหน */
+                    worldBoundary: (siteOrigin && geojson.geometry.coordinates && geojson.geometry.coordinates[0])
+                        ? geojson.geometry.coordinates[0].map(cd => ({
+                            x: Number(((cd[0] - siteOrigin.lng) * siteOrigin.mPerLng).toFixed(3)),
+                            y: Number(((cd[1] - siteOrigin.lat) * 111320).toFixed(3))
+                        }))
+                        : undefined,
                     localBoundary: localBoundary // 🌟 ส่งขอบเขตหลังคาเข้าไปใน DB
                 });
 

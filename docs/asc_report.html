@@ -660,6 +660,29 @@
 						<div id="db0-nodata" class="bg-red-50 p-4 rounded-lg border border-red-200 text-center text-sm text-red-600 font-bold mb-4">
 							⚠️ ไม่พบข้อมูลการใช้ไฟ (DB0) ระบบใช้ค่าจำลองมาตรฐาน
 						</div>
+
+						<!-- 🌟 ค่าไฟสมมติ — ใช้เมื่อยังไม่มีบิลจริง เพื่อให้ได้ตารางกระแสเงินสดเป็นตัวอย่าง -->
+						<div id="demo-bill-box" class="bg-amber-50 p-4 rounded-lg border border-amber-300 mb-4">
+							<h4 class="font-bold text-amber-800 text-sm mb-1">🧪 ค่าไฟสมมติ (ใช้เมื่อยังไม่มีบิลจริง)</h4>
+							<p class="text-xs text-gray-600 mb-3">กรอกหน่วยไฟต่อเดือนกับอัตราค่าไฟ แล้วกดปุ่ม ระบบจะคำนวณ Cashflow &amp; Financial Table ให้เป็นตัวอย่างได้ทันที
+							โดยไม่ต้องมีไฟล์ DB0 <b class="text-amber-800">ตัวเลขที่ได้เป็นเพียงตัวอย่างประกอบการนำเสนอ ไม่ใช่ผลจากบิลจริงของลูกค้า</b></p>
+							<div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
+								<div><label class="block text-xs text-gray-600">หน่วยไฟ (kWh/เดือน)</label>
+									<input type="number" id="inp-demo-unit" value="60000" step="1000" min="0" class="w-full border rounded p-2 font-bold text-amber-700"></div>
+								<div><label class="block text-xs text-gray-600">อัตราค่าไฟ (บาท/หน่วย)</label>
+									<input type="number" id="inp-demo-rate" value="4.20" step="0.05" min="0" class="w-full border rounded p-2 font-bold text-amber-700"></div>
+								<div><label class="block text-xs text-gray-600">รูปแบบการใช้ไฟ</label>
+									<select id="sel-demo-load" class="w-full border rounded p-2 text-sm">
+										<option value="factory_day">โรงงานกะเดียว (08:00–17:00)</option>
+										<option value="factory_2shift">โรงงานสองกะ (06:00–22:00)</option>
+										<option value="factory_24h">โรงงานเดินเครื่อง 24 ชม.</option>
+										<option value="office">อาคารสำนักงาน (09:00–18:00)</option>
+										<option value="retail">ห้างร้าน (10:00–21:00)</option>
+									</select></div>
+								<div><button type="button" id="btn-demo-apply" class="w-full bg-amber-600 hover:bg-amber-700 text-white rounded p-2 text-sm font-bold shadow-sm">ใช้ค่าสมมตินี้</button></div>
+							</div>
+							<div id="demo-bill-msg" class="text-xs font-bold mt-2 text-amber-800"></div>
+						</div>
 					</div>
 
 					<!-- ซ่อน Input ไว้เพื่อไม่ให้ระบบคำนวณพังเวลาเรียกใช้งาน -->
@@ -1626,6 +1649,8 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             init24hGrid(); calcBill(); initApexChart();
+            const bd = document.getElementById('btn-demo-apply');
+            if (bd) bd.addEventListener('click', ascApplyDemoBill);
         });
 
         function init24hGrid() {
@@ -1641,6 +1666,70 @@
                          <input type="number" id="ld24-${i}" step="0.1" value="${defVal}" class="w-full border rounded p-1 text-center text-sm ${inputClass}" onkeyup="validateLoad()" onchange="validateLoad()"></div>`;
             }
             grid.innerHTML = html;
+        }
+
+        /* ========================================================================
+           ค่าไฟสมมติ — ทางออกเมื่อยังไม่มีบิลจริงของลูกค้า
+
+           โหมด "ประเมินความคุ้มค่า" ต้องรู้สองอย่างเท่านั้นถึงจะออกตารางกระแสเงินสดได้
+           คือหน่วยไฟที่ใช้ต่อเดือน กับอัตราค่าไฟต่อหน่วย ส่วนโหมด "จำลองทางวิศวกรรม"
+           ตั้งใจข้ามการคำนวณเงินอยู่แล้ว จึงไม่มีตารางการเงินให้ ซึ่งถูกต้องตามที่ออกแบบไว้
+           ถ้าอยากได้ตารางเป็นตัวอย่าง ให้เลือกโหมดประเมินความคุ้มค่าแล้วกรอกค่าสมมติตรงนี้
+
+           รูปแบบการใช้ไฟด้านล่างเป็นน้ำหนักรายชั่วโมง ระบบจะปรับให้รวมได้ 100% พอดีเอง
+           อ้างอิงลักษณะโหลดที่พบทั่วไปของผู้ใช้ไฟแต่ละประเภท ไม่ใช่ค่ามาตรฐานทางกฎหมาย
+           ======================================================================== */
+        const ASC_LOAD_SHAPES = {
+            //                0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+            factory_day:   [ 8, 8, 8, 8, 8, 8,12,20,55,90,95,95,70,92,95,90,60,25,15,12,10, 9, 8, 8],
+            factory_2shift:[10,10,10,10,10,15,45,70,90,95,95,95,75,92,95,95,90,85,80,75,70,45,20,12],
+            factory_24h:   [70,68,66,66,68,72,80,88,95,98,98,98,85,96,98,96,92,88,85,82,80,78,75,72],
+            office:        [ 8, 7, 7, 7, 7, 8,12,25,55,90,95,95,80,92,95,92,85,70,35,18,12,10, 9, 8],
+            retail:        [10, 9, 8, 8, 8, 9,12,18,30,50,80,90,92,90,90,92,95,95,95,92,85,70,35,15]
+        };
+
+        /* แปลงน้ำหนักเป็นเปอร์เซ็นต์ที่รวมได้ 100.0 พอดี
+           ปัดทศนิยม 2 ตำแหน่งแล้วยกเศษที่เหลือไปใส่ชั่วโมงที่ใช้ไฟมากที่สุด
+           เพื่อให้ผ่านการตรวจของ validateLoad() ที่บังคับผลรวมเท่ากับ 100 */
+        function ascLoadShapeToPct(shape) {
+            const sum = shape.reduce((a, b) => a + b, 0);
+            const pct = shape.map(v => Math.round((v / sum) * 10000) / 100);
+            const diff = Math.round((100 - pct.reduce((a, b) => a + b, 0)) * 100) / 100;
+            let iMax = 0;
+            shape.forEach((v, i) => { if (v > shape[iMax]) iMax = i; });
+            pct[iMax] = Math.round((pct[iMax] + diff) * 100) / 100;
+            return pct;
+        }
+
+        function ascApplyDemoBill() {
+            const unit = getVal('inp-demo-unit');
+            const rate = getVal('inp-demo-rate');
+            const msg = document.getElementById('demo-bill-msg');
+            if (!(unit > 0) || !(rate > 0)) {
+                if (msg) { msg.className = 'text-xs font-bold mt-2 text-red-600'; msg.innerText = 'กรอกหน่วยไฟและอัตราค่าไฟให้มากกว่าศูนย์ก่อน'; }
+                return;
+            }
+            // ต้องอยู่โหมดประเมินความคุ้มค่า ไม่งั้นระบบข้ามการคำนวณเงินทั้งหมด
+            const rc = document.querySelector('input[name="simObjective"][value="commercial"]');
+            if (rc && !rc.checked) { rc.checked = true; if (typeof toggleObjectiveMode === 'function') toggleObjectiveMode(); }
+
+            setVal('inp-bill-unit', unit);
+            setVal('fin-tariff', rate.toFixed(4));
+
+            const key = (document.getElementById('sel-demo-load') || {}).value || 'factory_day';
+            const pct = ascLoadShapeToPct(ASC_LOAD_SHAPES[key] || ASC_LOAD_SHAPES.factory_day);
+            const rp = document.querySelector('input[name="loadType"][value="pct"]');
+            if (rp) rp.checked = true;
+            pct.forEach((v, i) => setVal(`ld24-${i}`, v));
+            validateLoad();
+
+            if (msg) {
+                msg.className = 'text-xs font-bold mt-2 text-green-700';
+                msg.innerText = 'ตั้งค่าแล้ว: ' + formatNum(unit, 0) + ' kWh/เดือน × ' + rate.toFixed(2) +
+                    ' บาท = ' + formatNum(unit * rate, 0) + ' บาท/เดือน · รูปแบบโหลด ' +
+                    (document.getElementById('sel-demo-load').selectedOptions[0].text) +
+                    ' — ไปเมนู 3 การเงิน แล้วกดประมวลผลเพื่อดูตารางกระแสเงินสด';
+            }
         }
 
         function validateLoad() {
@@ -4737,33 +4826,75 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             let polys = AppState.sysPolygons || [];
             let hasRealBoundary = polys.some(p => (p.localBoundary || p.points || p.vertices || []).length >= 3);
 
+            /* ถ้า DB2 ส่งขอบเขตในพิกัดจริงมาด้วย ให้วางอาคารตามตำแหน่งและทิศทางจริง
+               ไฟล์รุ่นก่อนไม่มีข้อมูลนี้ จึงยังต้องเรียงหลังคาต่อกันแบบเดิมเป็นทางสำรอง */
+            let useWorld = polys.length > 0 && polys.every(p => (p.worldBoundary || []).length >= 3);
+
             if (hasRealBoundary) {
                 let offsetX = 0;
                 polys.forEach((roof, idx) => {
                     let ptsRaw = roof.localBoundary || roof.points || roof.vertices || [];
                     if (ptsRaw.length < 3) return;
                     let pts = ptsRaw.map(p => ({ x: (p.x !== undefined ? p.x : p.X || 0), y: (p.y !== undefined ? p.y : p.Y || 0) }));
-                    // เลื่อนแต่ละหลังคาให้เรียงต่อกัน ไม่ทับกัน (พิกัด local ของแต่ละหลังเริ่มที่ศูนย์เหมือนกัน)
                     let minX = Math.min(...pts.map(p => p.x)), maxX = Math.max(...pts.map(p => p.x));
                     let minY = Math.min(...pts.map(p => p.y));
-                    pts = pts.map(p => ({ x: p.x - minX + offsetX, y: p.y - minY }));
                     let modsRaw = roof.customLayout || roof.modules || roof.panels || [];
-                    let mods = modsRaw.map(m => {
-                        let isLS = m.isLandscape === true || m.isLandscape === 'true' || m.isLandscape === 'True';
-                        return {
-                            x: (m.x !== undefined ? m.x : m.cx || 0) - minX + offsetX,
-                            y: (m.y !== undefined ? m.y : m.cy || 0) - minY,
-                            w: isLS ? ph : pw, h: isLS ? pw : ph
-                        };
-                    });
+                    let mods;
+
+                    if (useWorld) {
+                        /* พิกัดท้องถิ่นของหลังคาถูกหมุนตามทิศของผืนนั้นและย้ายจุดเริ่มไว้ที่ศูนย์
+                           จับคู่จุดศูนย์ถ่วงของสองระบบเข้าหากัน ก็ได้การแปลงกลับไปพิกัดจริงครบ
+                           (วิธีเดียวกับที่ asc_3d ใช้ ผลลัพธ์จึงตรงกันทั้งสองหน้า) */
+                        const a = (roof.azimuth || 0) * Math.PI / 180;
+                        const ux = [Math.cos(a), -Math.sin(a)], uy = [Math.sin(a), Math.cos(a)];
+                        const cL = pts.reduce((s, q) => [s[0] + q.x, s[1] + q.y], [0, 0]).map(v => v / pts.length);
+                        const wb = roof.worldBoundary.map(q => ({ x: q.x, y: q.y }));
+                        const cW = wb.reduce((s, q) => [s[0] + q.x, s[1] + q.y], [0, 0]).map(v => v / wb.length);
+                        const T = [cW[0] - (ux[0] * cL[0] + uy[0] * cL[1]), cW[1] - (ux[1] * cL[0] + uy[1] * cL[1])];
+                        const toW = (lx, ly) => ({ x: T[0] + ux[0] * lx + uy[0] * ly, y: T[1] + ux[1] * lx + uy[1] * ly });
+
+                        pts = wb;                       // รูปหลังคาใช้พิกัดจริงตรงๆ
+                        /* แผงต้องหมุนตามอาคารด้วย จึงส่งมุมทั้งสี่ในพิกัดจริงไปเลย
+                           ไม่ใช่ส่งจุดมุมกับความกว้างยาวแล้วให้ปลายทางวาดเป็นสี่เหลี่ยมตรงแกน */
+                        mods = modsRaw.map(m => {
+                            let isLS = m.isLandscape === true || m.isLandscape === 'true' || m.isLandscape === 'True';
+                            const mw = isLS ? ph : pw, mh = isLS ? pw : ph;
+                            const lx = (m.x !== undefined ? m.x : m.cx || 0), ly = (m.y !== undefined ? m.y : m.cy || 0);
+                            return {
+                                quad: [toW(lx, ly), toW(lx + mw, ly), toW(lx + mw, ly + mh), toW(lx, ly + mh)],
+                                w: mw, h: mh
+                            };
+                        });
+                        // จุดอ้างอิงสำหรับคำนวณความสูงผิวหลังคาในพิกัดจริง
+                        var _basis = { ux, uy, T };
+                    } else {
+                        // เลื่อนแต่ละหลังคาให้เรียงต่อกัน ไม่ทับกัน (พิกัด local ของแต่ละหลังเริ่มที่ศูนย์เหมือนกัน)
+                        pts = pts.map(p => ({ x: p.x - minX + offsetX, y: p.y - minY }));
+                        mods = modsRaw.map(m => {
+                            let isLS = m.isLandscape === true || m.isLandscape === 'true' || m.isLandscape === 'True';
+                            return {
+                                x: (m.x !== undefined ? m.x : m.cx || 0) - minX + offsetX,
+                                y: (m.y !== undefined ? m.y : m.cy || 0) - minY,
+                                w: isLS ? ph : pw, h: isLS ? pw : ph, rot: 0
+                            };
+                        });
+                    }
                     let g = polyToGroup[idx] || ctx.groups[0];
 
                     /* 🌟 ความสูงจริงของอาคาร แทนค่าคงที่เดิม
                        ระยะไหลหลังคา = ช่วงแกน y ของขอบหลังคาในพิกัดท้องถิ่น (ภาพฉายบนพื้นราบ)
                        ถ้า DB2 ไม่มี ridgeHeight_m (ไฟล์รุ่นก่อน) คำนวณย้อนจากความชันได้ผลเท่ากัน */
-                    let yAll = pts.map(q => q.y);
-                    let runM = Math.max(...yAll) - Math.min(...yAll);
-                    if (!(runM > 0)) runM = parseFloat(roof.runM) || 0;
+                    /* เมื่อวางตามพิกัดจริง ช่วงแกน y ไม่ใช่ระยะไหลอีกต่อไป เพราะรูปถูกหมุนตามทิศอาคาร
+                       ต้องใช้ค่าระยะไหลที่ asc_design คำนวณไว้ให้แล้ว ไม่งั้นความสูงสันจะเพี้ยน */
+                    let runM;
+                    if (useWorld) {
+                        runM = parseFloat(roof.runM) || 0;
+                        if (!(runM > 0)) { let ly = ptsRaw.map(q => q.y); runM = Math.max(...ly) - Math.min(...ly); }
+                    } else {
+                        let yAll = pts.map(q => q.y);
+                        runM = Math.max(...yAll) - Math.min(...yAll);
+                        if (!(runM > 0)) runM = parseFloat(roof.runM) || 0;
+                    }
                     let eaveM = parseFloat(roof.eaveHeight_m);
                     if (!isFinite(eaveM)) eaveM = parseFloat(AppState.buildingHeight_m) || 3.2;
                     let ridgeM = parseFloat(roof.ridgeHeight_m);
@@ -4771,11 +4902,18 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                     /* ชายคาปลายที่สอง — ไฟล์เก่าไม่มี ให้เท่าปลายแรก = หลังคาลาดทางเดียวเหมือนเดิม */
                     let eaveBM = parseFloat(roof.eaveHeightB_m);
                     if (!isFinite(eaveBM)) eaveBM = eaveM;
-                    let xAll = pts.map(q => q.x);
-                    let spanM = Math.max(...xAll) - Math.min(...xAll);
+                    let spanM;
+                    if (useWorld) {
+                        spanM = parseFloat(roof.spanM) || 0;
+                        if (!(spanM > 0)) { let lx = ptsRaw.map(q => q.x); spanM = Math.max(...lx) - Math.min(...lx); }
+                    } else {
+                        let xAll = pts.map(q => q.x);
+                        spanM = Math.max(...xAll) - Math.min(...xAll);
+                    }
 
                     roofs.push({ groupId: g.id, tilt: g.tilt, azi: g.azi, pts, mods,
                                  eaveM: eaveM, eaveBM: eaveBM, ridgeM: ridgeM, runM: runM, spanM: spanM,
+                                 basis: useWorld ? _basis : null,
                                  label: `หลังคา ${idx + 1} (กลุ่ม #${g.id})` });
                     offsetX += (maxX - minX) + 4; // เว้นช่องไฟ 4 ม.
                 });
@@ -4806,7 +4944,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             let halfSpan = Math.max(Math.max(...allX) - cx, Math.max(...allY) - cy, 8);
             roofs.forEach(r => {
                 r.pts = r.pts.map(p => ({ x: p.x - cx, y: p.y - cy }));
-                r.mods = r.mods.map(m => ({ ...m, x: m.x - cx, y: m.y - cy }));
+                r.mods = r.mods.map(m => m.quad
+                    ? { ...m, quad: m.quad.map(p => ({ x: p.x - cx, y: p.y - cy })) }
+                    : { ...m, x: m.x - cx, y: m.y - cy });
+                // จุดอ้างอิงของแกนหลังคาต้องเลื่อนตามไปด้วย ไม่งั้นความสูงผิวหลังคาจะคำนวณผิดที่
+                if (r.basis) r.basis = { ux: r.basis.ux, uy: r.basis.uy, T: [r.basis.T[0] - cx, r.basis.T[1] - cy] };
             });
             return { roofs, halfSpan };
         }
@@ -4918,12 +5060,30 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 let eaveH = isFinite(r.eaveM) ? r.eaveM : ROOF_H;
                 let riseH = (isFinite(r.ridgeM) ? r.ridgeM : eaveH) - eaveH;
                 let runH  = (r.runM > 0) ? r.runM : 1;
-                let yTop  = Math.min(...r.pts.map(q => q.y));
                 /* เอียงตามขวางด้วย เมื่อชายคาสองปลายไม่เท่ากัน (อาคารทรงโมเดิร์น) */
                 let crossH = (isFinite(r.eaveBM) ? r.eaveBM : eaveH) - eaveH;
-                let xLeft  = Math.min(...r.pts.map(q => q.x));
                 let spanH  = (r.spanM > 0) ? r.spanM : 1;
-                let roofZ = (x, y) => eaveH + riseH * (1 - (y - yTop) / runH) + crossH * (x - xLeft) / spanH;
+
+                /* แนวลาดของหลังคาคือทิศ azimuth ของผืนนั้น ไม่ใช่แกน y ของภาพ
+                   เมื่อวางอาคารตามพิกัดจริง รูปถูกหมุนไปแล้ว จึงต้องฉายจุดกลับเข้าแกนของหลังคาก่อน
+                   ไม่งั้นหลังคาที่หันเฉียงจะลาดผิดทาง และสันไปโผล่คนละด้าน */
+                let toLocal;
+                if (r.basis) {
+                    const B = r.basis;
+                    toLocal = (x, y) => {
+                        const dx = x - B.T[0], dy = y - B.T[1];
+                        return { lx: dx * B.ux[0] + dy * B.ux[1], ly: dx * B.uy[0] + dy * B.uy[1] };
+                    };
+                } else {
+                    toLocal = (x, y) => ({ lx: x, ly: y });
+                }
+                let locPts = r.pts.map(q => toLocal(q.x, q.y));
+                let yTop   = Math.min(...locPts.map(q => q.ly));
+                let xLeft  = Math.min(...locPts.map(q => q.lx));
+                let roofZ = (x, y) => {
+                    const L = toLocal(x, y);
+                    return eaveH + riseH * (1 - (L.ly - yTop) / runH) + crossH * (L.lx - xLeft) / spanH;
+                };
 
                 // ผนังอาคาร — ขอบบนไต่ตามความลาดของหลังคา
                 for (let i = 0; i < r.pts.length; i++) {
@@ -4936,12 +5096,14 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 let lossNow = groupLossNow[r.groupId];
                 let panelColor = (lossNow === null || lossNow === undefined) ? '#475569' : sdashBucketColor(lossNow * 100);
                 r.mods.forEach(m => {
-                    poly([
-                        iso(m.x,        m.y,        roofZ(m.x,        m.y)        + 0.15),
-                        iso(m.x + m.w,  m.y,        roofZ(m.x + m.w,  m.y)        + 0.15),
-                        iso(m.x + m.w,  m.y + m.h,  roofZ(m.x + m.w,  m.y + m.h)  + 0.15),
-                        iso(m.x,        m.y + m.h,  roofZ(m.x,        m.y + m.h)  + 0.15)
-                    ], panelColor, '#1e293b', 0.5);
+                    // แผงที่วางตามพิกัดจริงส่งมุมทั้งสี่มาแล้ว ส่วนแบบเดิมยังเป็นสี่เหลี่ยมตรงแกน
+                    const q = m.quad || [
+                        { x: m.x,       y: m.y },
+                        { x: m.x + m.w, y: m.y },
+                        { x: m.x + m.w, y: m.y + m.h },
+                        { x: m.x,       y: m.y + m.h }
+                    ];
+                    poly(q.map(p => iso(p.x, p.y, roofZ(p.x, p.y) + 0.15)), panelColor, '#1e293b', 0.5);
                 });
                 // ป้ายชื่อหลังคา พร้อมความสูงชายคา/สัน
                 let lp = iso(r.pts[0].x, r.pts[0].y, roofZ(r.pts[0].x, r.pts[0].y) + 1.2);
