@@ -810,8 +810,11 @@
                             <div class="w-full lg:w-64 flex-shrink-0 no-print">
                                 <div class="font-bold text-sm mb-2 text-gray-700">Main display type (เลือกรูปแบบแสดงผลหลัก)</div>
                                 <button id="sdash-btn-heatmap" onclick="setShadingDashView('heatmap')" class="w-full text-left text-xs font-bold p-2.5 rounded border-2 border-green-600 bg-green-50 text-green-800 mb-2 transition">กราฟที่ 1: แผนภูมิความร้อน<br><span class="font-normal">(Simplified Heatmap)</span></button>
+                                <label class="flex items-center gap-1.5 text-[11px] text-gray-600 -mt-1 mb-2 pl-1 cursor-pointer"><input type="checkbox" id="sdash-pdf-heatmap" checked onchange="sdashSetPdfPick('heatmap', this.checked)" class="w-3.5 h-3.5">ใส่ กราฟที่ 1 ลงในรายงาน PDF</label>
                                 <button id="sdash-btn-polar" onclick="setShadingDashView('polar')" class="w-full text-left text-xs font-bold p-2.5 rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 mb-2 transition">กราฟที่ 2: กราฟวงกลม<br><span class="font-normal">(Polar Obscuration View)</span></button>
+                                <label class="flex items-center gap-1.5 text-[11px] text-gray-600 -mt-1 mb-2 pl-1 cursor-pointer"><input type="checkbox" id="sdash-pdf-polar" checked onchange="sdashSetPdfPick('polar', this.checked)" class="w-3.5 h-3.5">ใส่ กราฟที่ 2 ลงในรายงาน PDF</label>
                                 <button id="sdash-btn-iso3d" onclick="setShadingDashView('iso3d')" class="w-full text-left text-xs font-bold p-2.5 rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 mb-2 transition">กราฟที่ 3: โมเดล 3 มิติ<br><span class="font-normal">(3D Site Modeling & Shading)</span></button>
+                                <label class="flex items-center gap-1.5 text-[11px] text-gray-600 -mt-1 mb-2 pl-1 cursor-pointer"><input type="checkbox" id="sdash-pdf-iso3d" checked onchange="sdashSetPdfPick('iso3d', this.checked)" class="w-3.5 h-3.5">ใส่ กราฟที่ 3 ลงในรายงาน PDF</label>
                                 <div class="mt-3">
                                     <label class="block text-xs font-bold text-gray-700 mb-1">เลือกกลุ่มการวางแผง (Orientation Group)</label>
                                     <select id="sdash-group-sel" onchange="window.ShadingDashState.group=this.value; renderShadingDashboard();" class="w-full border rounded p-2 text-xs"></select>
@@ -840,6 +843,10 @@
                             <div class="flex-1 min-w-0">
                                 <div style="border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background-color: white;">
                                     <canvas id="sdash-canvas" style="width: 100%; height: auto; display: block;"></canvas>
+                                </div>
+                                <div id="sdash-view-hint" class="text-[10px] text-gray-500 mt-1.5 leading-snug" style="display:none;">
+                                    🖱️ ลากเมาส์บนภาพเพื่อหมุนมุมมอง · ดับเบิลคลิกเพื่อกลับมุมเริ่มต้น
+                                    <span id="sdash-view-angle" class="ml-2 text-gray-400"></span>
                                 </div>
                             </div>
                         </div>
@@ -4337,7 +4344,28 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
         // แผงควบคุมการวิเคราะห์การบังแดด: Heatmap / Polar + ตัวเลือกกลุ่มการวางแผง [B+C+D]
         // ใช้ข้อมูลจาก ShadingEngine (Phase 1) ทั้งหมด — ไม่มีการคำนวณซ้ำซ้อนในไฟล์นี้
 
-        window.ShadingDashState = { view: 'heatmap', group: 'all' };
+        /* pdfPick = กราฟไหนบ้างที่จะถูกใส่ลงรายงาน
+           เดิมรายงานใส่เฉพาะกราฟที่กำลังเปิดดูอยู่บนหน้าจอเพียงอันเดียว จะเอาทั้งสามแบบ
+           ต้องส่งออกสามรอบแล้วสลับมุมมองเอง เลือกไว้ล่วงหน้าได้ทั้งสามอันเลยดีกว่า
+           iso = มุมมองของโมเดล 3 มิติ หมุนได้ด้วยเมาส์ แล้วค่าที่หมุนไว้ถูกใช้ตอนออก PDF ด้วย */
+        window.ShadingDashState = {
+            view: 'heatmap', group: 'all',
+            pdfPick: { heatmap: true, polar: true, iso3d: true },
+            iso: { yaw: 0, pitch: 0.5 }
+        };
+
+        function sdashSetPdfPick(key, on) {
+            const S = window.ShadingDashState;
+            S.pdfPick[key] = !!on;
+            // กันไม่ให้ปิดหมดทั้งสามอัน เพราะหัวข้อนี้จะกลายเป็นหน้าว่างในรายงาน
+            if (!S.pdfPick.heatmap && !S.pdfPick.polar && !S.pdfPick.iso3d) {
+                S.pdfPick[key] = true;
+                const el = document.getElementById('sdash-pdf-' + key);
+                if (el) el.checked = true;
+                alert('ต้องเลือกอย่างน้อยหนึ่งกราฟ ไม่งั้นหัวข้อนี้จะเป็นหน้าว่างในรายงาน\n\n' +
+                      'ถ้าไม่ต้องการหัวข้อนี้เลย ให้ปิดที่ช่อง "ASC Solar Shading Analysis Dashboard" ในรายการเลือกหัวข้อ');
+            }
+        }
 
         // สีตามระดับ Shading Loss % (ตรงกับ legend ในภาพตัวอย่าง)
         const SDASH_COLORS = [
@@ -4610,6 +4638,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             // 🌟 PHASE 4: แสดงตัวเลือกเดือน/เวลา เฉพาะโหมดโมเดล 3 มิติ
             let c3d = document.getElementById('sdash-3d-controls');
             if (c3d) c3d.style.display = (st.view === 'iso3d') ? 'block' : 'none';
+            // คำแนะนำการหมุน แสดงเฉพาะโหมดโมเดล 3 มิติ ซึ่งเป็นโหมดเดียวที่หมุนได้
+            let vh = document.getElementById('sdash-view-hint');
+            if (vh) vh.style.display = (st.view === 'iso3d') ? 'block' : 'none';
 
             // เลือกขอบเขตข้อมูล: กลุ่มเดียว หรือ ถ่วงน้ำหนักทั้งไซต์ [C]
             let isAll = (st.group === 'all' && ctx.groups.length > 1);
@@ -4672,6 +4703,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             } else if (st.view === 'iso3d') {
                 // 🌟 PHASE 4: โมเดล 3 มิติ (ทั้งไซต์ หรือเฉพาะกลุ่มที่เลือก)
                 sdashDrawIso3D(canvas, ctx, isAll ? null : scopeGroup, sdashGet3DOpts());
+                // จำขอบเขตที่กำลังแสดงไว้ เพื่อวาดซ้ำระหว่างลากหมุนโดยไม่ต้องคำนวณสถิติใหม่
+                st._iso3dScope = isAll ? null : scopeGroup;
+                sdashBindIsoDrag(canvas);
             } else {
                 let hm = isAll
                     ? ShadingEngine.computeWeightedHeatmap(ctx.groups, ctx.lat, ctx.lon, SunCalc, ctx.tz)
@@ -4789,30 +4823,39 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                     (caption ? `<div class="text-[10px] text-gray-600 mb-4" style="page-break-inside: avoid;">${caption}</div>` : '');
             };
 
-            // ---- 1) ภาพกราฟ: หน้าสรุปรวม (ถ้ามีหลายกลุ่ม) + รายกลุ่มครบทุกกลุ่ม ----
-            if (view === 'iso3d') {
-                // 🌟 PHASE 4: โมเดล 3 มิติ = ภาพรวมไซต์ภาพเดียว ณ เดือน/เวลาที่เลือก
-                let o3 = sdashGet3DOpts();
-                let cv3 = document.createElement('canvas');
-                sdashDrawIso3D(cv3, ctx, null, o3);
-                addImg(cv3.toDataURL('image/png', 1.0),
-                    `โมเดล 3 มิติของไซต์ ณ สถานการณ์จำลอง เดือน${SDASH_MONTH_TH_FULL[o3.month]} เวลา ${String(o3.hour).padStart(2,'0')}:00 น. — สีของแผงแสดงระดับ Shading Loss ณ ขณะนั้น`);
-            } else if (multi) {
-                if (view === 'polar') {
-                    let mergedHorizon = ShadingEngine.mergeHorizonsMax(ctx.groups.map(g => g.horizon));
-                    let gAll = { tilt: 0, azi: 0, horizon: mergedHorizon };
-                    addImg(sdashRenderToImage('polar', gAll, ctx, `ภาพรวมทั้งไซต์ (ขอบฟ้ารวมแบบอนุรักษ์นิยม)`),
-                        `ภาพรวมทั้งไซต์: พื้นที่สีเทาคือขอบเขตสิ่งกีดขวางรวมของทุกกลุ่ม (ใช้ค่าที่บังมากที่สุดในแต่ละทิศ เพื่อไม่ประเมินผลกระทบต่ำกว่าความเป็นจริง)`);
-                } else {
-                    addImg(sdashRenderToImage('heatmap', 'ALL_WEIGHTED', ctx, `ภาพรวมทั้งไซต์: ${ctx.groups.length} กลุ่ม (ถ่วงน้ำหนัก ${formatNum(weighted.totalKwp,1)} kWp)`),
-                        `ภาพรวมทั้งไซต์: ค่า Shading Loss ในแต่ละช่องคือค่าเฉลี่ยถ่วงน้ำหนักตามขนาดติดตั้ง (kWp) ของทุกกลุ่มการวางแผง`);
+            /* ---- 1) ภาพกราฟ: ใส่ครบทุกแบบที่ผู้ใช้ติ๊กเลือกไว้ ----
+               เดิมใส่เฉพาะกราฟที่กำลังเปิดดูอยู่บนหน้าจออันเดียว อยากได้ครบสามแบบ
+               ต้องสั่งพิมพ์สามรอบแล้วสลับมุมมองเอง ตอนนี้เลือกไว้ล่วงหน้าได้เลย */
+            const pick = (window.ShadingDashState && window.ShadingDashState.pdfPick)
+                       || { heatmap: true, polar: true, iso3d: true };
+            const wanted = ['heatmap', 'polar', 'iso3d'].filter(v => pick[v]);
+            if (!wanted.length) wanted.push(view);   // กันกรณีไม่ได้เลือกอะไรเลย
+
+            wanted.forEach(v => {
+                if (v === 'iso3d') {
+                    // 🌟 PHASE 4: โมเดล 3 มิติ = ภาพรวมไซต์ภาพเดียว ณ เดือน/เวลาที่เลือก
+                    let o3 = sdashGet3DOpts();
+                    let cv3 = document.createElement('canvas');
+                    sdashDrawIso3D(cv3, ctx, null, o3);   // ใช้มุมมองที่ผู้ใช้หมุนค้างไว้
+                    addImg(cv3.toDataURL('image/png', 1.0),
+                        `โมเดล 3 มิติของไซต์ ณ สถานการณ์จำลอง เดือน${SDASH_MONTH_TH_FULL[o3.month]} เวลา ${String(o3.hour).padStart(2,'0')}:00 น. — สีของแผงแสดงระดับ Shading Loss ณ ขณะนั้น`);
+                    return;
                 }
-            }
-            if (view !== 'iso3d') {
+                if (multi) {
+                    if (v === 'polar') {
+                        let mergedHorizon = ShadingEngine.mergeHorizonsMax(ctx.groups.map(g => g.horizon));
+                        let gAll = { tilt: 0, azi: 0, horizon: mergedHorizon };
+                        addImg(sdashRenderToImage('polar', gAll, ctx, `ภาพรวมทั้งไซต์ (ขอบฟ้ารวมแบบอนุรักษ์นิยม)`),
+                            `ภาพรวมทั้งไซต์: พื้นที่สีเทาคือขอบเขตสิ่งกีดขวางรวมของทุกกลุ่ม (ใช้ค่าที่บังมากที่สุดในแต่ละทิศ เพื่อไม่ประเมินผลกระทบต่ำกว่าความเป็นจริง)`);
+                    } else {
+                        addImg(sdashRenderToImage('heatmap', 'ALL_WEIGHTED', ctx, `ภาพรวมทั้งไซต์: ${ctx.groups.length} กลุ่ม (ถ่วงน้ำหนัก ${formatNum(weighted.totalKwp,1)} kWp)`),
+                            `ภาพรวมทั้งไซต์: ค่า Shading Loss ในแต่ละช่องคือค่าเฉลี่ยถ่วงน้ำหนักตามขนาดติดตั้ง (kWp) ของทุกกลุ่มการวางแผง`);
+                    }
+                }
                 ctx.groups.forEach(g => {
-                    addImg(sdashRenderToImage(view, g, ctx, g.label), null);
+                    addImg(sdashRenderToImage(v, g, ctx, g.label), null);
                 });
-            }
+            });
 
             // ---- 2) คำอธิบายใต้กราฟ: ความหมาย + ผลการวิเคราะห์ + ข้อเสนอแนะ ----
             let html = sdashPdfMeaningText(view);
@@ -5013,6 +5056,60 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
         }
 
         // ตัววาดหลัก: canvas 2D + Isometric projection (world: +x=ตะวันออก, +y=เหนือ, +z=สูง)
+        /* ลากเมาส์บนภาพเพื่อหมุนมุมมอง ผูกครั้งเดียวพอ เรียกซ้ำได้ไม่มีผลข้างเคียง
+           ลากซ้ายขวา = หมุนรอบแกนตั้ง · ลากขึ้นลง = ก้มเงย · ดับเบิลคลิก = กลับมุมเริ่มต้น
+           วาดใหม่เฉพาะภาพ ไม่เรียกคำนวณสถิติซ้ำ การลากจึงลื่นแม้ไซต์ใหญ่ */
+        function sdashBindIsoDrag(canvas) {
+            if (!canvas || canvas.__isoDragBound) return;
+            canvas.__isoDragBound = true;
+            canvas.style.cursor = 'grab';
+            canvas.title = 'ลากเพื่อหมุนมุมมอง · ดับเบิลคลิกเพื่อกลับมุมเริ่มต้น';
+
+            const S = window.ShadingDashState;
+            if (!S.iso) S.iso = { yaw: 0, pitch: 0.5 };
+            let drag = null, pending = false;
+
+            const redraw = () => {
+                pending = false;
+                const c = S.lastCtx;
+                if (!c || S.view !== 'iso3d') return;
+                sdashDrawIso3D(canvas, c, S._iso3dScope || null, sdashGet3DOpts());
+            };
+            const ask = () => { if (!pending) { pending = true; requestAnimationFrame(redraw); } };
+
+            const pos = e => {
+                const r = canvas.getBoundingClientRect();
+                // ภาพถูกย่อด้วย CSS ต้องแปลงกลับเป็นพิกัดของผืนผ้าใบจริง
+                return { x: (e.clientX - r.left) * (canvas.width / r.width),
+                         y: (e.clientY - r.top) * (canvas.height / r.height) };
+            };
+
+            canvas.addEventListener('mousedown', e => {
+                if (S.view !== 'iso3d') return;
+                drag = pos(e); canvas.style.cursor = 'grabbing'; e.preventDefault();
+            });
+            window.addEventListener('mousemove', e => {
+                if (!drag) return;
+                const p = pos(e);
+                S.iso.yaw = (((S.iso.yaw - (p.x - drag.x) * 0.35) % 360) + 360) % 360;
+                S.iso.pitch = Math.max(0.12, Math.min(0.92, S.iso.pitch - (p.y - drag.y) * 0.0025));
+                drag = p;
+                ask();
+            });
+            window.addEventListener('mouseup', () => {
+                if (!drag) return;
+                drag = null; canvas.style.cursor = 'grab';
+                const el = document.getElementById('sdash-view-angle');
+                if (el) el.innerText = 'มุมมอง: หมุน ' + Math.round(S.iso.yaw) + '° · ก้มเงย ' + S.iso.pitch.toFixed(2);
+            });
+            canvas.addEventListener('dblclick', () => {
+                if (S.view !== 'iso3d') return;
+                S.iso.yaw = 0; S.iso.pitch = 0.5; ask();
+                const el = document.getElementById('sdash-view-angle');
+                if (el) el.innerText = 'มุมมอง: มุมเริ่มต้น';
+            });
+        }
+
         function sdashDrawIso3D(canvas, ctx, onlyGroup, opts) {
             const W = 1100, H = 660;
             canvas.width = W; canvas.height = H;
@@ -5055,14 +5152,45 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             /* จัดสเกลให้ภาพเต็มผืนผ้าใบพอดี แทนค่าคงที่เดิมที่ทำให้เหลือที่ว่างเกินครึ่ง
                ความสูงที่ภาพกินคือ ยอดโดม + ครึ่งล่างของพื้น = 2.05·Rd·scale
                ความกว้างคือ 3.64·Rd·scale (มุมซ้ายสุดถึงมุมขวาสุดของพื้น) */
-            const scale = Math.min((H - 95) / (2.05 * Rd), (W - 80) / (3.64 * Rd), 14);
-            const ox = W / 2, oy = 76 + Rd * scale;
             const ROOF_H = 3.2;                          // ค่าสำรองเมื่อ DB2 ไม่มีข้อมูลความสูง
-            const iso = (x, y, z) => ({
-                x: ox + (x - y) * 0.866 * scale,
-                y: oy + (x + y) * 0.5 * scale - (z || 0) * scale
-            });
             const D2R = Math.PI / 180;
+
+            /* มุมมองหมุนได้ด้วยเมาส์ เพื่อหามุมที่เห็นผังชัดที่สุดก่อนส่งออกเป็น PDF
+               yaw หมุนรอบแกนตั้ง · pitch คือความสูงของสายตา ยิ่งน้อยยิ่งมองจากด้านข้าง
+               หมุนที่พิกัดพื้นก่อนฉายภาพ โดมท้องฟ้า ป้ายทิศ และดวงอาทิตย์จึงหมุนตามไปด้วย
+               เพราะทุกอย่างวาดผ่านฟังก์ชันฉายภาพตัวเดียวกันหมด */
+            const vw = (window.ShadingDashState && window.ShadingDashState.iso) || { yaw: 0, pitch: 0.5 };
+            const yawR = (vw.yaw || 0) * D2R;
+            const kp = Math.max(0.12, Math.min(0.92, vw.pitch === undefined ? 0.5 : vw.pitch));
+            const cyaw = Math.cos(yawR), syaw = Math.sin(yawR);
+            const proj = (x, y, z) => {
+                const rx = x * cyaw - y * syaw, ry = x * syaw + y * cyaw;
+                return { x: (rx - ry) * 0.866, y: (rx + ry) * kp - (z || 0) };
+            };
+
+            /* หาขนาดภาพจากจุดสำคัญจริงๆ แทนการใช้สูตรตายตัว เพราะพอหมุนหรือก้มเงย
+               กรอบภาพเปลี่ยนรูปไปหมด สูตรเดิมที่ผูกกับมุมมองเดียวจะทำให้ภาพล้นหรือลอย */
+            const Gp = Rd * 1.05;
+            const probe = [
+                proj(-Gp, -Gp, 0), proj(Gp, -Gp, 0), proj(Gp, Gp, 0), proj(-Gp, Gp, 0), proj(0, 0, Rd)
+            ];
+            for (let a = 0; a < 360; a += 30) {
+                for (const e of [0, 30, 60]) {
+                    const r = Rd * Math.cos(e * D2R), z = Rd * Math.sin(e * D2R);
+                    probe.push(proj(r * Math.sin(a * D2R), r * Math.cos(a * D2R), z));
+                }
+            }
+            const pxs = probe.map(p => p.x), pys = probe.map(p => p.y);
+            const minPX = Math.min.apply(null, pxs), maxPX = Math.max.apply(null, pxs);
+            const minPY = Math.min.apply(null, pys), maxPY = Math.max.apply(null, pys);
+            const scale = Math.min((W - 70) / Math.max(maxPX - minPX, 1e-6),
+                                   (H - 100) / Math.max(maxPY - minPY, 1e-6), 14);
+            const ox = (W - (minPX + maxPX) * scale) / 2;
+            const oy = 78 - minPY * scale;
+            const iso = (x, y, z) => {
+                const p = proj(x, y, z);
+                return { x: ox + p.x * scale, y: oy + p.y * scale };
+            };
             // จุดบนผิวโดม ณ (azimuth เข็มทิศองศา, elevation องศา)
             const domePt = (compAzi, elev) => {
                 let r = Rd * Math.cos(elev * D2R), z = Rd * Math.sin(elev * D2R);
