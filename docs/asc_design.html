@@ -662,6 +662,16 @@
                             </div>
                         </div>
 
+                        <div class="radio-item" style="background: white; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 0; display: flex; flex-direction: column; align-items: flex-start;">
+                            <div style="display: flex; align-items: center; width: 100%;">
+                                <input type="radio" id="drawPvzone" name="drawMode" value="pvzone">
+                                <label for="drawPvzone" style="color: #2563eb; font-weight: bold; margin: 0; white-space: nowrap;">🔵 พื้นที่วางแผง</label>
+                            </div>
+                            <div style="font-size: 0.8em; color: #475569; margin-top: 6px; padding-left: 20px;">
+                                วาดทับบนหลังคา เพื่อจำกัดให้วางแผงเฉพาะในกรอบนี้
+                            </div>
+                        </div>
+
                     </div>
                     <div style="font-size: 0.75em; color: #64748b; margin-top: -6px; margin-bottom: 15px; text-align: center;">
                         <i class="fa-solid fa-info-circle"></i> <b>Snap 90°:</b> ลากเมาส์ใกล้มุมฉาก เส้นจะเป็นประสีส้มเพื่อดูดให้อัตโนมัติ
@@ -1377,6 +1387,9 @@ const INDUSTRIAL_SOLAR_CONFIG = {
                                     layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
                                 } else if (layer.drawMode === 'walkway') {
                                     layer.setStyle({ color: '#4b5563', weight: 1, fillColor: '#9ca3af', fillOpacity: 0.7, dashArray: 'none' });
+                                    layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
+                                } else if (layer.drawMode === 'pvzone') {
+                                    layer.setStyle(ASC_PVZONE_STYLE);
                                     layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
                                 } else if (layer.drawMode === 'mdb') {
                                     // 🌟 ดึงข้อมูลหมุด MDB จากไฟล์ DB1 กลับมาแสดง
@@ -2477,6 +2490,11 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
         // --- Crosshair & Guide Lines ---
         let isDrawingMode = false;
         let activeRoofLayer = null;
+
+        /* พื้นที่วางแผง (PV Zone) — กรอบที่ผู้ใช้วาดทับหลังคาเพื่อจำกัดขอบเขตการวางแผง
+           ต้องโปร่งกว่าวัตถุอื่นมาก เพราะมันวางทับหลังคาและแผงที่ต้องมองเห็นอยู่ข้างใต้ */
+        const ASC_PVZONE_STYLE = { color: '#2563eb', weight: 2, fillColor: '#3b82f6', fillOpacity: 0.06, dashArray: '8, 5' };
+
         function setActiveRoofLayer(layer) {
             // คืนค่าสีเดิมของแต่ละวัตถุตอนที่ยกเลิกการเลือก
             if(activeRoofLayer && editableItems.hasLayer(activeRoofLayer)) {
@@ -2485,6 +2503,8 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                         activeRoofLayer.setStyle({ color: '#dc2626', weight: 1 });
                     } else if (activeRoofLayer.drawMode === 'walkway') {
                         activeRoofLayer.setStyle({ color: '#4b5563', weight: 1 });
+                    } else if (activeRoofLayer.drawMode === 'pvzone') {
+                        activeRoofLayer.setStyle({ color: ASC_PVZONE_STYLE.color, weight: ASC_PVZONE_STYLE.weight, dashArray: ASC_PVZONE_STYLE.dashArray });
                     } else {
                         activeRoofLayer.setStyle({ color: '#ea580c', weight: 2 });
                     }
@@ -3558,9 +3578,12 @@ processPolygonsAndPanels = function() {
                 });
                 // เฟส 8: ถอด tooltip ตอน hover ออก (ป้ายข้อมูลจะแสดงเมื่อคลิกเลือกวัตถุแทน)
                 
-            } else if (drawMode === 'keepout') { 
-                layer.setStyle({ color: '#dc2626', weight: 1, fillColor: '#ef4444', fillOpacity: 0.7, dashArray: '4, 4' }); 
+            } else if (drawMode === 'keepout') {
+                layer.setStyle({ color: '#dc2626', weight: 1, fillColor: '#ef4444', fillOpacity: 0.7, dashArray: '4, 4' });
                 layer.objectHeightM = parseFloat(document.getElementById('keepoutHeightM').value) || 0;
+                layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
+            } else if (drawMode === 'pvzone') {
+                layer.setStyle(ASC_PVZONE_STYLE);
                 layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
             } else if (drawMode === 'walkway') { // 🌟 สีของทางเดิน 🌟
                 layer.setStyle({ color: '#4b5563', weight: 1, fillColor: '#9ca3af', fillOpacity: 0.7, dashArray: 'none' }); 
@@ -4011,20 +4034,24 @@ processPolygonsAndPanels = function() {
                 return; 
             }
             
-            const keepoutPolys = []; const roofLayers = [];
-            
+            const keepoutPolys = []; const roofLayers = []; const pvZonePolys = [];
+
             editableItems.eachLayer(layer => {
                 if(!layer.toGeoJSON) return;
                 const mode = layer.drawMode || 'roof';
-                
+
                 // ฝังข้อมูล mode ลงไปเพื่อให้ระบบคำนวณแผงรู้ว่าเป็น Keepout ชนิดไหน
                 let geojson = layer.toGeoJSON();
                 geojson.properties = geojson.properties || {};
-                geojson.properties.drawMode = mode; 
+                geojson.properties.drawMode = mode;
 
                 if (mode === 'keepout' || mode === 'walkway') {
                     // ให้พื้นที่กีดขวางและทางเดิน ไปอยู่ในกลุ่มเดียวกัน (เว้นไม่วางแผง)
-                    keepoutPolys.push(geojson); 
+                    keepoutPolys.push(geojson);
+                } else if (mode === 'pvzone') {
+                    /* พื้นที่วางแผงเป็นการบอกแบบ "บวก" ตรงข้ามกับสิ่งกีดขวางที่บอกแบบ "ลบ"
+                       จึงต้องเก็บแยกกอง ห้ามปนกับ keepoutPolys เด็ดขาด */
+                    pvZonePolys.push(geojson);
                 } else if (mode === 'roof') {
                     // นับเฉพาะโหมดวาดหลังคาจริงๆ เท่านั้น
                     roofLayers.push(layer);
@@ -4145,7 +4172,14 @@ processPolygonsAndPanels = function() {
                     localBoundary: localBoundary // 🌟 ส่งขอบเขตหลังคาเข้าไปใน DB
                 });
 
-                state.allPossiblePanelsGeoJSON = state.allPossiblePanelsGeoJSON.concat(generatePanelGrid(geojson, center, finalAzimuth, state.pvWid/1000, state.pvLen/1000, keepoutPolys, config));           
+                /* เลือกเฉพาะพื้นที่วางแผงที่ทับหลังคาผืนนี้จริง
+                   หลังคาผืนที่ไม่มีพื้นที่วางแผงทับอยู่เลย ให้วางแผงเต็มผืนเหมือนเดิม
+                   ไฟล์งานเก่าที่ยังไม่มีเครื่องมือนี้จึงให้ผลเท่าเดิมทุกประการ */
+                const zonesForRoof = pvZonePolys.filter(z => {
+                    try { return turf.booleanIntersects(z, geojson); } catch (e) { return false; }
+                });
+
+                state.allPossiblePanelsGeoJSON = state.allPossiblePanelsGeoJSON.concat(generatePanelGrid(geojson, center, finalAzimuth, state.pvWid/1000, state.pvLen/1000, keepoutPolys, config, zonesForRoof));
             });
             
             // 🌟 รูปหลังคา/ทิศเปลี่ยน → ระยะไหลเปลี่ยน → คำนวณความสูงสันหลังคาใหม่โดยคงความชันไว้
@@ -4173,8 +4207,8 @@ processPolygonsAndPanels = function() {
             calculateStringSizing(); 
         }
 
-function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM, keepouts, config) { 
-            let panels = []; 
+function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM, keepouts, config, pvZones) {
+            let panels = [];
             const gapM = 0.03; 
             const rowWalkwayM = config.rowWalkwayM; 
             const colWalkwayM = config.colWalkwayM;
@@ -4219,8 +4253,14 @@ function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM,
             const mToDegLng = 1 / (111320 * Math.cos(centerCoords[1] * Math.PI / 180));
 
             // 1. หมุนหลังคากลับมาให้ขนานแกน X, Y เพื่อตีกรอบ Bounding Box
-            const rotatedRoof = turf.transformRotate(workableRoof, -azimuth, {pivot: centerPoint}); 
+            const rotatedRoof = turf.transformRotate(workableRoof, -azimuth, {pivot: centerPoint});
             const bbox = turf.bbox(rotatedRoof); // [minLng, minLat, maxLng, maxLat]
+
+            /* พื้นที่วางแผงต้องหมุนตามหลังคาไปด้วย จะได้เทียบกับแผงในระบบพิกัดเดียวกัน
+               หมุนครั้งเดียวตรงนี้ ไม่ใช่หมุนซ้ำในลูปที่วนหลายพันรอบ */
+            const rotatedZones = (pvZones && pvZones.length)
+                ? pvZones.map(z => { try { return turf.transformRotate(z, -azimuth, {pivot: centerPoint}); } catch (e) { return null; } }).filter(Boolean)
+                : [];
 
             // 2. ลอจิกสำคัญ: แปลงกรอบ Bounding Box กลับมาเป็นหน่วย "เมตร" (มิติ 2D ธรรมดา) โดยอ้างอิงจากจุดศูนย์กลาง
             const minX_m = (bbox[0] - centerCoords[0]) / mToDegLng;
@@ -4262,7 +4302,17 @@ function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM,
                     // สร้าง Polygon แบบดิบที่ถูกต้องทางคณิตศาสตร์
                     const checkPoly = turf.polygon([[p1_deg, p2_deg, p3_deg, p4_deg, p1_deg]]);
                     
-                    if (turf.booleanPointInPolygon(turf.center(checkPoly), rotatedRoof)) {
+                    /* แผงอยู่ในหลังคาหรือไม่ ตัดสินที่จุดกึ่งกลางแผงเหมือนเดิม
+                       ถ้ามีพื้นที่วางแผงกำกับอยู่ ต้องอยู่ในกรอบนั้นอีกชั้นหนึ่งด้วย */
+                    const panelCenter = turf.center(checkPoly);
+                    let insideZone = true;
+                    if (rotatedZones.length) {
+                        insideZone = rotatedZones.some(z => {
+                            try { return turf.booleanPointInPolygon(panelCenter, z); } catch (e) { return false; }
+                        });
+                    }
+
+                    if (insideZone && turf.booleanPointInPolygon(panelCenter, rotatedRoof)) {
                         // หมุนแผงกลับหน้างานจริง (Transformation รวบยอด)
                         const realWorldCheckPanel = turf.transformRotate(checkPoly, azimuth, {pivot: centerPoint});
                         let isObstacle = false; 
@@ -6971,6 +7021,9 @@ document.addEventListener('keydown', function(e) {
                     } else if (layer.drawMode === 'walkway') {
                         layer.setStyle({ color: '#4b5563', weight: 1, fillColor: '#9ca3af', fillOpacity: 0.7, dashArray: 'none' });
                         layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
+                    } else if (layer.drawMode === 'pvzone') {
+                        layer.setStyle(ASC_PVZONE_STYLE);
+                        layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
                     } else if (layer.drawMode === 'mdb') {
                         // ลบ MDB เดิมทิ้งถ้ามี (มีได้แค่ 1 จุด)
                         editableItems.eachLayer(lyr => { if (lyr.drawMode === 'mdb') editableItems.removeLayer(lyr); });
@@ -7019,7 +7072,7 @@ function loadEdgeLengths(layer) {
     if (!container) return;
 
     // 🌟 แก้ไขเงื่อนไขให้รองรับการคลิก Walkway และ Keepout ได้
-    if (!layer || (layer.drawMode !== 'roof' && layer.drawMode !== 'walkway' && layer.drawMode !== 'keepout')) {
+    if (!layer || (layer.drawMode !== 'roof' && layer.drawMode !== 'walkway' && layer.drawMode !== 'keepout' && layer.drawMode !== 'pvzone')) {
         container.innerHTML = '<div style="color:#64748b; font-size:0.85em;">กรุณาคลิกเลือกพื้นที่บนแผนที่ ที่ต้องการปรับ</div>';
         document.getElementById('edgeEditorSection').style.display = 'none';
         return;
