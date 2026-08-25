@@ -4964,9 +4964,35 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             let roofs = onlyGroup ? site.roofs.filter(r => r.groupId === onlyGroup.id) : site.roofs;
             if (!roofs.length) roofs = site.roofs;
 
-            const Rd = site.halfSpan * 1.7 + 8;         // รัศมีโดมท้องฟ้า
-            const scale = Math.min(360 / (Rd * 1.9), 9); // สเกล ม. → พิกเซล
-            const ox = W / 2, oy = H / 2 + 120;
+            /* ขนาดของภาพต้องคิดจากหลังคาที่วาดจริง ไม่ใช่ทั้งไซต์
+               เดิมใช้ขนาดของทั้งไซต์เสมอ พอเลือกดูทีละกลุ่ม อาคารหลังเดียวจึงลอยเล็กจิ๋ว
+               อยู่กลางโดมที่ใหญ่เท่าเดิม */
+            let dx = [], dy = [];
+            roofs.forEach(r => r.pts.forEach(p => { dx.push(p.x); dy.push(p.y); }));
+            let halfDrawn = site.halfSpan;
+            if (dx.length) {
+                // ย้ายกลุ่มที่กำลังวาดมาไว้กลางภาพก่อน ไม่งั้นอาคารที่อยู่ริมไซต์จะเบียดขอบ
+                const mx = (Math.min(...dx) + Math.max(...dx)) / 2;
+                const my = (Math.min(...dy) + Math.max(...dy)) / 2;
+                roofs = roofs.map(r => ({
+                    ...r,
+                    pts: r.pts.map(p => ({ x: p.x - mx, y: p.y - my })),
+                    mods: r.mods.map(m => m.quad
+                        ? { ...m, quad: m.quad.map(p => ({ x: p.x - mx, y: p.y - my })) }
+                        : { ...m, x: m.x - mx, y: m.y - my }),
+                    basis: r.basis ? { ux: r.basis.ux, uy: r.basis.uy, T: [r.basis.T[0] - mx, r.basis.T[1] - my] } : null
+                }));
+                const ax = [], ay = [];
+                roofs.forEach(r => r.pts.forEach(p => { ax.push(Math.abs(p.x)); ay.push(Math.abs(p.y)); }));
+                halfDrawn = Math.max(Math.max(...ax), Math.max(...ay), 8);
+            }
+
+            const Rd = halfDrawn * 1.7 + 8;              // รัศมีโดมท้องฟ้า
+            /* จัดสเกลให้ภาพเต็มผืนผ้าใบพอดี แทนค่าคงที่เดิมที่ทำให้เหลือที่ว่างเกินครึ่ง
+               ความสูงที่ภาพกินคือ ยอดโดม + ครึ่งล่างของพื้น = 2.05·Rd·scale
+               ความกว้างคือ 3.64·Rd·scale (มุมซ้ายสุดถึงมุมขวาสุดของพื้น) */
+            const scale = Math.min((H - 95) / (2.05 * Rd), (W - 80) / (3.64 * Rd), 14);
+            const ox = W / 2, oy = 76 + Rd * scale;
             const ROOF_H = 3.2;                          // ค่าสำรองเมื่อ DB2 ไม่มีข้อมูลความสูง
             const iso = (x, y, z) => ({
                 x: ox + (x - y) * 0.866 * scale,
@@ -5051,6 +5077,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             }
 
             // ---- 5. อาคาร + หลังคา + แผง (เรียงวาดจากไกล→ใกล้ด้วยค่า x+y) ----
+            const labelJobs = [];
             roofs.slice().sort((a, b) => {
                 let ka = Math.min(...a.pts.map(p => p.x + p.y)), kb = Math.min(...b.pts.map(p => p.x + p.y));
                 return ka - kb;
@@ -5105,11 +5132,56 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                     ];
                     poly(q.map(p => iso(p.x, p.y, roofZ(p.x, p.y) + 0.15)), panelColor, '#1e293b', 0.5);
                 });
-                // ป้ายชื่อหลังคา พร้อมความสูงชายคา/สัน
-                let lp = iso(r.pts[0].x, r.pts[0].y, roofZ(r.pts[0].x, r.pts[0].y) + 1.2);
-                g2.font = '10px Arial'; g2.fillStyle = '#334155'; g2.textAlign = 'left';
-                g2.fillText(`${r.label} T${r.tilt}°/A${r.azi}°  ชายคา ${eaveH.toFixed(1)}/สัน ${(eaveH + riseH).toFixed(1)} ม.`, lp.x, lp.y);
+                /* เก็บป้ายไว้ก่อน ยังไม่วาด เพราะต้องรู้ตำแหน่งของทุกป้ายจึงจะกันซ้อนกันได้
+                   วางที่จุดกึ่งกลางหลังคาเหนือสันขึ้นไป ไม่ใช่ที่มุมแรกของรูปซึ่งเป็นมุมไหนก็ได้ */
+                const cxL = r.pts.reduce((s, q) => s + q.x, 0) / r.pts.length;
+                const cyL = r.pts.reduce((s, q) => s + q.y, 0) / r.pts.length;
+                const topZ = Math.max.apply(null, r.pts.map(q => roofZ(q.x, q.y)));
+                const anchor = iso(cxL, cyL, topZ + 0.4);
+                labelJobs.push({
+                    ax: anchor.x, ay: anchor.y,
+                    text: `${r.label}  ${r.tilt}°/${((r.azi % 360) + 360) % 360}°  ${eaveH.toFixed(1)}–${(eaveH + riseH).toFixed(1)} ม.`,
+                    color: panelColor
+                });
             });
+
+            /* วาดป้ายทีหลังทั้งชุด ไล่จากบนลงล่างแล้วเบียดลงเมื่อชนกัน
+               เดิมวาดทันทีในลูป ป้ายของหลังคาที่อยู่ใกล้กันจึงทับกันจนอ่านไม่ออก */
+            {
+                g2.font = 'bold 10px Arial'; g2.textBaseline = 'middle';
+                /* เรียงจากป้ายที่อยู่ล่างสุดขึ้นไป แล้วดันขึ้นเมื่อชนกัน
+                   ป้ายจึงไปกองอยู่เหนือหลังคา ไม่ทับแผงที่ต้องการให้ดูสี Shading Loss
+                   ถ้าดันจนชนหัวเรื่องด้านบน ให้หยุดไว้ที่ขอบบนแทน */
+                labelJobs.sort((a, b) => b.ay - a.ay);
+                let lastY = 1e9;
+                const topLimit = 64;
+                labelJobs.forEach(L => {
+                    let ly = L.ay - 18;
+                    if (ly > lastY - 17) ly = lastY - 17;
+                    if (ly < topLimit) ly = topLimit;
+                    lastY = ly;
+                    const tw = g2.measureText(L.text).width;
+                    let lx = L.ax;
+                    // กันป้ายล้นขอบผืนผ้าใบทั้งสองด้าน
+                    lx = Math.max(8 + tw / 2 + 10, Math.min(W - 8 - tw / 2 - 10, lx));
+                    // เส้นโยงจากหลังคาขึ้นมาที่ป้าย ให้รู้ว่าป้ายไหนเป็นของหลังคาผืนใด
+                    g2.strokeStyle = '#94a3b8'; g2.lineWidth = 0.8;
+                    g2.beginPath(); g2.moveTo(L.ax, L.ay); g2.lineTo(lx, ly + 8); g2.stroke();
+                    g2.fillStyle = '#94a3b8';
+                    g2.beginPath(); g2.arc(L.ax, L.ay, 2, 0, Math.PI * 2); g2.fill();
+                    const bw = tw + 20, bh = 16;
+                    g2.fillStyle = 'rgba(255,255,255,0.95)';
+                    g2.fillRect(lx - bw / 2, ly - bh / 2, bw, bh);
+                    g2.strokeStyle = '#cbd5e1'; g2.lineWidth = 1;
+                    g2.strokeRect(lx - bw / 2, ly - bh / 2, bw, bh);
+                    // แถบสีบอกระดับการบังเงาของหลังคาผืนนั้น
+                    g2.fillStyle = L.color;
+                    g2.fillRect(lx - bw / 2, ly - bh / 2, 4, bh);
+                    g2.fillStyle = '#1e293b'; g2.textAlign = 'center';
+                    g2.fillText(L.text, lx + 2, ly);
+                });
+                g2.textBaseline = 'alphabetic';
+            }
 
             // ---- 6. วาดดวงอาทิตย์ทับด้านหน้า ----
             if (sunUp && sunP) {
