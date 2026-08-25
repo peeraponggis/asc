@@ -848,7 +848,7 @@
                                 <label class="flex items-center gap-1.5 text-[11px] text-gray-600 -mt-1 mb-2 pl-1 cursor-pointer"><input type="checkbox" id="sdash-pdf-iso3d" checked onchange="sdashSetPdfPick('iso3d', this.checked)" class="w-3.5 h-3.5">ใส่ กราฟที่ 3 ลงในรายงาน PDF</label>
                                 <div class="mt-3">
                                     <label class="block text-xs font-bold text-gray-700 mb-1">เลือกกลุ่มการวางแผง (Orientation Group)</label>
-                                    <select id="sdash-group-sel" onchange="window.ShadingDashState.group=this.value; renderShadingDashboard();" class="w-full border rounded p-2 text-xs"></select>
+                                    <select id="sdash-group-sel" onchange="window.ShadingDashState.group=this.value; window.ShadingDashState.groupUserSet=true; renderShadingDashboard();" class="w-full border rounded p-2 text-xs"></select>
                                     <div class="text-[10px] text-gray-500 mt-1.5 leading-snug">💡 ระบบจัดกลุ่มหลังคาที่มุมเอียง/มุมทิศต่างกันไม่เกิน ±5° เป็นกลุ่มเดียวกันอัตโนมัติ และมุมมอง "ทั้งหมด" ถ่วงน้ำหนักตามขนาด kWp ของแต่ละกลุ่ม</div>
                                     <!-- 🌟 PHASE 4: ตัวเลือกเดือน/เวลา สำหรับโมเดล 3 มิติ -->
                                     <div id="sdash-3d-controls" style="display:none;" class="mt-3 pt-3 border-t border-gray-200">
@@ -4631,6 +4631,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             // เติมตัวเลือกกลุ่ม [B]+[C] (คงค่าที่ผู้ใช้เลือกไว้)
             if (sel) {
                 let prev = sel.value || st.group;
+                /* ก่อน Import ไฟล์ DB2 ไซต์มีระนาบเดียว ตัวเลือก "ทั้งหมด" จึงยังไม่มี
+                   ค่าที่ค้างอยู่คือกลุ่ม #1 พอ Import แล้วมีหลายกลุ่ม ค่าเดิมจะยึดกลุ่ม #1 ต่อ
+                   ทำให้ภาพในรายงานแสดงหลังคาผืนเดียว จำนวนแผงจึงไม่ตรงกับหน้าออกแบบและ 3D
+                   ถ้าผู้ใช้ยังไม่เคยเลือกกลุ่มเอง ให้ยึด "ทั้งหมด" เสมอเมื่อมีให้เลือก */
+                if (!st.groupUserSet && ctx.groups.length > 1) prev = 'all';
                 let opts = '';
                 if (ctx.groups.length > 1) {
                     let totKwp = ctx.groups.reduce((s, g) => s + g.kwp, 0);
@@ -5240,7 +5245,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             };
 
             // ---- หัวเรื่อง ----
-            let scopeName = onlyGroup ? onlyGroup.label : `ทั้งไซต์ (${ctx.groups.length} กลุ่ม)`;
+            /* บอกจำนวนแผงที่อยู่ในภาพนี้ไว้บนหัวเรื่องด้วย เวลาเอาไปเทียบกับหน้าออกแบบหรือ
+               asc_3d จะได้เห็นทันทีว่ากำลังดูขอบเขตเดียวกันหรือไม่ ไม่ต้องนับแผงเอง */
+            let drawnPanels = roofs.reduce((s, r) => s + (r.mods || []).length, 0);
+            let scopeName = (onlyGroup ? onlyGroup.label : `ทั้งไซต์ (${ctx.groups.length} กลุ่ม)`) +
+                            ` · ${drawnPanels} แผง`;
             g2.fillStyle = '#111'; g2.font = 'bold 16px Arial'; g2.textAlign = 'left'; g2.textBaseline = 'alphabetic';
             g2.fillText('3D Site Modeling & Shading Visualization — ' + scopeName, 20, 28);
             g2.font = '12px Arial'; g2.fillStyle = '#555';
