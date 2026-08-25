@@ -5268,9 +5268,15 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 g2.moveTo(sunP.x, sunP.y); g2.lineTo(c0.x, c0.y); g2.stroke(); g2.setLineDash([]);
             }
 
-            // ---- 5. อาคาร + หลังคา + แผง (เรียงวาดจากไกล→ใกล้ด้วยค่า x+y) ----
+            /* ---- 5. อาคาร + หลังคา + แผง ----
+               เรียงวาดจากไกลไปใกล้ ต้องวัดความลึกในระบบพิกัด "หลังหมุน" ไม่ใช่ x+y ดิบ
+               เดิมใช้ x+y ตรงๆ ซึ่งถูกต้องเฉพาะมุมมองตายตัวมุมเดียว พอหมุนมุมกล้อง
+               ลำดับจะกลับด้าน อาคารที่อยู่ใกล้ถูกวาดก่อน แล้วอาคารที่อยู่ไกลวาดทับลงมา
+               ผลคือเห็นเป็นรูทะลุเข้าไปในกล่อง เหมือนผนังหายไปหนึ่งด้าน */
+            const depthOf = (x, y) => (x * cyaw - y * syaw) + (x * syaw + y * cyaw);
             roofs.slice().sort((a, b) => {
-                let ka = Math.min(...a.pts.map(p => p.x + p.y)), kb = Math.min(...b.pts.map(p => p.x + p.y));
+                const ka = Math.min.apply(null, a.pts.map(p => depthOf(p.x, p.y)));
+                const kb = Math.min.apply(null, b.pts.map(p => depthOf(p.x, p.y)));
                 return ka - kb;
             }).forEach(r => {
                 /* 🌟 ความสูงหลังคา ณ ตำแหน่ง y ใดๆ — สันอยู่ที่ y ต่ำสุด ลาดลงไปทางชายคาที่ y สูงสุด
@@ -5308,7 +5314,15 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                    เดิมทุกด้านเป็นสีเดียวกันหมด อาคารจึงแบนและแยกด้านไม่ออก */
                 const cxW = r.pts.reduce((s, q) => s + q.x, 0) / r.pts.length;
                 const cyW = r.pts.reduce((s, q) => s + q.y, 0) / r.pts.length;
-                for (let i = 0; i < r.pts.length; i++) {
+                /* ผนังของอาคารหลังเดียวกันก็ต้องเรียงจากไกลไปใกล้เช่นกัน
+                   ไม่งั้นผนังด้านหลังจะถูกวาดทับผนังด้านหน้า กลายเป็นมองทะลุกล่องได้ */
+                const wallOrder = r.pts.map((p, i) => i).sort((i, j) => {
+                    const a1 = r.pts[i], a2 = r.pts[(i + 1) % r.pts.length];
+                    const b1 = r.pts[j], b2 = r.pts[(j + 1) % r.pts.length];
+                    return depthOf((a1.x + a2.x) / 2, (a1.y + a2.y) / 2)
+                         - depthOf((b1.x + b2.x) / 2, (b1.y + b2.y) / 2);
+                });
+                for (const i of wallOrder) {
                     let p1 = r.pts[i], p2 = r.pts[(i + 1) % r.pts.length];
                     let ex = p2.x - p1.x, ey = p2.y - p1.y;
                     let nx = ey, ny = -ex;                       // เวกเตอร์ตั้งฉากของด้านนี้
