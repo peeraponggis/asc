@@ -5141,7 +5141,6 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             }
 
             // ---- 5. อาคาร + หลังคา + แผง (เรียงวาดจากไกล→ใกล้ด้วยค่า x+y) ----
-            const labelJobs = [];
             roofs.slice().sort((a, b) => {
                 let ka = Math.min(...a.pts.map(p => p.x + p.y)), kb = Math.min(...b.pts.map(p => p.x + p.y));
                 return ka - kb;
@@ -5176,76 +5175,58 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                     return eaveH + riseH * (1 - (L.ly - yTop) / runH) + crossH * (L.lx - xLeft) / spanH;
                 };
 
-                // ผนังอาคาร — ขอบบนไต่ตามความลาดของหลังคา
+                /* ผนังอาคาร — ขอบบนไต่ตามความลาดของหลังคา
+                   ไล่ความสว่างตามทิศที่ผนังแต่ละด้านหันไป แบบเดียวกับที่ asc_3d ได้จากแสงในฉาก
+                   เดิมทุกด้านเป็นสีเดียวกันหมด อาคารจึงแบนและแยกด้านไม่ออก */
+                const cxW = r.pts.reduce((s, q) => s + q.x, 0) / r.pts.length;
+                const cyW = r.pts.reduce((s, q) => s + q.y, 0) / r.pts.length;
                 for (let i = 0; i < r.pts.length; i++) {
                     let p1 = r.pts[i], p2 = r.pts[(i + 1) % r.pts.length];
-                    poly([iso(p1.x, p1.y, 0), iso(p2.x, p2.y, 0), iso(p2.x, p2.y, roofZ(p2.x, p2.y)), iso(p1.x, p1.y, roofZ(p1.x, p1.y))], 'rgba(203, 213, 225, 0.7)', '#94a3b8', 0.7);
+                    let ex = p2.x - p1.x, ey = p2.y - p1.y;
+                    let nx = ey, ny = -ex;                       // เวกเตอร์ตั้งฉากของด้านนี้
+                    const mx = (p1.x + p2.x) / 2 - cxW, my = (p1.y + p2.y) / 2 - cyW;
+                    if (nx * mx + ny * my < 0) { nx = -nx; ny = -ny; }   // บังคับให้ชี้ออกนอกอาคาร
+                    const nl = Math.hypot(nx, ny) || 1;
+                    // ฉายลงแกนนอนของภาพ ด้านที่หันไปทางขวาของจอจะสว่างกว่า
+                    const sx = ((nx / nl) - (ny / nl)) / Math.SQRT2;
+                    /* ช่วงความสว่างแคบๆ พอให้แยกด้านออก แต่ไม่ถึงกับเป็นเงาดำ
+                       asc_3d ผนังเป็นสีเทาอ่อนใกล้กันทุกด้าน ต่างกันแค่เล็กน้อยตามแสง */
+                    const sh = 0.88 + 0.12 * Math.max(-1, Math.min(1, sx));
+                    const wc = (b) => Math.round(Math.min(255, b * sh));
+                    poly([iso(p1.x, p1.y, 0), iso(p2.x, p2.y, 0),
+                          iso(p2.x, p2.y, roofZ(p2.x, p2.y)), iso(p1.x, p1.y, roofZ(p1.x, p1.y))],
+                         `rgb(${wc(222)},${wc(227)},${wc(234)})`, `rgba(100,116,139,0.40)`, 0.6);
                 }
-                // แผ่นหลังคา (เอียงตามความชันจริง)
-                poly(r.pts.map(p => iso(p.x, p.y, roofZ(p.x, p.y))), '#e2e8f0', '#64748b', 1.2);
-                // แผงโซลาร์: วางแนบระนาบหลังคา สีตาม loss ของกลุ่ม ณ เวลาที่เลือก
+                // แผ่นหลังคา — สีอ่อนอมครีมแบบเดียวกับ asc_3d ให้แยกออกจากผนังชัดเจน
+                poly(r.pts.map(p => iso(p.x, p.y, roofZ(p.x, p.y))), '#f1f3f6', '#9aa5b1', 1.0);
+
+                /* แผงโซลาร์ วางแนบระนาบหลังคา สีตาม Shading Loss ของกลุ่ม ณ เวลาที่เลือก
+                   เส้นขอบเดิมหนาเกินไปเมื่อเทียบกับขนาดแผงบนจอ ทำให้กลายเป็นตาข่ายสีเข้ม
+                   ตอนนี้วาดพื้นแผงก่อนทั้งชุด แล้วค่อยตีเส้นบางทับ ให้อ่านเป็นแถวแผงจริง */
                 let lossNow = groupLossNow[r.groupId];
                 let panelColor = (lossNow === null || lossNow === undefined) ? '#475569' : sdashBucketColor(lossNow * 100);
-                r.mods.forEach(m => {
-                    // แผงที่วางตามพิกัดจริงส่งมุมทั้งสี่มาแล้ว ส่วนแบบเดิมยังเป็นสี่เหลี่ยมตรงแกน
-                    const q = m.quad || [
-                        { x: m.x,       y: m.y },
-                        { x: m.x + m.w, y: m.y },
-                        { x: m.x + m.w, y: m.y + m.h },
-                        { x: m.x,       y: m.y + m.h }
-                    ];
-                    poly(q.map(p => iso(p.x, p.y, roofZ(p.x, p.y) + 0.15)), panelColor, '#1e293b', 0.5);
-                });
-                /* เก็บป้ายไว้ก่อน ยังไม่วาด เพราะต้องรู้ตำแหน่งของทุกป้ายจึงจะกันซ้อนกันได้
-                   วางที่จุดกึ่งกลางหลังคาเหนือสันขึ้นไป ไม่ใช่ที่มุมแรกของรูปซึ่งเป็นมุมไหนก็ได้ */
-                const cxL = r.pts.reduce((s, q) => s + q.x, 0) / r.pts.length;
-                const cyL = r.pts.reduce((s, q) => s + q.y, 0) / r.pts.length;
-                const topZ = Math.max.apply(null, r.pts.map(q => roofZ(q.x, q.y)));
-                const anchor = iso(cxL, cyL, topZ + 0.4);
-                labelJobs.push({
-                    ax: anchor.x, ay: anchor.y,
-                    text: `${r.label}  ${r.tilt}°/${((r.azi % 360) + 360) % 360}°  ${eaveH.toFixed(1)}–${(eaveH + riseH).toFixed(1)} ม.`,
-                    color: panelColor
-                });
+                const quads = r.mods.map(m => (m.quad || [
+                    { x: m.x,       y: m.y },
+                    { x: m.x + m.w, y: m.y },
+                    { x: m.x + m.w, y: m.y + m.h },
+                    { x: m.x,       y: m.y + m.h }
+                ]).map(p => iso(p.x, p.y, roofZ(p.x, p.y) + 0.15)));
+                quads.forEach(q => poly(q, panelColor, null, 0));
+                // เส้นแบ่งแผงบางๆ วาดเฉพาะตอนที่แผงใหญ่พอจะเห็นเส้น ไม่งั้นจะกลายเป็นก้อนทึบ
+                const pxW = quads.length ? Math.hypot(quads[0][1].x - quads[0][0].x, quads[0][1].y - quads[0][0].y) : 0;
+                if (pxW > 5) {
+                    g2.strokeStyle = 'rgba(15,23,42,0.30)'; g2.lineWidth = 0.5;
+                    quads.forEach(q => {
+                        g2.beginPath();
+                        q.forEach((p, i) => i === 0 ? g2.moveTo(p.x, p.y) : g2.lineTo(p.x, p.y));
+                        g2.closePath(); g2.stroke();
+                    });
+                }
+                /* ตัดป้ายชื่อหลังคาที่ลอยอยู่เหนืออาคารออกทั้งหมด
+                   ป้ายบังตัวอาคารและแผงซึ่งเป็นเนื้อหาหลักของภาพ ทั้งที่ชื่อกลุ่มอยู่ในหัวเรื่อง
+                   และกล่องสรุปมุมขวาบนอยู่แล้ว ภาพในรายงานจึงสะอาดและใกล้เคียงกับ asc_3d มากขึ้น */
             });
 
-            /* วาดป้ายทีหลังทั้งชุด ไล่จากบนลงล่างแล้วเบียดลงเมื่อชนกัน
-               เดิมวาดทันทีในลูป ป้ายของหลังคาที่อยู่ใกล้กันจึงทับกันจนอ่านไม่ออก */
-            {
-                g2.font = 'bold 10px Arial'; g2.textBaseline = 'middle';
-                /* เรียงจากป้ายที่อยู่ล่างสุดขึ้นไป แล้วดันขึ้นเมื่อชนกัน
-                   ป้ายจึงไปกองอยู่เหนือหลังคา ไม่ทับแผงที่ต้องการให้ดูสี Shading Loss
-                   ถ้าดันจนชนหัวเรื่องด้านบน ให้หยุดไว้ที่ขอบบนแทน */
-                labelJobs.sort((a, b) => b.ay - a.ay);
-                let lastY = 1e9;
-                const topLimit = 64;
-                labelJobs.forEach(L => {
-                    let ly = L.ay - 18;
-                    if (ly > lastY - 17) ly = lastY - 17;
-                    if (ly < topLimit) ly = topLimit;
-                    lastY = ly;
-                    const tw = g2.measureText(L.text).width;
-                    let lx = L.ax;
-                    // กันป้ายล้นขอบผืนผ้าใบทั้งสองด้าน
-                    lx = Math.max(8 + tw / 2 + 10, Math.min(W - 8 - tw / 2 - 10, lx));
-                    // เส้นโยงจากหลังคาขึ้นมาที่ป้าย ให้รู้ว่าป้ายไหนเป็นของหลังคาผืนใด
-                    g2.strokeStyle = '#94a3b8'; g2.lineWidth = 0.8;
-                    g2.beginPath(); g2.moveTo(L.ax, L.ay); g2.lineTo(lx, ly + 8); g2.stroke();
-                    g2.fillStyle = '#94a3b8';
-                    g2.beginPath(); g2.arc(L.ax, L.ay, 2, 0, Math.PI * 2); g2.fill();
-                    const bw = tw + 20, bh = 16;
-                    g2.fillStyle = 'rgba(255,255,255,0.95)';
-                    g2.fillRect(lx - bw / 2, ly - bh / 2, bw, bh);
-                    g2.strokeStyle = '#cbd5e1'; g2.lineWidth = 1;
-                    g2.strokeRect(lx - bw / 2, ly - bh / 2, bw, bh);
-                    // แถบสีบอกระดับการบังเงาของหลังคาผืนนั้น
-                    g2.fillStyle = L.color;
-                    g2.fillRect(lx - bw / 2, ly - bh / 2, 4, bh);
-                    g2.fillStyle = '#1e293b'; g2.textAlign = 'center';
-                    g2.fillText(L.text, lx + 2, ly);
-                });
-                g2.textBaseline = 'alphabetic';
-            }
 
             // ---- 6. วาดดวงอาทิตย์ทับด้านหน้า ----
             if (sunUp && sunP) {
