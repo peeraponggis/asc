@@ -291,7 +291,11 @@
         .section-header { font-size: 11px; font-weight: 700; color: var(--ink-500); margin-top: 10px; margin-bottom: 5px; border-bottom: 1px solid var(--border); padding-bottom: 5px; letter-spacing: 0.03em; }
         .draw-mode-box { display: flex; gap: 10px; background: #fffbeb; padding: 10px; border: 1px solid #fde68a; border-radius: 4px; }
         
-        .leaflet-div-icon.leaflet-editing-icon { border-radius: 50% !important; background-color: #ef4444 !important; border: 2px solid #ffffff !important; width: 12px !important; height: 12px !important; margin-left: -6px !important; margin-top: -6px !important; }
+        /* หมุดแก้ไขรูปทรง — ทำเป็นสี่เหลี่ยมสีน้ำเงิน ไม่ใช่วงกลมสีแดงเหมือนเดิม
+           เพราะหมุด GCP ของภาพโดรนเป็นวงกลมสีส้มขอบขาวขนาดใกล้กัน วางบนภาพถ่าย
+           ดาวเทียมแล้วแยกไม่ออกว่าจุดไหนของอะไร เผลอลากผิดตัวได้ง่าย
+           ต่างกันทั้งรูปทรงและสี จึงแยกออกแน่นอนไม่ว่าจะมองบนพื้นหลังแบบใด */
+        .leaflet-div-icon.leaflet-editing-icon { border-radius: 2px !important; background-color: #2563eb !important; border: 2px solid #ffffff !important; width: 12px !important; height: 12px !important; margin-left: -6px !important; margin-top: -6px !important; box-shadow: 0 1px 3px rgba(0,0,0,.45) !important; }
        .interactive-panel { cursor: pointer !important; outline: none; shape-rendering: geometricPrecision; }
         
         .file-upload-row { display: flex; align-items: center; justify-content: space-between; font-size: 11px; margin-top: 4px; color: #64748b; }
@@ -2724,7 +2728,19 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
         map.on('draw:deletestop', function () { isDeleteModeActive = false; });
         
         let isEditModeActive = false;
-        map.on('draw:editstart', function () { isEditModeActive = true; });
+        /* Leaflet.draw เปิดหมุดแก้ไขให้ "ทุกวัตถุ" ในกลุ่มพร้อมกันตามค่าเริ่มต้น
+           ไซต์ที่มีหลังคาหลายผืน ทางเดิน สิ่งกีดขวาง และกรอบพื้นที่วางแผง จึงเต็มไปด้วย
+           หมุดหลายสิบจุดจนแยกไม่ออกว่าจุดไหนของอะไร และเผลอลากผิดวัตถุได้ง่ายมาก
+           ถ้ามีวัตถุที่เลือกไว้อยู่แล้ว ให้ปิดหมุดของวัตถุอื่นทั้งหมด เหลือเฉพาะตัวที่เลือก */
+        map.on('draw:editstart', function () {
+            isEditModeActive = true;
+            if (!activeRoofLayer) return;
+            setTimeout(() => {
+                editableItems.eachLayer(l => {
+                    if (l !== activeRoofLayer && l.editing && l.editing.enabled()) l.editing.disable();
+                });
+            }, 0);
+        });
         map.on('draw:editstop', function () { isEditModeActive = false; });
         
 		// --- 🌟 ดักจับ Double Click เพื่อสั่งจบการวาดทันที 🌟 ---
@@ -4485,12 +4501,20 @@ function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM,
                     const checkPoly = turf.polygon([[p1_deg, p2_deg, p3_deg, p4_deg, p1_deg]]);
                     
                     /* แผงอยู่ในหลังคาหรือไม่ ตัดสินที่จุดกึ่งกลางแผงเหมือนเดิม
-                       ถ้ามีพื้นที่วางแผงกำกับอยู่ ต้องอยู่ในกรอบนั้นอีกชั้นหนึ่งด้วย */
+                       ถ้ามีพื้นที่วางแผงกำกับอยู่ ต้องอยู่ในกรอบนั้นอีกชั้นหนึ่งด้วย
+
+                       กรอบพื้นที่วางแผงต้องวัดที่ "มุมทั้งสี่" ไม่ใช่จุดกึ่งกลาง
+                       เพราะเป็นเส้นที่ผู้ใช้ลากเองเพื่อกำหนดขอบเขตให้ชัด ถ้าวัดที่จุด
+                       กึ่งกลาง แผงที่จุดกึ่งกลางอยู่ในกรอบพอดีจะยื่นพ้นขอบออกไปได้ถึง
+                       ครึ่งแผ่น (กว่า 1 เมตร) ซึ่งเห็นชัดมากบนแผนที่ ส่วนขอบหลังคายังใช้
+                       จุดกึ่งกลางเหมือนเดิม เพราะมีระยะเว้นขอบในคุมอยู่แล้ว */
                     const panelCenter = turf.center(checkPoly);
                     let insideZone = true;
                     if (rotatedZones.length) {
+                        const corners = [p1_deg, p2_deg, p3_deg, p4_deg].map(c => turf.point(c));
                         insideZone = rotatedZones.some(z => {
-                            try { return turf.booleanPointInPolygon(panelCenter, z); } catch (e) { return false; }
+                            try { return corners.every(c => turf.booleanPointInPolygon(c, z)); }
+                            catch (e) { return false; }
                         });
                     }
 
