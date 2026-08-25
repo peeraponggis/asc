@@ -733,7 +733,38 @@
 
             <div id="menu-dashboard" class="tab-content max-w-5xl mx-auto">
                 <div class="grid grid-cols-1 w-full pb-20">
-                    
+
+                    <!-- ตัวตรวจแบบ ตรวจด้วยกฎที่คำนวณจากตัวเลขในไฟล์ล้วนๆ ไม่ใช้โมเดลภาษา
+                         ทุกข้อแนบตัวเลขที่ใช้ตัดสินมาด้วย จึงตรวจสอบย้อนกลับได้ทุกบรรทัด -->
+                    <div class="bg-white p-5 rounded-lg shadow-sm border border-amber-300 mb-6 avoid-break no-print">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 border-b pb-2 gap-2">
+                            <h3 class="font-bold text-amber-800"><i class="fa-solid fa-stethoscope mr-2"></i>ตรวจแบบก่อนส่งงาน (ASC Advisor)</h3>
+                            <div class="flex flex-wrap gap-2 items-center">
+                                <span id="adv-summary" class="text-[11px] text-gray-500"></span>
+                                <button onclick="runAdvisor()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-bold shadow-sm">
+                                    <i class="fa-solid fa-rotate mr-1"></i>ตรวจใหม่
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-3 mb-3 text-[11px]">
+                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="adv-f-error" checked class="w-3.5 h-3.5"><span class="text-red-700 font-bold">ต้องแก้</span></label>
+                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="adv-f-warn" checked class="w-3.5 h-3.5"><span class="text-amber-700 font-bold">ควรตรวจสอบ</span></label>
+                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="adv-f-info" checked class="w-3.5 h-3.5"><span class="text-blue-700 font-bold">ข้อสังเกต</span></label>
+                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="adv-f-ok" class="w-3.5 h-3.5"><span class="text-green-700 font-bold">ผ่านแล้ว</span></label>
+                            <span class="text-gray-400 ml-auto">ทุกข้อคำนวณจากตัวเลขในไฟล์ ไม่ได้ใช้ AI</span>
+                        </div>
+                        <div id="adv-list" class="space-y-2 text-sm"></div>
+                    </div>
+
+                    <!-- คู่มือและมาตรฐาน ค้นได้จากคำสำคัญ และเปิดจากลิงก์ในผลตรวจ -->
+                    <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-300 mb-6 avoid-break no-print">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 border-b pb-2 gap-2">
+                            <h3 class="font-bold text-slate-700"><i class="fa-solid fa-book mr-2"></i>คู่มือและมาตรฐาน (ASC Knowledge Base)</h3>
+                            <input type="text" id="kb-q" placeholder="ค้นหา เช่น dcac, เงา, ทิศ, สตริง, ฝุ่น" class="border rounded px-3 py-1.5 text-xs w-full sm:w-72">
+                        </div>
+                        <div id="kb-list" class="space-y-2 text-sm"></div>
+                    </div>
+
                     <!-- 🌟 ส่วนที่เพิ่มใหม่: แผงควบคุมการเปิด/ปิดเนื้อหาในรายงาน -->
                     <div class="bg-white p-5 rounded-lg shadow-sm border border-blue-200 mb-6 avoid-break no-print">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 border-b pb-2 gap-2">
@@ -1876,7 +1907,11 @@
             }
             document.getElementById('header-title').innerText = newTitle;
             
-            if(menuId === 'menu-dashboard') { setTimeout(() => window.dispatchEvent(new Event('resize')), 100); }
+            if(menuId === 'menu-dashboard') {
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+                // ตรวจแบบให้อัตโนมัติเมื่อเปิดหน้านี้ ผู้ใช้จะได้เห็นก่อนสั่งพิมพ์รายงาน
+                setTimeout(() => { try { runAdvisor(); } catch (e) { console.warn('Advisor:', e); } }, 250);
+            }
         
             // เข้าเมนูข้อเสนอเมื่อไร ให้สร้างเอกสารใหม่จากตัวเลขล่าสุดเสมอ
             if (menuId === 'menu-proposal' && global_AscProposalReady()) AscProposal.render();
@@ -7006,5 +7041,127 @@ function renderCADLayout() {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="asc-proposal.js"></script>
 <script src="asc-proposal-docx.js"></script>
+<script src="asc-kb.js"></script>
+<script src="asc-advisor.js"></script>
+<script>
+/* ==========================================================================
+   หน้าจอของตัวตรวจแบบและคู่มือ
+   ตัวตรวจอ่านข้อมูลจาก AppState ที่หน้ารายงานถืออยู่แล้ว จึงไม่ต้องนำเข้าไฟล์ซ้ำ
+   ========================================================================== */
+const ADV_STYLE = {
+    error: { bg:'#fef2f2', bd:'#fca5a5', fg:'#991b1b', icon:'fa-circle-exclamation', label:'ต้องแก้' },
+    warn:  { bg:'#fffbeb', bd:'#fcd34d', fg:'#92400e', icon:'fa-triangle-exclamation', label:'ควรตรวจสอบ' },
+    info:  { bg:'#eff6ff', bd:'#93c5fd', fg:'#1e40af', icon:'fa-circle-info', label:'ข้อสังเกต' },
+    ok:    { bg:'#f0fdf4', bd:'#86efac', fg:'#166534', icon:'fa-circle-check', label:'ผ่าน' }
+};
+let ADV_LAST = null;
+
+/* รวบรวมข้อมูลที่ตัวตรวจต้องใช้จากสิ่งที่หน้ารายงานมีอยู่ */
+function advCollect() {
+    const g = id => { const e = document.getElementById(id); return e ? e.value : ''; };
+    return {
+        projectName: (typeof getStr === 'function' ? getStr('inp-proj', '') : ''),
+        coords: g('inp-coords'),
+        equipData: AppState.equipData || {},
+        sysPolygons: AppState.sysPolygons || [],
+        counts: (AppState.equipData && AppState.equipData.counts) || AppState.equipmentCounts || {},
+        kwp: (AppState.results && AppState.results.pnom) || (typeof calcPnom === 'function' ? calcPnom() : null),
+        dcac: g('dcacSlider') || null,
+        stringConfig: AppState.stringConfig || {},
+        bomData: AppState.bomData || {},
+        losses: {},
+        simulationParams: Object.assign({}, AppState.simulationParams || {}, {
+            horizonProfile: AppState.horizonProfile || '',
+            soilingLoss: (typeof getVal === 'function' ? getVal('sim-soiling') : null),
+            groundClearance_m: (AppState.bifacialParams || {}).groundClearance_m
+        }),
+        sysMountType: AppState.sysMountType || '',
+        results: AppState.results || null
+    };
+}
+
+function runAdvisor() {
+    const box = document.getElementById('adv-list');
+    const sum = document.getElementById('adv-summary');
+    if (!box) return;
+    if (typeof AppState === 'undefined' || !(AppState.sysPolygons || []).length) {
+        box.innerHTML = '<div class="text-gray-500 text-sm p-3 bg-gray-50 rounded border">ยังไม่มีข้อมูลผัง กรุณานำเข้าไฟล์ DB2 แล้วกดประมวลผลก่อน</div>';
+        if (sum) sum.innerText = '';
+        return;
+    }
+    ADV_LAST = AscAdvisor.analyze(advCollect());
+    if (sum) {
+        const s = ADV_LAST.summary;
+        sum.innerHTML = 'ตรวจ ' + s.checked + ' จาก ' + s.total + ' ข้อ · ' +
+            '<b style="color:#991b1b">ต้องแก้ ' + s.error + '</b> · ' +
+            '<b style="color:#92400e">ควรตรวจ ' + s.warn + '</b> · ' +
+            '<b style="color:#166534">ผ่าน ' + s.ok + '</b>';
+    }
+    advRender();
+}
+
+function advRender() {
+    const box = document.getElementById('adv-list');
+    if (!box || !ADV_LAST) return;
+    const on = lv => { const e = document.getElementById('adv-f-' + lv); return e ? e.checked : true; };
+    const list = ADV_LAST.findings.filter(f => on(f.level));
+    if (!list.length) { box.innerHTML = '<div class="text-gray-400 text-sm p-3">ไม่มีรายการตามตัวกรองที่เลือก</div>'; return; }
+    box.innerHTML = list.map(f => {
+        const st = ADV_STYLE[f.level] || ADV_STYLE.info;
+        const fixes = (f.fix || []).map(x => '<li>' + esc2(x) + '</li>').join('');
+        const kb = f.kb && window.AscKB && AscKB.get(f.kb)
+            ? '<button onclick="kbOpen(\'' + f.kb + '\')" class="text-[11px] underline font-semibold" style="color:' + st.fg + '">อ่าน: ' + esc2(AscKB.get(f.kb).title) + '</button>' : '';
+        return '<div style="background:' + st.bg + ';border:1px solid ' + st.bd + ';border-radius:6px;padding:9px 11px;">' +
+            '<div style="color:' + st.fg + ';font-weight:700;font-size:0.92em;">' +
+                '<i class="fa-solid ' + st.icon + ' mr-1.5"></i>[' + st.label + '] ' + esc2(f.title) + '</div>' +
+            (f.detail ? '<div class="text-gray-700 mt-1" style="font-size:0.88em;line-height:1.55;">' + esc2(f.detail) + '</div>' : '') +
+            (f.evidence ? '<div class="text-gray-500 mt-1" style="font-size:0.8em;font-family:monospace;">' + esc2(f.evidence) + '</div>' : '') +
+            (fixes ? '<ul class="list-disc pl-5 mt-1.5 text-gray-700" style="font-size:0.85em;line-height:1.5;">' + fixes + '</ul>' : '') +
+            (kb ? '<div class="mt-1.5">' + kb + '</div>' : '') +
+        '</div>';
+    }).join('');
+}
+
+function esc2(s) {
+    return String(s === undefined || s === null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* ── คู่มือและมาตรฐาน ─────────────────────────────────────────────────── */
+function kbRender(hits) {
+    const box = document.getElementById('kb-list');
+    if (!box) return;
+    if (!hits.length) { box.innerHTML = '<div class="text-gray-400 text-sm p-2">ไม่พบหัวข้อที่ตรงกับคำค้น</div>'; return; }
+    box.innerHTML = hits.map(h =>
+        '<div class="border border-slate-200 rounded p-2.5 bg-slate-50">' +
+            '<button onclick="kbOpen(\'' + h.id + '\')" class="text-left font-bold text-slate-800 hover:underline" style="font-size:0.9em;">' +
+                '<i class="fa-solid fa-file-lines mr-1.5 text-slate-400"></i>' + esc2(h.article.title) + '</button>' +
+            '<div class="text-gray-500 mt-0.5" style="font-size:0.78em;">' +
+                esc2(h.article.body.split('\n')[0].slice(0, 110)) + '…</div>' +
+        '</div>').join('');
+}
+
+function kbOpen(id) {
+    const a = window.AscKB && AscKB.get(id);
+    if (!a) return;
+    const refs = (a.refs || []).map(r => '  • ' + r).join('\n');
+    alert(a.title + '\n' + '─'.repeat(46) + '\n\n' + a.body +
+          (refs ? '\n\n' + 'ที่มา\n' + refs : ''));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    ['error', 'warn', 'info', 'ok'].forEach(lv => {
+        const e = document.getElementById('adv-f-' + lv);
+        if (e) e.addEventListener('change', advRender);
+    });
+    const q = document.getElementById('kb-q');
+    if (q) q.addEventListener('input', () => {
+        const v = q.value.trim();
+        kbRender(v ? AscKB.search(v, 8)
+                   : AscKB.ids().map(id => ({ id: id, article: AscKB.get(id) })));
+    });
+    if (window.AscKB) kbRender(AscKB.ids().map(id => ({ id: id, article: AscKB.get(id) })));
+});
+</script>
 </body>
 </html>
