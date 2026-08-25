@@ -673,6 +673,22 @@
                         </div>
 
                     </div>
+
+                    <!-- 🌳 ต้นไม้ — สิ่งบังแดดที่อยู่ข้างอาคาร ไม่กินพื้นที่บนหลังคา -->
+                    <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 10px; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                            <span style="color: #15803d; font-weight: bold; font-size: 0.9em;">🌳 ต้นไม้บังแดด</span>
+                            <button type="button" id="btnPlaceTree" style="background: #f0fdf4; color: #15803d; border: 1px solid #15803d; border-radius: 5px; padding: 4px 10px; font-size: 0.82em; font-weight: bold; cursor: pointer; white-space: nowrap;">🌳 วางต้นไม้</button>
+                        </div>
+                        <div style="font-size: 0.8em; color: #475569; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-top: 8px;">
+                            ทรงพุ่ม R <input type="number" id="treeCanopyR" value="3" step="0.5" min="0.3" style="width: 46px; padding: 2px 4px; border: 1px solid #86efac; border-radius: 4px; text-align: center;"> ม.
+                            สูง <input type="number" id="treeHeightM" value="8" step="0.5" min="0.3" style="width: 46px; padding: 2px 4px; border: 1px solid #86efac; border-radius: 4px; text-align: center;"> ม.
+                            เผื่อโต <input type="number" id="treeGrowthM" value="0" step="0.5" min="0" style="width: 46px; padding: 2px 4px; border: 1px solid #86efac; border-radius: 4px; text-align: center;"> ม.
+                        </div>
+                        <div id="treeStatusBox" style="font-size: 0.78em; line-height: 1.5; margin-top: 8px; color: #166534;">
+                            <span style="color:#64748b;">ยังไม่มีต้นไม้ในไซต์</span>
+                        </div>
+                    </div>
                     <div style="font-size: 0.75em; color: #64748b; margin-top: -6px; margin-bottom: 15px; text-align: center;">
                         <i class="fa-solid fa-info-circle"></i> <b>Snap 90°:</b> ลากเมาส์ใกล้มุมฉาก เส้นจะเป็นประสีส้มเพื่อดูดให้อัตโนมัติ
                     </div>
@@ -1350,6 +1366,14 @@ const INDUSTRIAL_SOLAR_CONFIG = {
             globalMdbMarker = null; // 🌟 เคลียร์หมุด MDB เดิมทิ้งก่อนโหลดใหม่
             if(geojsonData && geojsonData.features) {
                 L.geoJSON(geojsonData, {
+                    /* 🌳 ต้นไม้ถูกเก็บเป็นจุด ถ้าปล่อยให้สร้างเป็นหมุดตามปกติ
+                       รัศมีทรงพุ่มจะหายไป ต้องสร้างเป็นวงกลมตั้งแต่ต้น */
+                    pointToLayer: function(feature, latlng) {
+                        if (feature.properties && feature.properties.drawMode === 'tree' && window.AscTree) {
+                            return AscTree.makeLayer(latlng, feature.properties.treeData);
+                        }
+                        return L.marker(latlng);
+                    },
                     onEachFeature: function(feature, layer) {
                         layer.drawMode = feature.properties.drawMode;
                         if (layer.drawMode === 'roof') {
@@ -1406,6 +1430,11 @@ const INDUSTRIAL_SOLAR_CONFIG = {
             }
             recalculateLabels();
             processPolygonsAndPanels();
+            /* 🌳 คำนวณเงาต้นไม้ใหม่หลังเปิดไฟล์ เผื่อว่ารูปหลังคาหรือความสูงเปลี่ยนไป
+               จากตอนที่บันทึก เส้นขอบฟ้าที่ติดมากับไฟล์จะได้ไม่ค้างเป็นค่าเก่า */
+            if (window.AscTree && editableItems.getLayers().some(l => l.drawMode === 'tree')) {
+                AscTree.recompute();
+            }
             updateUndoRedoUI();
         }
 
@@ -3691,9 +3720,15 @@ processPolygonsAndPanels = function() {
                 isDraggingLayer = false;
                 dragStartLatLng = null;
                 map.dragging.enable(); // เปิดให้แผนที่กลับมาเลื่อนได้ปกติ
-                
-                processPolygonsAndPanels(); // คำนวณแผงใหม่ตามพิกัดใหม่
-                saveMapState();             // เซฟประวัติลงระบบ Undo/Redo
+
+                /* 🌳 ย้ายต้นไม้แล้วมุมบังเปลี่ยนตามระยะห่างที่เปลี่ยนไป ต้องคำนวณเงาใหม่
+                   recompute() เรียก processPolygonsAndPanels กับ saveMapState ให้อยู่แล้ว */
+                if (activeRoofLayer && activeRoofLayer.drawMode === 'tree' && window.AscTree) {
+                    AscTree.recompute();
+                } else {
+                    processPolygonsAndPanels(); // คำนวณแผงใหม่ตามพิกัดใหม่
+                    saveMapState();             // เซฟประวัติลงระบบ Undo/Redo
+                }
                 
                 if (activeRoofLayer && typeof loadEdgeLengths === 'function') {
                     loadEdgeLengths(activeRoofLayer); // อัปเดตระยะในแถบเครื่องมือด้านซ้าย
@@ -4169,6 +4204,10 @@ processPolygonsAndPanels = function() {
                     eaveHeight_m: eaveNow,          // 🌟 ความสูงชายคาปลายแรก (x น้อยสุด)
                     eaveHeightB_m: eaveBNow,        // 🌟 ความสูงชายคาปลายที่สอง (x มากสุด) — เท่ากันคือหลังคาลาดทางเดียว
                     ridgeHeight_m: ridgeNow,        // 🌟 ความสูงสันหลังคา (ม.) — คำนวณจากชายคา+ความชัน+ระยะไหล
+                    /* 🌳 เส้นขอบฟ้าของหลังคาผืนนี้ คำนวณจากต้นไม้ที่วางไว้รอบอาคาร
+                       ShadingEngine ใน asc_report อ่านช่องนี้เป็นรายหลังคาอยู่แล้ว
+                       ไม่มีต้นไม้ = ไม่มีช่องนี้ = ระบบใช้ค่ากลางของไซต์เหมือนเดิม */
+                    horizonProfile: layer.panelConfig.horizonProfile || undefined,
                     localBoundary: localBoundary // 🌟 ส่งขอบเขตหลังคาเข้าไปใน DB
                 });
 
@@ -5139,6 +5178,11 @@ function updateFinalDcLength() {
                     // ฝังความสูงลงไปสำหรับโหมด keepout
                     if (layer.drawMode === 'keepout') {
                         f.properties.objectHeightM = layer.objectHeightM || 0;
+                    }
+                    /* 🌳 ต้นไม้เก็บเป็นจุด รัศมีทรงพุ่มกับความสูงไม่ติดไปกับ GeoJSON เอง
+                       ต้องฝังลงคุณสมบัติเอง ไม่งั้นเปิดไฟล์กลับมาแล้วเงาหายหมด */
+                    if (layer.drawMode === 'tree') {
+                        f.properties.treeData = JSON.parse(JSON.stringify(layer.treeData || {}));
                     }
                     // 🌟 เฟส 5: ฝัง panelConfig ของแต่ละหลังคาลงไฟล์ด้วย เพื่อให้ import กลับมาได้ 100% (slope/ทิศ/ระยะเว้นรายหลังคา)
                     if (layer.drawMode === 'roof' && layer.panelConfig) {
@@ -7000,6 +7044,12 @@ document.addEventListener('keydown', function(e) {
 
             // วาดลงบนแผนที่ใหม่
             L.geoJSON(pastedGeojson, {
+                pointToLayer: function(feature, latlng) {
+                    if (feature.properties && feature.properties.drawMode === 'tree' && window.AscTree) {
+                        return AscTree.makeLayer(latlng, feature.properties.treeData);
+                    }
+                    return L.marker(latlng);
+                },
                 onEachFeature: function(feature, layer) {
                     layer.drawMode = feature.properties.drawMode;
                     if (layer.drawMode === 'roof') {
@@ -7237,5 +7287,6 @@ function applyEdgeChanges() {
 	</div>
 <!-- ================= จบ: กล่องข้อความ Help Custom ================= -->
 <script src="asc-ridge.js"></script>
+<script src="asc-tree.js"></script>
 </body>
 </html>

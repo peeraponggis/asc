@@ -330,7 +330,7 @@ const S = {
   projectName:'', lat:13.75, lon:100.5,
   origin:{ lon0:100.5, lat0:13.75 },
   roofs:[],
-  keepouts:[], mdb:null,
+  keepouts:[], trees:[], mdb:null,
   pv:{ len:2.382, wid:1.134, thk:0.03 },
   kpi:null, satImage:null,
   activeRoof:0,
@@ -478,6 +478,21 @@ function parseDB2(j) {
       pts: f.geometry.coordinates[0].slice(0, -1).map(c => toENU(c[0], c[1], lon0, lat0))
     }));
 
+  /* ต้นไม้ — เก็บเป็นจุดพร้อมรัศมีทรงพุ่มและความสูง ที่ asc_design คำนวณเงาไปแล้ว
+     ตรงนี้ทำหน้าที่แสดงภาพให้ตรงกับที่ใช้คำนวณ จะได้ตรวจสอบด้วยตาได้ว่าวางถูกที่ */
+  S.trees = feats
+    .filter(f => f.properties && f.properties.drawMode === 'tree'
+              && f.geometry && f.geometry.type === 'Point')
+    .map(f => {
+      const d = f.properties.treeData || {};
+      const r = Math.max(0.3, num(d.canopyR_m, 3));
+      return {
+        r: r,
+        h: Math.max(r + 0.5, num(d.height_m, 8) + num(d.growth_m, 0)),
+        pos: toENU(f.geometry.coordinates[0], f.geometry.coordinates[1], lon0, lat0)
+      };
+    });
+
   const mdbF = feats.find(f => f.properties && f.properties.drawMode === 'mdb'
                             && f.geometry && f.geometry.type === 'Point');
   S.mdb = mdbF ? toENU(mdbF.geometry.coordinates[0], mdbF.geometry.coordinates[1], lon0, lat0) : null;
@@ -563,6 +578,8 @@ const MAT = {
   roof:  new THREE.MeshStandardMaterial({ color:0xe4e8ed, roughness:.88, metalness:.03, side:THREE.DoubleSide }),
   edge:  new THREE.LineBasicMaterial({ color:0x5a6472 }),
   keep:  new THREE.MeshStandardMaterial({ color:0xff8a5c, roughness:.8, transparent:true, opacity:.82 }),
+  trunk: new THREE.MeshStandardMaterial({ color:0x6b4f36, roughness:.95 }),
+  leaf:  new THREE.MeshStandardMaterial({ color:0x2f7d3a, roughness:.9, transparent:true, opacity:.9 }),
   mdb:   new THREE.MeshStandardMaterial({ color:0x3b82f6, roughness:.55, metalness:.35 }),
   gnd:   new THREE.MeshStandardMaterial({ color:0x171d25, roughness:1 })
 };
@@ -828,6 +845,24 @@ function buildScene() {
   });
 
   S.keepouts.forEach(k => { if (k.pts.length >= 3) gSite.add(prism(k.pts, k.h, MAT.keep)); });
+
+  /* ต้นไม้ — ลำต้นทรงกระบอกกับทรงพุ่มทรงกลม
+     ทรงพุ่มใช้รัศมีเดียวกับที่ asc_design ใช้คำนวณมุมบัง ภาพกับตัวเลขจึงตรงกัน */
+  S.trees.forEach(t => {
+    const crown = Math.min(t.r * 1.15, t.h * 0.6);       // ครึ่งความสูงของทรงพุ่ม
+    const trunkH = Math.max(0.5, t.h - crown);
+    const trunk = new THREE.Mesh(
+      new THREE.CylinderGeometry(t.r * 0.12, t.r * 0.18, trunkH, 8), MAT.trunk);
+    trunk.position.set(t.pos[0], trunkH / 2, -t.pos[1]);
+    trunk.castShadow = true;
+    gSite.add(trunk);
+
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(t.r, 16, 12), MAT.leaf);
+    leaf.scale.set(1, crown / t.r, 1);                   // ยืดหรือบีบให้ยอดอยู่ที่ความสูงจริง
+    leaf.position.set(t.pos[0], t.h - crown, -t.pos[1]);
+    leaf.castShadow = true;
+    gSite.add(leaf);
+  });
 
   if (S.mdb) {
     const b = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.9, 0.45), MAT.mdb);
