@@ -4844,11 +4844,24 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                     if (useWorld) {
                         /* พิกัดท้องถิ่นของหลังคาถูกหมุนตามทิศของผืนนั้นและย้ายจุดเริ่มไว้ที่ศูนย์
                            จับคู่จุดศูนย์ถ่วงของสองระบบเข้าหากัน ก็ได้การแปลงกลับไปพิกัดจริงครบ
-                           (วิธีเดียวกับที่ asc_3d ใช้ ผลลัพธ์จึงตรงกันทั้งสองหน้า) */
+                           (วิธีเดียวกับที่ asc_3d ใช้ ผลลัพธ์จึงตรงกันทั้งสองหน้า)
+
+                           ต้องตัดจุดปิดรูปที่ซ้ำกับจุดแรกออกจากทั้งสองชุดก่อนหาจุดศูนย์ถ่วง
+                           ไม่งั้นจุดนั้นถูกนับสองครั้ง จุดศูนย์ถ่วงเบี้ยว และแผงทั้งผืนเลื่อนไป
+                           วัดกับไฟล์จริงแล้วเลื่อนไป 2.75 ม. ทำให้แผง 13 จาก 117 แผ่นหลุดออก
+                           นอกขอบหลังคา ภาพในรายงานจึงไม่ตรงกับ asc_3d ซึ่งตัดจุดซ้ำออกอยู่แล้ว */
+                        const dedupe = (arr) => {
+                            if (arr.length > 2) {
+                                const a0 = arr[0], zN = arr[arr.length - 1];
+                                if (Math.abs(a0.x - zN.x) < 1e-9 && Math.abs(a0.y - zN.y) < 1e-9) return arr.slice(0, -1);
+                            }
+                            return arr;
+                        };
                         const a = (roof.azimuth || 0) * Math.PI / 180;
                         const ux = [Math.cos(a), -Math.sin(a)], uy = [Math.sin(a), Math.cos(a)];
-                        const cL = pts.reduce((s, q) => [s[0] + q.x, s[1] + q.y], [0, 0]).map(v => v / pts.length);
-                        const wb = roof.worldBoundary.map(q => ({ x: q.x, y: q.y }));
+                        const ptsC = dedupe(pts);
+                        const cL = ptsC.reduce((s, q) => [s[0] + q.x, s[1] + q.y], [0, 0]).map(v => v / ptsC.length);
+                        const wb = dedupe(roof.worldBoundary.map(q => ({ x: q.x, y: q.y })));
                         const cW = wb.reduce((s, q) => [s[0] + q.x, s[1] + q.y], [0, 0]).map(v => v / wb.length);
                         const T = [cW[0] - (ux[0] * cL[0] + uy[0] * cL[1]), cW[1] - (ux[1] * cL[0] + uy[1] * cL[1])];
                         const toW = (lx, ly) => ({ x: T[0] + ux[0] * lx + uy[0] * ly, y: T[1] + ux[1] * lx + uy[1] * ly });
