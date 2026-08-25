@@ -337,13 +337,41 @@
             sessionStorage.removeItem('asc_supabase_auth');
         },
 
+        /* ที่อยู่ที่ให้ผู้ใช้กลับมาหลังกดลิงก์ในอีเมล
+
+           เดิมใช้ location.pathname ตรงๆ ซึ่งเปลี่ยนไปตามว่าผู้ใช้เปิดหน้าไหน
+           เปิด /asc/ ได้อย่างหนึ่ง เปิด /asc/index.html ได้อีกอย่างหนึ่ง
+           Supabase อนุญาตเฉพาะที่อยู่ที่อยู่ในรายการ Redirect URLs เท่านั้น
+           ถ้าไม่ตรงสักอันจะเงียบๆ พาไปที่ Site URL แทน ซึ่งถ้ายังเป็น localhost
+           อยู่ ผู้ใช้จะเจอหน้าเปิดไม่ได้ทั้งที่ตัวลิงก์ถูกต้อง
+
+           ตัดชื่อไฟล์ท้ายทิ้งให้เหลือแต่โฟลเดอร์เสมอ จะได้มีที่อยู่เดียวให้ไป
+           ใส่ในรายการอนุญาต ไม่ต้องไล่ใส่หลายแบบ */
+        authRedirectUrl() {
+            return location.origin + location.pathname.replace(/[^/]*$/, '');
+        },
+
         /* ส่งลิงก์ตั้งรหัสผ่านใหม่ ใช้ทั้งตอนลืมรหัส และตอนเชิญผู้ใช้เข้าระบบครั้งแรก */
         async sendPasswordReset(email, redirectTo) {
             need();
             const { error } = await sb.auth.resetPasswordForEmail(
                 String(email || '').trim().toLowerCase(),
-                { redirectTo: redirectTo || (location.origin + location.pathname) }
+                { redirectTo: redirectTo || this.authRedirectUrl() }
             );
+            if (error) throw fail(error);
+            return true;
+        },
+
+        /* ส่งอีเมลยืนยันการสมัครใหม่ ใช้เมื่อลิงก์เดิมหมดอายุหรือถูกใช้ไปแล้ว
+           ลิงก์ยืนยันใช้ได้ครั้งเดียวและมีอายุจำกัด บางครั้งตัวสแกนลิงก์ของผู้ให้
+           บริการอีเมลกดเปิดไปก่อนผู้ใช้ด้วยซ้ำ จึงต้องมีทางขอใหม่โดยไม่ต้องสมัครซ้ำ */
+        async resendConfirmation(email, redirectTo) {
+            need();
+            const { error } = await sb.auth.resend({
+                type: 'signup',
+                email: String(email || '').trim().toLowerCase(),
+                options: { emailRedirectTo: redirectTo || this.authRedirectUrl() }
+            });
             if (error) throw fail(error);
             return true;
         },
@@ -464,7 +492,7 @@
                 password: String(password || ''),
                 options: {
                     data: { display_name: String(displayName || '').trim() || mail.split('@')[0] },
-                    emailRedirectTo: redirectTo || (location.origin + location.pathname)
+                    emailRedirectTo: redirectTo || this.authRedirectUrl()
                 }
             });
             if (error) throw fail(error);

@@ -1061,6 +1061,31 @@ async function initLoginCloud() {
     document.getElementById('signup-form').addEventListener('submit', doSignup);
     document.getElementById('su-email').addEventListener('input', checkSignupEmail);
 
+    /* ลิงก์ในอีเมลอาจพากลับมาพร้อมข้อความผิดพลาดแทน token
+       ที่พบบ่อยคือ otp_expired ซึ่งเกิดได้ทั้งจากลิงก์หมดอายุ จากการกดซ้ำ
+       และจากตัวสแกนลิงก์ของผู้ให้บริการอีเมลที่กดเปิดไปก่อนผู้ใช้
+       เดิมหน้านี้ไม่ได้อ่านค่าพวกนี้เลย ผู้ใช้จึงเห็นแค่หน้าล็อกอินเปล่าๆ
+       โดยไม่รู้ว่าเกิดอะไรขึ้นและต้องทำอะไรต่อ */
+    const hashErr = new URLSearchParams(location.hash.replace(/^#/, ''));
+    if (hashErr.get('error') || hashErr.get('error_code')) {
+        await AscCloud.ready();
+        showLoginScreen();
+        const code = hashErr.get('error_code') || hashErr.get('error') || '';
+        const desc = (hashErr.get('error_description') || '').replace(/\+/g, ' ');
+        let msg;
+        if (/otp_expired|access_denied/.test(code)) {
+            msg = 'ลิงก์ยืนยันอีเมลหมดอายุ หรือถูกใช้ไปแล้ว — ลิงก์ยืนยันใช้ได้ครั้งเดียวและมีอายุจำกัด';
+        } else {
+            msg = 'ลิงก์จากอีเมลใช้งานไม่ได้' + (desc ? ' : ' + desc : '');
+        }
+        showLoginError(msg,
+            ' <a href="#" id="link-resend" class="underline font-semibold">ส่งลิงก์ยืนยันใหม่</a>');
+        const a = document.getElementById('link-resend');
+        if (a) a.addEventListener('click', ev => { ev.preventDefault(); resendConfirm(); });
+        history.replaceState(null, '', location.pathname + location.search);
+        return;
+    }
+
     // ผู้ใช้ที่กดลิงก์ในอีเมลจะกลับมาที่หน้านี้พร้อม token ต้องให้ตั้งรหัสใหม่ก่อน
     if (/type=recovery|type=invite/.test(location.hash)) {
         await AscCloud.ready();
@@ -1176,6 +1201,21 @@ async function forgotPassword() {
     try {
         await AscCloud.sendPasswordReset(email.trim());
         alert('ส่งลิงก์ไปที่ ' + email.trim() + ' แล้ว\n\nเปิดอีเมลแล้วกดลิงก์ในนั้นเพื่อตั้งรหัสผ่านใหม่\nถ้าไม่พบ ให้ดูในกล่องจดหมายขยะด้วย');
+    } catch (err) {
+        alert('ส่งไม่สำเร็จ : ' + err.message);
+    }
+}
+
+/* ขอลิงก์ยืนยันอีเมลใหม่ สำหรับคนที่ลิงก์เดิมหมดอายุหรือถูกกดไปแล้ว
+   ไม่ต้องสมัครซ้ำ เพราะบัญชีถูกสร้างไว้แล้วตั้งแต่ตอนกดสมัคร แค่ยังไม่ได้ยืนยัน */
+async function resendConfirm() {
+    const pre = document.getElementById('login-user').value.trim();
+    const email = prompt('กรอกอีเมลที่ใช้สมัครไว้ ระบบจะส่งลิงก์ยืนยันใหม่ไปให้', pre || '');
+    if (!email) return;
+    try {
+        await AscCloud.resendConfirmation(email.trim());
+        alert('ส่งลิงก์ยืนยันใหม่ไปที่ ' + email.trim() + ' แล้ว\n\n' +
+              'เปิดอีเมลแล้วกดลิงก์ภายในเวลาที่กำหนด\nถ้าไม่พบ ให้ดูในกล่องจดหมายขยะด้วย');
     } catch (err) {
         alert('ส่งไม่สำเร็จ : ' + err.message);
     }
