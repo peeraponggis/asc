@@ -1502,6 +1502,19 @@
             };
         }
 
+        /* รุ่นของไฟล์โปรแกรมที่เบราว์เซอร์กำลังใช้อยู่จริง อ่านจาก Last-Modified ของหน้าเว็บเอง
+           ไม่ต้องไล่เพิ่มเลขรุ่นด้วยมือทุกครั้งที่แก้โค้ด และบอกได้ทันทีว่าเบราว์เซอร์ยังค้าง
+           ไฟล์เก่าอยู่หรือไม่ ซึ่งเป็นสาเหตุที่ทำให้ภาพบนจอไม่ตรงกับที่แก้ไปแล้ว
+           (GitHub Pages ส่ง Cache-Control 10 นาที เบราว์เซอร์จึงถือของเก่าไว้ได้ระยะหนึ่ง
+            กด Ctrl+F5 เพื่อบังคับโหลดใหม่) */
+        function ascBuildStamp() {
+            const d = new Date(document.lastModified);
+            if (isNaN(d.getTime())) return '';
+            const p = n => String(n).padStart(2, '0');
+            return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+                   ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+        }
+
         /* ชื่อไฟล์กลางของทั้งชุดโปรแกรม : ชื่อโครงการ_ประเภทงาน_YYYYMMDD_HHMM
 
            asc_e_analysis ใช้ eBill · asc_design ใช้ design · asc_report ใช้ report
@@ -5226,9 +5239,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 g2.fillStyle = '#111';
                 g2.fillText(`กลุ่ม #${g.id} (T${g.tilt}°/A${g.azi}°): loss ${txt}`, ix + 30, iy + 51 + i * 18);
             });
-            // 🌟 ลายน้ำเอกลักษณ์ ASC
+            // 🌟 ลายน้ำเอกลักษณ์ ASC พร้อมรุ่นของไฟล์ที่เบราว์เซอร์กำลังใช้อยู่
             g2.font = 'bold 11px Arial'; g2.fillStyle = '#94a3b8'; g2.textAlign = 'right'; g2.textBaseline = 'alphabetic';
-            g2.fillText('ASC : Auto Solar Copilot', W - 14, H - 10);
+            g2.fillText('ASC : Auto Solar Copilot' + (ascBuildStamp() ? '  ·  รุ่นไฟล์ ' + ascBuildStamp() : ''), W - 14, H - 10);
         }
         /* ==================== 🌟 3D ISOMETRIC SITE MODEL (PHASE 4) — END ====================== */
 

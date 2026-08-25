@@ -276,7 +276,7 @@ setTimeout(function () {
     <div class="k"><span>Performance Ratio</span><b id="kPR">—</b></div>
   </div>
 
-  <div id="hint">ลากเมาส์ = หมุน · คลิกขวาลาก = เลื่อน · สกรอลล์ = ซูม</div>
+  <div id="hint">ลากเมาส์ = หมุน · คลิกขวาลาก = เลื่อน · สกรอลล์ = ซูม<span id="buildStamp"></span></div>
   <div id="busy">กำลังประมวลผล…</div>
 
   <div id="drop">
@@ -361,6 +361,21 @@ function roofBasis(aziDeg) {
 }
 
 const num = (v, d) => { const n = parseFloat(v); return isFinite(n) ? n : d; };
+
+/* รุ่นของไฟล์โปรแกรมที่เบราว์เซอร์กำลังใช้อยู่จริง อ่านจาก Last-Modified ของหน้าเว็บเอง
+   ใช้ตรวจว่าเบราว์เซอร์ยังค้างไฟล์เก่าอยู่หรือไม่ เมื่อภาพบนจอไม่ตรงกับที่แก้ไปแล้ว
+   (GitHub Pages ส่ง Cache-Control 10 นาที กด Ctrl+F5 เพื่อบังคับโหลดใหม่) */
+function ascBuildStamp() {
+  const d = new Date(document.lastModified);
+  if (isNaN(d.getTime())) return '';
+  const p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+         ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+(function () {
+  const el = document.getElementById('buildStamp');
+  if (el && ascBuildStamp()) el.textContent = '  ·  รุ่นไฟล์ ' + ascBuildStamp();
+})();
 
 /* ============================================================================
    1. แปลงไฟล์ DB2 เป็นโครงสร้างที่พร้อมสร้างเรขาคณิต
