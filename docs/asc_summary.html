@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>บทสรุประบบ — ProInventive Solar Suite</title>
+<link rel="icon" href="img/pilogo.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   บทสรุประบบ (Executive Summary) — SPA เดี่ยว ไม่พึ่งไลบรารีภายนอก
+   ธีมและภาษาการออกแบบยกมาจากรายงาน Villa Leelawadee (vl_solar.html)
+   ข้อมูลทั้งหมดอ่านจากไฟล์ DB3 ของหน้า Proposal & Report (asc_report)
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  --ink:#12263A; --ink-2:#3B4C5E; --mute:#7A8794;
+  --paper:#F3F6F8; --card:#FFFFFF; --line:#DCE3EA;
+  --sun:#E8A317; --sun-2:#F6C453; --pv:#1E5A8A; --bat:#1F8A70; --grid:#6B7A8F; --warn:#C4432B; --night:#0F1E33;
+  --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:'Sarabun',system-ui,sans-serif;font-size:16px;line-height:1.55}
+h1,h2,h3,h4{font-family:'Kanit',system-ui,sans-serif}
+button{font-family:inherit;cursor:pointer}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 70px}
+
+/* ── หัวเรื่อง ─────────────────────────────────────────────────── */
+header{background:var(--night);color:#fff;padding:24px 0 26px;position:relative;overflow:hidden}
+header .wrap{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;padding-bottom:0}
+header h1{margin:0;font-size:clamp(22px,3.2vw,34px);font-weight:600;line-height:1.15}
+header h1 small{display:block;font-weight:300;font-size:.52em;color:#B9C7D6;margin-top:6px}
+.eyebrow{font-family:'Kanit';font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--sun-2);margin-bottom:8px}
+header::after{content:"";position:absolute;right:-120px;top:-160px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(232,163,23,.35),transparent 65%);pointer-events:none}
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.seg{display:inline-flex;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:3px}
+.seg button{background:transparent;border:0;color:#fff;padding:7px 16px;border-radius:999px;font-family:'Kanit';font-size:14px}
+.seg button.on{background:var(--sun);color:var(--night)}
+.tariff{display:flex;align-items:center;gap:8px;font-size:13px;color:#B9C7D6}
+.tariff input{width:74px;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-family:'Kanit'}
+.btn-ghost{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:999px;padding:7px 16px;font-family:'Kanit';font-size:13px}
+.brand{display:flex;gap:16px;align-items:center}
+.brand img.cover{width:72px;height:72px;border-radius:12px;object-fit:cover;box-shadow:0 4px 18px rgba(0,0,0,.4);flex:none}
+
+/* ── โครงหน้า ──────────────────────────────────────────────────── */
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-top:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px}
+.card h2{margin:0 0 4px;font-size:20px;font-weight:600}
+.card h3{margin:18px 0 8px;font-size:14px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.card h3:first-of-type{margin-top:6px}
+.sub{color:var(--mute);font-size:14px;margin:0 0 14px}
+.badge{display:inline-block;font-family:'Kanit';font-size:12px;padding:3px 10px;border-radius:999px;background:#EAF1F7;color:var(--pv);margin-left:8px;vertical-align:middle}
+.badge.ac{background:#E6F4EF;color:var(--bat)}
+
+/* ── ตัวเลขสรุป ────────────────────────────────────────────────── */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--paper);border-radius:10px;padding:10px 12px}
+.stat .v{font-family:'Kanit';font-size:21px;font-weight:600;line-height:1.1}
+.stat .v small{font-size:12px;font-weight:400;color:var(--mute)}
+.stat .l{font-size:12px;color:var(--mute)}
+.stat.hot{background:#FFF5DC}
+.stat.hot .v{color:#9A6300}
+.roi{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.roi .stat .v{font-size:19px}
+.payback{margin-top:10px;height:10px;background:var(--paper);border-radius:999px;overflow:hidden}
+.payback i{display:block;height:100%;background:linear-gradient(90deg,var(--bat),var(--sun))}
+.tiny{font-size:12px;color:var(--mute);margin-top:6px}
+
+/* ── รายการอุปกรณ์ ─────────────────────────────────────────────── */
+.eqlist{list-style:none;margin:0;padding:0}
+.eqlist li{display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.eqlist li:last-child{border-bottom:0}
+.eqlist svg{width:30px;height:30px;flex:none}
+.eqlist b{display:block;font-family:'Kanit';font-weight:500;font-size:14.5px;line-height:1.25}
+.eqlist span{font-size:13px;color:var(--ink-2)}
+
+/* ── แผนภาพการไหลพลังงาน ───────────────────────────────────────── */
+.flow svg{width:100%;height:auto;display:block}
+.node-label{font-family:'Kanit';font-size:12.5px;fill:var(--ink);font-weight:500}
+.node-sub{font-family:'Kanit';font-size:11px;fill:var(--mute)}
+.kw{font-family:'Kanit';font-size:12px;font-weight:600}
+.edge{fill:none;stroke-width:3;stroke-linecap:round;stroke-dasharray:6 8;opacity:.15;transition:opacity .3s}
+.edge.on{opacity:1;animation:flow 1s linear infinite}
+.edge.rev{animation-direction:reverse}
+@keyframes flow{to{stroke-dashoffset:-14}}
+@media (prefers-reduced-motion:reduce){.edge.on{animation:none}}
+
+/* ── แถบเวลา 24 ชั่วโมง ────────────────────────────────────────── */
+.clock{margin-top:14px;border-radius:12px;padding:14px 16px 10px;background:linear-gradient(90deg,#0F1E33 0%,#1B3A5C 20%,#8FC6EE 32%,#FFF3C9 50%,#8FC6EE 68%,#1B3A5C 80%,#0F1E33 100%);color:#fff}
+.clock .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.clock .time{font-family:'Kanit';font-size:26px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.clock .state{font-family:'Kanit';font-size:13px;background:rgba(0,0,0,.45);padding:4px 10px;border-radius:999px}
+.clock input[type=range]{width:100%;margin:10px 0 2px;accent-color:var(--sun)}
+.clock .play{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;padding:5px 12px;font-family:'Kanit';font-size:13px}
+
+/* ── กราฟ ──────────────────────────────────────────────────────── */
+.chart{margin:16px -22px 0;padding:16px 22px 12px;border-top:1px solid var(--line);background:#FBFCFD}
+.chart svg{width:100%;height:auto;display:block}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);margin-top:6px}
+.legend i{display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}
+
+/* ── เสียงบรรยาย ───────────────────────────────────────────────── */
+.voice{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 12px;padding:12px 14px;border-radius:12px;background:var(--night);color:#fff}
+.voice button{background:var(--sun);color:var(--night);border:0;border-radius:999px;padding:9px 16px;font-family:'Kanit';font-weight:500;font-size:14px;display:inline-flex;gap:8px;align-items:center}
+.voice button.stop{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)}
+.voice .vs{font-size:12px;color:#B9C7D6;flex:1;min-width:160px}
+.voice.speaking button.speak{animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(232,163,23,.25)}}
+
+/* ── ตาราง ─────────────────────────────────────────────────────── */
+.compare{margin-top:22px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;color:var(--ink-2)}
+thead th{font-family:'Kanit';font-weight:500;color:var(--mute);font-size:12px;letter-spacing:.06em}
+tbody tr:hover{background:var(--paper)}
+td.best{color:var(--bat);font-weight:600}
+td.neg{color:var(--warn)}
+.tscroll{overflow-x:auto;max-height:420px;overflow-y:auto}
+.tscroll thead th{position:sticky;top:0;background:var(--card)}
+
+/* ── ข้อความเสริม ──────────────────────────────────────────────── */
+.flag{border-left:3px solid var(--warn);background:#FBEFEC;padding:8px 12px;border-radius:0 8px 8px 0;font-size:14px;margin-top:8px}
+.tip{border-left:3px solid var(--bat);background:#EAF6F1;padding:8px 12px;border-radius:0 8px 8px 0;font-size:14px;margin-top:8px}
+.advice{font-size:15px;list-style:none;margin:0;padding:0}
+.advice li{margin:7px 0;padding-left:24px;position:relative}
+.advice li::before{content:"✔";position:absolute;left:0;top:1px;color:var(--bat);font-size:13px}
+
+/* ── หน้าเปล่า (ยังไม่มีข้อมูล) ────────────────────────────────── */
+.empty{max-width:560px;margin:60px auto;text-align:center;background:var(--card);border:1px dashed var(--line);border-radius:var(--r);padding:40px 30px}
+.empty h2{margin:14px 0 8px}
+.empty p{color:var(--ink-2);font-size:14.5px}
+.empty .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.btn{font-family:'Kanit';border:0;border-radius:10px;padding:11px 20px;font-size:14.5px;font-weight:500}
+.btn.pri{background:var(--pv);color:#fff}
+.btn.sec{background:var(--paper);color:var(--ink);border:1px solid var(--line)}
+.empty.drag{border-color:var(--sun);background:#FFFBEE}
+
+/* ── หน้าต่างเลือกรูปแบบวิดีโอ ─────────────────────────────────── */
+.modal-bg{position:fixed;inset:0;background:rgba(15,30,51,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal{background:var(--card);border-radius:14px;max-width:480px;width:100%;padding:24px 26px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.modal h3{margin:0 0 6px;font-size:19px;font-weight:600}
+.modal .btn{width:100%;margin-top:9px;text-align:left}
+.modal .tiny{margin-top:12px}
+
+footer{margin-top:26px;font-size:12.5px;color:var(--mute);border-top:1px solid var(--line);padding-top:14px}
+.company{display:flex;gap:12px;align-items:center;margin-bottom:10px;color:var(--ink-2)}
+.company img{width:44px;height:44px;border-radius:50%;object-fit:cover}
+.company b{font-family:'Kanit';color:var(--ink)}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+
+@media (max-width:900px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:640px){
+  .wrap{padding:0 12px 50px}
+  header{padding:16px 0 20px}
+  .card{padding:14px;border-radius:12px}
+  .stats,.roi{grid-template-columns:1fr 1fr;gap:8px}
+  .stat .v{font-size:17px}
+  .clock .time{font-size:21px}
+  .chart{margin:14px -14px 0;padding:12px 14px 10px}
+  table{font-size:12px}
+  th,td{padding:7px 8px}
+}
+@media print{
+  header .controls,.voice,.clock .play,#btn-print,.empty .actions{display:none !important}
+  body{background:#fff}
+  .card{break-inside:avoid;border-color:#ccc}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <img id="cover-img" class="cover" src="img/pilogo.png" alt=""
+           onerror="this.style.display='none'">
+      <div>
+        <div class="eyebrow" data-i18n="eyebrow"></div>
+        <h1><span id="proj-name">—</span><small data-i18n="subtitle"></small></h1>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="tariff"><span data-i18n="tariff"></span><input id="tariff" type="number" step="0.1" min="1" value="4.2"> ฿/kWh</div>
+      <div class="seg" role="group" aria-label="Language">
+        <button id="lang-th" class="on" onclick="setLang('th')">ไทย</button>
+        <button id="lang-en" onclick="setLang('en')">English</button>
+      </div>
+      <button id="btn-print" class="btn-ghost" onclick="window.print()" data-i18n="print"></button>
+      <button id="btn-video" class="btn-ghost" onclick="exportVideo()" data-i18n="video"></button>
+    </div>
+  </div>
+</header>
+
+<!-- ยังไม่มีข้อมูล DB3 : บอกทางไปต่อให้ชัด แทนที่จะปล่อยหน้าว่าง -->
+<div id="empty" class="empty" style="display:none">
+  <svg viewBox="0 0 40 40" width="56" height="56"><rect x="4" y="10" width="32" height="20" rx="2" fill="#1E5A8A"/><path d="M4 17h32M4 24h32M14 10v20M25 10v20" stroke="#8FC6EE" stroke-width="1.3"/><path d="M14 30l-4 6M26 30l4 6" stroke="#3B4C5E" stroke-width="2"/></svg>
+  <h2 data-i18n="emptyTitle"></h2>
+  <p data-i18n="emptyBody"></p>
+  <div class="actions">
+    <button class="btn pri" onclick="document.getElementById('file-db3').click()" data-i18n="emptyImport"></button>
+    <button id="btn-goto-report" class="btn sec" style="display:none" onclick="gotoReport()" data-i18n="emptyGoto"></button>
+  </div>
+  <input type="file" id="file-db3" accept=".txt,.json" style="display:none" onchange="importFile(this.files[0]); this.value='';">
+  <p class="tiny" data-i18n="emptyDrop"></p>
+</div>
+
+<!-- เลือกรูปแบบการส่งออกวิดีโอ : มีเสียงบรรยาย (บันทึกหน้าจอ) หรือไม่มีเสียง -->
+<div id="vid-modal" class="modal-bg" style="display:none" onclick="if(event.target===this)closeVidModal()">
+  <div class="modal">
+    <h3 data-i18n="vmTitle"></h3>
+    <p class="sub" data-i18n="vmBody"></p>
+    <button class="btn pri" onclick="closeVidModal(); exportVideoWithVoice()" data-i18n="vmVoice"></button>
+    <button class="btn sec" onclick="closeVidModal(); exportVideoSilent()" data-i18n="vmSilent"></button>
+    <button class="btn sec" onclick="closeVidModal()" data-i18n="vmCancel"></button>
+    <p class="tiny" data-i18n="vmHint"></p>
+  </div>
+</div>
+
+<main class="wrap" id="main" style="display:none">
+
+  <div class="grid">
+    <!-- ซ้าย : แผนภาพการไหลพลังงาน 24 ชั่วโมง -->
+    <section class="card flow">
+      <h2><span data-i18n="flowT"></span><span class="badge" id="sys-badge"></span></h2>
+      <p class="sub" data-i18n="flowS"></p>
+      <div id="flow-svg"></div>
+      <div class="clock">
+        <div class="row">
+          <span class="time" id="clock-time">12:00</span>
+          <span class="state" id="clock-state"></span>
+          <button class="play" id="btn-play" onclick="togglePlay()">▶</button>
+        </div>
+        <input type="range" id="hour" min="0" max="23" value="12" oninput="setHour(+this.value)">
+      </div>
+      <div class="chart">
+        <div id="day-chart"></div>
+        <div class="legend" id="day-legend"></div>
+        <p class="sub" id="load-desc" style="margin:10px 0 0"></p>
+      </div>
+    </section>
+
+    <!-- ขวา : อุปกรณ์ + ตัวเลขสมรรถนะ + ความคุ้มค่า -->
+    <aside>
+      <section class="card">
+        <h2 data-i18n="equip"></h2>
+        <p class="sub" data-i18n="equipSub"></p>
+        <div class="voice" id="voice-box">
+          <button class="speak" id="btn-speak" onclick="speak()"><span>🔊</span><span data-i18n="speak"></span></button>
+          <button class="stop" onclick="stopSpeak()" data-i18n="stop"></button>
+          <span class="vs" id="voice-status" data-i18n="voiceNote"></span>
+        </div>
+        <ul class="eqlist" id="eq-list"></ul>
+        <h3 data-i18n="cap"></h3>
+        <p class="sub" data-i18n="capSub" style="margin-bottom:10px"></p>
+        <div class="stats" id="stat-grid"></div>
+      </section>
+      <section class="card" style="margin-top:18px">
+        <h2 data-i18n="roi"></h2>
+        <p class="sub" data-i18n="roiSub"></p>
+        <div class="roi" id="roi-grid"></div>
+        <div class="payback"><i id="pb-bar" style="width:0%"></i></div>
+        <p class="tiny" id="pb-note"></p>
+        <div class="tip" id="roi-tip"></div>
+      </section>
+    </aside>
+  </div>
+
+  <!-- ผลผลิตรายเดือน -->
+  <section class="card compare">
+    <h2 data-i18n="moTitle"></h2>
+    <p class="sub" data-i18n="moSub"></p>
+    <div id="month-chart"></div>
+  </section>
+
+  <!-- คำแนะนำในการตัดสินใจลงทุน -->
+  <section class="card compare">
+    <h2 data-i18n="advTitle"></h2>
+    <p class="sub" data-i18n="advSub"></p>
+    <ul class="advice" id="advice-list"></ul>
+    <div id="advice-flag"></div>
+    <div id="advice-tip"></div>
+  </section>
+
+  <!-- ตารางการเงิน 25 ปี -->
+  <section class="card compare">
+    <h2 data-i18n="finTitle"></h2>
+    <p class="sub" data-i18n="finSub"></p>
+    <div class="tscroll" id="fin-table"></div>
+  </section>
+
+  <footer>
+    <div class="company" id="company-box" style="display:none">
+      <img id="co-logo" src="" alt="" onerror="this.style.display='none'">
+      <div><b id="co-name"></b><br><span id="co-addr"></span><br><span id="co-contact"></span></div>
+    </div>
+    <p data-i18n="footer"></p>
+  </footer>
+</main>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   1) ภาษา ─ ไทย/อังกฤษ สลับได้ทั้งหน้าแบบเดียวกับรายงานตัวอย่าง
+   ══════════════════════════════════════════════════════════════════ */
+const I18N = {
+ th:{eyebrow:'บทสรุประบบโซลาร์เซลล์ · Executive Summary',
+     subtitle:'สรุปอุปกรณ์ กำลังการผลิต การไหลของพลังงาน และความคุ้มค่าจากผลจำลองรายชั่วโมง (DB3)',
+     tariff:'ค่าไฟ', print:'พิมพ์ / PDF', video:'Export Video', videoBusy:'กำลังสร้างวิดีโอ… ',
+     videoNo:'เบราว์เซอร์นี้ไม่รองรับการอัดวิดีโอ (MediaRecorder)',
+     vmTitle:'ส่งออกวิดีโอ',
+     vmBody:'แบบมีเสียงบรรยาย โปรแกรมจะบันทึกหน้าจอพร้อมเสียงพูดสรุประบบให้อัตโนมัติ — เมื่อหน้าต่างแชร์หน้าจอเปิดขึ้น ให้เลือก "ทั้งหน้าจอ (Entire screen)" และเปิดสวิตช์ "แชร์เสียงระบบ (Also share system audio)" แล้วกด Share จากนั้นปล่อยให้โปรแกรมทำงานจนเสียงบรรยายจบ ไฟล์จะดาวน์โหลดเอง',
+     vmVoice:'🔊 มีเสียงบรรยาย (บันทึกหน้าจอ + เสียงระบบ)',
+     vmSilent:'🎞 ไม่มีเสียง (ไฟล์แอนิเมชัน 24 ชั่วโมง)',
+     vmCancel:'ยกเลิก',
+     vmHint:'ทางเลือกอื่น: ใช้ Windows Game Bar (กด Win+Alt+R เริ่ม/หยุดอัด) แล้วกดปุ่ม ▶ กับปุ่ม "ฟังคำอธิบายระบบ" เอง',
+     vmNoAudio:'ไม่พบแทร็กเสียง — คุณอาจยังไม่ได้เปิด "แชร์เสียงระบบ" วิดีโอที่ได้จะไม่มีเสียง ดำเนินการต่อหรือไม่?',
+     vmRec:'● กำลังบันทึก…',
+     vmNoSupport:'เบราว์เซอร์นี้ไม่รองรับการบันทึกหน้าจอ (getDisplayMedia)',
+     flowT:'การไหลของพลังงานใน 24 ชั่วโมง', flowS:'เลื่อนแถบเวลาเพื่อดูทิศทางการไหลของพลังงานในแต่ละชั่วโมง (ค่าเฉลี่ยทั้งปีจากผลจำลอง 8,760 ชั่วโมง)',
+     equip:'อุปกรณ์ในระบบ', cap:'กำลังการผลิตและประสิทธิภาพ', roi:'ความคุ้มค่าในการลงทุน',
+     equipSub:'อุปกรณ์หลักที่ใช้: แผงโซลาร์ผลิตไฟฟ้ากระแสตรงจากแสงแดด อินเวอร์เตอร์แปลงเป็นไฟฟ้ากระแสสลับจ่ายให้อาคาร และแบตเตอรี่ (ถ้ามี) เก็บไฟส่วนเกินช่วงกลางวันไว้ใช้กลางคืนหรือยามไฟดับ',
+     capSub:'ขนาดติดตั้ง (kWp) คือกำลังรวมของแผงทั้งหมด · พลังงานที่ผลิตได้/ปี มาจากผลจำลองรายชั่วโมงตลอดทั้งปี · Performance Ratio (PR) เทียบพลังงานที่ได้จริงกับค่าทางทฤษฎี ยิ่งสูงแปลว่าการสูญเสียในระบบยิ่งน้อย',
+     roiSub:'เทียบเงินลงทุนกับค่าไฟที่ประหยัดได้ในแต่ละปี ระยะคืนทุนคือปีที่เงินสะสมจากการประหยัดกลับมาเท่ากับเงินลงทุน (ปรับค่าไฟที่หัวหน้าเพื่อดูผลต่างได้)',
+     pv:'แผงโซลาร์', hinv:'อินเวอร์เตอร์', bat:'แบตเตอรี่', house:'อาคาร', grid:'การไฟฟ้า', sun:'แสงแดด',
+     kwp:'ขนาดติดตั้ง (DC)', egrid:'พลังงานที่ผลิตได้/ปี', pr:'Performance Ratio', peakdc:'กำลังผลิตสูงสุด',
+     surplus:'ไฟส่วนเกิน/ปี', selfuse:'ใช้เองโดยประมาณ/วัน', yieldSpec:'ผลผลิตจำเพาะ',
+     cost:'เงินลงทุน', save:'ประหยัดปีแรก (ประมาณ)', payback:'ระยะคืนทุน', costkwp:'ต้นทุนต่อ kWp', years:'ปี',
+     pbNote:(y)=>`คืนทุนประมาณปีที่ ${y} จากกระแสเงินสดสะสมในตารางด้านล่าง`,
+     pbNone:'ยังไม่คืนทุนภายใน 25 ปี ตามสมมุติฐานปัจจุบัน',
+     roiTip:(u,t)=>`ที่ค่าไฟ ${t} บาท/หน่วย ระบบช่วยลดค่าไฟราว ${u} บาทต่อปีในปีแรก ตัวเลขจริงขึ้นกับสัดส่วนการใช้ไฟตรงเวลาที่ระบบผลิตได้`,
+     state:{night:'กลางคืน · แบตเตอรี่/การไฟฟ้าจ่ายไฟ',morn:'เช้า · แผงเริ่มผลิตไฟ',day:'กลางวัน · ผลิตไฟ ชาร์จแบตเตอรี่ และจ่ายโหลด',eve:'หัวค่ำ · แบตเตอรี่จ่ายไฟ'},
+     legend:{pv:'กำลังผลิต PV (kW)',load:'โหลดอาคาร (kW)',soc:'แบตเตอรี่ (%)',grid:'ซื้อจากกริด (kW)'},
+     moTitle:'พลังงานที่ผลิตได้รายเดือน', moSub:'จากผลจำลองรายชั่วโมงตลอดทั้งปี (E_Grid, kWh) — เดือนที่ผลิตได้มากคือช่วงแดดแรงและกลางวันยาว ส่วนฤดูฝนผลผลิตลดลงตามปริมาณเมฆ ใช้ดูแนวโน้มรายได้/การประหยัดในแต่ละช่วงของปี',
+     advTitle:'คำแนะนำในการตัดสินใจลงทุนติดตั้งระบบ', advSub:'ข้อสังเกตสร้างขึ้นอัตโนมัติจากตัวเลขผลจำลองของโครงการนี้ ใช้ประกอบการตัดสินใจร่วมกับการตรวจหน้างานจริง',
+     finTitle:'กระแสเงินสดตลอด 25 ปี', finSub:'ตัวเลขจากหน้ารายงาน (รวมค่า O&M การเสื่อมสภาพของแผง และอัตราค่าไฟตามสมมุติฐาน)',
+     finHead:['ปีที่','พลังงาน (kWh)','ประหยัดได้ (฿)','O&M (฿)','สุทธิ (฿)','สะสม (฿)'],
+     hybrid:'ไฮบริด + แบตเตอรี่', ongrid:'ออนกริด',
+     speak:'ฟังคำอธิบายระบบ', stop:'หยุดเสียง', playing:'กำลังบรรยาย',
+     voiceNote:'อ่านสรุประบบด้วยเสียงในเครื่องของคุณ', voiceNo:'เบราว์เซอร์นี้ไม่รองรับเสียงพูด',
+     emptyTitle:'ยังไม่มีข้อมูลผลจำลอง (DB3)',
+     emptyBody:'หน้านี้สร้างบทสรุปจากไฟล์ DB3 ของหน้า Proposal & Report — ไปที่แท็บรายงาน กด "Run Simulation" แล้วกด "Export DB3" หรือเลือกไฟล์ DB3 ที่บันทึกไว้',
+     emptyImport:'เลือกไฟล์ DB3…', emptyGoto:'ไปที่แท็บ Proposal & Report', emptyDrop:'หรือลากไฟล์ DB3 มาวางที่หน้านี้',
+     importBad:'ไฟล์นี้ไม่ใช่ DB3 ของ ASC Report (ต้องมี is_asc_db3)',
+     footer:'ตัวเลขทั้งหมดมาจากผลจำลองคณิตศาสตร์วิศวกรรมรายชั่วโมง (DB3) ของหน้า Proposal & Report · กราฟ 24 ชั่วโมงเป็นค่าเฉลี่ยรายวันทั้งปี ไม่ใช่ข้อมูลตรวจวัดจริง · ระยะคืนทุนอ้างอิงสมมุติฐานการเงินในหน้ารายงาน'},
+ en:{eyebrow:'Solar System Executive Summary',
+     subtitle:'Equipment, generation, energy flow and investment value from the hourly simulation (DB3)',
+     tariff:'Tariff', print:'Print / PDF', video:'Export Video', videoBusy:'Rendering video… ',
+     videoNo:'Video recording (MediaRecorder) is not supported in this browser',
+     vmTitle:'Export video',
+     vmBody:'With narration, the program records the screen together with the spoken summary automatically — when the share dialog opens, choose "Entire screen" and switch on "Also share system audio", then press Share. Let it run until the narration ends; the file downloads itself.',
+     vmVoice:'🔊 With narration (screen + system audio)',
+     vmSilent:'🎞 Silent (24-hour animation file)',
+     vmCancel:'Cancel',
+     vmHint:'Alternative: use Windows Game Bar (Win+Alt+R to start/stop) and press ▶ and "Listen to the summary" yourself',
+     vmNoAudio:'No audio track found — you may not have enabled "share system audio". The video will be silent. Continue?',
+     vmRec:'● Recording…',
+     vmNoSupport:'Screen recording (getDisplayMedia) is not supported in this browser',
+     flowT:'Energy flow across 24 hours', flowS:'Drag the time to see where power flows each hour (annual-average day from the 8,760-hour simulation)',
+     equip:'Equipment', cap:'Generation & performance', roi:'Investment value',
+     equipSub:'Main equipment: the PV array generates DC power from sunlight, the inverter converts it to AC for the building, and the battery (if fitted) stores daytime surplus for night use or outages.',
+     capSub:'Installed size (kWp) is the total panel power · Annual production comes from the full-year hourly simulation · Performance Ratio (PR) compares actual to theoretical yield — higher means lower system losses',
+     roiSub:'Compares the investment against yearly electricity savings. Payback is the year cumulative savings equal the investment (adjust the tariff above to explore).',
+     pv:'PV array', hinv:'Inverter', bat:'Battery', house:'Building', grid:'Utility grid', sun:'Sunlight',
+     kwp:'Installed DC size', egrid:'Annual production', pr:'Performance Ratio', peakdc:'Peak output',
+     surplus:'Annual surplus', selfuse:'Approx. self-use / day', yieldSpec:'Specific yield',
+     cost:'Investment', save:'Year-1 savings (est.)', payback:'Payback', costkwp:'Cost per kWp', years:'yrs',
+     pbNote:(y)=>`Payback around year ${y}, from the cumulative cash flow below`,
+     pbNone:'No payback within 25 years under current assumptions',
+     roiTip:(u,t)=>`At ${t} THB/kWh the system saves about ${u} THB in year 1. Actual savings depend on how much load coincides with generation.`,
+     state:{night:'Night · battery / grid supplies',morn:'Morning · PV ramping up',day:'Daytime · generating, charging & supplying',eve:'Evening · battery discharging'},
+     legend:{pv:'PV output (kW)',load:'Building load (kW)',soc:'Battery (%)',grid:'Grid import (kW)'},
+     moTitle:'Monthly energy production', moSub:'From the full-year hourly simulation (E_Grid, kWh) — strong months are the sunny, long-day season; the rainy season dips with cloud cover. Use this to gauge savings through the year.',
+     advTitle:'Investment decision guidance', advSub:'Auto-generated observations from this project\'s simulation figures — use alongside a real site survey',
+     finTitle:'25-year cash flow', finSub:'Figures from the report page (incl. O&M, panel degradation and tariff assumptions)',
+     finHead:['Year','Energy (kWh)','Savings (฿)','O&M (฿)','Net (฿)','Cumulative (฿)'],
+     hybrid:'Hybrid + battery', ongrid:'On-grid',
+     speak:'Listen to the summary', stop:'Stop', playing:'Narrating',
+     voiceNote:'Narrated with your device voice', voiceNo:'Speech is not supported in this browser',
+     emptyTitle:'No simulation data (DB3) yet',
+     emptyBody:'This page builds its summary from the DB3 file of the Proposal & Report page — open the report tab, press "Run Simulation" then "Export DB3", or pick a saved DB3 file.',
+     emptyImport:'Choose DB3 file…', emptyGoto:'Go to Proposal & Report', emptyDrop:'…or drop a DB3 file anywhere on this page',
+     importBad:'Not an ASC Report DB3 file (missing is_asc_db3)',
+     footer:'All figures come from the hourly engineering simulation (DB3) of the Proposal & Report page · The 24 h curves are an annual-average day, not measured data · Payback follows the financial assumptions of the report page'}
+};
+let lang='th', hour=12, timer=null;
+const T=()=>I18N[lang];
+const fmt=(n,d=0)=>Number(n||0).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+
+/* ══════════════════════════════════════════════════════════════════
+   2) รับข้อมูล ─ สองทางเหมือน asc_report : (ก) SYNC_PROJECT_STATE
+      จาก master_shell  (ข) นำเข้าไฟล์ DB3 เมื่อเปิดหน้าเดี่ยว
+   ══════════════════════════════════════════════════════════════════ */
+let M = null;          // โมเดลข้อมูลที่แปลงแล้ว พร้อมใช้วาดทุกส่วน
+let COMPANY = {};
+try { COMPANY = JSON.parse(localStorage.getItem('proinventive_company') || '{}'); } catch(e) {}
+
+const inShell = (window.parent && window.parent !== window);
+
+window.addEventListener('message', ev => {
+    const d = ev.data;
+    if (!d || d.type !== 'SYNC_PROJECT_STATE') return;
+    if (d.company && Object.keys(d.company).length) COMPANY = d.company;
+    const db3 = d.payload && d.payload.db3;
+    if (db3) loadDB3(db3);
+    else showEmpty();
+});
+
+function gotoReport(){ try { window.parent.postMessage({type:'SWITCH_TAB', tab:'report'}, '*'); } catch(e) {} }
+
+function importFile(file){
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = e => {
+        try {
+            const j = JSON.parse(e.target.result);
+            if (!j.is_asc_db3) { alert(T().importBad); return; }
+            loadDB3(j);
+        } catch(err) { alert('อ่านไฟล์ไม่สำเร็จ: ' + err.message); }
+    };
+    r.readAsText(file);
+}
+/* ลากไฟล์มาวางได้ทั้งหน้า ทั้งตอนว่างเปล่าและตอนที่มีข้อมูลแล้ว (แทนที่ของเดิม) */
+document.addEventListener('dragover', e => { e.preventDefault(); document.getElementById('empty').classList.add('drag'); });
+document.addEventListener('dragleave', () => document.getElementById('empty').classList.remove('drag'));
+document.addEventListener('drop', e => {
+    e.preventDefault();
+    document.getElementById('empty').classList.remove('drag');
+    if (e.dataTransfer.files.length) importFile(e.dataTransfer.files[0]);
+});
+
+/* ══════════════════════════════════════════════════════════════════
+   3) แปลง DB3 → โมเดลกลาง  (ทุกช่องมีค่าสำรอง กันไฟล์รุ่นเก่า)
+   ══════════════════════════════════════════════════════════════════ */
+function loadDB3(db3){
+    const ui = db3.ui_inputs || {};
+    const st = db3.app_state || {};
+    const R  = st.results || {};
+    const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+    const str = v => (v == null ? '' : String(v)).trim();
+
+    const fin = Array.isArray(st.financials) ? st.financials : [];
+    const y1  = fin.find(f => f.y === 1) || {};
+    const investment = fin.length ? -num(fin[0].net) : 0;
+
+    /* หา "ปีคืนทุน" จากจุดที่เงินสะสมพลิกเป็นบวก แล้วเทียบบัญญัติไตรยางศ์ในปีนั้น */
+    let payback = null;
+    for (let i = 1; i < fin.length; i++) {
+        if (num(fin[i].cum) >= 0) {
+            const prev = num(fin[i-1].cum), step = num(fin[i].cum) - prev;
+            payback = (fin[i].y - 1) + (step > 0 ? (-prev) / step : 0);
+            break;
+        }
+    }
+
+    const batQty = num(ui['inp-bat-qty']), batKwh = num(ui['inp-bat-kwh']);
+    const daily  = (Array.isArray(st.daily8760) && st.daily8760.length === 24) ? st.daily8760 : null;
+
+    M = {
+        name: str(db3.projectName || ui['inp-proj']) || 'Solar Project',
+        pnom: num(R.pnom), pr: num(R.effPR) * 100, eGrid: num(R.totalEGrid),
+        dcPeak: num(db3.dcPeak), surplus: num(db3.surplusSum),
+        pv:  { qty: num(ui['inp-pv-qty']), wp: num(ui['inp-pv-wp']), mfr: str(ui['pv-Manufacturer']), model: str(ui['inp-pv-model']), eff: num(ui['pv-Module_Efficiency_Pct']) },
+        inv: { qty: num(ui['inv1-qty']) || 1, kw: num(ui['inp-invKw']), mfr: str(ui['inv1-Manufacturer']), model: str(ui['inp-inv-model']) },
+        bat: { qty: batQty, kwh: batKwh, cap: batQty * batKwh, mfr: str(ui['bat-Manufacturer']), model: str(ui['inp-bat-model']),
+               ckw: num(ui['bat-Max_Continuous_Charge_Power_kw']) * batQty,
+               dkw: num(ui['bat-Max_Continuous_Discharge_Power_kw']) * batQty },
+        tariff: num(ui['fin-tariff']) || 4.2,
+        daily, monthly: Array.isArray(st.monthlyBalances) ? st.monthlyBalances : [],
+        financials: fin, investment, payback,
+        y1savings: num(y1.savings), y1energy: num(y1.energy),
+        cover: (Array.isArray(st.projectImagesBase64) && st.projectImagesBase64[0]) || null
+    };
+    M.sim = simulate(M);
+    document.getElementById('tariff').value = M.tariff;
+
+    document.getElementById('empty').style.display = 'none';
+    document.getElementById('main').style.display = '';
+    renderAll();
+}
+
+function showEmpty(){
+    document.getElementById('main').style.display = 'none';
+    const em = document.getElementById('empty');
+    em.style.display = '';
+    document.getElementById('btn-goto-report').style.display = inShell ? '' : 'none';
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   4) จำลองวันเฉลี่ย 24 ชั่วโมง ─ PV/โหลดมาจากผลจำลองจริง (daily8760)
+      ส่วนแบตเตอรี่จำลองการชาร์จ/คายซ้ำด้วยสเปกจริงจาก DB3
+   ══════════════════════════════════════════════════════════════════ */
+function simulate(m){
+    const rows = [];
+    let soc = m.bat.cap * 0.25;                       // เริ่มวันที่ 25% ตามเงื่อนไข minSoC ของหน้ารายงาน
+    const cLim = m.bat.ckw > 0 ? m.bat.ckw : m.inv.kw;
+    const dLim = m.bat.dkw > 0 ? m.bat.dkw : m.inv.kw;
+    for (let h = 0; h < 24; h++) {
+        let pv, load;
+        if (m.daily) { pv = m.daily[h].pv || 0; load = m.daily[h].load || 0; }
+        else {        // ไม่มี daily8760 (ไฟล์รุ่นเก่า) ใช้เส้นโค้งมาตรฐานจากยอดสูงสุด
+            const s = Math.sin(Math.PI * (h - 6) / 12);
+            pv = (h >= 6 && h <= 18) ? m.dcPeak * Math.pow(Math.max(0, s), 1.3) : 0;
+            load = m.eGrid / 365 / 12;
+        }
+        let bat = 0, grid = 0, exp = 0;
+        const surplus = pv - load;
+        if (m.bat.cap > 0) {
+            if (surplus > 0) { const room = m.bat.cap - soc; const c = Math.min(surplus, cLim, room); soc += c; bat = -c; exp = surplus - c; }
+            else { const need = -surplus; const d = Math.min(need, dLim, Math.max(0, soc - m.bat.cap * 0.25)); soc -= d; bat = d; grid = need - d; }
+        } else {
+            if (surplus > 0) exp = surplus; else grid = -surplus;
+        }
+        rows.push({ h, pv, load, bat, grid, exp, soc: m.bat.cap > 0 ? soc / m.bat.cap * 100 : 0 });
+    }
+    return rows;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   5) ไอคอนอุปกรณ์ (SVG ฝังในไฟล์ ไม่ต้องโหลดอะไรเพิ่ม)
+   ══════════════════════════════════════════════════════════════════ */
+const IC = {
+ pv:`<svg viewBox="0 0 40 40"><rect x="4" y="10" width="32" height="20" rx="2" fill="#1E5A8A"/><path d="M4 17h32M4 24h32M14 10v20M25 10v20" stroke="#8FC6EE" stroke-width="1.3"/><path d="M14 30l-4 6M26 30l4 6" stroke="#3B4C5E" stroke-width="2"/></svg>`,
+ inv:`<svg viewBox="0 0 40 40"><rect x="8" y="5" width="24" height="30" rx="4" fill="#fff" stroke="#3B4C5E" stroke-width="1.5"/><circle cx="20" cy="14" r="3" fill="#E8A317"/><path d="M13 22h14M13 26h14M13 30h9" stroke="#B9C7D6" stroke-width="1.5"/></svg>`,
+ bat:`<svg viewBox="0 0 40 40"><rect x="10" y="4" width="20" height="32" rx="3" fill="#fff" stroke="#1F8A70" stroke-width="1.5"/><path d="M10 14h20M10 22h20M10 30h20" stroke="#DCE3EA"/><circle cx="24" cy="9" r="2" fill="#1F8A70"/></svg>`,
+ house:`<svg viewBox="0 0 40 40"><path d="M6 20L20 7l14 13v14H6z" fill="#F6C453" stroke="#9A6300" stroke-width="1.3"/><rect x="16" y="24" width="8" height="10" fill="#9A6300"/></svg>`,
+ grid:`<svg viewBox="0 0 40 40"><path d="M20 4v32M12 12h16M9 20h22M14 36l6-16 6 16" stroke="#6B7A8F" stroke-width="2" fill="none"/></svg>`,
+ sun:`<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="8" fill="#E8A317"/><g stroke="#E8A317" stroke-width="2.4" stroke-linecap="round"><path d="M20 3v6M20 31v6M3 20h6M31 20h6M8 8l4 4M28 28l4 4M8 32l4-4M28 12l4-4"/></g></svg>`
+};
+
+/* ══════════════════════════════════════════════════════════════════
+   6) วาดหน้าจอทั้งหมด
+   ══════════════════════════════════════════════════════════════════ */
+function renderAll(){
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const v = T()[el.dataset.i18n];
+        if (typeof v === 'string') el.innerText = v;
+    });
+    if (!M) return;
+    const t = T();
+
+    document.getElementById('proj-name').innerText = M.name;
+    document.title = M.name + ' — ' + t.eyebrow;
+    if (M.cover) { const c = document.getElementById('cover-img'); c.src = M.cover; c.style.display = ''; }
+    document.getElementById('sys-badge').innerText = M.bat.cap > 0 ? t.hybrid : t.ongrid;
+    document.getElementById('sys-badge').className = 'badge' + (M.bat.cap > 0 ? ' ac' : '');
+
+    renderEquip(); renderStats(); renderROI(); renderFlow(); renderDayChart(); renderMonthChart(); renderFinTable();
+    renderLoadDesc(); renderAdvice();
+    setHour(hour);
+    renderCompany();
+}
+
+function renderEquip(){
+    const t = T(), rows = [];
+    rows.push([IC.pv, `${fmt(M.pv.qty)} × ${(M.pv.mfr && M.pv.mfr !== '-') ? M.pv.mfr + ' ' : ''}${M.pv.model || t.pv}`,
+               `${fmt(M.pnom, 2)} kWp · ${fmt(M.pv.wp)} Wp${M.pv.eff ? ' · ' + fmt(M.pv.eff, 1) + '%' : ''}`]);
+    rows.push([IC.inv, `${fmt(M.inv.qty)} × ${(M.inv.mfr && M.inv.mfr !== '-') ? M.inv.mfr + ' ' : ''}${M.inv.model || t.hinv}`,
+               `${fmt(M.inv.kw, 1)} kW AC · DC/AC ${M.inv.kw > 0 ? fmt(M.pnom / M.inv.kw, 2) : '—'}`]);
+    if (M.bat.cap > 0)
+        rows.push([IC.bat, `${fmt(M.bat.qty)} × ${(M.bat.mfr && M.bat.mfr !== '-') ? M.bat.mfr + ' ' : ''}${M.bat.model || t.bat}`,
+                   `${fmt(M.bat.cap, 1)} kWh · ${fmt(M.bat.dkw, 1)} kW`]);
+    rows.push([IC.house, t.house, `${t.legend.load.replace(' (kW)','')} ≈ ${fmt(avgLoad(), 2)} kW`]);
+    document.getElementById('eq-list').innerHTML =
+        rows.map(r => `<li>${r[0]}<div><b>${r[1]}</b><span>${r[2]}</span></div></li>`).join('');
+}
+function avgLoad(){ return M.sim.reduce((s, r) => s + r.load, 0) / 24; }
+
+function renderStats(){
+    const t = T();
+    const selfUse = M.sim.reduce((s, r) => s + Math.min(r.pv, r.load) + Math.max(0, r.bat), 0);
+    const cells = [
+        [fmt(M.pnom, 2) + ' <small>kWp</small>', t.kwp, 'hot'],
+        [fmt(M.eGrid) + ' <small>kWh</small>', t.egrid, 'hot'],
+        [fmt(M.pr, 1) + ' <small>%</small>', t.pr, ''],
+        [fmt(M.dcPeak, 1) + ' <small>kW</small>', t.peakdc, ''],
+        [M.pnom > 0 ? fmt(M.eGrid / M.pnom) + ' <small>kWh/kWp</small>' : '—', t.yieldSpec, ''],
+        [fmt(selfUse, 1) + ' <small>kWh</small>', t.selfuse, '']
+    ];
+    document.getElementById('stat-grid').innerHTML =
+        cells.map(c => `<div class="stat ${c[2]}"><div class="v">${c[0]}</div><div class="l">${c[1]}</div></div>`).join('');
+}
+
+function renderROI(){
+    const t = T();
+    const tariff = parseFloat(document.getElementById('tariff').value) || M.tariff;
+    const saveY1 = (tariff === M.tariff || !M.y1energy) ? M.y1savings : M.y1energy * tariff * (M.y1energy ? (M.y1savings / (M.y1energy * M.tariff)) : 1);
+    const pb = (tariff === M.tariff) ? M.payback : (saveY1 > 0 ? M.investment / saveY1 : null);
+    const cells = [
+        ['฿ ' + fmt(M.investment), t.cost],
+        ['฿ ' + fmt(saveY1), t.save],
+        [pb ? fmt(pb, 1) + ' ' + t.years : '—', t.payback],
+        [M.pnom > 0 ? '฿ ' + fmt(M.investment / M.pnom) : '—', t.costkwp]
+    ];
+    document.getElementById('roi-grid').innerHTML =
+        cells.map(c => `<div class="stat"><div class="v">${c[0]}</div><div class="l">${c[1]}</div></div>`).join('');
+    document.getElementById('pb-bar').style.width = pb ? Math.min(100, pb / 25 * 100) + '%' : '100%';
+    document.getElementById('pb-note').innerText = pb ? t.pbNote(fmt(pb, 1)) : t.pbNone;
+    document.getElementById('roi-tip').innerText = t.roiTip(fmt(saveY1), fmt(tariff, 2));
+}
+document.getElementById('tariff').addEventListener('input', () => { if (M) renderROI(); });
+
+/* ── แผนภาพการไหล ─ โหนด + เส้นทางพลังงานที่ติด/ดับตามชั่วโมง ─── */
+function renderFlow(){
+    const t = T(), hasBat = M.bat.cap > 0;
+    document.getElementById('flow-svg').innerHTML = `
+    <svg viewBox="0 0 640 330" role="img" aria-label="${t.flowT}">
+      <g transform="translate(60,18)" id="n-sun">${IC.sun.replace('<svg viewBox="0 0 40 40">','<svg viewBox="0 0 40 40" width="46" height="46">')}
+        <text class="node-sub" x="23" y="60" text-anchor="middle">${t.sun}</text></g>
+      <g transform="translate(40,120)">${IC.pv.replace('<svg viewBox="0 0 40 40">','<svg viewBox="0 0 40 40" width="56" height="56">')}
+        <text class="node-label" x="28" y="72" text-anchor="middle">${t.pv}</text>
+        <text class="node-sub" x="28" y="87" text-anchor="middle">${fmt(M.pnom,2)} kWp</text>
+        <text class="kw" id="kw-pv" x="28" y="103" text-anchor="middle" fill="#1E5A8A"></text></g>
+      <g transform="translate(285,120)">${IC.inv.replace('<svg viewBox="0 0 40 40">','<svg viewBox="0 0 40 40" width="56" height="56">')}
+        <text class="node-label" x="28" y="72" text-anchor="middle">${t.hinv}</text>
+        <text class="node-sub" x="28" y="87" text-anchor="middle">${fmt(M.inv.kw,1)} kW</text></g>
+      <g transform="translate(530,60)">${IC.house.replace('<svg viewBox="0 0 40 40">','<svg viewBox="0 0 40 40" width="56" height="56">')}
+        <text class="node-label" x="28" y="72" text-anchor="middle">${t.house}</text>
+        <text class="kw" id="kw-load" x="28" y="88" text-anchor="middle" fill="#9A6300"></text></g>
+      ${hasBat ? `
+      <g transform="translate(295,235)">${IC.bat.replace('<svg viewBox="0 0 40 40">','<svg viewBox="0 0 40 40" width="50" height="50">')}
+        <text class="node-label" x="25" y="66" text-anchor="middle">${t.bat}</text>
+        <text class="node-sub" x="25" y="81" text-anchor="middle">${fmt(M.bat.cap,1)} kWh</text>
+        <text class="kw" id="kw-soc" x="25" y="-8" text-anchor="middle" fill="#1F8A70"></text></g>` : ''}
+      <g transform="translate(535,235)">${IC.grid.replace('<svg viewBox="0 0 40 40">','<svg viewBox="0 0 40 40" width="50" height="50">')}
+        <text class="node-label" x="25" y="66" text-anchor="middle">${t.grid}</text>
+        <text class="kw" id="kw-grid" x="25" y="-8" text-anchor="middle" fill="#6B7A8F"></text></g>
+      <path id="e-sun"  class="edge" stroke="#E8A317" d="M92,74 C92,95 78,105 72,118"/>
+      <path id="e-pv"   class="edge" stroke="#1E5A8A" d="M100,148 C170,148 220,148 282,148"/>
+      <path id="e-house" class="edge" stroke="#E8A317" d="M345,140 C420,110 470,95 528,90"/>
+      ${hasBat ? `<path id="e-bat" class="edge" stroke="#1F8A70" d="M315,180 C316,200 318,215 320,232"/>` : ''}
+      <path id="e-exp"  class="edge" stroke="#6B7A8F" d="M345,160 C430,185 480,225 532,252"/>
+      <path id="e-imp"  class="edge rev" stroke="#C4432B" d="M560,232 C560,175 560,130 560,120"/>
+    </svg>`;
+}
+
+function setHour(h){
+    hour = h;
+    document.getElementById('hour').value = h;
+    if (!M) return;
+    const r = M.sim[h], t = T();
+    document.getElementById('clock-time').innerText = String(h).padStart(2, '0') + ':00';
+    const stKey = r.pv <= 0.05 ? (h >= 17 && M.bat.cap > 0 && r.bat > 0 ? 'eve' : 'night') : (h < 10 ? 'morn' : 'day');
+    document.getElementById('clock-state').innerText = t.state[stKey];
+
+    const on = (id, yes, rev) => { const el = document.getElementById(id); if (!el) return;
+        el.classList.toggle('on', !!yes); el.classList.toggle('rev', !!rev); };
+    on('e-sun', r.pv > 0.05);
+    on('e-pv', r.pv > 0.05);
+    on('e-house', r.pv > 0.05 || r.bat > 0.05);
+    on('e-bat', Math.abs(r.bat) > 0.05, r.bat > 0);   // ชาร์จ = ไหลลง, คาย = ไหลกลับ
+    on('e-exp', r.exp > 0.05);
+    on('e-imp', r.grid > 0.05);
+
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('kw-pv', fmt(r.pv, 1) + ' kW');
+    set('kw-load', fmt(r.load, 1) + ' kW');
+    set('kw-soc', M.bat.cap > 0 ? fmt(r.soc, 0) + ' %' : '');
+    set('kw-grid', r.grid > 0.05 ? fmt(r.grid, 1) + ' kW' : (r.exp > 0.05 ? '↗ ' + fmt(r.exp, 1) + ' kW' : ''));
+    drawDayCursor();
+}
+
+function togglePlay(){
+    const b = document.getElementById('btn-play');
+    if (timer) { clearInterval(timer); timer = null; b.innerText = '▶'; return; }
+    b.innerText = '⏸';
+    timer = setInterval(() => setHour((hour + 1) % 24), 700);
+}
+
+/* ── กราฟวันเฉลี่ย 24 ชั่วโมง ──────────────────────────────────── */
+function renderDayChart(){
+    const t = T(), W = 640, H = 190, P = {l: 34, r: 34, t: 12, b: 22};
+    const iw = W - P.l - P.r, ih = H - P.t - P.b;
+    const maxKw = Math.max(1, ...M.sim.map(r => Math.max(r.pv, r.load, r.grid))) * 1.15;
+    const x = h => P.l + h / 23 * iw;
+    const y = v => P.t + ih - v / maxKw * ih;
+    const ys = v => P.t + ih - v / 100 * ih;
+    const line = (key, fn) => M.sim.map((r, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + fn(r[key]).toFixed(1)).join('');
+    const area = line('pv', y) + `L${x(23)},${y(0)}L${x(0)},${y(0)}Z`;
+    const gridLines = [0, .25, .5, .75, 1].map(f =>
+        `<line x1="${P.l}" y1="${(P.t + ih - f * ih).toFixed(1)}" x2="${W - P.r}" y2="${(P.t + ih - f * ih).toFixed(1)}" stroke="#DCE3EA" stroke-width="1"/>` +
+        `<text x="${P.l - 5}" y="${(P.t + ih - f * ih + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#7A8794" font-family="Kanit">${fmt(maxKw * f, 0)}</text>`).join('');
+    const hourTicks = [0, 6, 12, 18, 23].map(h =>
+        `<text x="${x(h)}" y="${H - 6}" text-anchor="middle" font-size="10" fill="#7A8794" font-family="Kanit">${h}:00</text>`).join('');
+    document.getElementById('day-chart').innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" id="day-svg">
+        ${gridLines}${hourTicks}
+        <path d="${area}" fill="rgba(22,163,74,.16)"/>
+        <path d="${line('pv', y)}" stroke="#16A34A" stroke-width="2.2" fill="none"/>
+        <path d="${line('load', y)}" stroke="#C4432B" stroke-width="2" fill="none"/>
+        <path d="${line('grid', y)}" stroke="#6B7A8F" stroke-width="1.8" fill="none" stroke-dasharray="5 4"/>
+        ${M.bat.cap > 0 ? `<path d="${line('soc', ys)}" stroke="#EC4899" stroke-width="1.8" fill="none" stroke-dasharray="2 4"/>` : ''}
+        <line id="day-cursor" x1="${x(hour)}" y1="${P.t}" x2="${x(hour)}" y2="${P.t + ih}" stroke="#3B4C5E" stroke-width="1.4" stroke-dasharray="3 3"/>
+      </svg>`;
+    document.getElementById('day-svg').dataset.px = JSON.stringify({l: P.l, iw, t: P.t, ih});
+    document.getElementById('day-legend').innerHTML =
+        `<span><i style="background:#16A34A"></i>${t.legend.pv}</span>` +
+        `<span><i style="background:#C4432B"></i>${t.legend.load}</span>` +
+        `<span><i style="background:#6B7A8F"></i>${t.legend.grid}</span>` +
+        (M.bat.cap > 0 ? `<span><i style="background:#EC4899"></i>${t.legend.soc}</span>` : '');
+}
+function drawDayCursor(){
+    const svg = document.getElementById('day-svg');
+    if (!svg) return;
+    const p = JSON.parse(svg.dataset.px);
+    const cx = p.l + hour / 23 * p.iw;
+    const c = document.getElementById('day-cursor');
+    c.setAttribute('x1', cx); c.setAttribute('x2', cx);
+}
+
+/* ── กราฟแท่งรายเดือน ──────────────────────────────────────────── */
+function renderMonthChart(){
+    const mo = M.monthly;
+    if (!mo.length) { document.getElementById('month-chart').innerHTML = ''; return; }
+    const W = 1100, H = 220, P = {l: 50, r: 10, t: 14, b: 26};
+    const iw = W - P.l - P.r, ih = H - P.t - P.b;
+    const maxE = Math.max(1, ...mo.map(m => m.eGrid || 0)) * 1.12;
+    const bw = iw / mo.length * 0.62;
+    const bars = mo.map((m, i) => {
+        const bx = P.l + iw / mo.length * (i + 0.5) - bw / 2;
+        const bh = (m.eGrid || 0) / maxE * ih;
+        return `<rect x="${bx.toFixed(1)}" y="${(P.t + ih - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="4" fill="#1E5A8A"/>` +
+               `<text x="${(bx + bw / 2).toFixed(1)}" y="${(P.t + ih - bh - 5).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="#3B4C5E" font-family="Kanit">${fmt(m.eGrid)}</text>` +
+               `<text x="${(bx + bw / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="#7A8794" font-family="Kanit">${m.month || i + 1}</text>`;
+    }).join('');
+    const gl = [0, .5, 1].map(f =>
+        `<line x1="${P.l}" y1="${(P.t + ih - f * ih).toFixed(1)}" x2="${W - P.r}" y2="${(P.t + ih - f * ih).toFixed(1)}" stroke="#DCE3EA"/>` +
+        `<text x="${P.l - 6}" y="${(P.t + ih - f * ih + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#7A8794" font-family="Kanit">${fmt(maxE * f)}</text>`).join('');
+    document.getElementById('month-chart').innerHTML = `<svg viewBox="0 0 ${W} ${H}">${gl}${bars}</svg>`;
+}
+
+/* ── คำอธิบายโหลดอาคาร ─ อ่านจากวันเฉลี่ยของผลจำลองจริง ────────── */
+function renderLoadDesc(){
+    const el = document.getElementById('load-desc');
+    const avg = avgLoad(), peak = Math.max(...M.sim.map(r => r.load));
+    if (avg <= 0.05) {
+        el.innerText = lang === 'th'
+            ? 'ผลจำลองชุดนี้ไม่ได้ระบุโหลดอาคาร (โหมดวิศวกรรม 100% Grid Feed) พลังงานที่ผลิตได้ทั้งหมดจึงถูกคิดเป็นการจ่ายเข้าระบบไฟฟ้า หากต้องการเห็นสัดส่วนใช้เอง ให้รันผลจำลองแบบระบุโหลดในหน้ารายงาน'
+            : 'This simulation has no building load (engineering mode, 100% grid feed) — all generated energy is counted as export. Re-run the report simulation with a load profile to see self-consumption.';
+        return;
+    }
+    el.innerText = lang === 'th'
+        ? `โหลดอาคารเฉลี่ยประมาณ ${fmt(avg, 2)} kW (สูงสุด ${fmt(peak, 2)} kW) — ช่วงที่เส้นโหลด (สีแดง) อยู่ใต้เส้นผลิต PV (สีเขียว) อาคารใช้ไฟจากแสงอาทิตย์เต็มที่ ส่วนที่ขาดคือไฟที่ซื้อจากการไฟฟ้า (เส้นประสีเทา) หรือดึงจากแบตเตอรี่ (เส้นประสีชมพู)`
+        : `Average building load ≈ ${fmt(avg, 2)} kW (peak ${fmt(peak, 2)} kW). Where the red load line sits below the green PV line the building runs on solar; the shortfall is imported from the grid (grey dashes) or drawn from the battery (pink dashes).`;
+}
+
+/* ── คำแนะนำในการตัดสินใจลงทุน ─ กติกาง่าย ๆ อ่านจากตัวเลขจริง ── */
+function renderAdvice(){
+    const th = lang === 'th';
+    const items = []; let flag = '';
+    const ratio = M.inv.kw > 0 ? M.pnom / M.inv.kw : 0;
+    const pb = M.payback;
+    const surplusPct = M.eGrid > 0 ? M.surplus / M.eGrid * 100 : 0;
+
+    if (pb && pb <= 6)
+        items.push(th ? `ระยะคืนทุนประมาณ ${fmt(pb, 1)} ปี ถือว่าเร็วเมื่อเทียบกับอายุการใช้งานแผงมากกว่า 25 ปี — หลังจุดคืนทุน ค่าไฟที่ประหยัดได้ (ราวปีละ ${fmt(M.y1savings)} บาท) คือผลตอบแทนต่อเนื่อง`
+                      : `Payback of about ${fmt(pb, 1)} years is fast against a 25+ year panel life — after that point the ~${fmt(M.y1savings)} THB saved each year is ongoing return`);
+    else if (pb)
+        items.push(th ? `ระยะคืนทุนประมาณ ${fmt(pb, 1)} ปี — ควรเทียบกับทางเลือกการลงทุนอื่นและแนวโน้มค่าไฟ หากค่าไฟปรับขึ้น ระยะคืนทุนจะสั้นลง`
+                      : `Payback of about ${fmt(pb, 1)} years — compare with alternative investments and tariff outlook; rising tariffs shorten it`);
+    else
+        items.push(th ? 'เงินสะสมยังไม่กลับมาเท่าทุนภายใน 25 ปีตามสมมุติฐานปัจจุบัน ควรทบทวนขนาดระบบ ราคา หรือสมมุติฐานค่าไฟก่อนตัดสินใจ'
+                      : 'Cumulative savings do not recover the investment within 25 years under current assumptions — revisit system size, price, or tariff assumptions first');
+
+    if (M.pnom > 0)
+        items.push(th ? `ต้นทุนเฉลี่ย ${fmt(M.investment / M.pnom)} บาท/kWp — ใช้ตัวเลขนี้เทียบข้อเสนอจากผู้ติดตั้งรายอื่นในขนาดใกล้เคียงกัน`
+                      : `Average cost ${fmt(M.investment / M.pnom)} THB/kWp — use this to benchmark quotes for similar system sizes`);
+
+    if (M.bat.cap > 0)
+        items.push(th ? `แบตเตอรี่ ${fmt(M.bat.cap, 1)} kWh ช่วยย้ายไฟกลางวันไปใช้กลางคืนและสำรองไฟยามไฟดับ — ควรกำหนดให้ชัดว่าจะสำรองวงจรจำเป็นใดบ้าง (แสงสว่าง ปั๊มน้ำ สื่อสาร) ให้อยู่ในกำลังจ่าย ${fmt(M.bat.dkw, 1)} kW`
+                      : `The ${fmt(M.bat.cap, 1)} kWh battery shifts daytime energy to the night and backs up outages — define which essential circuits stay within its ${fmt(M.bat.dkw, 1)} kW output`);
+    else if (surplusPct > 30)
+        items.push(th ? `มีไฟส่วนเกินราว ${fmt(M.surplus)} หน่วย/ปี (${fmt(surplusPct)}% ของที่ผลิตได้) — หากไม่มีสัญญาขายไฟ ควรพิจารณาเพิ่มแบตเตอรี่ หรือย้ายการใช้ไฟ (เครื่องทำน้ำร้อน ปั๊ม อัดประจุรถไฟฟ้า) มาไว้ช่วงกลางวันเพื่อให้คุ้มขึ้น`
+                      : `About ${fmt(M.surplus)} kWh/y (${fmt(surplusPct)}%) is surplus — without an export agreement, consider adding a battery or shifting loads (water heating, pumps, EV charging) into daytime`);
+
+    if (M.pr < 70 && ratio > 1.3)
+        items.push(th ? `PR ${fmt(M.pr, 1)}% ต่ำกว่าระบบทั่วไป สาเหตุหลักคืออินเวอร์เตอร์เล็กกว่าแผงมาก (clipping) ไม่ใช่ความผิดปกติของอุปกรณ์`
+                      : `PR of ${fmt(M.pr, 1)}% is below typical systems, mainly due to inverter clipping rather than equipment faults`);
+    else if (M.pr < 70)
+        items.push(th ? `PR ${fmt(M.pr, 1)}% ต่ำกว่าระบบทั่วไป (75–85%) ควรตรวจการบังเงา ทิศ/มุมเอียงหลังคา และความสะอาดแผงเพิ่มเติม`
+                      : `PR of ${fmt(M.pr, 1)}% is below the typical 75–85% — check shading, roof orientation/tilt, and panel soiling`);
+
+    if (ratio > 1.3)
+        flag = th ? `DC/AC ratio ${fmt(ratio, 2)} ค่อนข้างสูง — กำลังผลิตช่วงเที่ยงจะถูกจำกัดที่ ${fmt(M.inv.kw, 0)} kW ของอินเวอร์เตอร์ (clipping) ตรวจว่าเป็นการออกแบบที่ตั้งใจ หรือควรเพิ่มขนาด/จำนวนอินเวอร์เตอร์`
+                  : `DC/AC ratio ${fmt(ratio, 2)} is high — midday output is clipped at the inverter's ${fmt(M.inv.kw, 0)} kW. Confirm this is intentional or consider more inverter capacity`;
+
+    const tip = th ? 'ตัวเลขทั้งหมดมาจากแบบจำลอง ก่อนตัดสินใจขั้นสุดท้ายควรตรวจบิลค่าไฟจริงย้อนหลัง 12 เดือน พฤติกรรมใช้ไฟรายชั่วโมง สภาพโครงสร้างหลังคา และการขออนุญาตหน่วยงานที่เกี่ยวข้อง (กฟภ./กฟน., อบต./เทศบาล) ให้ครบถ้วน'
+                   : 'All figures are simulated — before the final decision, review 12 months of actual bills, hourly usage patterns, roof structure condition, and complete utility/local permits';
+
+    document.getElementById('advice-list').innerHTML = items.map(i => `<li>${i}</li>`).join('');
+    document.getElementById('advice-flag').innerHTML = flag ? `<div class="flag">${flag}</div>` : '';
+    document.getElementById('advice-tip').innerHTML = `<div class="tip">${tip}</div>`;
+}
+
+/* ── ตารางการเงิน 25 ปี ────────────────────────────────────────── */
+function renderFinTable(){
+    const t = T(), fin = M.financials;
+    if (!fin.length) { document.getElementById('fin-table').innerHTML = ''; return; }
+    const head = `<thead><tr>${t.finHead.map(h => `<th>${h}</th>`).join('')}</tr></thead>`;
+    const body = fin.filter(f => f.y > 0).map(f => {
+        const cumCls = f.cum >= 0 ? 'best' : 'neg';
+        return `<tr><td>${f.y}</td><td>${fmt(f.energy)}</td><td>${fmt(f.savings)}</td>` +
+               `<td>${fmt(f.om)}</td><td>${fmt(f.net)}</td><td class="${cumCls}">${fmt(f.cum)}</td></tr>`;
+    }).join('');
+    document.getElementById('fin-table').innerHTML = `<table>${head}<tbody>${body}</tbody></table>`;
+}
+
+/* ── ข้อมูลบริษัทท้ายหน้า ──────────────────────────────────────── */
+function renderCompany(){
+    const c = COMPANY || {};
+    const box = document.getElementById('company-box');
+    if (!c.company_name) { box.style.display = 'none'; return; }
+    box.style.display = '';
+    document.getElementById('co-name').innerText = c.company_name || '';
+    document.getElementById('co-addr').innerText = c.company_address || '';
+    document.getElementById('co-contact').innerText =
+        [c.company_phone, c.company_email, c.company_website].filter(Boolean).join(' · ');
+    const lg = document.getElementById('co-logo');
+    if (c.company_logo_url) { lg.src = c.company_logo_url; lg.style.display = ''; } else lg.style.display = 'none';
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   7) เสียงบรรยายสรุประบบ (ใช้เสียงในเครื่อง แบบเดียวกับรายงานตัวอย่าง)
+   ══════════════════════════════════════════════════════════════════ */
+function narration(){
+    const t = T(), pb = M.payback ? fmt(M.payback, 1) : null;
+    if (lang === 'th') {
+        let s = `ระบบโซลาร์เซลล์โครงการ ${M.name} ขนาดติดตั้ง ${fmt(M.pnom, 2)} กิโลวัตต์ ` +
+                `ใช้แผงจำนวน ${fmt(M.pv.qty)} แผง ผลิตพลังงานได้ประมาณปีละ ${fmt(M.eGrid)} หน่วย `;
+        if (M.bat.cap > 0) s += `พร้อมแบตเตอรี่ความจุ ${fmt(M.bat.cap, 1)} กิโลวัตต์ชั่วโมง เก็บไฟกลางวันไว้ใช้กลางคืน `;
+        s += `เงินลงทุน ${fmt(M.investment)} บาท ` + (pb ? `คาดว่าคืนทุนในเวลาประมาณ ${pb} ปี` : '');
+        return s;
+    }
+    let s = `The ${M.name} solar system is ${fmt(M.pnom, 2)} kilowatts, using ${fmt(M.pv.qty)} panels, ` +
+            `producing about ${fmt(M.eGrid)} units per year. `;
+    if (M.bat.cap > 0) s += `A ${fmt(M.bat.cap, 1)} kilowatt-hour battery stores daytime energy for the night. `;
+    s += `The investment is ${fmt(M.investment)} baht` + (pb ? `, with payback in about ${pb} years.` : '.');
+    return s;
+}
+/* พูดสรุประบบ คืน Promise ที่จบเมื่อเสียงจบ ใช้ได้ทั้งปุ่มฟังและตอนอัดวิดีโอ */
+function speakNarration(){
+    return new Promise(resolve => {
+        if (!('speechSynthesis' in window)) { resolve(false); return; }
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(narration());
+        u.lang = lang === 'th' ? 'th-TH' : 'en-US';
+        u.rate = 0.92;
+        const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith(u.lang.slice(0, 2)));
+        if (v) u.voice = v;
+        u.onstart = () => { document.getElementById('voice-box').classList.add('speaking'); document.getElementById('voice-status').innerText = T().playing; };
+        u.onend = u.onerror = () => {
+            document.getElementById('voice-box').classList.remove('speaking');
+            document.getElementById('voice-status').innerText = T().voiceNote;
+            resolve(true);
+        };
+        speechSynthesis.speak(u);
+    });
+}
+function speak(){
+    if (!('speechSynthesis' in window)) { document.getElementById('voice-status').innerText = T().voiceNo; return; }
+    speakNarration();
+}
+function stopSpeak(){ if ('speechSynthesis' in window) speechSynthesis.cancel(); }
+
+/* ══════════════════════════════════════════════════════════════════
+   8) ส่งออกวิดีโอ ─ อัดแอนิเมชันการไหลพลังงานครบ 24 ชั่วโมงเป็น .webm
+      วาด SVG ของแผนภาพและกราฟลง canvas ทีละเฟรม แล้วบันทึกด้วย
+      MediaRecorder ในเครื่อง ไม่ต้องพึ่งเซิร์ฟเวอร์หรือไลบรารีภายนอก
+   ══════════════════════════════════════════════════════════════════ */
+/* สไตล์ที่ต้องพกไปกับ SVG ตอนแปลงเป็นภาพ เพราะภาพ SVG มองไม่เห็น CSS ของหน้า */
+const VIDEO_SVG_CSS = '.edge{fill:none;stroke-width:3;stroke-linecap:round;stroke-dasharray:6 8;opacity:.15}' +
+    '.edge.on{opacity:1}.node-label{font:500 12.5px Kanit,sans-serif;fill:#12263A}' +
+    '.node-sub{font:11px Kanit,sans-serif;fill:#7A8794}.kw{font:600 12px Kanit,sans-serif}';
+
+function svgToImage(svgEl, dashOffset){
+    return new Promise(resolve => {
+        const clone = svgEl.cloneNode(true);
+        clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        // กำหนดขนาดจริงเป็น 2 เท่าของ viewBox ให้ภาพคมเมื่อขยายลง canvas
+        const vb = (clone.getAttribute('viewBox') || '0 0 640 330').split(/\s+/);
+        clone.setAttribute('width', parseFloat(vb[2]) * 2);
+        clone.setAttribute('height', parseFloat(vb[3]) * 2);
+        const st = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+        st.textContent = VIDEO_SVG_CSS;
+        clone.insertBefore(st, clone.firstChild);
+        // ขยับลายเส้นประเองทีละเฟรม แทน CSS animation ที่ไม่ทำงานในภาพนิ่ง
+        if (dashOffset != null) clone.querySelectorAll('.edge.on').forEach(e => {
+            e.style.strokeDashoffset = (e.classList.contains('rev') ? dashOffset : -dashOffset) + 'px';
+        });
+        const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml;charset=utf-8' }));
+        const img = new Image();
+        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+        img.src = url;
+    });
+}
+
+function drawVideoFrame(ctx, flow, day, h){
+    const t = T(), r = M.sim[h];
+    ctx.fillStyle = '#F3F6F8'; ctx.fillRect(0, 0, 1280, 720);
+    // แถบหัวเรื่อง
+    ctx.fillStyle = '#0F1E33'; ctx.fillRect(0, 0, 1280, 92);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#F6C453'; ctx.font = '600 15px Kanit,sans-serif';
+    ctx.fillText(t.eyebrow, 28, 34);
+    ctx.fillStyle = '#fff'; ctx.font = '600 30px Kanit,sans-serif';
+    ctx.fillText(M.name, 28, 72);
+    ctx.textAlign = 'right'; ctx.font = '600 44px Kanit,sans-serif';
+    ctx.fillStyle = '#F6C453';
+    ctx.fillText(String(h).padStart(2, '0') + ':00', 1252, 66);
+    ctx.textAlign = 'left';
+    // ซ้าย : แผนภาพการไหล + กราฟวันเฉลี่ย
+    ctx.fillStyle = '#fff'; ctx.fillRect(16, 108, 764, 596);
+    ctx.strokeStyle = '#DCE3EA'; ctx.strokeRect(16.5, 108.5, 763, 595);
+    if (flow) ctx.drawImage(flow, 24, 116, 748, 386);
+    if (day) ctx.drawImage(day, 24, 500, 748, 200);
+    // ขวา : ตัวเลขสำคัญประจำชั่วโมงและของโครงการ
+    ctx.fillStyle = '#fff'; ctx.fillRect(796, 108, 468, 596);
+    ctx.strokeRect(796.5, 108.5, 467, 595);
+    const rows = [
+        [t.kwp, fmt(M.pnom, 2) + ' kWp'],
+        [t.egrid, fmt(M.eGrid) + ' kWh'],
+        [t.pr, fmt(M.pr, 1) + ' %'],
+        [t.cost, '฿ ' + fmt(M.investment)],
+        [t.payback, M.payback ? fmt(M.payback, 1) + ' ' + t.years : '—'],
+        [t.legend.pv.replace(' (kW)', ''), fmt(r.pv, 1) + ' kW'],
+        [t.legend.load.replace(' (kW)', ''), fmt(r.load, 1) + ' kW'],
+        [t.legend.grid.replace(' (kW)', ''), fmt(r.grid, 1) + ' kW']
+    ];
+    if (M.bat.cap > 0) rows.push([t.legend.soc.replace(' (%)', ''), fmt(r.soc, 0) + ' %']);
+    let y = 158;
+    rows.forEach(([label, val]) => {
+        ctx.fillStyle = '#7A8794'; ctx.font = '14px Kanit,sans-serif';
+        ctx.fillText(label, 822, y);
+        ctx.fillStyle = '#12263A'; ctx.font = '600 25px Kanit,sans-serif';
+        ctx.fillText(val, 822, y + 30);
+        y += 60;
+    });
+}
+
+let VID_BUSY = false;
+
+/* ปุ่ม Export Video : เปิดหน้าต่างให้เลือกก่อนว่าเอาแบบมีเสียงหรือไม่มีเสียง */
+function exportVideo(){
+    if (!M || VID_BUSY) return;
+    document.getElementById('vid-modal').style.display = '';
+}
+function closeVidModal(){ document.getElementById('vid-modal').style.display = 'none'; }
+
+/* ── แบบมีเสียงบรรยาย ─ บันทึกหน้าจอ + เสียงระบบของ Windows
+   เสียงพูดจาก speechSynthesis ออกทางลำโพงเป็น "เสียงระบบ" เบราว์เซอร์ไม่ให้
+   ดึงเข้าไฟล์ตรง ๆ จึงใช้การแชร์หน้าจอทั้งจอพร้อมติ๊กแชร์เสียงระบบแทน ──── */
+async function exportVideoWithVoice(){
+    if (!M || VID_BUSY) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) { alert(T().vmNoSupport); return; }
+    let stream = null;
+    try {
+        stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
+    } catch (e) { return; }                        // ผู้ใช้กดยกเลิกหน้าต่างแชร์ ไม่ต้องฟ้อง
+    VID_BUSY = true;
+    const btn = document.getElementById('btn-video');
+    const oldHour = hour;
+    if (timer) togglePlay();
+    try {
+        if (stream.getAudioTracks().length === 0 && !confirm(T().vmNoAudio)) return;
+
+        window.scrollTo({ top: 0 });
+        const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') ? 'video/webm;codecs=vp9,opus' : 'video/webm';
+        const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 });
+        const chunks = [];
+        rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+        const done = new Promise(res => rec.onstop = res);
+        // ผู้ใช้กด "หยุดแชร์" ของเบราว์เซอร์เอง ก็ปิดการอัดให้เรียบร้อย
+        stream.getVideoTracks()[0].addEventListener('ended', () => { try { rec.stop(); } catch (e) {} });
+        rec.start();
+        btn.innerText = T().vmRec;
+
+        await new Promise(r => setTimeout(r, 800));   // เผื่อเวลาหน้าจอนิ่งก่อนเริ่ม
+        // เดินแอนิเมชันครบ 24 ชั่วโมง พร้อมเสียงบรรยาย รอจนจบทั้งสองอย่าง
+        const anim = (async () => { for (let h = 0; h < 24; h++) { setHour(h); await new Promise(r => setTimeout(r, 700)); } })();
+        await Promise.all([speakNarration(), anim]);
+        await new Promise(r => setTimeout(r, 700));
+
+        try { rec.stop(); } catch (e) {}
+        await done;
+
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = (M.name || 'solar').replace(/[\\/:*?"<>|]/g, '_') + '_presentation.webm';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    } catch (e) {
+        console.error('บันทึกหน้าจอไม่สำเร็จ', e);
+        alert('บันทึกหน้าจอไม่สำเร็จ : ' + e.message);
+    } finally {
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        stopSpeak();
+        setHour(oldHour);
+        btn.innerText = T().video;
+        VID_BUSY = false;
+    }
+}
+
+/* ── แบบไม่มีเสียง ─ วาดเฟรมลง canvas เองทั้งหมด (แบบเดิม) ─────── */
+async function exportVideoSilent(){
+    if (!M || VID_BUSY) return;
+    const btn = document.getElementById('btn-video');
+    if (!('MediaRecorder' in window) || !document.createElement('canvas').captureStream) { alert(T().videoNo); return; }
+    VID_BUSY = true;
+    const oldHour = hour;
+    if (timer) togglePlay();                       // หยุดปุ่มเล่นอัตโนมัติก่อน กันชั่วโมงกระโดดระหว่างอัด
+    try {
+        const cv = document.createElement('canvas'); cv.width = 1280; cv.height = 720;
+        const ctx = cv.getContext('2d');
+        const stream = cv.captureStream(30);
+        const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
+        const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 });
+        const chunks = [];
+        rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+        const done = new Promise(res => rec.onstop = res);
+        rec.start();
+
+        const SUB = 4, HOLD = 110;                 // 4 เฟรมย่อยต่อชั่วโมง ≈ วิดีโอยาว 12 วินาที
+        for (let h = 0; h < 24; h++) {
+            setHour(h);
+            btn.innerText = T().videoBusy + (h + 1) + '/24';
+            const day = await svgToImage(document.getElementById('day-svg'));
+            for (let f = 0; f < SUB; f++) {
+                const flow = await svgToImage(document.querySelector('#flow-svg svg'), (h * SUB + f) * 4);
+                drawVideoFrame(ctx, flow, day, h);
+                await new Promise(rs => setTimeout(rs, HOLD));
+            }
+        }
+        rec.stop(); await done;
+
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = (M.name || 'solar').replace(/[\\/:*?"<>|]/g, '_') + '_summary.webm';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    } catch (e) {
+        console.error('สร้างวิดีโอไม่สำเร็จ', e);
+        alert('สร้างวิดีโอไม่สำเร็จ : ' + e.message);
+    } finally {
+        setHour(oldHour);
+        btn.innerText = T().video;
+        VID_BUSY = false;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   9) เริ่มระบบ
+   ══════════════════════════════════════════════════════════════════ */
+function setLang(l){
+    lang = l;
+    document.getElementById('lang-th').classList.toggle('on', l === 'th');
+    document.getElementById('lang-en').classList.toggle('on', l === 'en');
+    document.documentElement.lang = l;
+    if (M) renderAll(); else { showEmpty(); document.querySelectorAll('[data-i18n]').forEach(el => {
+        const v = T()[el.dataset.i18n]; if (typeof v === 'string') el.innerText = v; }); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setLang('th');
+    showEmpty();
+    // เปิดใน master_shell : ขอข้อมูลโครงการทันที (หน้าหลักจะ broadcast กลับมา)
+    if (inShell) { try { window.parent.postMessage({ type: 'REQUEST_SESSION' }, '*'); } catch(e) {} }
+});
+</script>
+</body>
+</html>

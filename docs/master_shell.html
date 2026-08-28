@@ -110,6 +110,12 @@
                 <div class="step-num w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs font-bold mr-2">5</div>
                 <span class="text-sm">Proposal &amp; Report</span>
             </button>
+            <div class="flex items-center text-slate-300"><i class="fa-solid fa-chevron-right text-[10px]"></i></div>
+
+            <button onclick="switchTab('summary')" id="tab-summary" class="nav-step flex-1 sm:flex-none flex items-center px-4 h-full text-slate-500 hover:bg-slate-50 min-w-max" title="บทสรุประบบสำหรับนำเสนอลูกค้า">
+                <div class="step-num w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs font-bold mr-2">6</div>
+                <span class="text-sm">System Summary</span>
+            </button>
         </div>
     </nav>
 
@@ -121,6 +127,7 @@
         <iframe id="frame-model3d" src="asc_3d.html" class="workspace-iframe bg-white"></iframe>
         <iframe id="frame-device" src="device_location.html" class="workspace-iframe bg-white"></iframe>
         <iframe id="frame-report" src="asc_report.html" class="workspace-iframe bg-white"></iframe>
+        <iframe id="frame-summary" src="asc_summary.html" class="workspace-iframe bg-white"></iframe>
     </main>
 
     <!-- 4. Floating Live Metrics Bar — ถอดออกแล้ว เพราะทับแถบสถานะของหน้าออกแบบ -->
@@ -491,7 +498,7 @@
             }
             // หน้าคู่มือขอสลับไปแท็บอื่น
             else if (data.type === 'SWITCH_TAB') {
-                if (['manual','pea','asc','model3d','device','report'].includes(data.tab)) switchTab(data.tab);
+                if (['manual','pea','asc','model3d','device','report','summary'].includes(data.tab)) switchTab(data.tab);
                 return;
             }
             // หน้าลูกขอออกจากระบบ
@@ -547,7 +554,7 @@
                 projectId: currentProjectId,
                 payload: slimProjectData()
             };
-            ['frame-manual','frame-pea','frame-asc','frame-model3d','frame-device','frame-report'].forEach(id => {
+            ['frame-manual','frame-pea','frame-asc','frame-model3d','frame-device','frame-report','frame-summary'].forEach(id => {
                 const f = document.getElementById(id);
                 if (f && f.contentWindow) { try { f.contentWindow.postMessage(payload, '*'); } catch (e) {} }
             });
@@ -601,7 +608,7 @@
         document.addEventListener('DOMContentLoaded', initApp);
 
         // ส่ง Session ให้หน้าลูกทันทีที่แต่ละ iframe โหลดเสร็จ
-        ['frame-manual','frame-pea','frame-asc','frame-model3d','frame-device','frame-report'].forEach(id => {
+        ['frame-manual','frame-pea','frame-asc','frame-model3d','frame-device','frame-report','frame-summary'].forEach(id => {
             const f = document.getElementById(id);
             if (!f) return;
             f.addEventListener('load', function () {
