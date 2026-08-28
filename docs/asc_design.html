@@ -292,8 +292,8 @@
         .draw-mode-box { display: flex; gap: 10px; background: #fffbeb; padding: 10px; border: 1px solid #fde68a; border-radius: 4px; }
         
         /* หมุดแก้ไขรูปทรง — ทำเป็นสี่เหลี่ยมสีน้ำเงิน ไม่ใช่วงกลมสีแดงเหมือนเดิม
-           เพราะหมุด GCP ของภาพโดรนเป็นวงกลมสีส้มขอบขาวขนาดใกล้กัน วางบนภาพถ่าย
-           ดาวเทียมแล้วแยกไม่ออกว่าจุดไหนของอะไร เผลอลากผิดตัวได้ง่าย
+           เพราะหมุด GCP ของภาพโดรนเป็นกากบาทสีส้มเข้มรองพื้นขาว วางบนภาพถ่าย
+           ดาวเทียมแล้วอาจสับสนว่าจุดไหนของอะไร เผลอลากผิดตัวได้ง่าย
            ต่างกันทั้งรูปทรงและสี จึงแยกออกแน่นอนไม่ว่าจะมองบนพื้นหลังแบบใด */
         .leaflet-div-icon.leaflet-editing-icon { border-radius: 2px !important; background-color: #2563eb !important; border: 2px solid #ffffff !important; width: 12px !important; height: 12px !important; margin-left: -6px !important; margin-top: -6px !important; box-shadow: 0 1px 3px rgba(0,0,0,.45) !important; }
        .interactive-panel { cursor: pointer !important; outline: none; shape-rendering: geometricPrecision; }
@@ -462,9 +462,9 @@
                     <div class="form-group smart-db smart-db-drone" id="droneListContainer">
                         <div style="font-size: 0.75em; color: #64748b; margin-bottom: 8px; line-height: 1.3;">
                             <b>1. วางคร่าว ๆ ก่อน</b> — เลือกไฟล์ แล้วใช้ <b>✋ ย้ายภาพ</b> ลากไปวาง ปรับ <b>หมุน / ย่อ-ขยาย</b> ให้ทาบกับภาพดาวเทียมพอประมาณ<br>
-                            <b>2. ปรับละเอียดด้วย GCP</b> — เลื่อนแผนที่ให้จุดสังเกต (มุมอาคาร/เสา) อยู่กึ่งกลางจอ กด <b>🎯 เพิ่ม GCP</b> แล้วลากหมุดส้มไปยังตำแหน่งจริง<br>
-                            <span style="color:#94a3b8;">1 จุด = เลื่อน · 2 จุด = เลื่อน+หมุน+ย่อขยาย · 3 จุด = Affine ตรงเป๊ะทุกจุด · 4 จุดขึ้นไป = Affine เฉลี่ยความคลาด (มี RMSE) หรือเลือก Rubber-sheet เพื่อดัดให้ตรงทุกจุด</span><br>
-                            🔍 ซูมไปที่ภาพ · 🔒 ล็อกกันขยับ · คลิกขวาที่หมุด = ลบทีละจุด · ซ้อนหลายภาพด้วยปุ่ม "+ เพิ่มรูป"
+                            <b>2. ปรับละเอียดด้วย GCP</b> — กด <b>🎯 ปัก GCP</b> แล้ว <b>① คลิกจุดเด่นบนภาพโดรน</b> (มุมหลังคา/เสา) ตามด้วย <b>② คลิกตำแหน่งจริงของจุดเดียวกันบนดาวเทียม</b> ภาพจะขยับเข้าหาทันที ปักต่อได้เรื่อย ๆ (กด Esc เพื่อจบ) — กระจายจุดเป็นสามเหลี่ยมกว้าง ๆ อย่าปักซ้อน/เรียงเส้นตรง<br>
+                            <span style="color:#94a3b8;">1 จุด = เลื่อน · 2 จุด = เลื่อน+หมุน+ย่อขยาย · 3 จุด = Affine ตรงเป๊ะทุกจุด · 4 จุดขึ้นไป = Affine เฉลี่ยความคลาด (มี RMSE) หรือเลือก Rubber-sheet เพื่อดัดให้ตรงทุกจุด · เส้นประแดง = ความคลาดของแต่ละหมุด</span><br>
+                            🔍 ซูมไปที่ภาพ · 🔒 ล็อกกันขยับ · ลากหมุด ✛ เพื่อปรับ · ลบหมุดจากรายการหรือคลิกขวาที่หมุด · ซ้อนหลายภาพด้วยปุ่ม "+ เพิ่มรูป"
                         </div>
                     </div>
 
@@ -2045,6 +2045,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     const c0 = this.pxToMerc(g[0].u, g[0].v);
                     this.A = AscAff.compose(AscAff.translation(dst[0][0]-c0[0], dst[0][1]-c0[1]), this.A);
                 }
+                this.updateLines();
             }
 
             /* ความคลาดเคลื่อนเฉลี่ยเป็นเมตร — ต่ำกว่า 0.5 ม. ถือว่าใช้ได้สำหรับงานออกแบบแผง */
@@ -2058,31 +2059,76 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 return Math.sqrt(s / this.gcps.length);
             }
 
-            /* ปักหมุดที่กึ่งกลางจอ — จุดพิกเซลล็อกไว้ตรงจุดที่เห็น แล้วผู้ใช้ลากหมุดไปยังตำแหน่งจริง
-               ใช้กึ่งกลางจอแทนการดักคลิกบนแผนที่ เพื่อไม่ให้ชนกับเครื่องมือวาดหลังคาที่มีอยู่เดิม */
-            addGcpAtCenter() {
+            /* ปักหมุดโดยระบุจุดยึดบนภาพ (พิกเซล u,v) กับตำแหน่งจริง (lat,lng) ตรง ๆ
+               ใช้กับโหมดคลิก 2 จังหวะ: คลิกจุดเด่นบนภาพโดรนก่อน แล้วคลิกตำแหน่งจริงบนดาวเทียม */
+            addGcpAt(u, v, lat, lng) {
                 if (!this.src) return null;
-                const ll = map.getCenter();
-                const px = this.latLngToPx(ll);
-                const g = { u: px[0], v: px[1], lat: ll.lat, lng: ll.lng, marker: null };
+                const g = { u, v, lat, lng, marker: null, line: null };
                 this.gcps.push(g);
                 this._makeMarker(g);
                 return g;
             }
 
+            /* ตำแหน่งของจุดยึดบนภาพตามเมทริกซ์ปัจจุบัน กับความคลาดของหมุดนั้นเป็นเมตร */
+            anchorLatLng(g) { return this.pxToLatLng(g.u, g.v); }
+            gcpError(g) { return map.distance(this.anchorLatLng(g), L.latLng(g.lat, g.lng)); }
+
+            /* ตรวจคุณภาพชุดจุดยึด — จุดซ้อนกันหรือเรียงเกือบเป็นเส้นตรงทำให้สมการเสื่อมรูป
+               ภาพจะไม่ขยับตามหมุดแล้วผู้ใช้จะงงว่าค้าง จึงเตือนทันทีที่เกิด */
+            gcpQualityWarning() {
+                const g = this.gcps;
+                if (g.length < 2 || !this.w) return null;
+                const diag = Math.hypot(this.w, this.h);
+                for (let i = 0; i < g.length; i++)
+                    for (let j = i + 1; j < g.length; j++)
+                        if (Math.hypot(g[i].u - g[j].u, g[i].v - g[j].v) < diag * 0.02)
+                            return 'จุดยึดที่ ' + (i + 1) + ' กับ ' + (j + 1) + ' อยู่ใกล้กันเกินไปบนภาพ — ลบทิ้งหนึ่งจุด แล้วปักใหม่ให้กระจายห่างกัน ภาพจึงจะขยับตามหมุดได้ถูกต้อง';
+                if (g.length >= 3) {
+                    let best = 0;
+                    for (let i = 0; i < g.length; i++)
+                        for (let j = i + 1; j < g.length; j++)
+                            for (let k = j + 1; k < g.length; k++) {
+                                const a = Math.abs((g[j].u - g[i].u) * (g[k].v - g[i].v) -
+                                                   (g[k].u - g[i].u) * (g[j].v - g[i].v)) / 2;
+                                if (a > best) best = a;
+                            }
+                    if (best < Math.pow(diag * 0.05, 2))
+                        return 'จุดยึดเรียงเกือบเป็นเส้นตรง — ปักจุดต่อไปให้กางออกเป็นสามเหลี่ยมกว้าง ๆ ภาพจึงจะหมุน/ย่อขยายตามได้ถูกต้อง';
+                }
+                return null;
+            }
+
+            /* เส้นเชื่อมจุดยึดบนภาพ ↔ หมุดตำแหน่งจริง ให้เห็นว่าจุดไหนคลาดเท่าไร
+               อยู่ใน droneMarkers กลุ่มเดียวกับหมุด จะได้ถูกซ่อนตอนบันทึกภาพเหมือนกัน */
+            updateLines() {
+                this.gcps.forEach(g => {
+                    if (!g.marker) return;
+                    const pts = [this.anchorLatLng(g), [g.lat, g.lng]];
+                    if (g.line) g.line.setLatLngs(pts);
+                    else g.line = L.polyline(pts, { color: '#dc2626', weight: 2, dashArray: '4 4',
+                                                    opacity: 0.85, interactive: false }).addTo(droneMarkers);
+                });
+            }
+
             _makeMarker(g) {
                 const idx = () => this.gcps.indexOf(g) + 1;
+                /* กากบาทสีส้มเข้ม เจาะกลางโล่ง เล็งจุดอ้างอิงได้แม่นกว่าวงกลมทึบ
+                   รองพื้นเส้นขาวไว้ข้างใต้ ให้มองเห็นบนหลังคาสีเข้มด้วย */
                 const m = L.marker([g.lat, g.lng], {
                     draggable: true,
                     zIndexOffset: 900,
                     icon: L.divIcon({
                         className: 'drone-marker',
-                        html: '<div style="width:16px;height:16px;background:#ea580c;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.6);"></div>',
-                        iconSize: [20, 20], iconAnchor: [10, 10]
+                        html: '<svg width="26" height="26" viewBox="0 0 26 26" style="display:block;">' +
+                              '<g stroke="#ffffff" stroke-width="5" stroke-linecap="round">' +
+                              '<path d="M13 1.5v7.5M13 17v7.5M1.5 13H9M17 13h7.5"/></g>' +
+                              '<g stroke="#c2410c" stroke-width="2.6" stroke-linecap="round">' +
+                              '<path d="M13 1.5v7.5M13 17v7.5M1.5 13H9M17 13h7.5"/></g></svg>',
+                        iconSize: [26, 26], iconAnchor: [13, 13]
                     })
                 }).addTo(droneMarkers);
-                m.bindTooltip(() => 'GCP ' + idx() + ' — ' + this.name + ' (ลากไปยังตำแหน่งจริง)',
-                              { direction: 'top', offset: [0, -12] });
+                m.bindTooltip(() => 'GCP ' + idx() + ' — ' + this.name + ' (ลากปรับตำแหน่งจริง · คลิกขวาเพื่อลบ)',
+                              { direction: 'top', offset: [0, -14] });
                 m.on('dragstart', () => { if (this.locked) m.dragging.disable(); });
                 m.on('drag', () => {
                     const ll = m.getLatLng();
@@ -2092,6 +2138,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 m.on('dragend', () => { renderDroneList(); });
                 m.on('contextmenu', () => { this.removeGcp(g); });
                 g.marker = m;
+                this.updateLines();
             }
 
             /* แปลงภาพในพิกัดพิกเซล แล้วลาก GCP ตามไปด้วย
@@ -2106,6 +2153,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     g.lat = ll.lat; g.lng = ll.lng;
                     if (g.marker) g.marker.setLatLng([g.lat, g.lng]);
                 });
+                this.updateLines();
             }
             translateMerc(dx, dy) {
                 this.A = AscAff.compose(AscAff.translation(dx, dy), this.A);
@@ -2140,11 +2188,15 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 const i = this.gcps.indexOf(g);
                 if (i < 0) return;
                 if (g.marker) droneMarkers.removeLayer(g.marker);
+                if (g.line)   droneMarkers.removeLayer(g.line);
                 this.gcps.splice(i, 1);
                 this.refit(); droneLayer.redraw(); renderDroneList();
             }
             clearGcps() {
-                this.gcps.forEach(g => { if (g.marker) droneMarkers.removeLayer(g.marker); });
+                this.gcps.forEach(g => {
+                    if (g.marker) droneMarkers.removeLayer(g.marker);
+                    if (g.line)   droneMarkers.removeLayer(g.line);
+                });
                 this.gcps = [];
                 droneLayer.redraw(); renderDroneList();
             }
@@ -2299,11 +2351,63 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
            จะเปิดรับเฉพาะตอนกดปุ่ม "ย้ายภาพ" เท่านั้น แล้วปิดกลับทันทีที่เลิก */
         let ascMoveTarget = null;
         function ascSetMoveMode(im) {
+            ascGcpCancel();                          // สองโหมดนี้ใช้เมาส์ชนกัน เปิดได้ทีละอย่าง
             ascMoveTarget = (ascMoveTarget === im) ? null : im;
             const pane = map.getPane('dronePane');
             pane.style.pointerEvents = ascMoveTarget ? 'auto' : 'none';
             pane.style.cursor = ascMoveTarget ? 'grab' : '';
             renderDroneList();
+        }
+
+        /* ---------- โหมดปัก GCP แบบคลิก 2 จังหวะ ----------
+           ① คลิกจุดเด่นบนภาพโดรน (มุมหลังคา เสา) = จุดยึดพิกเซล
+           ② คลิกตำแหน่งจริงของจุดเดียวกันบนภาพดาวเทียม = หมุดจริง
+           ภาพขยับเข้าหาทันทีทุกจุดที่ปักเสร็จ ปักต่อได้เรื่อย ๆ จนกด Esc /
+           คลิกขวาบนแผนที่ / กดปุ่มเดิมซ้ำ เพื่อออกจากโหมด */
+        let ascGcpPlace = null;                      // { im, u, v } — u เป็น null = ยังรอคลิกแรก
+        function ascSetGcpMode(im) {
+            if (ascGcpPlace && ascGcpPlace.im === im) { ascGcpCancel(); return; }
+            ascGcpCancel();
+            if (ascMoveTarget) ascSetMoveMode(ascMoveTarget);
+            ascGcpPlace = { im, u: null, v: null };
+            map.getContainer().style.cursor = 'crosshair';
+            map.on('click', ascGcpClick);
+            map.on('contextmenu', ascGcpCancel);
+            renderDroneList();
+        }
+        function ascGcpCancel() {
+            if (!ascGcpPlace) return;
+            ascGcpPlace = null;
+            map.off('click', ascGcpClick);
+            map.off('contextmenu', ascGcpCancel);
+            map.getContainer().style.cursor = '';
+            renderDroneList();
+        }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') ascGcpCancel(); });
+
+        function ascGcpClick(e) {
+            const st = ascGcpPlace;
+            if (!st) return;
+            const im = st.im;
+            if (st.u === null) {
+                // คลิกแรก : ต้องอยู่บนภาพโดรนเท่านั้น จึงจะเป็นจุดยึดได้
+                const px = im.latLngToPx(e.latlng);
+                if (px[0] < 0 || px[1] < 0 || px[0] > im.w || px[1] > im.h) {
+                    alert('จุดแรกต้องคลิกบนภาพโดรน\nเลือกจุดเด่นที่หาเจอบนภาพดาวเทียมด้วย เช่น มุมหลังคา เสา ขอบถนน');
+                    return;
+                }
+                st.u = px[0]; st.v = px[1];
+                renderDroneList();
+            } else {
+                // คลิกที่สอง : ตำแหน่งจริงบนดาวเทียม → สร้างหมุดแล้วดึงภาพเข้าหาทันที
+                im.addGcpAt(st.u, st.v, e.latlng.lat, e.latlng.lng);
+                im.refit();
+                droneLayer.redraw();
+                st.u = null; st.v = null;            // พร้อมปักจุดถัดไปต่อเนื่อง
+                renderDroneList();
+                const warn = im.gcpQualityWarning();
+                if (warn) alert('⚠ ' + warn);
+            }
         }
         (function attachImageDrag() {
             const cv = droneLayer._canvas || (droneLayer._canvas = null);
@@ -2355,7 +2459,8 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
             host.querySelectorAll('.drone-item-row').forEach(el => el.remove());
 
             ascDroneImages.forEach((im, idx) => {
-                const moving = (ascMoveTarget === im);
+                const moving  = (ascMoveTarget === im);
+                const placing = (ascGcpPlace && ascGcpPlace.im === im) ? ascGcpPlace : null;
                 const dis = im.locked ? ' disabled' : '';
                 const box = document.createElement('div');
                 box.className = 'drone-item-row';
@@ -2387,7 +2492,8 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                   sl('rot', 'หมุน',     0,   360, 0.5,  im.rotDeg,   '°') +
                   sl('sc',  'ย่อ/ขยาย', 10,  400, 1,    im.scalePct, '%') +
                   '<div style="display:flex; gap:4px; margin:6px 0 5px;">' +
-                    '<button data-a="addgcp" style="flex:1.6; padding:5px 2px; background:#ea580c; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:0.78em; font-weight:bold;">🎯 เพิ่ม GCP (' + im.gcps.length + ')</button>' +
+                    '<button data-a="addgcp" style="flex:1.6; padding:5px 2px; background:' + (placing ? '#9a3412' : '#ea580c') + '; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:0.78em; font-weight:bold;">' +
+                        (placing ? (placing.u === null ? '① คลิกจุดบนภาพ…' : '② คลิกตำแหน่งจริง…') : '🎯 ปัก GCP (' + im.gcps.length + ')') + '</button>' +
                     '<button data-a="move" style="flex:1.2; padding:5px 2px; background:' + (moving ? '#f59e0b' : '#f1f5f9') + '; color:' + (moving ? '#fff' : '#475569') + '; border:1px solid ' + (moving ? '#f59e0b' : '#cbd5e1') + '; border-radius:4px; cursor:pointer; font-size:0.78em; font-weight:bold;">✋ ' + (moving ? 'กำลังย้าย' : 'ย้ายภาพ') + '</button>' +
                     '<button data-a="cleargcp" style="flex:1; padding:5px 2px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:4px; cursor:pointer; font-size:0.78em;">ล้าง GCP</button>' +
                   '</div>' +
@@ -2398,7 +2504,27 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                   '<div style="font-size:0.72em; color:#64748b; font-family:ui-monospace,monospace;">' +
                     (im.w ? im.w + '×' + im.h + ' px' : 'ยังไม่มีภาพ') + ' • GCP ' + im.gcps.length + ' จุด • ' + ascRmseText(im) +
                   '</div>' +
-                  (moving ? '<div style="font-size:0.72em; color:#b45309; margin-top:5px;">ลากบนภาพเพื่อย้าย — กดปุ่มซ้ำเพื่อออกจากโหมดนี้</div>' : '');
+                  /* รายการหมุดรายจุด — เห็นความคลาดของแต่ละจุด และลบได้โดยไม่ต้องคลิกขวาบนแผนที่ */
+                  (im.gcps.length ?
+                    '<div style="margin-top:5px; border-top:1px dashed #fed7aa; padding-top:4px;">' +
+                      im.gcps.map((g, gi) => {
+                          const err = im.gcpError(g);
+                          const col = err <= 0.5 ? '#16a34a' : (err <= 1.5 ? '#d97706' : '#dc2626');
+                          return '<div style="display:flex; align-items:center; gap:5px; font-size:0.72em; color:#475569; padding:1px 0;">' +
+                              '<span style="flex:1;">✛ GCP ' + (gi + 1) + '</span>' +
+                              '<span style="font-family:ui-monospace,monospace; color:' + col + ';">คลาด ' + err.toFixed(2) + ' ม.</span>' +
+                              '<button data-gdel="' + gi + '" title="ลบหมุดนี้" style="border:1px solid #fecaca; background:#fef2f2; color:#dc2626; border-radius:3px; padding:0 5px; cursor:pointer; font-size:0.95em;">✕</button>' +
+                            '</div>';
+                      }).join('') +
+                    '</div>' : '') +
+                  (im.gcpQualityWarning() ?
+                    '<div style="font-size:0.72em; color:#dc2626; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; padding:4px 7px; margin-top:5px;">⚠ ' + im.gcpQualityWarning() + '</div>' : '') +
+                  (moving ? '<div style="font-size:0.72em; color:#b45309; margin-top:5px;">ลากบนภาพเพื่อย้าย — กดปุ่มซ้ำเพื่อออกจากโหมดนี้</div>' : '') +
+                  (placing ? '<div style="font-size:0.72em; color:#9a3412; background:#fff7ed; border:1px solid #fed7aa; border-radius:4px; padding:4px 7px; margin-top:5px;">' +
+                      (placing.u === null
+                        ? '① คลิก <b>จุดเด่นบนภาพโดรน</b> (มุมหลังคา เสา) ที่หาเจอบนดาวเทียมได้'
+                        : '② คลิก <b>ตำแหน่งจริงของจุดเดียวกัน</b> บนภาพดาวเทียม — ภาพจะขยับเข้าหาทันที') +
+                      '<br>ปักต่อได้เรื่อย ๆ · กด Esc / คลิกขวา / กดปุ่มซ้ำ เพื่อจบ</div>' : '');
 
                 const q = k => box.querySelector('[data-a="' + k + '"]');
                 const fEl = q('file');
@@ -2453,13 +2579,19 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 });
                 q('addgcp').addEventListener('click', () => {
                     if (!im.src) { alert('เลือกไฟล์ภาพก่อนจึงจะปักหมุดได้'); return; }
-                    im.addGcpAtCenter(); droneLayer.redraw(); renderDroneList();
+                    if (im.locked) { alert('ภาพถูกล็อกอยู่ กดปลดล็อก 🔒 ก่อน'); return; }
+                    ascSetGcpMode(im);
                 });
                 q('cleargcp').addEventListener('click', () => {
                     if (!im.gcps.length) return;
                     if (!confirm('ล้าง GCP ทั้ง ' + im.gcps.length + ' จุดของภาพนี้?')) return;
                     im.clearGcps();
                 });
+                box.querySelectorAll('[data-gdel]').forEach(btn =>
+                    btn.addEventListener('click', () => {
+                        const g = im.gcps[parseInt(btn.dataset.gdel, 10)];
+                        if (g) im.removeGcp(g);
+                    }));
 
                 host.appendChild(box);
             });
