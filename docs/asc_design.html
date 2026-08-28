@@ -463,7 +463,7 @@
                         <div style="font-size: 0.75em; color: #64748b; margin-bottom: 8px; line-height: 1.3;">
                             <b>1. วางคร่าว ๆ ก่อน</b> — เลือกไฟล์ แล้วใช้ <b>✋ ย้ายภาพ</b> ลากไปวาง ปรับ <b>หมุน / ย่อ-ขยาย</b> ให้ทาบกับภาพดาวเทียมพอประมาณ<br>
                             <b>2. ปรับละเอียดด้วย GCP</b> — กด <b>🎯 ปัก GCP</b> แล้ว <b>① คลิกจุดเด่นบนภาพโดรน</b> (มุมหลังคา/เสา) ตามด้วย <b>② คลิกตำแหน่งจริงของจุดเดียวกันบนดาวเทียม</b> ภาพจะขยับเข้าหาทันที ปักต่อได้เรื่อย ๆ (กด Esc เพื่อจบ) — กระจายจุดเป็นสามเหลี่ยมกว้าง ๆ อย่าปักซ้อน/เรียงเส้นตรง<br>
-                            <span style="color:#94a3b8;">1 จุด = เลื่อน · 2 จุด = เลื่อน+หมุน+ย่อขยาย · 3 จุด = Affine ตรงเป๊ะทุกจุด · 4 จุดขึ้นไป = Affine เฉลี่ยความคลาด (มี RMSE) หรือเลือก Rubber-sheet เพื่อดัดให้ตรงทุกจุด · เส้นประแดง = ความคลาดของแต่ละหมุด</span><br>
+                            <span style="color:#94a3b8;">1 จุด = เลื่อน · 2 จุด = เลื่อน+หมุน+ย่อขยาย · 3 จุด = Affine ตรงเป๊ะทุกจุด · 4 จุดขึ้นไป = Affine เฉลี่ยความคลาด (มี RMSE) หรือเลือก Rubber-sheet เพื่อดัดให้ตรงทุกจุด · กากบาทเหลือง = จุดยึดที่เพิ่งคลิก (ชั่วคราว) · กากบาทส้ม = หมุดที่ปักแล้ว · เส้นประแดง = ความคลาดของแต่ละหมุด</span><br>
                             🔍 ซูมไปที่ภาพ · 🔒 ล็อกกันขยับ · ลากหมุด ✛ เพื่อปรับ · ลบหมุดจากรายการหรือคลิกขวาที่หมุด · ซ้อนหลายภาพด้วยปุ่ม "+ เพิ่มรูป"
                         </div>
                     </div>
@@ -2377,11 +2377,39 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
         }
         function ascGcpCancel() {
             if (!ascGcpPlace) return;
+            ascGcpTempClear();
             ascGcpPlace = null;
             map.off('click', ascGcpClick);
             map.off('contextmenu', ascGcpCancel);
             map.getContainer().style.cursor = '';
             renderDroneList();
+        }
+
+        /* หมุดชั่วคราวสีเหลืองตอนคลิกแรก — ให้เห็นชัดว่าจุดยึดบนภาพอยู่ตรงไหน
+           ใช้สีเหลืองต่างจากหมุดจริงสีส้มเข้ม จะได้ไม่สับสนว่าปักเสร็จแล้ว */
+        function ascGcpTempShow(latlng) {
+            ascGcpTempClear();
+            ascGcpPlace.temp = L.marker(latlng, {
+                interactive: false,
+                zIndexOffset: 1000,
+                icon: L.divIcon({
+                    className: 'drone-marker',
+                    html: '<svg width="26" height="26" viewBox="0 0 26 26" style="display:block;">' +
+                          '<g stroke="#1e293b" stroke-width="5" stroke-linecap="round">' +
+                          '<path d="M13 1.5v7.5M13 17v7.5M1.5 13H9M17 13h7.5"/></g>' +
+                          '<g stroke="#facc15" stroke-width="2.6" stroke-linecap="round">' +
+                          '<path d="M13 1.5v7.5M13 17v7.5M1.5 13H9M17 13h7.5"/></g></svg>',
+                    iconSize: [26, 26], iconAnchor: [13, 13]
+                })
+            }).addTo(map);
+            ascGcpPlace.temp.bindTooltip('① จุดยึดบนภาพ — คลิกตำแหน่งจริงบนดาวเทียมต่อ',
+                { permanent: true, direction: 'top', offset: [0, -14] }).openTooltip();
+        }
+        function ascGcpTempClear() {
+            if (ascGcpPlace && ascGcpPlace.temp) {
+                map.removeLayer(ascGcpPlace.temp);
+                ascGcpPlace.temp = null;
+            }
         }
         document.addEventListener('keydown', e => { if (e.key === 'Escape') ascGcpCancel(); });
 
@@ -2397,9 +2425,11 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     return;
                 }
                 st.u = px[0]; st.v = px[1];
+                ascGcpTempShow(e.latlng);            // โชว์กากบาทเหลืองตรงจุดที่เพิ่งคลิก
                 renderDroneList();
             } else {
                 // คลิกที่สอง : ตำแหน่งจริงบนดาวเทียม → สร้างหมุดแล้วดึงภาพเข้าหาทันที
+                ascGcpTempClear();
                 im.addGcpAt(st.u, st.v, e.latlng.lat, e.latlng.lng);
                 im.refit();
                 droneLayer.redraw();
