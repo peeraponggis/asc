@@ -353,12 +353,19 @@ const toENU = (lon, lat, lon0, lat0) => [
 ];
 
 /* ---------- ฐานเวกเตอร์ของหลังคาจากค่า azimuth ----------
-   ตรวจกับข้อมูลจริงแล้ว: azimuth 65 องศา ทำให้ local +y ชี้ทิศ 65 และ local +x ชี้ทิศ 155 */
+   asc_design สร้างพิกัดท้องถิ่นโดยหมุนหลังคาด้วย -azimuth แล้ว "กลับแกน y"
+   (y ท้องถิ่น = yสูงสุด − yที่หมุนแล้ว) ดังนั้น +y ท้องถิ่นชี้ทิศ azimuth+180
+   ไม่ใช่ทิศ azimuth ตามที่เคยเข้าใจ
+
+   ของเดิมใช้ +y = ทิศ azimuth หลังคาแต่ละผืนจึงถูกพลิกกลับด้านรอบจุดศูนย์ถ่วง
+   ตัวเองกลางแบบ วัดกับไฟล์จริงคลาดจากตำแหน่งจริงถึง 19.6 และ 31.6 เมตร
+   อาคารที่เป็นจั่วสองผืนจึงกลายเป็นแผ่นสองแผ่นแยกกัน ไม่ชนกันที่สันอย่างที่วาดไว้
+   แก้เครื่องหมายแล้วคลาดเหลือ 0.06 และ 0.00 เมตร */
 function roofBasis(aziDeg) {
   const a = aziDeg * D2R;
   return {
-    ux: [ Math.cos(a), -Math.sin(a) ],
-    uy: [ Math.sin(a),  Math.cos(a) ]
+    ux: [  Math.cos(a), -Math.sin(a) ],
+    uy: [ -Math.sin(a), -Math.cos(a) ]
   };
 }
 
@@ -726,12 +733,17 @@ function buildRoof(r, fallbackOffset) {
   const tilt = r.slope * D2R;
   const bs   = roofBasis(r.azi);
 
-  /* ระนาบหลังคา z = eave + rise·(yMax−y)/run + cross·(x−xMin)/span
+  /* ระนาบหลังคา z = eave + rise·(y−yMin)/run + cross·(x−xMin)/span
      สามค่า (ชายคาสองปลาย + สัน) นิยามระนาบได้ครบพอดี รองรับอาคารทรงโมเดิร์นที่ชายคาไม่เท่ากัน
-     ถ้าชายคาสองปลายเท่ากัน เทอมหลังเป็นศูนย์ ได้หลังคาลาดทางเดียวเหมือนเดิม */
+     ถ้าชายคาสองปลายเท่ากัน เทอมหลังเป็นศูนย์ ได้หลังคาลาดทางเดียวเหมือนเดิม
+
+     ด้านสูงอยู่ที่ y มาก เพราะ +y ท้องถิ่นชี้ทิศตรงข้าม azimuth คือทิศขึ้นเนินหลังคา
+     ตรวจกับไฟล์จริงแล้ว ขอบที่หลังคาสองผืนชนกัน (สันจั่ว) อยู่ที่ y = yMax ทั้งคู่
+     และความสูงที่ได้ตรงกับ ridgeHeight_m ในไฟล์พอดี ของเดิมกลับด้าน ทำให้สันจั่ว
+     กลายเป็นชายคาและหลังคาลาดสวนทางกับที่ออกแบบไว้ */
   const kY = Math.tan(tilt);
   const kX = (r.span > 0) ? ((r.eaveB - r.eave) / r.span) : 0;
-  const roofZ = (lx, ly) => r.eave + (r.yMax - ly) * kY + (lx - r.xMin) * kX;
+  const roofZ = (lx, ly) => r.eave + (ly - r.yMin) * kY + (lx - r.xMin) * kX;
 
   /* หาการเลื่อนจากพิกัดท้องถิ่นไปพิกัดจริง โดยจับคู่จุดศูนย์ถ่วง */
   let T = [0, 0];
@@ -791,10 +803,11 @@ function buildRoof(r, fallbackOffset) {
   if (r.layout.length) {
     const uxW = new THREE.Vector3(bs.ux[0], 0, -bs.ux[1]);
     const uyW = new THREE.Vector3(bs.uy[0], 0, -bs.uy[1]);
-    /* เวกเตอร์ตั้งฉากของระนาบ z = kX·x − kY·y + c คือ (−kX, +kY, 1) ในพิกัดท้องถิ่น */
+    /* เวกเตอร์ตั้งฉากของระนาบ z = kX·x + kY·y + c คือ (−kX, −kY, 1) ในพิกัดท้องถิ่น
+       (ต้องเปลี่ยนตาม roofZ ที่กลับทิศ ไม่งั้นแผงจะเอียงสวนทางกับผิวหลังคา) */
     const nW = UP.clone()
                  .sub(uxW.clone().multiplyScalar(kX))
-                 .add(uyW.clone().multiplyScalar(kY))
+                 .sub(uyW.clone().multiplyScalar(kY))
                  .normalize();
     /* สร้างฐานตั้งฉากกันบนระนาบ เพื่อให้กล่องแผงไม่ถูกเฉือน */
     const exW = uxW.clone().sub(nW.clone().multiplyScalar(uxW.dot(nW))).normalize();
@@ -836,7 +849,7 @@ function buildRoof(r, fallbackOffset) {
     const lab = textSprite(
       'หลังคา ' + r.id + '  ' + r.slope.toFixed(1) + '° / ' + Math.round(r.azi) + '°  ' + r.layout.length + ' แผง'
     );
-    const top = toW(cL[0], r.yMin, roofZ(cL[0], r.yMin) + 3.2);
+    const top = toW(cL[0], r.yMax, roofZ(cL[0], r.yMax) + 3.2);
     lab.position.copy(top);
     grp.add(lab);
   }
