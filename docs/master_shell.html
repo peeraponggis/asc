@@ -23,6 +23,33 @@
     </script>
     <style>
         body { overflow: hidden; }
+        /* ── ตราคำ PROINVENTIVE ────────────────────────────────────────
+           PRO เป็นทองไล่เฉด INVENTIVE เป็นน้ำเงินไล่เฉด แล้วดันนูนด้วย
+           drop-shadow ซ้อนหลายชั้นให้เห็นเป็นตัวอักษรหนานูนแบบโลหะ
+           ใช้ drop-shadow ไม่ใช่ text-shadow เพราะตัวอักษรถูกเติมด้วย
+           background-clip แล้ว text-shadow จะทะลุออกมาด้านหน้า */
+        .brand-3d { display:inline-block; font-weight:800; letter-spacing:.045em;
+                    filter: drop-shadow(0 1px 0 rgba(0,0,0,.55))
+                            drop-shadow(0 2px 0 rgba(0,0,0,.30))
+                            drop-shadow(0 3px 5px rgba(0,0,0,.45)); }
+        .brand-3d > span { -webkit-background-clip:text; background-clip:text;
+                           color:transparent; -webkit-text-fill-color:transparent; }
+        .brand-3d .b-pro { background-image:linear-gradient(178deg,
+                    #FFF8E3 0%, #FFE9A8 22%, #F6CB5C 45%, #D8A22F 68%, #9A6D16 100%); }
+        .brand-3d .b-inv { background-image:linear-gradient(178deg,
+                    #EFF7FF 0%, #B9DAFF 26%, #6FB0F7 52%, #2F76D6 76%, #1A4585 100%); }
+
+        /* บนพื้นสว่างต้องลดเงาลงและใช้เฉดที่เข้มขึ้น ไม่งั้นทองจะจมหายไปกับพื้นขาว */
+        .brand-3d.on-light { filter: drop-shadow(0 1px 0 rgba(255,255,255,.9))
+                                     drop-shadow(0 1px 1px rgba(15,23,42,.28))
+                                     drop-shadow(0 2px 3px rgba(15,23,42,.18)); }
+        .brand-3d.on-light .b-pro { background-image:linear-gradient(178deg,
+                    #F7DC8E 0%, #E5B23F 34%, #BE8A1E 62%, #7C5410 100%); }
+        .brand-3d.on-light .b-inv { background-image:linear-gradient(178deg,
+                    #6FAAF0 0%, #2F76D6 40%, #1D4FA0 70%, #123268 100%); }
+
+        @media (prefers-reduced-transparency: reduce) { .brand-3d { filter:none; } }
+
         .nav-step { transition: all 0.3s ease; position: relative; }
         .nav-step::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background-color: #3b82f6; transform: scaleX(0); transition: transform 0.3s ease; }
         .nav-step.active::after { transform: scaleX(1); }
@@ -44,7 +71,7 @@
             <!-- 🌟 โลโก้บริษัท -->
             <img src="img/pilogo.png" alt="ProInventive" class="w-9 h-9 object-contain rounded bg-white/10 p-0.5"
                  onerror="this.outerHTML='<div class=&quot;bg-gradient-to-br from-blue-500 to-blue-700 w-8 h-8 rounded flex items-center justify-center shadow-lg&quot;><i class=&quot;fa-solid fa-solar-panel text-white text-sm&quot;></i></div>'">
-            <span class="font-bold text-lg tracking-wide hidden sm:block">PRO<span class="text-blue-400">INVENTIVE</span></span>
+            <span class="text-lg hidden sm:block"><span class="brand-3d"><span class="b-pro">PRO</span><span class="b-inv">INVENTIVE</span></span></span>
             <div class="h-6 w-px bg-slate-700 mx-2"></div>
 
             <button onclick="goToDashboard()" title="กลับไปหน้ารายการโปรเจกต์"
