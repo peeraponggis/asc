@@ -94,13 +94,18 @@ header::after{content:"";position:absolute;right:-120px;top:-160px;width:420px;h
 .clock .play{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;padding:5px 12px;font-family:'Kanit';font-size:13px}
 
 /* ── กราฟ ──────────────────────────────────────────────────────── */
-.chart{margin:16px -22px 0;padding:16px 22px 12px;border-top:1px solid var(--line);background:#FBFCFD}
+/* กราฟอยู่ในการ์ดของตัวเองแล้ว ไม่ได้ต่อท้ายแผนภาพ จึงไม่ต้องมีเส้นคั่นและระยะติดลบ */
+.chart{margin:0;padding:0;background:transparent}
 .chart svg{width:100%;height:auto;display:block}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);margin-top:6px}
 .legend i{display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}
 
 /* ── เสียงบรรยาย ───────────────────────────────────────────────── */
 .voice{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 12px;padding:12px 14px;border-radius:12px;background:var(--night);color:#fff}
+/* ชุดปุ่มเสียงเวอร์ชันที่อยู่บนแถบหัวเรื่อง พื้นหลังเข้มอยู่แล้วจึงไม่ต้องมีกล่องซ้อน */
+.voice.in-head{margin:0;padding:0;border-radius:0;background:transparent;justify-content:flex-end}
+.voice.in-head button{padding:7px 16px;font-size:14px}
+.voice.in-head .vs{width:100%;flex:none;text-align:right;margin-top:2px;min-width:0}
 .voice button{background:var(--sun);color:var(--night);border:0;border-radius:999px;padding:9px 16px;font-family:'Kanit';font-weight:500;font-size:14px;display:inline-flex;gap:8px;align-items:center}
 .voice button.stop{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)}
 .voice .vs{font-size:12px;color:#B9C7D6;flex:1;min-width:160px}
@@ -157,7 +162,6 @@ footer{margin-top:26px;font-size:12.5px;color:var(--mute);border-top:1px solid v
   .stats,.roi{grid-template-columns:1fr 1fr;gap:8px}
   .stat .v{font-size:17px}
   .clock .time{font-size:21px}
-  .chart{margin:14px -14px 0;padding:12px 14px 10px}
   table{font-size:12px}
   th,td{padding:7px 8px}
 }
@@ -188,6 +192,11 @@ footer{margin-top:26px;font-size:12.5px;color:var(--mute);border-top:1px solid v
       </div>
       <button id="btn-print" class="btn-ghost" onclick="window.print()" data-i18n="print"></button>
       <button id="btn-video" class="btn-ghost" onclick="exportVideo()" data-i18n="video"></button>
+      <div class="voice in-head" id="voice-box">
+        <button class="speak" id="btn-speak" onclick="speak()"><span>🔊</span><span data-i18n="speak"></span></button>
+        <button class="stop" onclick="stopSpeak()" data-i18n="stop"></button>
+        <span class="vs" id="voice-status" data-i18n="voiceNote"></span>
+      </div>
     </div>
   </div>
 </header>
@@ -219,12 +228,21 @@ footer{margin-top:26px;font-size:12.5px;color:var(--mute);border-top:1px solid v
 
 <main class="wrap" id="main" style="display:none">
 
+  <!-- แถวบน : แผนภาพการไหลอยู่ซ้าย กราฟและแถบเวลาอยู่ขวา
+       วางคู่กันเพื่อให้ดูเส้นทางพลังงานกับตัวเลขในชั่วโมงเดียวกันได้พร้อมกัน -->
   <div class="grid">
-    <!-- ซ้าย : แผนภาพการไหลพลังงาน 24 ชั่วโมง -->
     <section class="card flow">
       <h2><span data-i18n="flowT"></span><span class="badge" id="sys-badge"></span></h2>
       <p class="sub" data-i18n="flowS"></p>
       <div id="flow-svg"></div>
+    </section>
+
+    <section class="card">
+      <div class="chart">
+        <div id="day-chart"></div>
+        <div class="legend" id="day-legend"></div>
+        <p class="sub" id="load-desc" style="margin:10px 0 0"></p>
+      </div>
       <div class="clock">
         <div class="row">
           <span class="time" id="clock-time">12:00</span>
@@ -233,37 +251,27 @@ footer{margin-top:26px;font-size:12.5px;color:var(--mute);border-top:1px solid v
         </div>
         <input type="range" id="hour" min="0" max="23" value="12" oninput="setHour(+this.value)">
       </div>
-      <div class="chart">
-        <div id="day-chart"></div>
-        <div class="legend" id="day-legend"></div>
-        <p class="sub" id="load-desc" style="margin:10px 0 0"></p>
-      </div>
     </section>
+  </div>
 
-    <!-- ขวา : อุปกรณ์ + ตัวเลขสมรรถนะ + ความคุ้มค่า -->
-    <aside>
-      <section class="card">
-        <h2 data-i18n="equip"></h2>
-        <p class="sub" data-i18n="equipSub"></p>
-        <div class="voice" id="voice-box">
-          <button class="speak" id="btn-speak" onclick="speak()"><span>🔊</span><span data-i18n="speak"></span></button>
-          <button class="stop" onclick="stopSpeak()" data-i18n="stop"></button>
-          <span class="vs" id="voice-status" data-i18n="voiceNote"></span>
-        </div>
-        <ul class="eqlist" id="eq-list"></ul>
-        <h3 data-i18n="cap"></h3>
-        <p class="sub" data-i18n="capSub" style="margin-bottom:10px"></p>
-        <div class="stats" id="stat-grid"></div>
-      </section>
-      <section class="card" style="margin-top:18px">
-        <h2 data-i18n="roi"></h2>
-        <p class="sub" data-i18n="roiSub"></p>
-        <div class="roi" id="roi-grid"></div>
-        <div class="payback"><i id="pb-bar" style="width:0%"></i></div>
-        <p class="tiny" id="pb-note"></p>
-        <div class="tip" id="roi-tip"></div>
-      </section>
-    </aside>
+  <!-- แถวกลาง : อุปกรณ์และสมรรถนะอยู่ซ้าย ความคุ้มค่าอยู่ขวา -->
+  <div class="grid" style="margin-top:18px">
+    <section class="card">
+      <h2 data-i18n="equip"></h2>
+      <p class="sub" data-i18n="equipSub"></p>
+      <ul class="eqlist" id="eq-list"></ul>
+      <h3 data-i18n="cap"></h3>
+      <p class="sub" data-i18n="capSub" style="margin-bottom:10px"></p>
+      <div class="stats" id="stat-grid"></div>
+    </section>
+    <section class="card">
+      <h2 data-i18n="roi"></h2>
+      <p class="sub" data-i18n="roiSub"></p>
+      <div class="roi" id="roi-grid"></div>
+      <div class="payback"><i id="pb-bar" style="width:0%"></i></div>
+      <p class="tiny" id="pb-note"></p>
+      <div class="tip" id="roi-tip"></div>
+    </section>
   </div>
 
   <!-- ผลผลิตรายเดือน -->
@@ -383,6 +391,7 @@ const I18N = {
      footer:'All figures come from the hourly engineering simulation (DB3) of the Proposal & Report page · The 24 h curves are an annual-average day, not measured data · Payback follows the financial assumptions of the report page'}
 };
 let lang='th', hour=12, timer=null;
+let ADVICE = { items: [], flag: '', tip: '' };   // คำแนะนำชุดล่าสุด ใช้ทั้งแสดงผลและอ่านออกเสียง
 const T=()=>I18N[lang];
 const fmt=(n,d=0)=>Number(n||0).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
 
@@ -659,12 +668,17 @@ function setHour(h){
     drawDayCursor();
 }
 
-function togglePlay(){
-    const b = document.getElementById('btn-play');
-    if (timer) { clearInterval(timer); timer = null; b.innerText = '▶'; return; }
-    b.innerText = '⏸';
+function startClock(){
+    if (timer) return;
+    document.getElementById('btn-play').innerText = '⏸';
     timer = setInterval(() => setHour((hour + 1) % 24), 700);
 }
+function stopClock(){
+    if (!timer) return;
+    clearInterval(timer); timer = null;
+    document.getElementById('btn-play').innerText = '▶';
+}
+function togglePlay(){ if (timer) stopClock(); else startClock(); }
 
 /* ── กราฟวันเฉลี่ย 24 ชั่วโมง ──────────────────────────────────── */
 function renderDayChart(){
@@ -786,6 +800,7 @@ function renderAdvice(){
     const tip = th ? 'ตัวเลขทั้งหมดมาจากแบบจำลอง ก่อนตัดสินใจขั้นสุดท้ายควรตรวจบิลค่าไฟจริงย้อนหลัง 12 เดือน พฤติกรรมใช้ไฟรายชั่วโมง สภาพโครงสร้างหลังคา และการขออนุญาตหน่วยงานที่เกี่ยวข้อง (กฟภ./กฟน., อบต./เทศบาล) ให้ครบถ้วน'
                    : 'All figures are simulated — before the final decision, review 12 months of actual bills, hourly usage patterns, roof structure condition, and complete utility/local permits';
 
+    ADVICE = { items: items, flag: flag, tip: tip };
     document.getElementById('advice-list').innerHTML = items.map(i => `<li>${i}</li>`).join('');
     document.getElementById('advice-flag').innerHTML = flag ? `<div class="flag">${flag}</div>` : '';
     document.getElementById('advice-tip').innerHTML = `<div class="tip">${tip}</div>`;
@@ -821,45 +836,187 @@ function renderCompany(){
 /* ══════════════════════════════════════════════════════════════════
    7) เสียงบรรยายสรุประบบ (ใช้เสียงในเครื่อง แบบเดียวกับรายงานตัวอย่าง)
    ══════════════════════════════════════════════════════════════════ */
-function narration(){
-    const t = T(), pb = M.payback ? fmt(M.payback, 1) : null;
-    if (lang === 'th') {
-        let s = `ระบบโซลาร์เซลล์โครงการ ${M.name} ขนาดติดตั้ง ${fmt(M.pnom, 2)} กิโลวัตต์ ` +
-                `ใช้แผงจำนวน ${fmt(M.pv.qty)} แผง ผลิตพลังงานได้ประมาณปีละ ${fmt(M.eGrid)} หน่วย `;
-        if (M.bat.cap > 0) s += `พร้อมแบตเตอรี่ความจุ ${fmt(M.bat.cap, 1)} กิโลวัตต์ชั่วโมง เก็บไฟกลางวันไว้ใช้กลางคืน `;
-        s += `เงินลงทุน ${fmt(M.investment)} บาท ` + (pb ? `คาดว่าคืนทุนในเวลาประมาณ ${pb} ปี` : '');
-        return s;
+/* บทบรรยายแบ่งเป็นตอน ๆ ตามหัวข้อบนหน้าจอ
+   แยกเป็นข้อความหลายก้อนแทนก้อนเดียว เพราะเสียงจะได้เว้นวรรคระหว่างหัวข้อ
+   ฟังแล้วตามทันว่ากำลังพูดถึงส่วนไหนของหน้า */
+function narrationSegments(){
+    const th = lang === 'th';
+    const pb = M.payback ? fmt(M.payback, 1) : null;
+    const hasBat = M.bat.cap > 0;
+    const strip = x => String(x || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+
+    let peakPv = 0, peakHour = 12, peakLoad = 0;
+    M.sim.forEach(r => {
+        if (r.pv > peakPv) { peakPv = r.pv; peakHour = r.h; }
+        if (r.load > peakLoad) peakLoad = r.load;
+    });
+    const avg = avgLoad();
+    const segs = [];
+
+    if (th) {
+        /* ① ภาพรวมของระบบ */
+        let s1 = `ระบบโซลาร์เซลล์โครงการ ${M.name} ขนาดติดตั้ง ${fmt(M.pnom, 2)} กิโลวัตต์ ` +
+                 `ใช้แผงจำนวน ${fmt(M.pv.qty)} แผง ผลิตพลังงานได้ประมาณปีละ ${fmt(M.eGrid)} หน่วย `;
+        if (hasBat) s1 += `พร้อมแบตเตอรี่ความจุ ${fmt(M.bat.cap, 1)} กิโลวัตต์ชั่วโมง เก็บไฟกลางวันไว้ใช้กลางคืน `;
+        s1 += `เงินลงทุน ${fmt(M.investment)} บาท ` + (pb ? `คาดว่าคืนทุนในเวลาประมาณ ${pb} ปี` : '');
+        segs.push(s1);
+
+        /* ② การไหลของพลังงานใน 24 ชั่วโมง */
+        segs.push(
+            `หัวข้อแรก การไหลของพลังงานใน 24 ชั่วโมง แผนภาพทางซ้ายแสดงเส้นทางของไฟฟ้าในแต่ละชั่วโมง ` +
+            `ช่วงกลางวันแผงโซลาร์ผลิตไฟได้สูงสุดประมาณ ${fmt(peakPv, 1)} กิโลวัตต์ ในเวลาราว ${peakHour} นาฬิกา ` +
+            `ไฟที่ผลิตได้จะจ่ายให้อาคารก่อนเป็นอันดับแรก ` +
+            (hasBat
+              ? `ส่วนที่เหลือจะนำไปชาร์จแบตเตอรี่ เมื่อแบตเตอรี่เต็มแล้วจึงส่งออกสู่ระบบของการไฟฟ้า `
+              : `ส่วนที่เหลือจะถูกส่งออกสู่ระบบของการไฟฟ้า `) +
+            `เมื่อหมดแสงแดด อาคารจะรับไฟจาก` +
+            (hasBat ? `แบตเตอรี่ก่อน หากไม่พอจึงซื้อไฟจากการไฟฟ้า ` : `การไฟฟ้าตามปกติ `) +
+            `เส้นที่กำลังวิ่งอยู่ในแผนภาพ คือเส้นทางที่มีพลังงานไหลจริงในชั่วโมงนั้น`);
+
+        /* ③ กราฟ */
+        segs.push(
+            `หัวข้อที่สอง กราฟทางขวาเปรียบเทียบกำลังผลิตกับการใช้ไฟตลอดทั้งวัน ` +
+            `เส้นสีเขียวคือกำลังผลิตของแผงโซลาร์ เส้นสีแดงคือโหลดของอาคาร ` +
+            (avg > 0.05
+              ? `ซึ่งเฉลี่ยอยู่ที่ ${fmt(avg, 1)} กิโลวัตต์ และสูงสุด ${fmt(peakLoad, 1)} กิโลวัตต์ `
+              : `ซึ่งผลจำลองชุดนี้ไม่ได้ระบุไว้ เพราะเป็นโหมดวิศวกรรมที่จ่ายไฟเข้าระบบทั้งหมด `) +
+            `ช่วงที่เส้นสีเขียวอยู่เหนือเส้นสีแดง คือช่วงที่ระบบผลิตไฟได้มากกว่าที่อาคารใช้ ` +
+            `เส้นประสีเทาคือไฟที่ต้องซื้อจากการไฟฟ้า ` +
+            (hasBat ? `และเส้นประสีชมพูคือระดับพลังงานที่เหลืออยู่ในแบตเตอรี่ ` : '') +
+            `ตลอดทั้งปีระบบผลิตได้ ${fmt(M.eGrid)} หน่วย คิดเป็นค่าประสิทธิภาพระบบ ${fmt(M.pr, 1)} เปอร์เซ็นต์ ` +
+            `ส่วนกราฟแท่งด้านล่างคือพลังงานที่ผลิตได้รายเดือน เดือนที่แท่งสูงคือช่วงแดดแรงและกลางวันยาว ` +
+            `ส่วนฤดูฝนจะลดลงตามปริมาณเมฆ`);
+
+        /* ④ คำแนะนำในการตัดสินใจลงทุน */
+        let s4 = `หัวข้อสุดท้าย คำแนะนำในการตัดสินใจลงทุนติดตั้งระบบ `;
+        ADVICE.items.forEach((it, i) => { s4 += `ข้อที่ ${i + 1} ${strip(it)} `; });
+        if (ADVICE.flag) s4 += `ข้อควรระวัง ${strip(ADVICE.flag)} `;
+        if (ADVICE.tip)  s4 += strip(ADVICE.tip);
+        segs.push(s4);
+        return segs;
     }
-    let s = `The ${M.name} solar system is ${fmt(M.pnom, 2)} kilowatts, using ${fmt(M.pv.qty)} panels, ` +
-            `producing about ${fmt(M.eGrid)} units per year. `;
-    if (M.bat.cap > 0) s += `A ${fmt(M.bat.cap, 1)} kilowatt-hour battery stores daytime energy for the night. `;
-    s += `The investment is ${fmt(M.investment)} baht` + (pb ? `, with payback in about ${pb} years.` : '.');
-    return s;
+
+    /* ① Overview */
+    let e1 = `The ${M.name} solar system is ${fmt(M.pnom, 2)} kilowatts, using ${fmt(M.pv.qty)} panels, ` +
+             `producing about ${fmt(M.eGrid)} units per year. `;
+    if (hasBat) e1 += `A ${fmt(M.bat.cap, 1)} kilowatt-hour battery stores daytime energy for the night. `;
+    e1 += `The investment is ${fmt(M.investment)} baht` + (pb ? `, with payback in about ${pb} years.` : '.');
+    segs.push(e1);
+
+    /* ② Energy flow */
+    segs.push(
+        `First, the energy flow across 24 hours. The diagram on the left shows where power travels each hour. ` +
+        `During the day the array peaks at about ${fmt(peakPv, 1)} kilowatts, around ${peakHour} o'clock. ` +
+        `Generated power serves the building first. ` +
+        (hasBat
+          ? `The surplus charges the battery, and once the battery is full the rest is exported to the grid. `
+          : `Any surplus is exported to the grid. `) +
+        `After sunset the building draws from ` +
+        (hasBat ? `the battery first, and buys from the grid only when that runs short. ` : `the utility grid. `) +
+        `The animated lines show which paths actually carry power in that hour.`);
+
+    /* ③ Chart */
+    segs.push(
+        `Second, the chart on the right compares generation against consumption through the day. ` +
+        `The green line is PV output and the red line is the building load, ` +
+        (avg > 0.05
+          ? `averaging ${fmt(avg, 1)} kilowatts and peaking at ${fmt(peakLoad, 1)} kilowatts. `
+          : `which this simulation does not define, because it runs in engineering mode feeding everything to the grid. `) +
+        `Where the green line sits above the red line, the system generates more than the building uses. ` +
+        `The grey dashed line is power imported from the grid` +
+        (hasBat ? `, and the pink dashed line is the energy remaining in the battery. ` : `. `) +
+        `Across the year the system produces ${fmt(M.eGrid)} units, a performance ratio of ${fmt(M.pr, 1)} percent. ` +
+        `The bar chart below shows monthly production: tall bars are the sunny, long-day months, ` +
+        `while the rainy season dips with cloud cover.`);
+
+    /* ④ Investment guidance */
+    let e4 = `Finally, guidance for the investment decision. `;
+    ADVICE.items.forEach((it, i) => { e4 += `Point ${i + 1}. ${strip(it)} `; });
+    if (ADVICE.flag) e4 += `A caution: ${strip(ADVICE.flag)} `;
+    if (ADVICE.tip)  e4 += strip(ADVICE.tip);
+    segs.push(e4);
+    return segs;
 }
+function narration(){ return narrationSegments().join(' '); }
+
+/* ── จังหวะของภาพเคลื่อนไหวระหว่างบรรยาย ────────────────────────────
+   ภาพเริ่มเดินหลังเสียงเริ่ม 3 วินาที และหยุดก่อนเสียงจบ 2 วินาที
+   speechSynthesis ไม่บอกความยาวเสียงล่วงหน้าและไม่มีเหตุการณ์ "ใกล้จบ"
+   จึงประมาณจากจำนวนอักขระ ถ้าเสียงจบเร็วกว่าที่ประมาณไว้ ตัว onend จะหยุด
+   ภาพให้เองอยู่แล้ว ภาพจึงไม่มีทางเดินค้างหลังเสียงจบ */
+const SPEAK_RATE = 0.92;
+const ANIM_START_DELAY_MS = 3000;
+const ANIM_STOP_BEFORE_MS = 2000;
+let animStartTimer = null, animStopTimer = null, animGuardTimer = null;
+
+function estimateSpeechMs(text){
+    const cps = (lang === 'th' ? 11.5 : 14.5) * SPEAK_RATE;   // อักขระต่อวินาทีโดยประมาณ
+    return Math.max(4000, text.length / cps * 1000);
+}
+function clearAnimTimers(){
+    clearTimeout(animStartTimer); clearTimeout(animStopTimer); clearTimeout(animGuardTimer);
+    animStartTimer = animStopTimer = animGuardTimer = null;
+}
+
 /* พูดสรุประบบ คืน Promise ที่จบเมื่อเสียงจบ ใช้ได้ทั้งปุ่มฟังและตอนอัดวิดีโอ */
-function speakNarration(){
+function speakNarration(opts){
+    const autoAnim = !opts || opts.autoAnim !== false;
     return new Promise(resolve => {
         if (!('speechSynthesis' in window)) { resolve(false); return; }
         speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(narration());
-        u.lang = lang === 'th' ? 'th-TH' : 'en-US';
-        u.rate = 0.92;
-        const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith(u.lang.slice(0, 2)));
-        if (v) u.voice = v;
-        u.onstart = () => { document.getElementById('voice-box').classList.add('speaking'); document.getElementById('voice-status').innerText = T().playing; };
-        u.onend = u.onerror = () => {
+        clearAnimTimers();
+
+        const segs = narrationSegments();
+        const totalMs = estimateSpeechMs(segs.join(' '));
+        const want = lang === 'th' ? 'th' : 'en';
+        const voice = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith(want));
+        let done = false;
+
+        const finish = () => {
+            if (done) return;
+            done = true;
+            clearAnimTimers();
+            if (autoAnim) stopClock();
             document.getElementById('voice-box').classList.remove('speaking');
             document.getElementById('voice-status').innerText = T().voiceNote;
             resolve(true);
         };
-        speechSynthesis.speak(u);
+
+        segs.forEach((text, i) => {
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = lang === 'th' ? 'th-TH' : 'en-US';
+            u.rate = SPEAK_RATE;
+            if (voice) u.voice = voice;
+            if (i === 0) {
+                u.onstart = () => {
+                    document.getElementById('voice-box').classList.add('speaking');
+                    document.getElementById('voice-status').innerText = T().playing;
+                    if (!autoAnim) return;
+                    setHour(0);
+                    animStartTimer = setTimeout(startClock, ANIM_START_DELAY_MS);
+                    animStopTimer  = setTimeout(stopClock,
+                        Math.max(ANIM_START_DELAY_MS + 1000, totalMs - ANIM_STOP_BEFORE_MS));
+                };
+            }
+            if (i === segs.length - 1) { u.onend = finish; u.onerror = finish; }
+            speechSynthesis.speak(u);
+        });
+
+        // กันเหนียว เผื่อเสียงบางก้อนหลุดจนไม่มี onend ยิงกลับมา
+        animGuardTimer = setTimeout(finish, totalMs + 20000);
     });
 }
 function speak(){
     if (!('speechSynthesis' in window)) { document.getElementById('voice-status').innerText = T().voiceNo; return; }
     speakNarration();
 }
-function stopSpeak(){ if ('speechSynthesis' in window) speechSynthesis.cancel(); }
+function stopSpeak(){
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+    clearAnimTimers();
+    stopClock();
+    document.getElementById('voice-box').classList.remove('speaking');
+    document.getElementById('voice-status').innerText = T().voiceNote;
+}
 
 /* ══════════════════════════════════════════════════════════════════
    8) ส่งออกวิดีโอ ─ อัดแอนิเมชันการไหลพลังงานครบ 24 ชั่วโมงเป็น .webm
@@ -975,9 +1132,9 @@ async function exportVideoWithVoice(){
         btn.innerText = T().vmRec;
 
         await new Promise(r => setTimeout(r, 800));   // เผื่อเวลาหน้าจอนิ่งก่อนเริ่ม
-        // เดินแอนิเมชันครบ 24 ชั่วโมง พร้อมเสียงบรรยาย รอจนจบทั้งสองอย่าง
-        const anim = (async () => { for (let h = 0; h < 24; h++) { setHour(h); await new Promise(r => setTimeout(r, 700)); } })();
-        await Promise.all([speakNarration(), anim]);
+        // ตัวบรรยายเดินภาพให้เองแล้ว (เริ่มหลังเสียง 3 วินาที หยุดก่อนเสียงจบ 2 วินาที)
+        // จึงไม่ต้องมีลูปเดินชั่วโมงซ้อนอีกชุด ซึ่งจะแย่งกันตั้งเวลาบนหน้าจอ
+        await speakNarration();
         await new Promise(r => setTimeout(r, 700));
 
         try { rec.stop(); } catch (e) {}
