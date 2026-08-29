@@ -464,7 +464,8 @@
                             <b>1. วางคร่าว ๆ ก่อน</b> — เลือกไฟล์ แล้วใช้ <b>✋ ย้ายภาพ</b> ลากไปวาง ปรับ <b>หมุน / ย่อ-ขยาย</b> ให้ทาบกับภาพดาวเทียมพอประมาณ<br>
                             <b>2. ปรับละเอียดด้วย GCP</b> — กด <b>🎯 ปัก GCP</b> แล้ว <b>① คลิกจุดเด่นบนภาพโดรน</b> (มุมหลังคา/เสา) ตามด้วย <b>② คลิกตำแหน่งจริงของจุดเดียวกันบนดาวเทียม</b> ภาพจะขยับเข้าหาทันที ปักต่อได้เรื่อย ๆ (กด Esc เพื่อจบ) — กระจายจุดเป็นสามเหลี่ยมกว้าง ๆ อย่าปักซ้อน/เรียงเส้นตรง<br>
                             <span style="color:#94a3b8;">1 จุด = เลื่อน · 2 จุด = เลื่อน+หมุน+ย่อขยาย · 3 จุด = Affine ตรงเป๊ะทุกจุด · 4 จุดขึ้นไป = Affine เฉลี่ยความคลาด (มี RMSE) หรือเลือก Rubber-sheet เพื่อดัดให้ตรงทุกจุด · กากบาทเหลือง = จุดยึดที่เพิ่งคลิก (ชั่วคราว) · กากบาทส้ม = หมุดที่ปักแล้ว · เส้นประแดง = ความคลาดของแต่ละหมุด</span><br>
-                            🔍 ซูมไปที่ภาพ · 🔒 ล็อกกันขยับ · ลากหมุด ✛ เพื่อปรับ · ลบหมุดจากรายการหรือคลิกขวาที่หมุด · ซ้อนหลายภาพด้วยปุ่ม "+ เพิ่มรูป"
+                            <b>3. เสร็จแล้วกด ✅ เสร็จสิ้น</b> — ปิดโหมดตรึงภาพก่อนไปวาดหลังคา ไม่งั้นคลิกบนแผนที่จะยังถูกโหมดนี้ดักอยู่ (ระบบปิดให้เองเมื่อกดเครื่องมือวาดหรือสลับขั้นตอน)<br>
+                            🔍 ซูมไปที่ภาพ · 🔒 ล็อกกันขยับ · ลากหมุด ✛ เพื่อปรับ · ลบหมุดจากรายการหรือคลิกขวาที่หมุด · ซ้อนหลายภาพด้วยปุ่ม "+ เพิ่มรูป" · ภาพย่อจะถูกฝังไปกับไฟล์ DB2 ให้เปิดมาแล้วเห็นภาพทันที
                         </div>
                     </div>
 
@@ -2021,6 +2022,9 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 this.scalePct= 100;
                 this.gcps    = [];        // { u, v, lat, lng, marker }
                 this.A       = AscAff.identity();   // พิกเซล → Mercator เมตร
+                this.thumb   = null;      // ภาพย่อ (dataURL) สำหรับฝังลง DB2
+                this.embed   = true;      // ฝังภาพย่อไปกับไฟล์ DB2 หรือไม่
+                this.fromThumb = false;   // ภาพที่เห็นอยู่มาจากภาพย่อในไฟล์ ไม่ใช่ไฟล์เต็ม
             }
 
             pxToMerc(u, v)  { return AscAff.apply(this.A, u, v); }
@@ -2221,10 +2225,14 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 droneLayer.redraw();
             }
 
-            /* บันทึกลง DB2 — เก็บเฉพาะตัวเลข ไม่มีข้อมูลภาพ */
+            /* บันทึกลง DB2 — ตัวเลขทั้งหมด พร้อมภาพย่อถ้าเลือกให้ฝังไปด้วย
+               w กับ h ยังเป็นความละเอียดของไฟล์ต้นฉบับเสมอ ไม่ใช่ของภาพย่อ
+               เพราะเมทริกซ์ A และพิกัด GCP อ้างอิงระบบพิกัดพิกเซลชุดนั้น */
             toJSON() {
                 return {
                     id: this.id, name: this.name, w: this.w, h: this.h,
+                    img: (this.embed && this.thumb) ? this.thumb : null,
+                    embed: !!this.embed,
                     opacity: this.opacity, visible: this.visible, mode: this.mode,
                     locked: this.locked, rotDeg: this.rotDeg, scalePct: this.scalePct,
                     A: this.A.slice(),
@@ -2314,7 +2322,8 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 ctx.save();
                 ctx.setTransform(this._dpr, 0, 0, this._dpr, 0, 0);
                 ctx.transform(a, b, c, d, q00[0], q00[1]);
-                try { ctx.drawImage(im.src, 0, 0); } catch (e) {}
+                // ระบุขนาดปลายทางเสมอ ภาพย่อจากไฟล์ DB2 จึงวางทับกรอบเดิมได้พอดี
+                try { ctx.drawImage(im.src, 0, 0, im.w, im.h); } catch (e) {}
                 ctx.restore();
             },
 
@@ -2351,7 +2360,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     ctx.moveTo(e0[0], e0[1]); ctx.lineTo(e1[0], e1[1]); ctx.lineTo(e2[0], e2[1]);
                     ctx.closePath(); ctx.clip();
                     ctx.transform(m11, m12, m21, m22, dx, dy);
-                    try { ctx.drawImage(im.src, 0, 0); } catch (e) {}
+                    try { ctx.drawImage(im.src, 0, 0, im.w, im.h); } catch (e) {}
                     ctx.restore();
                 });
                 ctx.restore();
@@ -2364,6 +2373,70 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
            ปกติ pane ของภาพปิดการรับคลิกไว้ เพื่อไม่ให้บังเครื่องมือวาดหลังคา
            จะเปิดรับเฉพาะตอนกดปุ่ม "ย้ายภาพ" เท่านั้น แล้วปิดกลับทันทีที่เลิก */
         let ascMoveTarget = null;
+
+        /* ═══════════════════════════════════════════════════════════════
+           ปิดโหมดตรึงภาพทุกชนิดในครั้งเดียว
+
+           ทั้งโหมดปัก GCP และโหมดย้ายภาพต่างยึดเมาส์บนแผนที่ไว้ โหมดปัก GCP
+           ดักเหตุการณ์คลิก ส่วนโหมดย้ายภาพเปิดให้ pane ของภาพรับคลิกแทนแผนที่
+           ถ้าไม่ปิดก่อนไปวาดหลังคา คลิกบนแผนที่จะถูกกินไปหมด เครื่องมือวาด
+           จึงสร้างรูปไม่ได้เลย และไม่มีอะไรบอกผู้ใช้ว่าติดอยู่ตรงไหน
+           ═══════════════════════════════════════════════════════════════ */
+        function ascExitImageModes() {
+            let changed = false;
+            if (ascGcpPlace) { ascGcpCancel(); changed = true; }
+            if (ascMoveTarget) {
+                ascMoveTarget = null;
+                const pane = map.getPane('dronePane');
+                pane.style.pointerEvents = 'none';
+                pane.style.cursor = '';
+                changed = true;
+                renderDroneList();
+            }
+            ascUpdateImageModeBar();
+            return changed;
+        }
+
+        /* ปุ่มเสร็จสิ้น — ปิดโหมดแล้วบันทึกสถานะลงประวัติ ให้ย้อนกลับมาจุดนี้ได้ */
+        function ascFinishImageAlign() {
+            ascExitImageModes();
+            saveMapState();
+        }
+
+        /* แถบลอยกลางแผนที่ บอกว่าโหมดตรึงภาพยังเปิดอยู่ พร้อมปุ่มปิด
+           เดิมสถานะนี้ดูได้จากปุ่มในแผงด้านขวาเท่านั้น พอเลื่อนไปขั้นตอนอื่น
+           ผู้ใช้จะไม่เห็นว่ายังค้างอยู่ แล้วงงว่าทำไมวาดหลังคาไม่ได้ */
+        let ascModeBarEl = null;
+        function ascUpdateImageModeBar() {
+            if (!ascModeBarEl) {
+                ascModeBarEl = document.createElement('div');
+                ascModeBarEl.id = 'ascImageModeBar';
+                ascModeBarEl.style.cssText =
+                    'position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:1200;' +
+                    'display:none; align-items:center; gap:10px; padding:8px 12px; border-radius:8px;' +
+                    'background:#9a3412; color:#fff; font-size:0.85em; font-weight:700;' +
+                    'box-shadow:0 4px 14px rgba(0,0,0,.35); white-space:nowrap;';
+                map.getContainer().appendChild(ascModeBarEl);
+                L.DomEvent.disableClickPropagation(ascModeBarEl);
+                L.DomEvent.disableScrollPropagation(ascModeBarEl);
+            }
+            const im = ascGcpPlace ? ascGcpPlace.im : ascMoveTarget;
+            if (!im) { ascModeBarEl.style.display = 'none'; ascModeBarEl.innerHTML = ''; return; }
+            const what = ascGcpPlace
+                ? (ascGcpPlace.u === null ? '① คลิกจุดเด่นบนภาพโดรน' : '② คลิกตำแหน่งจริงบนดาวเทียม')
+                : 'ลากบนภาพเพื่อย้าย';
+            ascModeBarEl.style.display = 'flex';
+            ascModeBarEl.innerHTML = '';
+            const txt = document.createElement('span');
+            txt.textContent = '🖼 กำลังตรึงภาพ "' + im.name + '" — ' + what;
+            const btn = document.createElement('button');
+            btn.textContent = '✅ เสร็จสิ้น';
+            btn.style.cssText = 'background:#fff; color:#9a3412; border:0; border-radius:6px;' +
+                'padding:4px 12px; font-weight:700; cursor:pointer; font-family:inherit; font-size:1em;';
+            btn.addEventListener('click', ascFinishImageAlign);
+            ascModeBarEl.appendChild(txt); ascModeBarEl.appendChild(btn);
+        }
+
         function ascSetMoveMode(im) {
             ascGcpCancel();                          // สองโหมดนี้ใช้เมาส์ชนกัน เปิดได้ทีละอย่าง
             ascMoveTarget = (ascMoveTarget === im) ? null : im;
@@ -2371,6 +2444,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
             pane.style.pointerEvents = ascMoveTarget ? 'auto' : 'none';
             pane.style.cursor = ascMoveTarget ? 'grab' : '';
             renderDroneList();
+            ascUpdateImageModeBar();
         }
 
         /* ---------- โหมดปัก GCP แบบคลิก 2 จังหวะ ----------
@@ -2388,6 +2462,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
             map.on('click', ascGcpClick);
             map.on('contextmenu', ascGcpCancel);
             renderDroneList();
+            ascUpdateImageModeBar();
         }
         function ascGcpCancel() {
             if (!ascGcpPlace) return;
@@ -2397,6 +2472,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
             map.off('contextmenu', ascGcpCancel);
             map.getContainer().style.cursor = '';
             renderDroneList();
+            ascUpdateImageModeBar();
         }
 
         /* หมุดชั่วคราวสีเหลืองตอนคลิกแรก — ให้เห็นชัดว่าจุดยึดบนภาพอยู่ตรงไหน
@@ -2430,6 +2506,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
         function ascGcpClick(e) {
             const st = ascGcpPlace;
             if (!st) return;
+            if (isDrawingMode) return;      // กำลังวาดรูปอยู่ อย่าไปแย่งคลิกของเครื่องมือวาด
             const im = st.im;
             if (st.u === null) {
                 // คลิกแรก : ต้องอยู่บนภาพโดรนเท่านั้น จึงจะเป็นจุดยึดได้
@@ -2461,7 +2538,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 el.__ascBound = true;
                 let last = null;
                 el.addEventListener('pointerdown', e => {
-                    if (!ascMoveTarget || ascMoveTarget.locked) return;
+                    if (!ascMoveTarget || ascMoveTarget.locked || isDrawingMode) return;
                     e.preventDefault();
                     last = map.mouseEventToLatLng(e);
                     map.dragging.disable();
@@ -2531,7 +2608,10 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                   (im.src ? '' :
                     '<div style="font-size:0.74em; color:#b45309; background:#fffbeb; border:1px dashed #fde68a; border-radius:4px; padding:5px 7px; margin-bottom:6px;">' +
                       'กู้ตำแหน่งและ GCP จากไฟล์แล้ว — เลือกไฟล์ภาพเดิมเพื่อให้ภาพกลับมา</div>') +
-                  (im.src ? '' : '<input type="file" data-a="file" accept="image/png, image/jpeg" style="width:100%; font-size:0.78em; margin-bottom:6px;">') +
+                  (im.fromThumb ?
+                    '<div style="font-size:0.74em; color:#0369a1; background:#f0f9ff; border:1px dashed #bae6fd; border-radius:4px; padding:5px 7px; margin-bottom:6px;">' +
+                      'กำลังใช้ภาพย่อที่ฝังมากับไฟล์ DB2 — เลือกไฟล์ความละเอียดเต็มได้ ตำแหน่งที่ตรึงไว้ไม่เปลี่ยน</div>' : '') +
+                  ((im.src && !im.fromThumb) ? '' : '<input type="file" data-a="file" accept="image/png, image/jpeg" style="width:100%; font-size:0.78em; margin-bottom:6px;">') +
                   sl('op',  'โปร่งแสง', 0.1, 1,   0.05, im.opacity,  '') +
                   sl('rot', 'หมุน',     0,   360, 0.5,  im.rotDeg,   '°') +
                   sl('sc',  'ย่อ/ขยาย', 10,  400, 1,    im.scalePct, '%') +
@@ -2541,10 +2621,20 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     '<button data-a="move" style="flex:1.2; padding:5px 2px; background:' + (moving ? '#f59e0b' : '#f1f5f9') + '; color:' + (moving ? '#fff' : '#475569') + '; border:1px solid ' + (moving ? '#f59e0b' : '#cbd5e1') + '; border-radius:4px; cursor:pointer; font-size:0.78em; font-weight:bold;">✋ ' + (moving ? 'กำลังย้าย' : 'ย้ายภาพ') + '</button>' +
                     '<button data-a="cleargcp" style="flex:1; padding:5px 2px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:4px; cursor:pointer; font-size:0.78em;">ล้าง GCP</button>' +
                   '</div>' +
+                  /* ปิดโหมดตรึงภาพให้จบเป็นเรื่องเป็นราว ก่อนไปวาดหลังคาต่อ */
+                  ((moving || placing) ?
+                    '<button data-a="done" style="width:100%; padding:7px 2px; margin-bottom:6px; background:#16a34a; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:0.82em; font-weight:bold;">' +
+                      '✅ เสร็จสิ้น และบันทึกการตรึงภาพ</button>' : '') +
                   '<select data-a="mode" style="width:100%; font-size:0.78em; padding:3px 4px; margin-bottom:5px;">' +
                     '<option value="affine"' + (im.mode === 'affine' ? ' selected' : '') + '>Affine — ยืด/หมุน/เฉือนทั้งภาพ</option>' +
                     '<option value="rubber"' + (im.mode === 'rubber' ? ' selected' : '') + '>Rubber-sheet — ดัดให้ตรงทุกจุด (GCP ≥ 4)</option>' +
                   '</select>' +
+                  '<label style="display:flex; align-items:center; gap:6px; font-size:0.76em; color:#475569; margin-bottom:5px; cursor:pointer;">' +
+                    '<input type="checkbox" data-a="embed"' + (im.embed ? ' checked' : '') + '>' +
+                    '<span>ฝังภาพย่อลงไฟล์ DB2' +
+                      (im.thumb ? ' <b style="color:#0369a1;">(' + Math.round(im.thumb.length / 1024) + ' KB)</b>' : '') +
+                    '</span>' +
+                  '</label>' +
                   '<div style="font-size:0.72em; color:#64748b; font-family:ui-monospace,monospace;">' +
                     (im.w ? im.w + '×' + im.h + ' px' : 'ยังไม่มีภาพ') + ' • GCP ' + im.gcps.length + ' จุด • ' + ascRmseText(im) +
                   '</div>' +
@@ -2626,6 +2716,13 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     if (im.locked) { alert('ภาพถูกล็อกอยู่ กดปลดล็อก 🔒 ก่อน'); return; }
                     ascSetGcpMode(im);
                 });
+                const doneEl = q('done');
+                if (doneEl) doneEl.addEventListener('click', ascFinishImageAlign);
+                const embedEl = q('embed');
+                if (embedEl) embedEl.addEventListener('change', e => {
+                    im.embed = e.target.checked;
+                    renderDroneList();
+                });
                 q('cleargcp').addEventListener('click', () => {
                     if (!im.gcps.length) return;
                     if (!confirm('ล้าง GCP ทั้ง ' + im.gcps.length + ' จุดของภาพนี้?')) return;
@@ -2641,6 +2738,38 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
             });
         }
 
+        /* ═══════════════════════════════════════════════════════════════
+           ภาพย่อสำหรับฝังลงไฟล์ DB2
+
+           ภาพโดรนเต็มความละเอียดมักมีขนาด 5–20 MB ต่อใบ ถ้าฝังดิบ ๆ ไฟล์ DB2
+           จะใหญ่จนเปิดและส่งต่อไม่ไหว จึงย่อลงให้พออ่านตำแหน่งบนแผนที่ได้
+           แล้วบีบเป็น JPEG โดยไล่ลดขนาดจนกว่าจะเข้างบที่ตั้งไว้
+
+           ความละเอียดต้นฉบับ (w, h) ยังถูกบันทึกไว้เหมือนเดิม เมทริกซ์และ GCP
+           จึงใช้ได้ต่อ และถ้าภายหลังเลือกไฟล์เต็มกลับมา ตำแหน่งก็ยังตรงเป๊ะ
+           ═══════════════════════════════════════════════════════════════ */
+        const ASC_THUMB_BUDGET = 700000;                       // ความยาว dataURL สูงสุดต่อภาพ (~0.7 MB)
+        const ASC_THUMB_STEPS  = [[1600, 0.72], [1600, 0.55], [1280, 0.6], [1024, 0.6], [800, 0.55], [640, 0.5]];
+
+        function ascMakeThumb(img) {
+            let best = null;
+            for (const [maxDim, q] of ASC_THUMB_STEPS) {
+                const k = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+                const w = Math.max(1, Math.round(img.naturalWidth * k));
+                const h = Math.max(1, Math.round(img.naturalHeight * k));
+                const cv = document.createElement('canvas');
+                cv.width = w; cv.height = h;
+                const cx = cv.getContext('2d');
+                cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high';
+                cx.drawImage(img, 0, 0, w, h);
+                let url;
+                try { url = cv.toDataURL('image/jpeg', q); } catch (e) { return null; }
+                best = url;
+                if (url.length <= ASC_THUMB_BUDGET) return url;
+            }
+            return best;   // เล็กสุดแล้วยังเกินงบ ก็ใช้เท่าที่ย่อได้
+        }
+
         /* ผูกไฟล์ภาพเข้ากับรายการ — ถ้ามี GCP อยู่แล้วให้คงตำแหน่งเดิม ไม่วางใหม่ */
         function ascAttachImageFile(im, file) {
             const url = URL.createObjectURL(file);
@@ -2649,6 +2778,8 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 const hadGeo = im.gcps.length > 0 || (im.w > 0 && im.h > 0);
                 const oldW = im.w, oldH = im.h;
                 im.src = img; im.w = img.naturalWidth; im.h = img.naturalHeight;
+                im.thumb = ascMakeThumb(img);      // เตรียมภาพย่อไว้ฝังลง DB2 ตั้งแต่ตอนเลือกไฟล์
+                im.fromThumb = false;
                 if (!im.name || /^ภาพที่ \d+$/.test(im.name)) im.name = file.name;
 
                 if (!hadGeo) {
@@ -2700,6 +2831,16 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 if (isFinite(d.rotDeg))   im.rotDeg   = d.rotDeg;
                 if (isFinite(d.scalePct)) im.scalePct = d.scalePct;
                 if (Array.isArray(d.A) && d.A.length === 6) im.A = d.A.slice();
+                /* ภาพย่อที่ฝังมากับไฟล์ — เอากลับขึ้นจอทันที ไม่ต้องให้ผู้ใช้ไปหาไฟล์เดิม
+                   ยังเปลี่ยนเป็นไฟล์ความละเอียดเต็มทีหลังได้ ตำแหน่งไม่เพี้ยนเพราะ w/h เดิมถูกเก็บไว้ */
+                if (d.img) {
+                    im.thumb = d.img;
+                    im.fromThumb = true;
+                    const ti = new Image();
+                    ti.onload = () => { im.src = ti; droneLayer.redraw(); renderDroneList(); };
+                    ti.src = d.img;
+                }
+                if (d.embed === false) im.embed = false;
                 (d.gcps || []).forEach(g => {
                     const o = { u: g.u, v: g.v, lat: g.lat, lng: g.lng, marker: null };
                     im.gcps.push(o); im._makeMarker(o);
@@ -2937,6 +3078,8 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
     }
 });
         map.on('draw:drawstart', function (e) {
+            // เริ่มวาดเมื่อไร ให้เลิกตรึงภาพทันที ไม่งั้นคลิกจะถูกโหมดตรึงภาพกินไป
+            if (typeof ascExitImageModes === 'function') ascExitImageModes();
 			map.doubleClickZoom.disable(); // 🌟 ปิดการซูมแผนที่ขณะวาด
 			isDrawingMode = true;
             if (e.layerType === 'polygon') {
@@ -7687,6 +7830,9 @@ function ascFileStamp(projectName, kind) {
 
 		// ═══ เฟส 11: Stepper Navigation ═══
 		function goToStep(n) {
+			// ออกจากขั้นตอนที่มีเครื่องมือตรึงภาพ ต้องปิดโหมดให้ด้วย
+			// ไม่งั้นไปขั้นตอนออกแบบแล้ววาดหลังคาไม่ได้ เพราะคลิกยังถูกดักอยู่
+			if (typeof ascExitImageModes === 'function') ascExitImageModes();
 			document.querySelectorAll('#stepperBar .step-tab').forEach(t => {
 				t.classList.toggle('active', parseInt(t.dataset.step) === n);
 			});
