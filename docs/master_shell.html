@@ -24,28 +24,37 @@
     <style>
         body { overflow: hidden; }
         /* ── ตราคำ PROINVENTIVE ────────────────────────────────────────
-           PRO เป็นทองไล่เฉด INVENTIVE เป็นน้ำเงินไล่เฉด แล้วดันนูนด้วย
-           drop-shadow ซ้อนหลายชั้นให้เห็นเป็นตัวอักษรหนานูนแบบโลหะ
-           ใช้ drop-shadow ไม่ใช่ text-shadow เพราะตัวอักษรถูกเติมด้วย
-           background-clip แล้ว text-shadow จะทะลุออกมาด้านหน้า */
-        .brand-3d { display:inline-block; font-weight:800; letter-spacing:.045em;
-                    filter: drop-shadow(0 1px 0 rgba(0,0,0,.55))
-                            drop-shadow(0 2px 0 rgba(0,0,0,.30))
-                            drop-shadow(0 3px 5px rgba(0,0,0,.45)); }
+           เฉดทองดูดมาจากไฟล์โลโก้จริง img/pilogo.png โดยไล่จากจุดสว่างสุด
+           ไปจุดเงาสุดของเหรียญ ตัวอักษรกับเหรียญจึงเป็นทองโทนเดียวกัน
+           ไม่ใช่ทองคนละเฉดวางอยู่ข้างกัน
+
+           ความนูนทำด้วย drop-shadow ทีละ 1 พิกเซลต่อเนื่องกันหลายชั้น
+           แต่ละชั้นซ้อนบนผลของชั้นก่อนหน้า จึงได้เป็นเนื้อความหนาทึบจริง
+           ไม่ใช่เงาเบลอใต้ตัวอักษร ใช้ drop-shadow ไม่ใช่ text-shadow
+           เพราะตัวอักษรถูกเติมสีด้วย background-clip แล้ว text-shadow
+           จะทะลุออกมาด้านหน้าตัวอักษร */
+        .brand-3d { display:inline-block; font-weight:800; letter-spacing:.05em;
+                    filter: drop-shadow(0 -1px 0 rgba(255,255,255,.32))
+                            drop-shadow(0 1px 0 #171C24) drop-shadow(0 1px 0 #171C24)
+                            drop-shadow(0 1px 0 #171C24) drop-shadow(0 1px 0 #161A22)
+                            drop-shadow(0 1px 0 #14181F) drop-shadow(0 1px 0 #12161C)
+                            drop-shadow(0 1px 0 #101419)
+                            drop-shadow(0 7px 9px rgba(0,0,0,.6)); }
         .brand-3d > span { -webkit-background-clip:text; background-clip:text;
                            color:transparent; -webkit-text-fill-color:transparent; }
-        .brand-3d .b-pro { background-image:linear-gradient(178deg,
-                    #FFF8E3 0%, #FFE9A8 22%, #F6CB5C 45%, #D8A22F 68%, #9A6D16 100%); }
-        .brand-3d .b-inv { background-image:linear-gradient(178deg,
+        .brand-3d .b-pro { background-image:linear-gradient(177deg,
+                    #FDF7D3 0%, #FAE5A6 18%, #E3CB8C 36%, #C9A868 55%, #B08B48 74%, #8E6C31 100%); }
+        .brand-3d .b-inv { background-image:linear-gradient(177deg,
                     #EFF7FF 0%, #B9DAFF 26%, #6FB0F7 52%, #2F76D6 76%, #1A4585 100%); }
 
-        /* บนพื้นสว่างต้องลดเงาลงและใช้เฉดที่เข้มขึ้น ไม่งั้นทองจะจมหายไปกับพื้นขาว */
-        .brand-3d.on-light { filter: drop-shadow(0 1px 0 rgba(255,255,255,.9))
-                                     drop-shadow(0 1px 1px rgba(15,23,42,.28))
-                                     drop-shadow(0 2px 3px rgba(15,23,42,.18)); }
-        .brand-3d.on-light .b-pro { background-image:linear-gradient(178deg,
-                    #F7DC8E 0%, #E5B23F 34%, #BE8A1E 62%, #7C5410 100%); }
-        .brand-3d.on-light .b-inv { background-image:linear-gradient(178deg,
+        /* บนพื้นสว่างต้องลดชั้นความหนาลงและใช้เฉดเข้มขึ้น ไม่งั้นทองจะจมหายไปกับพื้นขาว */
+        .brand-3d.on-light { filter: drop-shadow(0 -1px 0 rgba(255,255,255,.95))
+                                     drop-shadow(0 1px 0 #4A5364) drop-shadow(0 1px 0 #414A59)
+                                     drop-shadow(0 1px 0 #39414E) drop-shadow(0 1px 0 #313844)
+                                     drop-shadow(0 4px 6px rgba(15,23,42,.35)); }
+        .brand-3d.on-light .b-pro { background-image:linear-gradient(177deg,
+                    #E7CD8E 0%, #C9A868 30%, #A6864B 58%, #85681F 82%, #5E4915 100%); }
+        .brand-3d.on-light .b-inv { background-image:linear-gradient(177deg,
                     #6FAAF0 0%, #2F76D6 40%, #1D4FA0 70%, #123268 100%); }
 
         @media (prefers-reduced-transparency: reduce) { .brand-3d { filter:none; } }

@@ -605,7 +605,9 @@ let gSite, gGrid, gSat, siteRadius = 30, needRender = true;
 
 const UP = new THREE.Vector3(0, 1, 0);
 const MAT = {
-  wall:  new THREE.MeshStandardMaterial({ color:0xcdd3da, roughness:.94, metalness:.02 }),
+  /* ผนังต้องเป็น DoubleSide เพราะลำดับจุดของหลังคาแต่ละผืนวนคนละทิศกัน
+     ถ้าใช้ด้านเดียว ผนังครึ่งหนึ่งจะหันเข้าในและหายไปจนอาคารดูโหว่ */
+  wall:  new THREE.MeshStandardMaterial({ color:0xcdd3da, roughness:.94, metalness:.02, side:THREE.DoubleSide }),
   roof:  new THREE.MeshStandardMaterial({ color:0xe4e8ed, roughness:.88, metalness:.03, side:THREE.DoubleSide }),
   edge:  new THREE.LineBasicMaterial({ color:0x5a6472 }),
   keep:  new THREE.MeshStandardMaterial({ color:0xff8a5c, roughness:.8, transparent:true, opacity:.82 }),
@@ -727,8 +729,70 @@ function textSprite(txt, color) {
   return sp;
 }
 
+/* ---------- กรอบพิกัดของหลังคาหนึ่งผืน ----------
+   แยกออกมาเพราะต้องใช้สองที่ คือตอนสร้างรูปทรง และตอนไล่หาว่าขอบไหน
+   เป็นรอยต่อที่ชนกับหลังคาผืนอื่น */
+function roofFrame(r, fallbackOffset) {
+  const tilt = r.slope * D2R;
+  const bs   = roofBasis(r.azi);
+  const kY   = Math.tan(tilt);
+  const kX   = (r.span > 0) ? ((r.eaveB - r.eave) / r.span) : 0;
+  const roofZ = (lx, ly) => r.eave + (ly - r.yMin) * kY + (lx - r.xMin) * kX;
+
+  const cL = r.lb.reduce((a, q) => [a[0] + q.x, a[1] + q.y], [0, 0]).map(v => v / Math.max(r.lb.length, 1));
+  let T;
+  if (r.world && r.world.length >= 3) {
+    const cW = r.world.reduce((a, q) => [a[0] + q[0], a[1] + q[1]], [0, 0]).map(v => v / r.world.length);
+    T = [ cW[0] - (bs.ux[0] * cL[0] + bs.uy[0] * cL[1]),
+          cW[1] - (bs.ux[1] * cL[0] + bs.uy[1] * cL[1]) ];
+  } else {
+    T = [ fallbackOffset - (bs.ux[0] * cL[0] + bs.uy[0] * cL[1]),
+          0 - (bs.ux[1] * cL[0] + bs.uy[1] * cL[1]) ];
+  }
+  const toW = (lx, ly, h) => new THREE.Vector3(
+    T[0] + bs.ux[0] * lx + bs.uy[0] * ly,
+    h,
+    -(T[1] + bs.ux[1] * lx + bs.uy[1] * ly)
+  );
+  return { bs: bs, kX: kX, kY: kY, roofZ: roofZ, cL: cL, toW: toW };
+}
+
+/* ขอบทุกด้านของหลังคาผืนหนึ่งในพิกัดจริง พร้อมความสูงผิวหลังคาที่ปลายทั้งสอง */
+function roofEdges(r, fallbackOffset) {
+  const F = roofFrame(r, fallbackOffset);
+  const out = [];
+  for (let i = 0; i < r.lb.length; i++) {
+    const p = r.lb[i], q = r.lb[(i + 1) % r.lb.length];
+    out.push({
+      i: i,
+      a: F.toW(p.x, p.y, 0), b: F.toW(q.x, q.y, 0),
+      ha: F.roofZ(p.x, p.y), hb: F.roofZ(q.x, q.y)
+    });
+  }
+  return out;
+}
+
+/* จับคู่ขอบที่หลังคาสองผืนใช้ร่วมกัน เช่นสันจั่วที่อาคารสองหลังชนกัน
+   ขอบแบบนี้ไม่ควรก่อผนังลงถึงพื้น เพราะเป็นผนังภายในที่ซ้อนกันสองชั้น
+   ต้องปิดเฉพาะช่องต่างระดับระหว่างขอบหลังคาทั้งสองแทน อาคารจึงต่อกันสนิท */
+const ASC_EDGE_TOL = 0.6;   // เมตร — เผื่อความคลาดจากการแปลงพิกัดกลับไปมา
+function ascBuildEdgeIndex(roofs, offsets) {
+  const all = [];
+  roofs.forEach((r, idx) => roofEdges(r, offsets[idx]).forEach(e => {
+    e.roof = idx; all.push(e);
+  }));
+  const near = (u, v) => Math.hypot(u.x - v.x, u.z - v.z) < ASC_EDGE_TOL;
+  all.forEach(e => {
+    e.mate = all.find(o => o.roof !== e.roof &&
+      ((near(o.a, e.a) && near(o.b, e.b)) || (near(o.a, e.b) && near(o.b, e.a)))) || null;
+  });
+  const map = new Map();
+  all.forEach(e => map.set(e.roof + ':' + e.i, e));
+  return map;
+}
+
 /* ---------- สร้างระนาบหลังคาหนึ่งผืน ---------- */
-function buildRoof(r, fallbackOffset) {
+function buildRoof(r, fallbackOffset, edgeIndex, roofIdx) {
   const grp = new THREE.Group();
   const tilt = r.slope * D2R;
   const bs   = roofBasis(r.azi);
@@ -762,14 +826,41 @@ function buildRoof(r, fallbackOffset) {
     -(T[1] + bs.ux[1] * lx + bs.uy[1] * ly)
   );
 
-  /* ผนังอาคาร จากพื้นถึงขอบหลังคา */
+  /* ผนังอาคาร จากพื้นถึงขอบหลังคา
+     ยกเว้นขอบที่ชนกับหลังคาผืนอื่น ขอบแบบนั้นเป็นผนังภายใน ถ้าก่อลงถึงพื้น
+     จะได้ผนังซ้อนกันสองชั้นและเห็นเป็นร่องคั่นระหว่างอาคาร จึงปิดเฉพาะ
+     ช่องต่างระดับระหว่างขอบหลังคาทั้งสองผืน ให้ต่อกันสนิทเป็นอาคารเดียว */
   const walls = [];
   for (let i = 0; i < r.lb.length; i++) {
     const p = r.lb[i], q = r.lb[(i + 1) % r.lb.length];
-    walls.push([
-      toW(p.x, p.y, 0), toW(q.x, q.y, 0),
-      toW(q.x, q.y, roofZ(q.x, q.y)), toW(p.x, p.y, roofZ(p.x, p.y))
-    ]);
+    const zp = roofZ(p.x, p.y), zq = roofZ(q.x, q.y);
+    const me = edgeIndex ? edgeIndex.get(roofIdx + ':' + i) : null;
+    const mate = me && me.mate;
+
+    if (!mate) {
+      walls.push([
+        toW(p.x, p.y, 0), toW(q.x, q.y, 0),
+        toW(q.x, q.y, zq), toW(p.x, p.y, zp)
+      ]);
+      continue;
+    }
+
+    /* ปลายของขอบคู่อาจสลับหัวท้ายกัน ต้องจับให้ตรงจุดก่อนเทียบความสูง */
+    const A = toW(p.x, p.y, 0), B = toW(q.x, q.y, 0);
+    const d = (u, v) => Math.hypot(u.x - v.x, u.z - v.z);
+    const swapped = d(mate.a, A) > d(mate.b, A);
+    const mp = swapped ? mate.hb : mate.ha;
+    const mq = swapped ? mate.ha : mate.hb;
+
+    const loP = Math.min(zp, mp), hiP = Math.max(zp, mp);
+    const loQ = Math.min(zq, mq), hiQ = Math.max(zq, mq);
+    // ให้ผืนที่ลำดับน้อยกว่าเป็นคนปิดช่อง จะได้ไม่วาดซ้อนกันสองครั้ง
+    if (roofIdx < mate.roof && (hiP - loP > 0.02 || hiQ - loQ > 0.02)) {
+      walls.push([
+        toW(p.x, p.y, loP), toW(q.x, q.y, loQ),
+        toW(q.x, q.y, hiQ), toW(p.x, p.y, hiP)
+      ]);
+    }
   }
   const wallMesh = new THREE.Mesh(quadGeom(walls), MAT.wall);
   wallMesh.castShadow = true; wallMesh.receiveShadow = true;
@@ -874,12 +965,16 @@ function buildScene() {
     c.traverse(o => { if (o.geometry) o.geometry.dispose(); });
   }
 
+  /* คำนวณระยะเลื่อนสำรองของทุกผืนก่อน เพื่อให้ดัชนีขอบใช้กรอบพิกัดชุดเดียวกับตอนวาดจริง */
+  const offsets = [];
   let off = 0;
   S.roofs.forEach(r => {
-    gSite.add(buildRoof(r, off));
+    offsets.push(off);
     const xs = r.lb.map(q => q.x);
     off += (Math.max.apply(null, xs) - Math.min.apply(null, xs)) + 6;
   });
+  const edgeIndex = ascBuildEdgeIndex(S.roofs, offsets);
+  S.roofs.forEach((r, i) => gSite.add(buildRoof(r, offsets[i], edgeIndex, i)));
 
   S.keepouts.forEach(k => { if (k.pts.length >= 3) gSite.add(prism(k.pts, k.h, MAT.keep)); });
 
