@@ -718,6 +718,10 @@
                         ยังไม่ได้เลือกหลังคา — ค่าที่กรอกจะใช้กับทุกผืน
                     </div>
 
+                    <!-- จำนวนแผงของ "พื้นที่ที่เลือกอยู่" เป็นค่าประจำพื้นที่ ไม่ใช่ยอดรวมของทั้งระบบ
+                         ล็อกไว้แล้วจะไม่ถูกแตะ ไม่ว่าจะวาดหลังคาเพิ่มหรือปรับยอดรวมด้านล่าง -->
+                    <div id="ascAreaPanelBox" style="display:none; margin:-4px 0 10px; padding:8px 10px; border-radius:6px; border:1px solid #bfdbfe; background:#eff6ff; font-size:0.86em;"></div>
+
                     <!-- 🌟 กลุ่มความสูง/ความชันหลังคา — เรียงตามลำดับที่ผู้ใช้กรอกจริงหน้างาน
                          วัดความสูง 2 ค่าด้วยเลเซอร์ แล้วให้โปรแกรมคำนวณ Slope ให้ -->
                     <div class="setting-group">
@@ -915,8 +919,12 @@
 
                         <div style="margin-top: 15px; flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display:flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <span style="font-weight: bold; color: #1e293b; font-size: 1.05em;">แผงที่ติดตั้งได้จริง (แผง):</span> 
+                                <span style="font-weight: bold; color: #1e293b; font-size: 1.05em;">แผงที่ติดตั้งได้จริง (แผง):</span>
                                 <input type="number" class="highlight-input" id="finalPanelCount" value="0" min="0" style="background:#f8fafc;">
+                            </div>
+                            <div style="font-size: 0.75em; color: #64748b; line-height: 1.4;">
+                                ยอดรวมของทุกพื้นที่ · แก้ที่นี่คือเกลี่ยลงเฉพาะพื้นที่ที่ไม่ได้ล็อก
+                                — ตั้งจำนวนแยกรายพื้นที่และล็อกได้ที่หัวข้อ 3 โดยคลิกเลือกหลังคาหรือกรอบพื้นที่วางแผงบนแผนที่ก่อน
                             </div>
                         </div>
                         
@@ -1358,6 +1366,10 @@ const INDUSTRIAL_SOLAR_CONFIG = {
                     if (layer.panelConfig) {
                         f.properties.panelConfig = JSON.parse(JSON.stringify(layer.panelConfig)); // คัดลอกการตั้งค่าแผง
                     }
+                    // ค่าการวางแผงของกรอบ และจำนวนแผง/สถานะล็อกรายพื้นที่ ต้องติดไปกับประวัติด้วย
+                    // ไม่งั้นกด Undo ทีเดียวแล้วจำนวนที่ตั้งไว้ทุกพื้นที่หายหมด
+                    if (layer.zoneConfig) f.properties.zoneConfig = JSON.parse(JSON.stringify(layer.zoneConfig));
+                    if (layer.ascPanel)   f.properties.ascPanel   = JSON.parse(JSON.stringify(layer.ascPanel));
                     geojsonData.features.push(f);
                 }
             });
@@ -1400,6 +1412,8 @@ const INDUSTRIAL_SOLAR_CONFIG = {
                     },
                     onEachFeature: function(feature, layer) {
                         layer.drawMode = feature.properties.drawMode;
+                        // จำนวนแผงและสถานะล็อกของพื้นที่นี้ (ใช้ได้ทั้งหลังคาและกรอบพื้นที่วางแผง)
+                        if (feature.properties.ascPanel) layer.ascPanel = feature.properties.ascPanel;
                         if (layer.drawMode === 'roof') {
                             layer.setStyle({ color: '#ea580c', weight: 2, fillColor: '#f97316', fillOpacity: 0.3 });
                             // 🌟 เฟส 5: fallback ใช้ค่าจริงบนหน้าจอ (ที่เพิ่งถูกกู้คืน) แทนค่า hardcode เดิม
@@ -2794,6 +2808,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 loadEdgeLengths(layer);
             }
             ascUpdateActiveRoofBanner();
+            ascRenderAreaPanelBox();
         }
 
         /* บอกให้ชัดว่าค่าที่กำลังกรอกอยู่จะไปลงหลังคาผืนไหน
@@ -3214,14 +3229,21 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     if(db1.step4_validation_results && db1.step4_validation_results.equipmentCounts) {
                         const savedPanels = db1.step4_validation_results.equipmentCounts.totalPanels;
                         if (savedPanels !== undefined) {
-                            document.getElementById('finalPanelCount').value = savedPanels;
                             /* จำนวนที่มากับไฟล์ถือเป็นค่าที่ผู้ใช้เลือกไว้แล้ว ต้องไม่ถูกทับ
                                ตอนที่ระบบคำนวณใหม่ ไม่งั้นเปิดไฟล์เก่ามาแก้นิดเดียว
-                               จำนวนแผงก็เปลี่ยนไปจากที่เคยเสนอลูกค้าไว้ */
+                               จำนวนแผงก็เปลี่ยนไปจากที่เคยเสนอลูกค้าไว้
+
+                               ไฟล์รุ่นใหม่มีจำนวนแผงรายพื้นที่ฝังมาแล้ว จึงเชื่อค่าที่ฝังมา
+                               ส่วนไฟล์รุ่นเก่าที่มีแต่ยอดรวม ให้เกลี่ยลงทุกพื้นที่ตามสัดส่วนเพื่อให้ยอดตรงกับไฟล์ */
+                            const hasAreaTargets = (db1.mapGeoJSON && db1.mapGeoJSON.features || [])
+                                .some(f => f.properties && f.properties.ascPanel);
+                            const shown = hasAreaTargets ? ascAreaQuota().total : ascDistributeGlobal(savedPanels);
+                            document.getElementById('finalPanelCount').value = shown;
                             document.getElementById('finalPanelCount').dataset.userSet = '1';
                             if (typeof updateOptQty === 'function') updateOptQty(); // คำนวณ Optimizer ตามจำนวนแผงจริง
                             calculateStringSizing();
-                            renderPanels(savedPanels);
+                            renderPanels(shown);
+                            ascRenderAreaPanelBox();
                         }
                     }
                     // 🌟 กู้คืนผลคำนวณ BOM (ปลดล็อกปุ่ม SLD/Wiring โดยไม่ต้องกด Generate BOM ใหม่)
@@ -3892,9 +3914,12 @@ processPolygonsAndPanels = function() {
             // 🌟 สำคัญ: ล้างค่า customLayout ทิ้ง เพื่อบังคับให้ระบบสร้างแผงใหม่ตามรูปทรงที่ถูก Edit
             e.layers.eachLayer(layer => {
                 if (layer.panelConfig) {
-                    delete layer.panelConfig.customLayout; 
+                    delete layer.panelConfig.customLayout;
                     delete layer.panelConfig.deletedPanels; // 🌟 ล้างประวัติแผงที่เคยถูกลบทิ้งไปด้วยเมื่อดัดแปลงหลังคา
                 }
+                /* รูปพื้นที่เปลี่ยน = ผังแผงเดิมใช้ไม่ได้แล้ว การล็อกจึงไม่มีความหมายต่อไป
+                   ปลดล็อกให้เองพร้อมคืนค่าเป็นเต็มพื้นที่ ดีกว่าปล่อยให้ล็อกค้างจำนวนเก่าไว้เงียบ ๆ */
+                if (layer.ascPanel) { layer.ascPanel.locked = false; layer.ascPanel.target = null; }
             });
 
             // หากเป็นการแก้ไขหลังคาที่กำลังเลือกอยู่ ให้อัปเดตกล่องเครื่องมือเปลี่ยนความยาวด้วย
@@ -4364,6 +4389,9 @@ processPolygonsAndPanels = function() {
                        จึงต้องเก็บแยกกอง ห้ามปนกับ keepoutPolys เด็ดขาด
                        ค่าการวางแผงของกรอบติดไปด้วย เพื่อให้แต่ละกรอบจัดแถวของตัวเองได้ */
                     if (layer.zoneConfig) geojson.properties.zoneConfig = layer.zoneConfig;
+                    /* รหัสประจำพื้นที่ ใช้ผูกจำนวนแผงและสถานะล็อกไว้กับกรอบนี้โดยเฉพาะ
+                       จำนวนแผงจึงเป็นของแต่ละพื้นที่จริง ๆ ไม่ใช่ยอดรวมที่ถูกหารใหม่ทุกครั้ง */
+                    geojson.properties._areaUid = L.Util.stamp(layer);
                     pvZonePolys.push(geojson);
                 } else if (mode === 'roof') {
                     // นับเฉพาะโหมดวาดหลังคาจริงๆ เท่านั้น
@@ -4457,6 +4485,7 @@ processPolygonsAndPanels = function() {
                 }
 
                 config.roofId = index + 1;
+                config.areaUid = L.Util.stamp(layer);   // รหัสพื้นที่ของหลังคาผืนนี้ (ใช้เมื่อไม่มีกรอบพื้นที่วางแผงทับ)
                 layer.panelConfig.roofId = config.roofId; // 🌟 แนบ roofId ลง layer ทันทีเพื่อให้ระบบประวัติการลบแผงหากันเจอ
 
                 /* 🌟 ระยะไหลหลังคา = ช่วงของ localBoundary ตามแนวลาด (แกน y ในพิกัดท้องถิ่น)
@@ -4535,7 +4564,9 @@ processPolygonsAndPanels = function() {
                        ผังที่ส่งออกจึงอ้างอิงระบบเดียวกับที่ asc_3d และ asc_report ใช้ */
                     zonesForRoof.forEach(z => {
                         const zc = (z.properties && z.properties.zoneConfig) || null;
-                        const cfg = zc ? Object.assign({}, config, zc) : config;
+                        const cfg = Object.assign({}, config, zc || {});
+                        // แผงในกรอบนี้เป็นของกรอบนี้ ไม่ใช่ของหลังคา จำนวนและการล็อกจึงแยกกันได้
+                        cfg.areaUid = z.properties._areaUid;
                         state.allPossiblePanelsGeoJSON = state.allPossiblePanelsGeoJSON.concat(
                             generatePanelGrid(geojson, center, finalAzimuth, state.pvWid/1000, state.pvLen/1000, keepoutPolys, cfg, [z]));
                     });
@@ -4547,49 +4578,38 @@ processPolygonsAndPanels = function() {
             // 🌟 รูปหลังคา/ทิศเปลี่ยน → ระยะไหลเปลี่ยน → คำนวณความสูงสันหลังคาใหม่โดยคงความชันไว้
             if (typeof ascRefreshRoofGeom === 'function') ascRefreshRoofGeom();
 
-            const polyListDiv = document.getElementById('polygonParamsList');
-            if (state.roofPolygonsData.length > 0) {
-                let html = `<strong><i class="fa-solid fa-list"></i> ข้อมูลหลังคาที่วาด (${state.roofPolygonsData.length} พื้นที่):</strong><ul style="margin: 4px 0 0 0; padding-left: 20px; color: #ea580c;">`;
-                state.roofPolygonsData.forEach(p => {
-                    html += `<li>หลังคา ${p.id}: เอียง ${p.slope}°, ทิศ ${p.azimuth}° · ชายคา ${Number(p.eaveHeight_m||0).toFixed(2)} / สัน ${Number(p.ridgeHeight_m||0).toFixed(2)} ม. (พื้นที่ ${p.area.toFixed(1)} ตร.ม.)</li>`;
-                });
-                html += `</ul>`;
-                polyListDiv.innerHTML = html;
-                polyListDiv.style.display = 'block';
-                // ลูกศรทิศลาด และการตรวจจั่ว/รางน้ำ ต้องอัปเดตทุกครั้งที่รูปหรือทิศเปลี่ยน
-                if (window.AscRoofDir) AscRoofDir.refresh();
-                if (typeof ascUpdateActiveRoofBanner === 'function') ascUpdateActiveRoofBanner();
-            } else {
-                polyListDiv.style.display = 'none';
-            }
+            /* จำนวนแผงเป็นของแต่ละพื้นที่ ช่องด้านบนเป็นเพียงผลรวม
 
-            /* จำนวนแผงที่จะใช้จริง
+               พื้นที่ที่เพิ่งวาดใหม่เริ่มต้นที่เต็มพื้นที่ของตัวเอง ส่วนพื้นที่เดิม
+               คงจำนวนที่เคยตั้งไว้ทุกประการ การเพิ่มหลังคาผืนใหม่จึงไม่ไปดึงแผง
+               ออกจากผืนที่จัดลงตัวแล้ว ซึ่งเป็นพฤติกรรมเดิมที่ทำให้ผังเปลี่ยนเอง
 
-               เดิมตั้งเป็นค่าสูงสุดทุกครั้งที่คำนวณใหม่ ซึ่งทับค่าที่ผู้ใช้ตั้งไว้เองแบบเงียบๆ
-               ผู้ใช้ที่ลดจำนวนแผงให้พอดีกับอินเวอร์เตอร์ แล้วไปขยับต้นไม้หรือแก้ความชัน
-               จะพบว่าจำนวนแผงเด้งกลับเป็นสูงสุดโดยไม่มีอะไรบอก ทำให้ผังบนแผนที่
-               ไฟล์ที่ส่งออก และภาพใน 3 มิติกับรายงาน กลายเป็นคนละจำนวนกันโดยไม่รู้ตัว
-
-               ตอนนี้ถ้าผู้ใช้เคยตั้งค่าเอง จะคงค่านั้นไว้ เพียงแต่หดลงมาถ้าพื้นที่ลดจนใส่ไม่พอ
-               และแจ้งให้ทราบเมื่อถูกหด ส่วนกรณีที่ยังไม่เคยตั้งเอง ให้เต็มพื้นที่เหมือนเดิม */
-            const maxCount = state.allPossiblePanelsGeoJSON.length;
-            const pcEl = document.getElementById('finalPanelCount');
-            const wasUserSet = pcEl.dataset.userSet === '1';
-            const prev = parseInt(pcEl.value) || 0;
-            let finalCount = maxCount;
-
-            if (wasUserSet && prev > 0) {
-                finalCount = Math.min(prev, maxCount);
-                if (finalCount < prev) {
-                    ascPanelCountNote('พื้นที่วางแผงลดลง จำนวนแผงจึงถูกหดจาก ' + prev + ' เหลือ ' + finalCount + ' แผง');
-                } else {
-                    ascPanelCountNote('');
+               จะหดก็ต่อเมื่อพื้นที่วางได้จริงเล็กลงกว่าจำนวนที่ตั้งไว้เท่านั้น และแจ้งให้ทราบ */
+            const availMap = ascAreaAvailable();
+            let shrunk = [];
+            availMap.forEach((n, uid) => {
+                const l = ascAreaLayer(uid);
+                if (!l) return;
+                if (!l.ascPanel) l.ascPanel = { target: null, locked: false };
+                const t = l.ascPanel.target;
+                if (t === null || t === undefined || !isFinite(t)) {
+                    l.ascPanel.target = n;                       // พื้นที่ใหม่ = เต็มพื้นที่
+                } else if (t > n) {
+                    shrunk.push(t + '→' + n);
+                    l.ascPanel.target = n;                       // พื้นที่เล็กลง จึงใส่ได้ไม่ครบตามที่ตั้งไว้
                 }
-            } else {
-                ascPanelCountNote('');
-            }
+            });
 
-            pcEl.value = finalCount;
+            ascRenderRoofList();
+
+            const pcEl = document.getElementById('finalPanelCount');
+            const q = ascAreaQuota();
+            pcEl.value = q.total;
+            ascPanelCountNote(shrunk.length
+                ? 'พื้นที่วางแผงเล็กลง จำนวนแผงของบางพื้นที่จึงถูกหด (' + shrunk.join(', ') + ')'
+                : '');
+            ascRenderAreaPanelBox();
+
             updateOptQty();
             calculateStringSizing();
         }
@@ -4737,6 +4757,7 @@ function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM,
                                 // 🌟 แนบข้อมูลพิกัด X, Y (Invert Y) และแนบ gridRow/gridCol เพื่อใช้จัดกลุ่มสตริง
                                 realWorldCheckPanel.properties = {
                                     roofId: config.roofId,
+                                    areaUid: config.areaUid || ('R' + config.roofId),
                                     localX: locX,
                                     localY: locY,
                                     isLandscape: config.ori === "L",
@@ -4910,47 +4931,259 @@ function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM,
 
            เปลี่ยนเป็นลดตามสัดส่วนของแต่ละหลังคา ลดรวม 10 เปอร์เซ็นต์
            ทุกหลังคาก็ลดลงราว 10 เปอร์เซ็นต์เท่ากัน ตรงกับที่ผู้ใช้คาดหวัง */
-        function ascActivePanels(count) {
-            const all = state.allPossiblePanelsGeoJSON;
-            if (!(count >= 0)) count = all.length;
-            if (count >= all.length) return all.slice();
+        /* ═══════════════════════════════════════════════════════════════════
+           จำนวนแผงรายพื้นที่ และการล็อกแผง
 
-            const byRoof = new Map();
-            all.forEach(p => {
-                const id = (p.properties && p.properties.roofId) || 0;
-                if (!byRoof.has(id)) byRoof.set(id, 0);
-                byRoof.set(id, byRoof.get(id) + 1);
+           "พื้นที่" หนึ่งหน่วยคือกรอบพื้นที่วางแผงหนึ่งกรอบ หรือหลังคาทั้งผืน
+           เมื่อผืนนั้นไม่มีกรอบทับอยู่ ค่าที่ตั้งไว้ผูกกับ layer ของพื้นที่นั้นเอง
+           (layer.ascPanel) จึงไม่หลุดเมื่อมีการวาดหลังคาผืนใหม่เพิ่ม
+
+           เดิมช่อง "แผงที่ติดตั้งได้จริง" เป็นยอดรวมตัวเดียวที่ถูกหารตามสัดส่วน
+           ให้ทุกหลังคาใหม่ทุกครั้งที่คำนวณ วาดหลังคาผืนที่สองแล้วผืนแรกจึงถูก
+           ดึงแผงออกไปครึ่งหนึ่งทันทีทั้งที่ผู้ใช้ไม่ได้สั่ง
+           ═══════════════════════════════════════════════════════════════════ */
+
+        /* หา layer ของพื้นที่จากรหัส — ใช้ตอนอ่านจำนวนที่ตั้งไว้และสถานะล็อก */
+        function ascAreaLayer(uid) {
+            let found = null;
+            editableItems.eachLayer(l => {
+                if (!found && L.Util.stamp(l) === uid) found = l;
             });
-
-            const ids = Array.from(byRoof.keys());
+            return found;
+        }
+        /* ค่าที่ตั้งไว้ของพื้นที่ : target = จำนวนที่ต้องการ (null = อัตโนมัติ), locked = ล็อกห้ามเปลี่ยน */
+        function ascAreaSetting(uid) {
+            const l = ascAreaLayer(uid);
+            const a = l && l.ascPanel;
+            return {
+                layer: l,
+                target: (a && isFinite(a.target) && a.target !== null) ? Math.max(0, Math.floor(a.target)) : null,
+                locked: !!(a && a.locked)
+            };
+        }
+        function ascAreaIsFixed(uid) {
+            const s = ascAreaSetting(uid);
+            return s.locked || s.target !== null;
+        }
+        /* จำนวนแผงที่วางได้ทั้งหมดของแต่ละพื้นที่ */
+        function ascAreaAvailable() {
+            const avail = new Map();
+            state.allPossiblePanelsGeoJSON.forEach(p => {
+                const k = (p.properties && p.properties.areaUid) || 0;
+                avail.set(k, (avail.get(k) || 0) + 1);
+            });
+            return avail;
+        }
+        /* โควตาของทุกพื้นที่ = จำนวนที่ตั้งไว้ของพื้นที่นั้น จำกัดด้วยที่วางได้จริง
+           ไม่มีการหารยอดรวมใหม่อีกต่อไป พื้นที่หนึ่งจึงไม่ถูกพื้นที่อื่นดึงแผงไป */
+        function ascAreaQuota() {
+            const avail = ascAreaAvailable();
             const quota = new Map();
+            let total = 0, lockedSum = 0;
+            avail.forEach((n, uid) => {
+                const s = ascAreaSetting(uid);
+                const take = Math.min(s.target !== null ? s.target : n, n);
+                quota.set(uid, take);
+                total += take;
+                if (s.locked) lockedSum += take;
+            });
+            return { quota: quota, avail: avail, total: total, lockedSum: lockedSum };
+        }
+
+        /* ตั้งจำนวนแผงรวมทั้งระบบ โดยเฉลี่ยลงเฉพาะพื้นที่ที่ "ไม่ได้ล็อก"
+           แล้วเขียนกลับเป็นจำนวนประจำพื้นที่ ผู้ใช้จึงเห็นได้ว่าแต่ละพื้นที่เหลือเท่าไร
+           พื้นที่ที่ล็อกไว้ไม่ถูกแตะ ไม่ว่าจะปรับยอดรวมเป็นเท่าไรก็ตาม */
+        function ascDistributeGlobal(reqTotal) {
+            const avail = ascAreaAvailable();
+            const open = [];
+            let lockedSum = 0, openCap = 0;
+            avail.forEach((n, uid) => {
+                const s = ascAreaSetting(uid);
+                if (s.locked) { lockedSum += Math.min(s.target !== null ? s.target : n, n); return; }
+                if (s.layer) { open.push({ uid: uid, cap: n, layer: s.layer }); openCap += n; }
+            });
+            let budget = Math.min(Math.max(0, (reqTotal || 0) - lockedSum), openCap);
+
             let assigned = 0;
             const frac = [];
-            ids.forEach(id => {
-                const share = byRoof.get(id) / all.length * count;
-                const base = Math.floor(share);
-                quota.set(id, base); assigned += base;
-                frac.push({ id: id, f: share - base });
+            open.forEach(o => {
+                const share = openCap > 0 ? o.cap / openCap * budget : 0;
+                o.take = Math.floor(share); assigned += o.take;
+                frac.push({ o: o, f: share - o.take });
             });
-            // แจกเศษที่เหลือให้หลังคาที่มีเศษมากที่สุดก่อน
             frac.sort((a, b) => b.f - a.f);
-            for (let i = 0; assigned < count && i < frac.length; i++) {
-                const id = frac[i].id;
-                if (quota.get(id) < byRoof.get(id)) { quota.set(id, quota.get(id) + 1); assigned++; }
+            for (let i = 0; assigned < budget && i < frac.length; i++) {
+                if (frac[i].o.take < frac[i].o.cap) { frac[i].o.take++; assigned++; }
             }
-            // เผื่อกรณีที่ยังไม่ครบ วนเติมให้ผืนที่ยังมีที่ว่าง
-            for (let g = 0; assigned < count && g < ids.length * 4096; g++) {
-                const id = ids[g % ids.length];
-                if (quota.get(id) < byRoof.get(id)) { quota.set(id, quota.get(id) + 1); assigned++; }
+            for (let g = 0; assigned < budget && g < open.length * 4096; g++) {
+                const o = open[g % open.length];
+                if (o.take < o.cap) { o.take++; assigned++; }
             }
+            open.forEach(o => {
+                if (!o.layer.ascPanel) o.layer.ascPanel = { target: null, locked: false };
+                o.layer.ascPanel.target = o.take;
+            });
+            return lockedSum + assigned;
+        }
 
+        function ascActivePanels() {
+            const all = state.allPossiblePanelsGeoJSON;
+            const left = new Map(ascAreaQuota().quota);
             const out = [];
             all.forEach(p => {
-                const id = (p.properties && p.properties.roofId) || 0;
-                const q = quota.get(id) || 0;
-                if (q > 0) { out.push(p); quota.set(id, q - 1); }
+                const uid = (p.properties && p.properties.areaUid) || 0;
+                const n = left.get(uid) || 0;
+                if (n > 0) { out.push(p); left.set(uid, n - 1); }
             });
             return out;
+        }
+
+        /* รายการหลังคาพร้อมจำนวนแผงที่ใช้จริงและสถานะล็อกของแต่ละผืน
+           แยกออกมาเป็นฟังก์ชันเพราะต้องวาดใหม่ทั้งตอนคำนวณผัง และตอนที่ผู้ใช้
+           แก้จำนวนแผงรายพื้นที่ ซึ่งไม่ได้คำนวณผังใหม่ */
+        function ascRenderRoofList() {
+            const polyListDiv = document.getElementById('polygonParamsList');
+            if (!polyListDiv) return;
+            if (!state.roofPolygonsData.length) { polyListDiv.style.display = 'none'; return; }
+
+            const roofLayers = editableItems.getLayers().filter(l => l.drawMode === 'roof');
+            const zoneLayers = editableItems.getLayers().filter(l => l.drawMode === 'pvzone');
+            const drawnByRoof = {};
+            ascActivePanels().forEach(p => {
+                const r = (p.properties && p.properties.roofId) || 0;
+                drawnByRoof[r] = (drawnByRoof[r] || 0) + 1;
+            });
+
+            let html = `<strong><i class="fa-solid fa-list"></i> ข้อมูลหลังคาที่วาด (${state.roofPolygonsData.length} พื้นที่):</strong><ul style="margin: 4px 0 0 0; padding-left: 20px; color: #ea580c;">`;
+            state.roofPolygonsData.forEach(p => {
+                const lyr = roofLayers[p.id - 1];
+                let locked = !!(lyr && lyr.ascPanel && lyr.ascPanel.locked);
+                // หลังคาที่แผงเป็นของกรอบ ให้ถือว่าล็อกเมื่อกรอบที่ทับอยู่ถูกล็อก
+                if (!locked && lyr) {
+                    const rg = lyr.toGeoJSON();
+                    locked = zoneLayers.some(z => {
+                        if (!z.ascPanel || !z.ascPanel.locked) return false;
+                        try { return turf.booleanIntersects(z.toGeoJSON(), rg); } catch (e) { return false; }
+                    });
+                }
+                const badge = locked
+                    ? ' <span style="background:#f59e0b; color:#fff; border-radius:3px; padding:0 5px; font-size:0.88em;">🔒 ล็อกแผง</span>'
+                    : '';
+                html += `<li>หลังคา ${p.id}: เอียง ${p.slope}°, ทิศ ${p.azimuth}° · ชายคา ${Number(p.eaveHeight_m||0).toFixed(2)} / สัน ${Number(p.ridgeHeight_m||0).toFixed(2)} ม. (พื้นที่ ${p.area.toFixed(1)} ตร.ม.) · <b>${fmtInt(drawnByRoof[p.id] || 0)} แผง</b>${badge}</li>`;
+            });
+            polyListDiv.innerHTML = html + `</ul>`;
+            polyListDiv.style.display = 'block';
+            // ลูกศรทิศลาด และการตรวจจั่ว/รางน้ำ ต้องอัปเดตทุกครั้งที่รูปหรือทิศเปลี่ยน
+            if (window.AscRoofDir) AscRoofDir.refresh();
+            if (typeof ascUpdateActiveRoofBanner === 'function') ascUpdateActiveRoofBanner();
+        }
+
+        /* ชื่อพื้นที่ที่ผู้ใช้อ่านแล้วรู้ว่าหมายถึงอันไหนบนแผนที่ */
+        function ascAreaName(layer) {
+            if (!layer) return '';
+            if (layer.drawMode === 'pvzone') {
+                const zones = editableItems.getLayers().filter(l => l.drawMode === 'pvzone');
+                return '🔵 พื้นที่วางแผง ' + (zones.indexOf(layer) + 1);
+            }
+            const roofs = editableItems.getLayers().filter(l => l.drawMode === 'roof');
+            return '🏠 หลังคา ' + (roofs.indexOf(layer) + 1);
+        }
+
+        /* กล่องจำนวนแผงของพื้นที่ที่กำลังเลือกอยู่ พร้อมปุ่มล็อก */
+        function ascRenderAreaPanelBox() {
+            const box = document.getElementById('ascAreaPanelBox');
+            if (!box) return;
+            const l = activeRoofLayer;
+            const isArea = l && (l.drawMode === 'roof' || l.drawMode === 'pvzone');
+
+            /* หลังคาที่มีกรอบพื้นที่วางแผงทับอยู่ จะไม่ได้ถือแผงเอง แผงเป็นของกรอบ
+               ถ้าไม่บอกตรงนี้ ผู้ใช้จะงงว่าทำไมตั้งจำนวนที่หลังคาแล้วไม่มีอะไรเกิดขึ้น */
+            if (!isArea) { box.style.display = 'none'; return; }
+            const uid = L.Util.stamp(l);
+            const avail = ascAreaAvailable().get(uid) || 0;
+            if (!l.ascPanel) l.ascPanel = { target: null, locked: false };
+            const st = l.ascPanel;
+
+            if (avail === 0 && l.drawMode === 'roof') {
+                box.style.display = 'block';
+                box.style.background = '#f8fafc'; box.style.borderColor = '#cbd5e1';
+                box.innerHTML = '<b>' + ascAreaName(l) + '</b> — ผืนนี้มีกรอบพื้นที่วางแผงทับอยู่ ' +
+                    'จำนวนแผงตั้งที่กรอบนั้นแทน (คลิกที่กรอบสีน้ำเงินเพื่อตั้งค่า)';
+                return;
+            }
+
+            const locked = !!st.locked;
+            box.style.display = 'block';
+            box.style.background = locked ? '#fffbeb' : '#eff6ff';
+            box.style.borderColor = locked ? '#fcd34d' : '#bfdbfe';
+            box.innerHTML =
+                '<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">' +
+                  '<b style="flex:1; min-width:120px;">' + ascAreaName(l) + '</b>' +
+                  '<span style="color:#475569;">แผง</span>' +
+                  '<input type="number" id="ascAreaCount" min="0" max="' + avail + '" value="' +
+                      Math.min(st.target === null || !isFinite(st.target) ? avail : st.target, avail) +
+                      '" style="width:74px; padding:3px 5px; border:1px solid #93c5fd; border-radius:4px; font-weight:700;"' +
+                      (locked ? ' disabled' : '') + '>' +
+                  '<span style="color:#64748b;">/ ' + fmtInt(avail) + '</span>' +
+                  '<button id="ascAreaFull" style="padding:3px 8px; border:1px solid #cbd5e1; background:#fff; border-radius:4px; cursor:pointer; font-size:0.92em;"' +
+                      (locked ? ' disabled' : '') + '>เต็มพื้นที่</button>' +
+                  '<button id="ascAreaLock" style="padding:3px 9px; border:1px solid ' + (locked ? '#f59e0b' : '#cbd5e1') +
+                      '; background:' + (locked ? '#f59e0b' : '#fff') + '; color:' + (locked ? '#fff' : '#475569') +
+                      '; border-radius:4px; cursor:pointer; font-weight:700; font-size:0.92em;">' +
+                      (locked ? '🔒 ล็อกแผงอยู่' : '🔓 ล็อกแผง') + '</button>' +
+                '</div>' +
+                '<div style="font-size:0.82em; color:' + (locked ? '#b45309' : '#64748b') + '; margin-top:5px; line-height:1.45;">' +
+                  (locked
+                    ? 'ล็อกอยู่ — จำนวนและตำแหน่งแผงของพื้นที่นี้จะไม่เปลี่ยน แม้จะวาดหลังคาเพิ่ม ปรับยอดรวม หรือแก้ค่าการวางแผง'
+                    : 'จำนวนนี้เป็นของพื้นที่นี้เท่านั้น · กดล็อกเพื่อกันไม่ให้ถูกแก้ตอนไปทำพื้นที่อื่น') +
+                '</div>';
+
+            const cEl = document.getElementById('ascAreaCount');
+            if (cEl) cEl.addEventListener('change', () => {
+                let v = parseInt(cEl.value);
+                if (!isFinite(v) || v < 0) v = 0;
+                if (v > avail) v = avail;
+                cEl.value = v;
+                l.ascPanel.target = v;
+                ascApplyAreaChange();
+            });
+            const fEl = document.getElementById('ascAreaFull');
+            if (fEl) fEl.addEventListener('click', () => {
+                l.ascPanel.target = avail;
+                ascApplyAreaChange();
+            });
+            const kEl = document.getElementById('ascAreaLock');
+            if (kEl) kEl.addEventListener('click', () => {
+                // ล็อกโดยยังไม่เคยตั้งจำนวน ให้ยึดจำนวนที่เห็นอยู่ตอนนี้เป็นค่าที่ถูกล็อก
+                if (!l.ascPanel.locked && (l.ascPanel.target === null || !isFinite(l.ascPanel.target))) {
+                    l.ascPanel.target = avail;
+                }
+                l.ascPanel.locked = !l.ascPanel.locked;
+                ascApplyAreaChange();
+            });
+        }
+
+        /* เตือนแบบไม่ขวางทาง เมื่อผู้ใช้พยายามแก้พื้นที่ที่ล็อกไว้ */
+        let ascLockNoticeTimer = null;
+        function ascAreaLockedNotice() {
+            const box = document.getElementById('ascAreaPanelBox');
+            if (!box || box.style.display === 'none') return;
+            box.style.boxShadow = '0 0 0 3px rgba(245,158,11,.45)';
+            clearTimeout(ascLockNoticeTimer);
+            ascLockNoticeTimer = setTimeout(() => { box.style.boxShadow = ''; }, 900);
+        }
+
+        /* เขียนผลของการแก้จำนวนรายพื้นที่กลับสู่หน้าจอ โดยไม่คำนวณผังใหม่ทั้งหมด
+           เพราะการวางแผงไม่ได้เปลี่ยน เปลี่ยนแค่ว่าจะใช้กี่แผ่นในพื้นที่นั้น */
+        function ascApplyAreaChange() {
+            const q = ascAreaQuota();
+            document.getElementById('finalPanelCount').value = q.total;
+            document.getElementById('finalPanelCount').dataset.userSet = '1';
+            updateOptQty();
+            calculateStringSizing();
+            ascRenderAreaPanelBox();
+            ascRenderRoofList();
+            saveMapState();
         }
 
         function renderPanels(countToDraw) {
@@ -4961,7 +5194,7 @@ function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM,
             let totalStrings = Math.ceil(panelsToDraw.length / strSize);
             document.getElementById('outTotalStrings').innerText = totalStrings > 0 ? fmtInt(totalStrings) + " Strings" : "-";
 			wiringItems.clearLayers(); // ล้างเส้นสายไฟเดิม
-            let stringCounts = {}; let remainingPanels = countToDraw;
+            let stringCounts = {}; let remainingPanels = panelsToDraw.length;
             for(let i = 0; i < totalStrings; i++) {
                 let panelsInThisString = Math.min(strSize, remainingPanels);
                 stringCounts[panelsInThisString] = (stringCounts[panelsInThisString] || 0) + 1; remainingPanels -= panelsInThisString;
@@ -5002,8 +5235,17 @@ function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM,
                 panelLayer.bindTooltip(tooltipText, { className: 'delete-panel-tooltip', direction: 'top' });
                 panelLayer.on('click', function(e) {
                     if (!isDeleteModeActive) return; // 🌟 ทำงานเมื่อกดปุ่มถังขยะเท่านั้น
-                    L.DomEvent.stop(e); 
-                    
+                    L.DomEvent.stop(e);
+
+                    /* แผงในพื้นที่ที่ล็อกไว้ ลบไม่ได้ ต้องปลดล็อกก่อน
+                       ไม่งั้นการล็อกก็ไม่มีความหมาย เพราะจำนวนยังลดได้อยู่ดี */
+                    const areaOfPanel = ascAreaSetting(p.properties.areaUid);
+                    if (areaOfPanel.locked) {
+                        if (areaOfPanel.layer) setActiveRoofLayer(areaOfPanel.layer);
+                        ascAreaLockedNotice();
+                        return;
+                    }
+
                     // 🌟 1. หาหลังคาที่เป็นเจ้าของแผงนี้ เพื่อบันทึกพิกัดแผงที่ถูกลบทิ้งลง panelConfig
                     const roofId = p.properties.roofId;
                     editableItems.eachLayer(layer => {
@@ -5015,15 +5257,23 @@ function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM,
                     });
 
                     // 🌟 2. ลบออกจากอาร์เรย์ปัจจุบัน
-                    const idx = state.allPossiblePanelsGeoJSON.indexOf(p); 
+                    const idx = state.allPossiblePanelsGeoJSON.indexOf(p);
                     if (idx > -1) state.allPossiblePanelsGeoJSON.splice(idx, 1);
-                    
-                    const currentCount = parseInt(document.getElementById('finalPanelCount').value) - 1; 
+
+                    /* หักจำนวนออกจากพื้นที่ที่แผงนี้อยู่ ไม่ใช่แค่ลดยอดรวม
+                       ไม่งั้นพื้นที่นั้นจะไปดึงแผงสำรองมาเติมแทนที่แผงที่เพิ่งลบ */
+                    if (areaOfPanel.layer && areaOfPanel.layer.ascPanel &&
+                        isFinite(areaOfPanel.layer.ascPanel.target)) {
+                        areaOfPanel.layer.ascPanel.target = Math.max(0, areaOfPanel.layer.ascPanel.target - 1);
+                    }
+
+                    const currentCount = ascAreaQuota().total;
                     document.getElementById('finalPanelCount').value = currentCount;
-                    
-                    updateOptQty(); 
-                    calculateStringSizing(); 
-                    renderPanels(currentCount); 
+
+                    updateOptQty();
+                    calculateStringSizing();
+                    renderPanels(currentCount);
+                    ascRenderAreaPanelBox();
                     
                     // 🌟 3. บันทึกประวัติการกระทำลงในระบบ เพื่อให้ใช้ปุ่ม Undo/Redo เรียกคืนได้
                     saveMapState();
@@ -5458,6 +5708,13 @@ function updateFinalDcLength() {
         }
 
         function syncActiveConfig() {
+            /* พื้นที่ที่ถูกล็อกแผงไว้ ห้ามรับค่าการวางแผงชุดใหม่
+               เพราะการเปลี่ยนแนววาง กลุ่ม หรือทางเดิน จะทำให้กริดถูกสร้างใหม่
+               ตำแหน่งและจำนวนแผงที่ล็อกไว้ก็จะเปลี่ยนตาม ซึ่งขัดกับความหมายของการล็อก */
+            if (activeRoofLayer && activeRoofLayer.ascPanel && activeRoofLayer.ascPanel.locked) {
+                ascAreaLockedNotice();
+                return;
+            }
             /* พื้นที่วางแผงมีชุดค่าการวางแผงของตัวเอง จะได้จัดกลุ่มและเว้นทางเดิน
                ต่างจากหลังคาที่มันวางอยู่ เช่นโซนหนึ่งวางแนวตั้ง อีกโซนวางแนวนอน
                เดิมโค้ดส่วนนี้อ้าง panelConfig ตรงๆ ซึ่งพื้นที่วางแผงไม่มี จึงพังทันที
@@ -5523,12 +5780,22 @@ function updateFinalDcLength() {
         document.querySelectorAll('input[name="panelOrientation"]').forEach(radio => radio.addEventListener('change', syncActiveConfig));
         document.querySelectorAll('input[name="stringOrientation"]').forEach(radio => radio.addEventListener('change', syncActiveConfig)); // 🌟 สั่งอัปเดตเมื่อเปลี่ยนจัดสตริง
 
-        document.getElementById('finalPanelCount').addEventListener('input', e => {
-            let req = parseInt(e.target.value) || 0; if (req > state.allPossiblePanelsGeoJSON.length) { req = state.allPossiblePanelsGeoJSON.length; e.target.value = req; }
-            // จำไว้ว่าผู้ใช้ตั้งเอง การคำนวณรอบถัดไปจะได้ไม่ทับค่านี้
+        /* ยอดรวมด้านบนเป็นทางลัดสำหรับเกลี่ยจำนวนแผงทั้งระบบ
+           จะลงเฉพาะพื้นที่ที่ไม่ได้ล็อก แล้วเขียนกลับเป็นจำนวนประจำพื้นที่ทันที
+           ใช้ change ไม่ใช่ input เพราะระหว่างพิมพ์เลขยังไม่ครบ ไม่ควรเกลี่ยทิ้งไปก่อน */
+        document.getElementById('finalPanelCount').addEventListener('change', e => {
+            let req = parseInt(e.target.value) || 0;
+            if (req > state.allPossiblePanelsGeoJSON.length) req = state.allPossiblePanelsGeoJSON.length;
+            const applied = ascDistributeGlobal(req);
+            e.target.value = applied;
             e.target.dataset.userSet = '1';
-            updateOptQty(); calculateStringSizing(); renderPanels(req);
-            ascPanelCountNote('');
+            updateOptQty(); calculateStringSizing();
+            ascRenderAreaPanelBox();
+            ascRenderRoofList();
+            ascPanelCountNote(applied < req
+                ? 'พื้นที่ที่ล็อกไว้ไม่ถูกแตะ จึงเกลี่ยได้เพียง ' + fmtInt(applied) + ' แผง'
+                : '');
+            saveMapState();
         });
 
         /* ข้อความกำกับใต้ช่องจำนวนแผง ใช้บอกเมื่อระบบหดจำนวนให้เอง
@@ -5679,6 +5946,9 @@ function updateFinalDcLength() {
                         f.properties.panelConfig = JSON.parse(JSON.stringify(layer.panelConfig));
                         if (f.properties.panelConfig.customLayout) delete f.properties.panelConfig.customLayout;
                     }
+                    /* จำนวนแผงและสถานะล็อกของแต่ละพื้นที่ ต้องติดไปกับไฟล์
+                       ไม่งั้นเปิดไฟล์กลับมาแล้วทุกพื้นที่เด้งกลับเป็นเต็มพื้นที่ */
+                    if (layer.ascPanel) f.properties.ascPanel = JSON.parse(JSON.stringify(layer.ascPanel));
                     mapGeoJSON.features.push(f);
                 }
             });
