@@ -295,7 +295,24 @@
            เพราะหมุด GCP ของภาพโดรนเป็นกากบาทสีส้มเข้มรองพื้นขาว วางบนภาพถ่าย
            ดาวเทียมแล้วอาจสับสนว่าจุดไหนของอะไร เผลอลากผิดตัวได้ง่าย
            ต่างกันทั้งรูปทรงและสี จึงแยกออกแน่นอนไม่ว่าจะมองบนพื้นหลังแบบใด */
-        .leaflet-div-icon.leaflet-editing-icon { border-radius: 2px !important; background-color: #2563eb !important; border: 2px solid #ffffff !important; width: 12px !important; height: 12px !important; margin-left: -6px !important; margin-top: -6px !important; box-shadow: 0 1px 3px rgba(0,0,0,.45) !important; }
+        .leaflet-div-icon.leaflet-editing-icon {
+            background-color: transparent !important; border: 0 !important; box-shadow: none !important;
+            border-radius: 0 !important;
+            width: 20px !important; height: 20px !important; margin-left: -10px !important; margin-top: -10px !important;
+            background-repeat: no-repeat; background-size: 20px 20px;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><g stroke='%23ffffff' stroke-width='4.5' stroke-linecap='round'><path d='M10 1.5v6M10 12.5v6M1.5 10h6M12.5 10h6'/></g><g stroke='%230ea5e9' stroke-width='2.4' stroke-linecap='round'><path d='M10 1.5v6M10 12.5v6M1.5 10h6M12.5 10h6'/></g></svg>");
+        }
+
+        /* เส้นนำระหว่างลากไปมุมถัดไป — Leaflet.draw วาดเป็นจุดสี่เหลี่ยมเล็ก ๆ เรียงกัน
+           และระบายสีตามสีของรูป ซึ่งของหลังคาเป็นสีส้ม กลืนไปกับเส้นหลังคาที่วาดเสร็จแล้ว
+           เปลี่ยนเป็นจุดกลมสีฟ้าให้อ่านออกว่าเป็นเส้นชั่วคราว ไม่ใช่ขอบรูปจริง
+           แล้วสลับสีเมื่อดูดมุมฉากหรือรูปตัดกันเอง เพื่อไม่ให้เสียสัญญาณเตือนเดิม */
+        .leaflet-draw-guide-dash {
+            background-color: #0ea5e9 !important; width: 4px !important; height: 4px !important;
+            border-radius: 50% !important; opacity: .95 !important;
+        }
+        .leaflet-container.asc-draw-snap  .leaflet-draw-guide-dash { background-color: #fa0505 !important; width: 5px !important; height: 5px !important; }
+        .leaflet-container.asc-draw-error .leaflet-draw-guide-dash { background-color: #b91c1c !important; }
        .interactive-panel { cursor: pointer !important; outline: none; shape-rendering: geometricPrecision; }
         
         .file-upload-row { display: flex; align-items: center; justify-content: space-between; font-size: 11px; margin-top: 4px; color: #64748b; }
@@ -699,7 +716,7 @@
                         </div>
                     </div>
                     <div style="font-size: 0.75em; color: #64748b; margin-top: -6px; margin-bottom: 15px; text-align: center;">
-                        <i class="fa-solid fa-info-circle"></i> <b>Snap 90°:</b> ลากเมาส์ใกล้มุมฉาก เส้นจะเป็นประสีส้มเพื่อดูดให้อัตโนมัติ
+                        <i class="fa-solid fa-info-circle"></i> <b>Snap 90°:</b> เส้นนำเป็นจุดประ<b style="color:#0ea5e9;">สีฟ้า</b> เมื่อลากใกล้มุมฉากจะเปลี่ยนเป็น<b style="color:#fa0505;">สีแดง</b> แล้วดูดให้อัตโนมัติ
                     </div>
 
                     <div class="section-header">2. พารามิเตอร์การติดตั้ง (Installation Params)</div>
@@ -2981,6 +2998,27 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 el.innerHTML = 'ยังไม่ได้เลือกหลังคา — ค่าที่กรอกจะใช้กับ<b>ทุกผืน</b> · คลิกหลังคาบนแผนที่เพื่อแก้ทีละผืน';
             }
         }
+        /* แถบแจ้งเตือนชั่วคราวกลางแผนที่ ใช้บอกเรื่องที่ต้องเห็นทันทีขณะทำงานบนแผนที่
+           ไม่ใช้ alert เพราะจะขวางการวาดและต้องกดปิดทุกครั้ง */
+        let ascNoticeEl = null, ascNoticeTimer = null;
+        function ascFlashNotice(msg, ms) {
+            if (!ascNoticeEl) {
+                ascNoticeEl = document.createElement('div');
+                ascNoticeEl.style.cssText =
+                    'position:absolute; top:56px; left:50%; transform:translateX(-50%); z-index:1200;' +
+                    'display:none; max-width:78%; padding:9px 14px; border-radius:8px; background:#b45309;' +
+                    'color:#fff; font-size:0.85em; font-weight:700; line-height:1.45; text-align:center;' +
+                    'box-shadow:0 4px 14px rgba(0,0,0,.35); cursor:pointer;';
+                ascNoticeEl.addEventListener('click', () => { ascNoticeEl.style.display = 'none'; });
+                map.getContainer().appendChild(ascNoticeEl);
+                L.DomEvent.disableClickPropagation(ascNoticeEl);
+            }
+            ascNoticeEl.textContent = msg;
+            ascNoticeEl.style.display = 'block';
+            clearTimeout(ascNoticeTimer);
+            ascNoticeTimer = setTimeout(() => { ascNoticeEl.style.display = 'none'; }, ms || 8000);
+        }
+
         const guideLinesLayer = L.layerGroup().addTo(map);
         const verticalLine = L.polyline([], {color: '#fa0505', weight: 1.0, dashArray: '4,6', interactive: false}).addTo(guideLinesLayer);
         const horizontalLine = L.polyline([], {color: '#fa0505', weight: 1.0, dashArray: '4,6', interactive: false}).addTo(guideLinesLayer);
@@ -3017,9 +3055,11 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                         const newLayerPoint = L.point(Math.round(p2.x + dist * Math.cos(targetAngle)), Math.round(p2.y + dist * Math.sin(targetAngle)));
                         snappedLatLng = this._map.layerPointToLatLng(newLayerPoint);
                         e.layerPoint = newLayerPoint; e.latlng = snappedLatLng;
-                        if(this._guideLine) { this._guideLine.setStyle({color: '#fa0505', weight: 2.0, dashArray: '6, 6'}); }
+                        L.DomUtil.addClass(this._map.getContainer(), 'asc-draw-snap');
+                        if (this._guideLine) this._guideLine.setStyle({ color: '#fa0505', weight: 2.0, dashArray: '6, 6' });
                     } else {
-                        if(this._guideLine) { this._guideLine.setStyle({ color: this.options.shapeOptions.color || '#0ea5e9', weight: this.options.shapeOptions.weight || 2, dashArray: 'none' }); }
+                        L.DomUtil.removeClass(this._map.getContainer(), 'asc-draw-snap');
+                        if (this._guideLine) this._guideLine.setStyle({ color: '#0ea5e9', weight: 2, dashArray: '6, 6' });
                     }
                 }
                 originalOnMouseMove.call(this, e);
@@ -3027,6 +3067,27 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
 
             const originalOnMouseUp = L.Draw.Polyline.prototype._onMouseUp;
             L.Draw.Polyline.prototype._onMouseUp = function (e) { if (snappedLatLng) { e.latlng = snappedLatLng; } originalOnMouseUp.call(this, e); };
+
+            /* รูปตัดกันเอง Leaflet.draw จะเปลี่ยนสีจุดนำเป็นสีเตือน แต่ตอนนี้สีถูก CSS
+               ทับไว้แล้ว จึงต้องติดคลาสบอกสถานะไว้ด้วย สัญญาณเตือนเดิมจึงไม่หายไป */
+            ['_showErrorTooltip', '_hideErrorTooltip'].forEach((fn, i) => {
+                const orig = L.Draw.Polyline.prototype[fn];
+                if (typeof orig !== 'function') return;
+                L.Draw.Polyline.prototype[fn] = function () {
+                    try {
+                        const el = this._map && this._map.getContainer();
+                        if (el) L.DomUtil[i === 0 ? 'addClass' : 'removeClass'](el, 'asc-draw-error');
+                    } catch (err) {}
+                    return orig.apply(this, arguments);
+                };
+            });
+
+            /* เลิกวาดเมื่อไร ต้องล้างคลาสสถานะทิ้ง ไม่งั้นสีค้างไปถึงการวาดครั้งถัดไป */
+            map.on('draw:drawstop draw:created', function () {
+                const el = map.getContainer();
+                L.DomUtil.removeClass(el, 'asc-draw-snap');
+                L.DomUtil.removeClass(el, 'asc-draw-error');
+            });
         }
 
         let globalMdbMarker = null; // 🌟 เพิ่มตัวแปรเก็บหมุด MDB หลัก
@@ -3922,8 +3983,13 @@ processPolygonsAndPanels = function() {
             updatePreviews(); 
         }
 
-        map.on('draw:created', e => { 
-            if(state.pvLen === 0) return; 
+        map.on('draw:created', e => {
+            /* เดิมถ้ายังไม่ได้โหลดสเปกแผง บรรทัดนี้ return ทิ้งรูปที่เพิ่งวาดไปเงียบ ๆ
+               ผู้ใช้เห็นแค่เส้นหายไปโดยไม่มีคำอธิบายใด ๆ และวาดกี่ครั้งก็หายทุกครั้ง
+               ทั้งที่รูปทรงไม่ได้ต้องใช้ขนาดแผงเลย ใช้ตอนคำนวณผังแผงเท่านั้น
+               จึงเก็บรูปไว้ตามปกติ แล้วบอกให้ไปโหลดสเปกแผงแทน */
+            if (state.pvLen === 0 || state.pvWid === 0) ascFlashNotice(
+                '⚠ ยังไม่ได้โหลดสเปกแผง (PV) — รูปที่วาดถูกเก็บไว้ครบแล้ว ระบบจะวางแผงให้ทันทีที่อัปโหลดไฟล์สเปกแผงในขั้นตอนที่ 1');
 
             // ปิดโหมดวาดและล้างเส้น Guide
             isDrawingMode = false; 
@@ -4509,10 +4575,21 @@ processPolygonsAndPanels = function() {
             state.allPossiblePanelsGeoJSON = []; 
             state.roofPolygonsData = [];
             
-            if (state.pvLen === 0 || state.pvWid === 0) { 
-                updateSystemStatus(); 
-                document.getElementById('polygonParamsList').style.display = 'none';
-                return; 
+            if (state.pvLen === 0 || state.pvWid === 0) {
+                updateSystemStatus();
+                /* วาดรูปไว้แล้วแต่ยังไม่มีสเปกแผง ต้องบอกให้ชัดว่ารูปยังอยู่ครบ
+                   ไม่งั้นผู้ใช้จะคิดว่าที่วาดไปหายหมดแล้ววาดซ้ำไปเรื่อย ๆ */
+                const pl = document.getElementById('polygonParamsList');
+                const nShape = editableItems.getLayers().filter(l => l.toGeoJSON && l.drawMode !== 'mdb').length;
+                if (nShape) {
+                    pl.style.display = 'block';
+                    pl.innerHTML = '<b style="color:#b45309;">⚠ วาดรูปไว้แล้ว ' + nShape + ' ชิ้น แต่ยังไม่ได้โหลดสเปกแผง (PV)</b>' +
+                        '<div style="color:#64748b; margin-top:3px;">รูปทั้งหมดถูกเก็บไว้ครบ ระบบจะคำนวณและวางแผงให้ทันที ' +
+                        'ที่อัปโหลดไฟล์สเปกแผงในขั้นตอนที่ 1</div>';
+                } else {
+                    pl.style.display = 'none';
+                }
+                return;
             }
             
             const keepoutPolys = []; const roofLayers = []; const pvZonePolys = [];
