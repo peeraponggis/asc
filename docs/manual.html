@@ -30,6 +30,17 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
         main { max-width:100% !important; padding:0 !important; }
         section { break-inside: avoid-page; }
     }
+    .prompt-box { position:relative; background:#0f172a; color:#e2e8f0; border-radius:12px;
+                  padding:18px 18px 18px; font-family: ui-monospace, monospace; font-size:.78rem;
+                  line-height:1.65; white-space:pre-wrap; word-break:break-word; overflow-x:auto; }
+    .prompt-copy { position:absolute; top:10px; right:10px; background:#334155; color:#fff; border:0;
+                   border-radius:7px; padding:5px 12px; font-family:'Kanit',sans-serif; font-size:.72rem;
+                   font-weight:600; cursor:pointer; }
+    .prompt-copy:hover { background:#475569; }
+    .keytab td { padding:6px 10px; vertical-align:top; }
+    .keytab tr + tr td { border-top:1px solid #e2e8f0; }
+    .keytab code { font-family:ui-monospace,monospace; font-size:.78em; color:#0f766e; }
+    @media print { .prompt-box { background:#fff; color:#0f172a; border:1px solid #cbd5e1; } .prompt-copy { display:none; } }
     @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
 </style>
 </head>
@@ -60,8 +71,11 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <a href="#m1-db0"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ส่งออก DB0</a>
 
                 <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 2 · ออกแบบระบบ</div>
+                <a href="#m2-prep"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้นเตรียม · ดาต้าชีตอุปกรณ์</a>
                 <a href="#m2-step1"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 1 · ข้อมูลและอุปกรณ์</a>
                 <a href="#m2-step2"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 2 · วางผังบนแผนที่</a>
+                <a href="#m2-overlay" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ตรึงภาพโดรนด้วย GCP</a>
+                <a href="#m2-zone"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">พื้นที่วางแผงและล็อกแผง</a>
                 <a href="#m2-step3"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 3 · งานวิศวกรรม</a>
                 <a href="#m2-step4"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 4 · บันทึกฐานข้อมูล</a>
 
@@ -81,6 +95,11 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <a href="#m3-import" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">นำเข้าข้อมูล</a>
                 <a href="#m3-param"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ตั้งค่าการเงิน</a>
                 <a href="#m3-run"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ประมวลผลและออก PDF</a>
+
+                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 6 · บทสรุประบบ</div>
+                <a href="#m6-load"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">เปิดและนำเข้าข้อมูล</a>
+                <a href="#m6-read"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">อ่านแต่ละส่วนของหน้า</a>
+                <a href="#m6-voice" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">เสียงบรรยายและวิดีโอ</a>
 
                 <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">อ้างอิง</div>
                 <a href="#troubleshoot" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ปัญหาที่พบบ่อย</a>
@@ -106,7 +125,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                     ออกแบบระบบโซลาร์เซลล์<br>ตั้งแต่บิลค่าไฟจนถึงรายงานเสนอลูกค้า
                 </h1>
                 <p class="text-slate-600 leading-relaxed">
-                    โปรแกรมแบ่งเป็น 3 เมนูที่ทำงานต่อกันเป็นทอด ๆ ผลลัพธ์ของเมนูก่อนหน้าคือวัตถุดิบของเมนูถัดไป
+                    โปรแกรมแบ่งเป็น 6 เมนูที่ทำงานต่อกันเป็นทอด ๆ ผลลัพธ์ของเมนูก่อนหน้าคือวัตถุดิบของเมนูถัดไป
                     คู่มือนี้ไล่ตามลำดับการใช้งานจริง เปิดค้างไว้ข้าง ๆ ระหว่างทำงานได้เลย
                 </p>
                 <div class="mt-6 flex flex-wrap gap-2">
@@ -115,6 +134,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                     <button onclick="jumpTo('model3d')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 3</button>
                     <button onclick="jumpTo('device')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 4</button>
                     <button onclick="jumpTo('report')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 5</button>
+                    <button onclick="jumpTo('summary')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 6</button>
                 </div>
             </header>
 
@@ -122,8 +142,9 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
             <section class="mb-14">
                 <h2 id="overview" class="text-xl font-bold text-slate-900 mb-4">ภาพรวมการทำงาน</h2>
                 <p class="text-slate-600 leading-relaxed mb-6">
-                    ทั้งสามเมนูอยู่บนแถบด้านบน สลับไปมาได้ตลอดเวลาโดยข้อมูลไม่หาย
+                    ทุกเมนูอยู่บนแถบด้านบน สลับไปมาได้ตลอดเวลาโดยข้อมูลไม่หาย
                     แต่ถ้าทำตามลำดับ 1 → 2 → 3 โปรแกรมจะเติมค่าให้อัตโนมัติเกือบทั้งหมด ไม่ต้องกรอกซ้ำ
+                    สามเมนูนี้คือแกนหลัก ส่วนเมนู 3 มิติ วางผังอุปกรณ์ และบทสรุประบบ เป็นส่วนเสริมที่หยิบใช้เมื่อต้องการ
                 </p>
 
                 <div class="space-y-3">
@@ -135,6 +156,24 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                                 ใส่บิลค่าไฟหรือไฟล์มิเตอร์ AMR เพื่อหาว่าลูกค้าใช้ไฟเท่าไร ใช้ช่วงไหนของวัน
                                 แล้วประเมินว่าควรติดตั้งกี่ kWp จึงคุ้มที่สุด
                             </p>
+                        </div>
+                    </div>
+                    <div class="pl-9 text-slate-300"><i class="fa-solid fa-arrow-down"></i></div>
+
+                    <div class="flex gap-4 bg-teal-50/60 border border-dashed border-teal-300 rounded-xl p-5">
+                        <div class="step-num bg-teal-100 text-teal-700"><i class="fa-solid fa-file-lines"></i></div>
+                        <div class="min-w-0">
+                            <h3 class="font-bold text-slate-800 mb-1">ขั้นเตรียม · สร้างดาต้าชีตอุปกรณ์
+                                <span class="text-slate-400 font-normal text-sm">— Equipment Datasheet (.txt)</span></h3>
+                            <p class="text-sm text-slate-600 leading-relaxed">
+                                ก่อนเข้าเมนู 2 ต้องมีไฟล์สเปกอุปกรณ์เป็น <span class="kbd">.txt</span> ก่อน
+                                วิธีที่เร็วที่สุดคือเอา <b>ไฟล์ PDF หรือ JPG ดาต้าชีตของผู้ผลิต</b>
+                                คู่กับ <b>ไฟล์ datasheet.txt แม่แบบ</b> ของอุปกรณ์ชนิดนั้น
+                                ส่งให้ AI พร้อม Prompt ที่เตรียมไว้ แล้วให้ถอดค่าออกมาเป็นไฟล์ .txt ทีละชนิด
+                                ทำครั้งเดียวใช้ได้ตลอด เก็บเป็นคลังอุปกรณ์ของบริษัท
+                            </p>
+                            <a href="#m2-prep" class="inline-block mt-2 text-xs font-semibold text-teal-700 hover:underline">
+                                ดูวิธีทำและ Prompt เต็ม <i class="fa-solid fa-arrow-right ml-0.5"></i></a>
                         </div>
                     </div>
                     <div class="pl-9 text-slate-300"><i class="fa-solid fa-arrow-down"></i></div>
@@ -379,6 +418,145 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 ด้านขวาคือแผนที่ดาวเทียม ซูมและลากได้เหมือน Google Maps
             </p>
 
+            <!-- ═══════════ ขั้นเตรียม · ดาต้าชีต ═══════════ -->
+            <section class="mb-12">
+                <h3 id="m2-prep" class="text-lg font-bold text-slate-800 mb-3">ขั้นเตรียม · สร้างดาต้าชีตอุปกรณ์ (.txt)</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    เมนู 2 รับสเปกอุปกรณ์เป็นไฟล์ <span class="kbd">.txt</span> เท่านั้น ไม่ได้อ่าน PDF โดยตรง
+                    ขั้นนี้จึงเป็นการแปลงดาต้าชีตของผู้ผลิตให้เป็นไฟล์ที่โปรแกรมอ่านได้
+                    ทำครั้งเดียวต่อหนึ่งรุ่น แล้วเก็บไว้เป็นคลังอุปกรณ์ของบริษัท ใช้ซ้ำได้ทุกโครงการ
+                </p>
+
+                <ol class="space-y-4 mb-6">
+                    <li class="flex gap-4">
+                        <div class="step-num bg-teal-50 text-teal-700">1</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            เตรียมไฟล์สองอย่างของอุปกรณ์ชนิดนั้น — <b>ดาต้าชีตผู้ผลิต</b> เป็น PDF หรือ JPG
+                            (ถ่ายรูปหน้าตารางสเปกก็ได้ ขอให้อ่านตัวเลขออกชัด)
+                            และ <b>ไฟล์ datasheet.txt แม่แบบ</b> ของชนิดนั้น ซึ่งมีชื่อคีย์ครบทุกบรรทัดไว้แล้ว
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-teal-50 text-teal-700">2</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            เปิดแชต AI ที่รับไฟล์แนบได้ แนบทั้งสองไฟล์ แล้ววาง Prompt ด้านล่างนี้
+                            <b>ทำทีละชนิดและทีละรุ่น</b> อย่ารวมหลายอุปกรณ์ในรอบเดียว เพราะคีย์ของแต่ละชนิดไม่เหมือนกัน
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-teal-50 text-teal-700">3</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            คัดลอกผลลัพธ์ไปบันทึกเป็นไฟล์ <span class="kbd">.txt</span>
+                            เลือก Encoding เป็น <b>UTF-8</b> ตั้งชื่อให้รู้ว่าเป็นอุปกรณ์อะไร เช่น
+                            <span class="kbd">PV_AIKO_G670.txt</span> <span class="kbd">INV_Sungrow_SG150CX.txt</span>
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-teal-50 text-teal-700">4</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            เอาไฟล์ที่ได้ไปอัปโหลดในเมนู 2 ขั้นที่ 1
+                            โปรแกรมจะเด้งรายการค่าที่อ่านได้ขึ้นมาให้ตรวจทันที
+                            <b>อ่านให้ครบก่อนกดปิด</b> ถ้ามีคีย์ไหนเป็น <span class="kbd">-</span> แปลว่าดาต้าชีตไม่มีค่านั้น
+                            หรือ AI หาไม่เจอ ให้เติมเองในไฟล์
+                        </p></div>
+                    </li>
+                </ol>
+
+                <h4 class="font-bold text-slate-800 text-sm mb-2">Prompt สำหรับสร้างดาต้าชีต</h4>
+                <div class="prompt-box mb-2" id="promptBox">คุณคือวิศวกรระบบโซลาร์เซลล์ หน้าที่คือถอดสเปกจากดาต้าชีตของผู้ผลิต
+ออกมาเป็นไฟล์ข้อความให้โปรแกรม ProInventive Solar Suite อ่านได้
+
+ไฟล์ที่แนบมา
+1) ดาต้าชีตของผู้ผลิต (PDF หรือ JPG)
+2) datasheet.txt แม่แบบของอุปกรณ์ชนิดนี้ ซึ่งมีชื่อคีย์ครบทุกบรรทัดแล้ว
+
+กติกาในการเขียนไฟล์
+- ใช้ชื่อคีย์และลำดับบรรทัดตามแม่แบบเป๊ะ ๆ ห้ามเพิ่ม ห้ามลบ
+  ห้ามเปลี่ยนตัวสะกด และห้ามเปลี่ยนตัวพิมพ์เล็กพิมพ์ใหญ่
+- เติมเฉพาะค่าหลังเครื่องหมาย = โดยอ่านจากดาต้าชีตที่แนบมาเท่านั้น
+- หนึ่งบรรทัดต่อหนึ่งคีย์ รูปแบบ   Key = Value
+- ค่าตัวเลขใส่ตัวเลขล้วน ไม่ต้องมีหน่วย ไม่ต้องมีจุลภาคคั่นหลักพัน
+- ค่าเปอร์เซ็นต์ใส่ตัวเลขอย่างเดียว เช่น 24.8 ไม่ใช่ 24.8%
+- สัมประสิทธิ์อุณหภูมิที่เป็นลบ ต้องคงเครื่องหมายลบไว้ เช่น -0.26
+- ค่าที่หาไม่พบในดาต้าชีต ให้ใส่เครื่องหมาย -  ห้ามเดา ห้ามเว้นว่าง
+- ค่าที่เป็นข้อความ เช่น ชื่อรุ่นหรือชนิดเซลล์ ให้คงข้อความเดิม ไม่ต้องใส่เครื่องหมายคำพูด
+- ค่าจริงเท็จ ใช้คำว่า True หรือ False
+- ถ้าดาต้าชีตมีหลายรุ่นในไฟล์เดียว ให้ถามก่อนว่าจะเอารุ่นไหน แล้วทำทีละรุ่น
+- ห้ามใส่คำอธิบายหรือข้อความอื่นนอกเหนือจากบรรทัด Key = Value
+  ถ้าต้องการหมายเหตุ ให้ขึ้นต้นบรรทัดด้วย #
+
+ตรวจก่อนส่งกลับ
+- Pmax_Wp ต้องใกล้เคียง Vmp_V คูณ Imp_A คลาดได้ไม่เกิน 2 เปอร์เซ็นต์
+- Voc_V ต้องมากกว่า Vmp_V และ Isc_A ต้องมากกว่า Imp_A
+- Length_mm กับ Width_mm เป็นขนาดจริงของแผง หน่วยมิลลิเมตร ไม่ใช่เซนติเมตร
+- ของอินเวอร์เตอร์ Number_of_MPPTs และ Inputs_per_MPPT ต้องเป็นจำนวนเต็ม
+- ของแบตเตอรี่ ระวังตัวพิมพ์ท้ายคีย์กำลังชาร์จ เป็น _kw ตัวเล็กทั้งคู่
+
+ผลลัพธ์
+ส่งกลับเป็นเนื้อไฟล์ .txt อย่างเดียว พร้อมบอกชื่อไฟล์ที่ควรตั้ง
+เช่น PV_AIKO_G670.txt หรือ INV_Sungrow_SG150CX.txt<button class="prompt-copy no-print" onclick="copyPrompt()">คัดลอก</button></div>
+                <p class="text-xs text-slate-400 mb-6">ใช้ Prompt เดียวกันได้กับอุปกรณ์ทุกชนิด เพราะชื่อคีย์มาจากไฟล์แม่แบบที่แนบไปด้วยอยู่แล้ว</p>
+
+                <h4 class="font-bold text-slate-800 text-sm mb-2">รูปแบบไฟล์ที่โปรแกรมอ่าน</h4>
+                <div class="bg-slate-900 text-slate-100 rounded-xl p-4 text-[0.78rem] font-mono leading-relaxed mb-2 overflow-x-auto"># ตัวอย่างไฟล์แผงโซลาร์
+Manufacturer = AIKO
+Model_Name = AIKO-G670-MCH72Mw
+Pmax_Wp = 670
+Voc_V = 54.8
+Isc_A = 15.36
+Vmp_V = 45.5
+Imp_A = 14.73
+Length_mm = 2382
+Width_mm = 1134
+Tk_Voc_Pct_Per_C = -0.22
+Is_Bifacial = False</div>
+                <ul class="text-sm text-slate-600 space-y-1.5 mb-6">
+                    <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span>บรรทัดที่ไม่มีเครื่องหมาย <span class="kbd">=</span> และบรรทัดที่ขึ้นต้นด้วย <span class="kbd">#</span> จะถูกข้าม ใช้เขียนหมายเหตุได้</span></li>
+                    <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span>เว้นวรรครอบเครื่องหมาย <span class="kbd">=</span> ได้ โปรแกรมตัดช่องว่างให้เอง</span></li>
+                    <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span>ค่าที่เป็นตัวเลขล้วนจะถูกแปลงเป็นตัวเลข ถ้าติดหน่วยมาด้วยจะกลายเป็นข้อความและคำนวณต่อไม่ได้</span></li>
+                    <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span>ค่าว่างจะถูกแทนด้วย <span class="kbd">-</span> อัตโนมัติ</span></li>
+                </ul>
+
+                <h4 class="font-bold text-slate-800 text-sm mb-2">คีย์ที่ระบบใช้คำนวณจริง</h4>
+                <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                    ไฟล์จะมีคีย์มากกว่านี้ได้ ทุกคีย์จะถูกเก็บลง DB2 ครบ แต่คีย์ในตารางนี้คือชุดที่ขาดไม่ได้
+                    เพราะระบบเอาไปคิดสตริง ผังแผง และผลจำลองโดยตรง
+                </p>
+                <div class="overflow-x-auto rounded-xl border border-slate-200 mb-4">
+                    <table class="w-full text-sm bg-white keytab">
+                        <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                            <tr><th class="px-4 py-3 text-left font-semibold w-36">อุปกรณ์</th>
+                                <th class="px-4 py-3 text-left font-semibold">คีย์ที่ต้องมี</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 align-top">
+                            <tr><td class="px-4 font-bold text-blue-600">แผงโซลาร์ (PV)</td>
+                                <td class="px-4 text-slate-600"><code>Manufacturer, Model_Name, Pmax_Wp, Voc_V, Isc_A, Vmp_V, Imp_A,
+                                    Length_mm, Width_mm, Module_Efficiency_Pct, Tk_Voc_Pct_Per_C, Tk_Pmax_Pct_Per_C,
+                                    Is_Bifacial, IAM_ASHRAE_b0</code></td></tr>
+                            <tr><td class="px-4 font-bold text-orange-600">อินเวอร์เตอร์ (INV)</td>
+                                <td class="px-4 text-slate-600"><code>Manufacturer, Model_Name, Max_DC_Input_Voltage_V, MPPT_Voltage_Min_V,
+                                    Number_of_MPPTs, Inputs_per_MPPT, Rated_AC_Output_Power_kW, Max_Efficiency_Pct</code></td></tr>
+                            <tr><td class="px-4 font-bold text-green-600">แบตเตอรี่ (BAT)</td>
+                                <td class="px-4 text-slate-600"><code>Manufacturer, Model_Name, Nominal_Capacity_kWh,
+                                    Max_Continuous_Charge_Power_kw, Max_Continuous_Discharge_Power_kw</code></td></tr>
+                            <tr><td class="px-4 font-bold text-purple-600">ออปติไมเซอร์ (OPT)</td>
+                                <td class="px-4 text-slate-600"><code>Manufacturer, Model_Name, Max_Input_Power_W</code></td></tr>
+                            <tr><td class="px-4 font-bold text-slate-600">EV Charger</td>
+                                <td class="px-4 text-slate-600"><code>Manufacturer, Model_Name</code></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-5">
+                    <h4 class="font-bold text-amber-900 text-sm mb-2"><i class="fa-solid fa-triangle-exclamation mr-1.5"></i> ตรวจสามค่านี้ทุกครั้งก่อนใช้จริง</h4>
+                    <ul class="text-sm text-amber-900 space-y-1.5">
+                        <li>• <b>Pmax_Wp</b> — ถ้าพิมพ์ผิดหลักเดียว ขนาดระบบทั้งโครงการจะผิดตามทันที</li>
+                        <li>• <b>Voc_V</b> — ใช้คิดจำนวนแผงสูงสุดต่อสตริง ผิดแล้วแรงดันอาจเกินพิกัดอินเวอร์เตอร์ตอนอากาศเย็น</li>
+                        <li>• <b>Length_mm / Width_mm</b> — ใช้วางผังบนแผนที่ ผิดแล้วจำนวนแผงที่วางได้จะคลาดทั้งหมด</li>
+                    </ul>
+                </div>
+            </section>
+
             <section class="mb-12">
                 <h3 id="m2-step1" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 1 · ข้อมูลโครงการและอุปกรณ์</h3>
                 <p class="text-slate-600 leading-relaxed mb-5">
@@ -398,6 +576,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                         <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
                             อัปโหลดสเปกอุปกรณ์ทีละชนิด — แผง อินเวอร์เตอร์ตัวที่ 1 และ 2 แบตเตอรี่ ออปติไมเซอร์ และ EV Charger
                             แต่ละช่องรับไฟล์ <span class="kbd">.txt</span> ที่ถอดมาจากดาต้าชีต
+                            (ยังไม่มีไฟล์ ให้ทำตาม <a href="#m2-prep" class="text-blue-600 font-semibold hover:underline">ขั้นเตรียม · สร้างดาต้าชีตอุปกรณ์</a> ก่อน)
                             อย่างน้อยต้องมีแผงและอินเวอร์เตอร์ตัวที่ 1 ที่เหลือใส่เฉพาะงานที่มี
                         </p></div>
                     </li>
@@ -479,6 +658,151 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                         <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><span class="btn-ref">ล็อก (Save)</span> ตรึงรูปหลังคาไม่ให้ขยับโดยไม่ตั้งใจ ส่วน <span class="btn-ref">ลบ (Del)</span> ลบผืนที่เลือกอยู่</span></li>
                     </ul>
                 </div>
+            </section>
+
+            <!-- ═══════════ ตรึงภาพโดรน ═══════════ -->
+            <section class="mb-12">
+                <h3 id="m2-overlay" class="text-lg font-bold text-slate-800 mb-3">ตรึงภาพโดรนหรือออร์โธโฟโต้ด้วย GCP</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    ใช้เมื่อภาพดาวเทียมเก่าหรือมัวจนวาดหลังคาไม่แม่น
+                    เครื่องมืออยู่ในกล่อง <b>Image Overlay</b> ของขั้นที่ 1
+                    หลักการคือเอาภาพของเราวางทับแผนที่ แล้วบอกโปรแกรมว่า
+                    &ldquo;จุดนี้บนภาพ คือจุดนี้บนพื้นโลก&rdquo; ทีละจุด โปรแกรมจะยืดและหมุนภาพให้ตรงเอง
+                </p>
+
+                <ol class="space-y-4 mb-6">
+                    <li class="flex gap-4">
+                        <div class="step-num bg-blue-50 text-blue-700">1</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            กด <span class="btn-ref">+ เพิ่มรูป</span> แล้วเลือกไฟล์ภาพ (PNG หรือ JPG)
+                            ภาพจะไปวางกลางจอให้ก่อน ปรับ <b>โปร่งแสง</b> ราว 0.5 ถึง 0.7
+                            จะได้เห็นทั้งภาพเราและภาพดาวเทียมพร้อมกัน
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-blue-50 text-blue-700">2</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            <b>วางคร่าว ๆ ก่อน</b> — กด <span class="btn-ref">✋ ย้ายภาพ</span> ให้ปุ่มเปลี่ยนเป็นสีส้ม
+                            แล้วลากภาพไปวางใกล้ตำแหน่งจริง ปรับ <b>หมุน</b> และ <b>ย่อ-ขยาย</b> ให้ทาบพอประมาณ
+                            กดปุ่มซ้ำเพื่อออกจากโหมด
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-blue-50 text-blue-700">3</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            <b>ปักหมุดทีละจุดแบบสองจังหวะ</b> — กด <span class="btn-ref">🎯 ปัก GCP</span>
+                            แล้ว <b>① คลิกจุดเด่นบนภาพโดรน</b> เช่นมุมหลังคา เสา หรือขอบถนน จะมี
+                            <b class="text-amber-600">กากบาทสีเหลือง</b> ขึ้นตรงจุดที่คลิก
+                            จากนั้น <b>② คลิกตำแหน่งจริงของจุดเดียวกันบนภาพดาวเทียม</b>
+                            ภาพจะขยับเข้าหาทันที และเปลี่ยนเป็น <b class="text-orange-700">กากบาทสีส้ม</b> คือหมุดที่ปักเสร็จแล้ว
+                            ปักจุดถัดไปได้ต่อเนื่องโดยไม่ต้องกดปุ่มใหม่
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-blue-50 text-blue-700">4</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            เสร็จแล้วกด <span class="btn-ref">✅ เสร็จสิ้น และบันทึกการตรึงภาพ</span>
+                            หรือกดปุ่มเดียวกันบนแถบสีส้มที่ลอยอยู่กลางแผนที่
+                            <b>ต้องปิดโหมดก่อนไปวาดหลังคา</b> ไม่งั้นคลิกบนแผนที่จะถูกโหมดนี้ดักไว้
+                            (ถ้าลืม ระบบปิดให้เองเมื่อกดเครื่องมือวาดหรือสลับขั้นตอน)
+                        </p></div>
+                    </li>
+                </ol>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-5">
+                    <h4 class="font-bold text-blue-900 text-sm mb-2">ปักกี่จุดถึงจะพอ และดูตรงไหนว่าแม่น</h4>
+                    <ul class="text-sm text-blue-800 space-y-1.5 mb-3">
+                        <li>• <b>1 จุด</b> — เลื่อนภาพอย่างเดียว</li>
+                        <li>• <b>2 จุด</b> — เลื่อน หมุน และย่อขยาย</li>
+                        <li>• <b>3 จุด</b> — Affine ตรงเป๊ะทุกจุด เพียงพอสำหรับงานทั่วไป</li>
+                        <li>• <b>4 จุดขึ้นไป</b> — เฉลี่ยความคลาดทั้งภาพ และเลือกโหมด <b>Rubber-sheet</b> เพื่อดัดภาพให้ตรงทุกจุดได้</li>
+                    </ul>
+                    <p class="text-sm text-blue-800 leading-relaxed">
+                        ดูค่า <b>RMSE</b> ที่บรรทัดล่างของรายการภาพ — <b class="text-green-700">ต่ำกว่า 0.5 ม. คือใช้ได้</b>
+                        สีเหลืองคือพอไหว สีแดงคือยังเพี้ยน
+                        และดู <b>เส้นประสีแดง</b> ที่โยงระหว่างจุดยึดกับหมุด เส้นไหนยาวคือจุดนั้นคลาดมาก
+                        รายการหมุดด้านล่างบอกค่าคลาดเป็นเมตรทีละจุด กดปุ่ม ✕ ลบเฉพาะจุดที่เพี้ยนได้
+                    </p>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-5">
+                    <h4 class="font-bold text-amber-900 text-sm mb-2"><i class="fa-solid fa-triangle-exclamation mr-1.5"></i> ลากหมุดแล้วภาพไม่ขยับ</h4>
+                    <p class="text-sm text-amber-900 leading-relaxed">
+                        เกิดจากจุดยึดบนภาพอยู่ซ้อนกันหรือเรียงเกือบเป็นเส้นตรง สมการหาคำตอบไม่ได้
+                        ระบบจะเตือนให้ทันทีที่ปัก ให้กระจายจุดเป็น <b>สามเหลี่ยมกว้าง ๆ</b>
+                        อย่าปักกระจุกอยู่มุมเดียว
+                    </p>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl p-5">
+                    <h4 class="font-bold text-slate-800 text-sm mb-3">ปุ่มอื่นในรายการภาพ</h4>
+                    <ul class="text-sm text-slate-600 space-y-2.5">
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><span class="btn-ref">🔍</span> ซูมกลับไปหาภาพ · <span class="btn-ref">👁</span> ซ่อนหรือแสดงภาพชั่วคราว · <span class="btn-ref">✕</span> ลบภาพออกจากโครงการ</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><span class="btn-ref">🔒</span> ล็อกภาพไม่ให้ขยับ ควรกดหลังตรึงเสร็จ กันเผลอลากตอนวาดหลังคา</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><span class="btn-ref">ล้าง GCP</span> ลบหมุดทั้งหมดของภาพนั้น ใช้เมื่ออยากเริ่มตรึงใหม่</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>คลิกขวาที่หมุด</b> ลบหมุดจุดนั้น · <b>กด Esc</b> ออกจากโหมดปักหมุด</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ฝังภาพย่อลงไฟล์ DB2</b> ติ๊กไว้แล้วภาพจะติดไปกับไฟล์ที่ส่งออก (ย่อให้เหลือไม่เกินราว 700 KB ต่อใบ) เปิดไฟล์กลับมาก็เห็นภาพทันทีไม่ต้องหาไฟล์เดิม ยังเปลี่ยนเป็นไฟล์ความละเอียดเต็มทีหลังได้โดยตำแหน่งไม่เพี้ยน</span></li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- ═══════════ พื้นที่วางแผงและล็อกแผง ═══════════ -->
+            <section class="mb-12">
+                <h3 id="m2-zone" class="text-lg font-bold text-slate-800 mb-3">พื้นที่วางแผง จำนวนแผงรายพื้นที่ และการล็อกแผง</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    สามเรื่องนี้ทำงานร่วมกัน ใช้คุมว่าแผงจะลงตรงไหน ลงกี่แผ่น
+                    และทำอย่างไรไม่ให้ผังที่จัดลงตัวแล้วเปลี่ยนเองตอนไปทำหลังคาผืนอื่น
+                </p>
+
+                <h4 class="font-bold text-slate-800 text-sm mb-2">1. กรอบพื้นที่วางแผง (PV Zone)</h4>
+                <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                    เลือกเครื่องมือ <span class="btn-ref">🔵 พื้นที่วางแผง</span> แล้ววาดกรอบทับบนหลังคา
+                    เพื่อจำกัดให้วางแผงเฉพาะในกรอบนั้น ใช้กันแผงล้ำเข้าไปในบริเวณที่ติดจริงไม่ได้
+                    และทำให้จัดแถวกับจัดสตริงตามมาตรฐาน วสท. ได้ง่ายขึ้น
+                </p>
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-4">
+                    <h4 class="font-bold text-blue-900 text-sm mb-2">กฎที่ต้องรู้</h4>
+                    <p class="text-sm text-blue-800 leading-relaxed">
+                        <b>เมื่อโครงการมีกรอบแล้วแม้แต่กรอบเดียว แผงจะขึ้นเฉพาะในกรอบเท่านั้น</b>
+                        หลังคาผืนที่ยังไม่มีกรอบทับจะไม่วางแผงให้ และจะมีแถบเตือนสีเหลืองในรายการหลังคาบอกว่าผืนไหนยังขาด
+                        ถ้าหลังคาผืนนั้นต้องติดตั้งจริง ให้วาดกรอบทับเพิ่ม
+                        (โครงการที่ยังไม่มีกรอบเลย ระบบจะวางเต็มผืนให้เหมือนเดิม)
+                    </p>
+                </div>
+                <p class="text-sm text-slate-600 leading-relaxed mb-6">
+                    คลิกที่กรอบสีน้ำเงินเพื่อเลือก แล้วตั้งค่าการวางแผงของกรอบนั้นเองได้ในหัวข้อ 3 —
+                    แนวตั้งหรือแนวนอน จำนวนแผงต่อกลุ่ม และทางเดิน แต่ละกรอบตั้งต่างกันได้
+                    ถ้าไม่ตั้ง กรอบจะสืบทอดค่าจากหลังคาที่มันวางอยู่
+                </p>
+
+                <h4 class="font-bold text-slate-800 text-sm mb-2">2. จำนวนแผงเป็นของแต่ละพื้นที่</h4>
+                <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                    คลิกเลือกหลังคาหรือกรอบพื้นที่วางแผงบนแผนที่ กล่องสีฟ้าในหัวข้อ 3 จะแสดง
+                    <b>ชื่อพื้นที่ · ช่องจำนวนแผง / จำนวนที่วางได้ · ปุ่มเต็มพื้นที่ · ปุ่มล็อกแผง</b>
+                    ตัวเลขในช่องนี้เป็นของพื้นที่นั้นโดยเฉพาะ วาดหลังคาผืนใหม่เพิ่มก็ไม่ถูกดึงแผงออกไป
+                </p>
+                <p class="text-sm text-slate-600 leading-relaxed mb-6">
+                    ส่วนช่อง <b>แผงที่ติดตั้งได้จริง</b> ด้านล่างคือ <b>ยอดรวมของทุกพื้นที่</b>
+                    แก้ที่นั่นคือสั่งเกลี่ยจำนวนใหม่ ซึ่งจะลงเฉพาะพื้นที่ที่ไม่ได้ล็อก
+                    และรายการหลังคาจะบอกจำนวนแผงของแต่ละผืนให้เห็นโดยไม่ต้องคลิกทีละผืน
+                </p>
+
+                <h4 class="font-bold text-slate-800 text-sm mb-2">3. ล็อกแผง</h4>
+                <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                    เมื่อจัดผังของพื้นที่ไหนลงตัวแล้ว ให้กด <span class="btn-ref">🔒 ล็อกแผง</span> ของพื้นที่นั้น
+                    ล็อกแล้วจะกันครบทุกทาง
+                </p>
+                <ul class="text-sm text-slate-600 space-y-1.5 mb-4">
+                    <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span>ยอดรวมด้านล่างเกลี่ยลงพื้นที่นี้ไม่ได้</span></li>
+                    <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span>แก้ค่าการวางแผงไม่ได้ กล่องจะกะพริบเตือน ผังจึงไม่ขยับ</span></li>
+                    <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span>ลบแผงด้วยปุ่มถังขยะไม่ได้</span></li>
+                    <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span>วาดหลังคาผืนใหม่เพิ่มก็ไม่กระทบ</span></li>
+                </ul>
+                <p class="text-sm text-slate-600 leading-relaxed">
+                    ข้อยกเว้นเดียวคือถ้าไปแก้รูปของพื้นที่นั้นเอง ระบบจะปลดล็อกให้อัตโนมัติ
+                    เพราะผังเดิมใช้กับรูปใหม่ไม่ได้แล้ว ค่าที่ล็อกไว้ติดไปกับ Undo/Redo และไฟล์ DB2 ด้วย
+                    รายการหลังคาจะมีป้าย <b class="text-amber-600">🔒 ล็อกแผง</b> กำกับผืนที่ถูกล็อกไว้
+                </p>
             </section>
 
             <section class="mb-12">
@@ -848,6 +1172,163 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
 
             <hr class="my-14 border-slate-200">
 
+            <!-- ═══════════ เมนู 6 ═══════════ -->
+            <div class="flex items-center gap-3 mb-6">
+                <div class="step-num bg-sky-600 text-white">6</div>
+                <h2 class="text-2xl font-bold text-slate-900">บทสรุประบบ</h2>
+            </div>
+            <p class="text-slate-600 leading-relaxed mb-8">
+                หน้าสรุปหน้าเดียวสำหรับเปิดคุยกับลูกค้า อ่านง่ายกว่ารายงาน PDF เต็มเล่ม
+                รวมอุปกรณ์ กำลังผลิต การไหลของพลังงานตลอดวัน ความคุ้มค่า และคำแนะนำการลงทุนไว้ในหน้าเดียว
+                มีเสียงบรรยายและส่งออกเป็นวิดีโอได้ เหมาะกับส่งให้ลูกค้าดูเองที่บ้าน
+            </p>
+
+            <section class="mb-12">
+                <h3 id="m6-load" class="text-lg font-bold text-slate-800 mb-3">เปิดและนำเข้าข้อมูล</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    หน้านี้อ่านจากไฟล์ <b>DB3</b> ซึ่งเป็นผลจำลองรายชั่วโมงจากเมนู 5
+                    ถ้ายังไม่มี DB3 หน้าจะว่างพร้อมบอกทางไปต่อ
+                </p>
+                <ol class="space-y-4 mb-5">
+                    <li class="flex gap-4">
+                        <div class="step-num bg-sky-50 text-sky-700">1</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            ไปเมนู 5 กด <span class="btn-ref">▶ ประมวลผลและสร้างรายงาน</span> ให้จบก่อน
+                            แล้วกด <span class="btn-ref">Export DB3</span> หนึ่งครั้ง
+                            ข้อมูลจะถูกส่งเข้าโครงการให้อัตโนมัติ
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-sky-50 text-sky-700">2</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            กลับมาที่แท็บ <b>System Summary</b> หน้าจะดึงข้อมูลขึ้นมาเองทันที
+                            ถ้าเปิดหน้านี้เดี่ยว ๆ ให้กด <span class="btn-ref">เลือกไฟล์ DB3…</span>
+                            หรือ <b>ลากไฟล์ DB3 มาวางบนหน้า</b> ก็ได้
+                        </p></div>
+                    </li>
+                </ol>
+                <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        แถบหัวเรื่องมีช่อง <b>ค่าไฟ</b> ปรับได้ทันที ตัวเลขความคุ้มค่าจะคำนวณใหม่ตามค่าที่กรอก
+                        ใช้ตอบลูกค้าหน้างานได้เลยว่า &ldquo;ถ้าค่าไฟขึ้นเป็นเท่านี้ จะคืนทุนเร็วขึ้นแค่ไหน&rdquo;
+                        และปุ่ม <span class="btn-ref">ไทย</span> <span class="btn-ref">English</span> สลับภาษาทั้งหน้ารวมถึงเสียงบรรยาย
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m6-read" class="text-lg font-bold text-slate-800 mb-3">อ่านแต่ละส่วนของหน้า</h3>
+
+                <div class="space-y-3 mb-5">
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">การไหลของพลังงานใน 24 ชั่วโมง (ซ้ายบน)</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            แผนภาพเส้นทางไฟฟ้า แดด → แผง → อินเวอร์เตอร์ → อาคาร แบตเตอรี่ และการไฟฟ้า
+                            <b>เส้นที่กำลังวิ่งคือเส้นทางที่มีพลังงานไหลจริงในชั่วโมงนั้น</b>
+                            เลื่อนแถบเวลาด้านล่างเพื่อไล่ดูทีละชั่วโมง หรือกด <span class="btn-ref">▶</span> ให้เดินเองครบ 24 ชั่วโมง
+                            ป้ายบนโหนดบอกกำลังเป็น kW และเปอร์เซ็นต์แบตเตอรี่ตามเวลานั้น
+                            (ตัวเลขเป็นค่าเฉลี่ยรายวันจากผลจำลอง 8,760 ชั่วโมง)
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">กราฟเทียบกำลังผลิตกับการใช้ไฟ (ขวาบน)</h4>
+                        <ul class="text-sm text-slate-600 space-y-1.5">
+                            <li>• <b class="text-green-600">เส้นเขียว</b> กำลังผลิตของแผง พื้นที่ใต้กราฟคือพลังงานที่ผลิตได้</li>
+                            <li>• <b class="text-red-600">เส้นแดง</b> โหลดของอาคาร ช่วงที่เส้นเขียวอยู่เหนือเส้นแดงคือช่วงที่ผลิตได้เกินใช้</li>
+                            <li>• <b class="text-slate-500">เส้นประเทา</b> ไฟที่ต้องซื้อจากการไฟฟ้า</li>
+                            <li>• <b class="text-pink-500">เส้นประชมพู</b> ระดับพลังงานที่เหลือในแบตเตอรี่ (แสดงเมื่อระบบมีแบตเตอรี่)</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">อุปกรณ์ในระบบ และกำลังการผลิต</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            รายการแผง อินเวอร์เตอร์ แบตเตอรี่ พร้อมขนาดและ DC/AC Ratio
+                            ตามด้วยตัวเลขสมรรถนะหกช่อง — ขนาดติดตั้ง พลังงานที่ผลิตได้ต่อปี
+                            <b>Performance Ratio</b> (ยิ่งสูงยิ่งสูญเสียน้อย) กำลังผลิตสูงสุด
+                            ผลผลิตจำเพาะ kWh ต่อ kWp และพลังงานที่ใช้เองโดยประมาณต่อวัน
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">ความคุ้มค่าในการลงทุน</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            เงินลงทุน ค่าไฟที่ประหยัดได้ปีแรก ระยะคืนทุน และต้นทุนต่อ kWp
+                            พร้อมแถบแสดงระยะคืนทุนเทียบอายุระบบ 25 ปี
+                            ตัวเลขทั้งหมดขยับตามค่าไฟที่กรอกไว้บนหัวเรื่อง
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">พลังงานรายเดือน · คำแนะนำการลงทุน · กระแสเงินสด 25 ปี</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            กราฟแท่งรายเดือนบอกฤดูที่ผลิตได้มากน้อย
+                            ถัดมาคือ <b>คำแนะนำในการตัดสินใจลงทุน</b> ที่ระบบสร้างเองจากตัวเลขของโครงการนี้
+                            เช่นเตือนเมื่อ DC/AC Ratio สูงจนเกิด Clipping หรือเมื่อมีไฟส่วนเกินมากจนควรพิจารณาแบตเตอรี่
+                            ปิดท้ายด้วยตารางกระแสเงินสด 25 ปี แถวที่เงินสะสมเปลี่ยนจากแดงเป็นเขียวคือปีที่คืนทุน
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-5">
+                    <h4 class="font-bold text-amber-900 text-sm mb-2"><i class="fa-solid fa-circle-info mr-1.5"></i> ถ้าโหลดอาคารขึ้นเป็นศูนย์</h4>
+                    <p class="text-sm text-amber-900 leading-relaxed">
+                        แปลว่าผลจำลองชุดนั้นรันในโหมดวิศวกรรมที่จ่ายไฟเข้าระบบทั้งหมด ไม่ได้ระบุโหลด
+                        หน้าจะบอกไว้ใต้กราฟให้เอง ถ้าต้องการเห็นสัดส่วนการใช้เอง
+                        ให้กลับไปรันผลจำลองแบบระบุโหลดในเมนู 5 แล้ว Export DB3 ใหม่
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m6-voice" class="text-lg font-bold text-slate-800 mb-3">เสียงบรรยายและการส่งออกวิดีโอ</h3>
+
+                <h4 class="font-bold text-slate-800 text-sm mb-2">ฟังคำอธิบายระบบ</h4>
+                <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                    กด <span class="btn-ref">🔊 ฟังคำอธิบายระบบ</span> บนแถบหัวเรื่อง
+                    ระบบจะอ่านสรุปให้ฟังสี่ตอนตามหัวข้อบนหน้าจอ —
+                    ภาพรวมระบบ · การไหลของพลังงาน 24 ชั่วโมง · วิธีอ่านกราฟ · คำแนะนำการลงทุนทีละข้อ
+                    ใช้เสียงที่มีอยู่ในเครื่องของผู้ใช้ ไม่ต้องต่ออินเทอร์เน็ต และเปลี่ยนภาษาตามปุ่มไทย/English
+                </p>
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-5">
+                    <p class="text-sm text-blue-800 leading-relaxed">
+                        ระหว่างบรรยาย <b>ภาพการไหลของพลังงานจะเดินให้เองอัตโนมัติ</b>
+                        เริ่มเดินหลังเสียงเริ่มไปแล้ว 3 วินาที และหยุดก่อนเสียงจบ 2 วินาที
+                        ผู้ฟังจึงได้ดูภาพเคลื่อนไหวไปพร้อมกับคำอธิบายโดยไม่ต้องกดอะไรเพิ่ม
+                        กด <span class="btn-ref">หยุดเสียง</span> เมื่อไร ภาพจะหยุดตามทันที
+                    </p>
+                </div>
+
+                <h4 class="font-bold text-slate-800 text-sm mb-2">Export Video</h4>
+                <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                    กด <span class="btn-ref">Export Video</span> จะมีให้เลือกสองแบบ
+                </p>
+                <div class="space-y-3 mb-5">
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">🔊 มีเสียงบรรยาย (บันทึกหน้าจอ + เสียงระบบ)</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            เบราว์เซอร์จะเปิดหน้าต่างขออนุญาตแชร์หน้าจอ —
+                            <b>ต้องเลือก &ldquo;ทั้งหน้าจอ (Entire screen)&rdquo; และเปิดสวิตช์ &ldquo;แชร์เสียงระบบ&rdquo;</b>
+                            แล้วกด Share จากนั้นปล่อยให้ทำงานจนเสียงบรรยายจบ
+                            ไฟล์ <span class="kbd">.webm</span> จะดาวน์โหลดเอง
+                            ถ้าลืมติ๊กแชร์เสียง ระบบจะถามก่อนว่าจะอัดแบบไม่มีเสียงต่อหรือไม่
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">🎞 ไม่มีเสียง (ไฟล์แอนิเมชัน 24 ชั่วโมง)</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            วาดภาพเองความละเอียด 1280×720 ไม่ต้องแชร์หน้าจอ ได้คลิปสั้นราว 12 วินาที
+                            แสดงแผนภาพการไหล กราฟ และตัวเลขสำคัญของแต่ละชั่วโมง
+                            เหมาะกับแนบไปในสไลด์หรือส่งทางแชต
+                        </p>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-500 leading-relaxed">
+                    อีกทางเลือกคือใช้ <b>Windows Game Bar</b> กด <span class="kbd">Win</span> + <span class="kbd">Alt</span> + <span class="kbd">R</span>
+                    เริ่มและหยุดอัดเอง แล้วกดปุ่ม ▶ กับปุ่มฟังคำอธิบายเองตามจังหวะที่ต้องการ
+                    ส่วนปุ่ม <span class="btn-ref">พิมพ์ / PDF</span> ใช้เก็บเป็นเอกสารหน้าเดียวแนบอีเมลได้
+                </p>
+            </section>
+
+            <hr class="my-14 border-slate-200">
+
             <!-- ═══════════ ปัญหาที่พบบ่อย ═══════════ -->
             <section class="mb-14">
                 <h2 id="troubleshoot" class="text-xl font-bold text-slate-900 mb-5">ปัญหาที่พบบ่อย</h2>
@@ -960,6 +1441,26 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
 </div>
 
 <script>
+    // คัดลอก Prompt สร้างดาต้าชีตไปวางในแชต AI
+    function copyPrompt() {
+        const box = document.getElementById('promptBox');
+        if (!box) return;
+        const btn = box.querySelector('.prompt-copy');
+        const text = box.textContent.replace(/คัดลอก$/, '').trim();
+        const done = ok => { if (btn) { btn.textContent = ok ? 'คัดลอกแล้ว' : 'คัดลอกไม่สำเร็จ';
+                                        setTimeout(() => btn.textContent = 'คัดลอก', 1600); } };
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(() => done(true), () => done(false));
+        } else {
+            // หน้าเปิดแบบไฟล์ในเครื่องไม่มีคลิปบอร์ดสมัยใหม่ให้ใช้ ต้องถอยไปใช้วิธีเดิม
+            const ta = document.createElement('textarea');
+            ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select();
+            let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+            document.body.removeChild(ta); done(ok);
+        }
+    }
+
     // ปุ่มลัดไปยังเมนูอื่น — ส่งคำสั่งให้หน้าแม่สลับแท็บ
     function jumpTo(tab) {
         try { window.parent.postMessage({ type: 'SWITCH_TAB', tab: tab }, '*'); }
