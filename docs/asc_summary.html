@@ -346,6 +346,7 @@ const I18N = {
      hybrid:'ไฮบริด + แบตเตอรี่', ongrid:'ออนกริด',
      speak:'ฟังคำอธิบายระบบ', stop:'หยุดเสียง', playing:'กำลังบรรยาย',
      voiceNote:'อ่านสรุประบบด้วยเสียงในเครื่องของคุณ', voiceNo:'เบราว์เซอร์นี้ไม่รองรับเสียงพูด',
+     voiceMissing:'⚠ เครื่องนี้ยังไม่มีเสียงภาษาไทย จะใช้เสียงภาษาอื่นอ่านแทนซึ่งจะฟังสะดุด — ติดตั้งได้ที่ Settings → Time & language → Language & region → เพิ่มภาษาไทย แล้วเปิด Speech',
      emptyTitle:'ยังไม่มีข้อมูลผลจำลอง (DB3)',
      emptyBody:'หน้านี้สร้างบทสรุปจากไฟล์ DB3 ของหน้า Proposal & Report — ไปที่แท็บรายงาน กด "Run Simulation" แล้วกด "Export DB3" หรือเลือกไฟล์ DB3 ที่บันทึกไว้',
      emptyImport:'เลือกไฟล์ DB3…', emptyGoto:'ไปที่แท็บ Proposal & Report', emptyDrop:'หรือลากไฟล์ DB3 มาวางที่หน้านี้',
@@ -386,6 +387,7 @@ const I18N = {
      hybrid:'Hybrid + battery', ongrid:'On-grid',
      speak:'Listen to the summary', stop:'Stop', playing:'Narrating',
      voiceNote:'Narrated with your device voice', voiceNo:'Speech is not supported in this browser',
+     voiceMissing:'⚠ No English speech voice found on this device — another voice will be used and may sound broken. Install one in Settings → Time & language → Speech.',
      emptyTitle:'No simulation data (DB3) yet',
      emptyBody:'This page builds its summary from the DB3 file of the Proposal & Report page — open the report tab, press "Run Simulation" then "Export DB3", or pick a saved DB3 file.',
      emptyImport:'Choose DB3 file…', emptyGoto:'Go to Proposal & Report', emptyDrop:'…or drop a DB3 file anywhere on this page',
@@ -987,10 +989,110 @@ function narration(){ return narrationSegments().join(' '); }
    speechSynthesis ไม่บอกความยาวเสียงล่วงหน้าและไม่มีเหตุการณ์ "ใกล้จบ"
    จึงประมาณจากจำนวนอักขระ ถ้าเสียงจบเร็วกว่าที่ประมาณไว้ ตัว onend จะหยุด
    ภาพให้เองอยู่แล้ว ภาพจึงไม่มีทางเดินค้างหลังเสียงจบ */
-const SPEAK_RATE = 0.92;
+const SPEAK_RATE = 1.0;
 const ANIM_START_DELAY_MS = 3000;
 const ANIM_STOP_BEFORE_MS = 2000;
-let animStartTimer = null, animStopTimer = null, animGuardTimer = null;
+const TTS_CHUNK_MAX = 170;          // อักขระต่อหนึ่งก้อนเสียง
+let animStartTimer = null, animStopTimer = null, animGuardTimer = null, ttsKeepAlive = null;
+
+/* ══════════════════════════════════════════════════════════════════
+   เตรียมข้อความก่อนส่งให้ตัวอ่านออกเสียง
+
+   ข้อความบนจอเขียนให้ "อ่านด้วยตา" แต่ตัวอ่านออกเสียงต้องการอีกแบบ
+   ตัวอักษรละตินที่แทรกอยู่กลางประโยคไทย เช่น kWh หรือ บาท/kWp
+   บังคับให้เครื่องสลับภาษากลางคัน เสียงจึงสะดุดเป็นช่วง ๆ
+   ส่วนตัวเลขยาวที่มีจุลภาค เครื่องมักอ่านทีละหลักหรือหยุดตรงจุลภาค
+   ฟังแล้วก็จำไม่ได้อยู่ดี จึงปัดเป็นหลักล้านให้พูดสั้นและเป็นธรรมชาติ
+
+   แปลงเฉพาะตอนอ่านออกเสียง ข้อความบนจอไม่ถูกแตะเลย
+   ══════════════════════════════════════════════════════════════════ */
+function ttsClean(text, lg) {
+    let t = String(text || '');
+
+    // ตัวเลขยาว : ตัดจุลภาคออกเสมอ และปัดหลักล้านให้พูดสั้น
+    const trim0 = x => x.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+    t = t.replace(/\d{1,3}(?:,\d{3})+(?:\.\d+)?/g, m => {
+        const n = parseFloat(m.replace(/,/g, ''));
+        if (!isFinite(n)) return m;
+        if (n >= 1e6) return trim0((n / 1e6).toFixed(n >= 1e7 ? 1 : 2)) + (lg === 'th' ? ' ล้าน' : ' million');
+        return String(Math.round(n));
+    });
+
+    if (lg === 'th') {
+        // หน่วยละติน : เปลี่ยนเป็นคำไทย เรียงยาวไปสั้นเพื่อไม่ให้ตัวสั้นไปกินตัวยาว
+        t = t.replace(/บาท\s*\/\s*/g, 'บาทต่อ')
+             .replace(/kWh\s*\/\s*kWp/gi, 'กิโลวัตต์ชั่วโมงต่อกิโลวัตต์พีค')
+             .replace(/kWh/gi, ' กิโลวัตต์ชั่วโมง ')
+             .replace(/kWp/gi, ' กิโลวัตต์พีค ')
+             .replace(/kVA/gi, ' กิโลโวลต์แอมป์ ')
+             .replace(/kW/g,   ' กิโลวัตต์ ')
+             .replace(/%/g,    ' เปอร์เซ็นต์ ')
+             .replace(/°/g,    ' องศา ');
+    }
+
+    // เครื่องหมายที่ตัวอ่านมักสะดุด เปลี่ยนเป็นเว้นวรรคหรือจุลภาคให้เว้นจังหวะแทน
+    t = t.replace(/[—–·•]/g, ' , ')
+         .replace(/[()"“”]/g, ' ')
+         .replace(/\s{2,}/g, ' ')
+         .trim();
+    /* เชื่อมคำที่ตัวแทนหน่วยไปแยกกลางคำ เพื่อไม่ให้เสียงหยุดกลางหน่วย และไม่ให้ตัวหั่นก้อนไปตัดตรงนั้น */
+    return lg === 'th'
+        ? t.replace(/ต่อ\s+(?=กิโล)/g, 'ต่อ').replace(/ล้าน\s+(?=บาท)/g, 'ล้าน')
+        : t;
+}
+
+/* หั่นเป็นก้อนสั้น ๆ ตัดที่ช่องว่างเพื่อไม่ให้คำขาดกลางคำ
+   Chrome พูดก้อนยาวแล้วสะดุดหรือหยุดกลางคันเมื่อเกินราว 15 วินาที
+   ก้อนสั้นจึงทั้งลื่นกว่าและได้จังหวะหายใจระหว่างประโยคไปในตัว */
+function ttsSplit(text, maxLen) {
+    const out = [];
+    let s = String(text || '').trim();
+    while (s.length > maxLen) {
+        const head = s.slice(0, maxLen);
+        /* หารอยต่อประโยคก่อน ตัดตรงนั้นแล้วเสียงจะหยุดในจังหวะที่ควรหยุดพอดี
+           ถ้าไม่มีค่อยถอยมาใช้ช่องว่าง เพราะภาษาไทยเว้นวรรคที่จบวลีอยู่แล้ว */
+        let cut = Math.max(head.lastIndexOf(' , '), head.lastIndexOf('. '), head.lastIndexOf('? '));
+        if (cut > maxLen * 0.4) cut += 1; else cut = head.lastIndexOf(' ');
+        if (cut < maxLen * 0.4) cut = maxLen;       // ไม่มีที่ให้ตัดสวย ๆ ตัดตรงนั้นเลย
+        out.push(s.slice(0, cut).trim());
+        s = s.slice(cut).replace(/^[,\s]+/, '');   // ก้อนถัดไปไม่ควรขึ้นต้นด้วยจุลภาค
+    }
+    if (s) out.push(s);
+    /* เศษสั้น ๆ ท้ายก้อน เช่น "2.3 ปี" ถ้าปล่อยไว้จะกลายเป็นการหยุดกลางประโยค
+       ยุบกลับเข้าก้อนก่อนหน้า ยอมให้ยาวเกินโควตาได้บ้าง ดีกว่าปล่อยให้ห้วน */
+    for (let i = out.length - 1; i > 0; i--) {
+        if (out[i].length < 45 && out[i - 1].length + out[i].length + 1 <= maxLen * 1.35) {
+            out[i - 1] = out[i - 1] + ' ' + out[i];
+            out.splice(i, 1);
+        }
+    }
+    return out;
+}
+
+/* เสียงของภาษาที่กำลังใช้อยู่ มีจริงในเครื่องหรือไม่ */
+function ttsVoiceFor(lg) {
+    const want = lg === 'th' ? 'th' : 'en';
+    const list = speechSynthesis.getVoices() || [];
+    return list.find(v => v.lang && v.lang.toLowerCase().startsWith(want)) || null;
+}
+
+/* บอกให้รู้ตัวเมื่อเครื่องไม่มีเสียงภาษานั้น
+   ของเดิมเงียบสนิท เบราว์เซอร์เลยเอาเสียงภาษาอื่นมาอ่านตัวอักษรไทย
+   ผลคือฟังสะดุดมาก แล้วผู้ใช้เข้าใจว่าโปรแกรมทำเสียงได้แค่นี้ */
+function ttsUpdateVoiceNote() {
+    const el = document.getElementById('voice-status');
+    if (!el) return;
+    if (!('speechSynthesis' in window)) { el.innerText = T().voiceNo; return; }
+    /* บางเบราว์เซอร์คืนรายชื่อเสียงเป็นค่าว่างตอนเปิดหน้าใหม่ ๆ แล้วค่อยยิง
+       voiceschanged ตามมา ระหว่างนั้นยังสรุปไม่ได้ว่าไม่มีเสียง จึงยังไม่เตือน */
+    if (!(speechSynthesis.getVoices() || []).length) { el.innerText = T().voiceNote; el.style.color = ''; return; }
+    const v = ttsVoiceFor(lang);
+    el.innerText = v ? T().voiceNote : T().voiceMissing;
+    el.style.color = v ? '' : '#F6C453';
+}
+if ('speechSynthesis' in window && typeof speechSynthesis.addEventListener === 'function') {
+    speechSynthesis.addEventListener('voiceschanged', ttsUpdateVoiceNote);
+}
 
 function estimateSpeechMs(text){
     const cps = (lang === 'th' ? 11.5 : 14.5) * SPEAK_RATE;   // อักขระต่อวินาทีโดยประมาณ
@@ -998,7 +1100,8 @@ function estimateSpeechMs(text){
 }
 function clearAnimTimers(){
     clearTimeout(animStartTimer); clearTimeout(animStopTimer); clearTimeout(animGuardTimer);
-    animStartTimer = animStopTimer = animGuardTimer = null;
+    clearInterval(ttsKeepAlive);
+    animStartTimer = animStopTimer = animGuardTimer = ttsKeepAlive = null;
 }
 
 /* พูดสรุประบบ คืน Promise ที่จบเมื่อเสียงจบ ใช้ได้ทั้งปุ่มฟังและตอนอัดวิดีโอ */
@@ -1009,10 +1112,16 @@ function speakNarration(opts){
         speechSynthesis.cancel();
         clearAnimTimers();
 
-        const segs = narrationSegments();
-        const totalMs = estimateSpeechMs(segs.join(' '));
-        const want = lang === 'th' ? 'th' : 'en';
-        const voice = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith(want));
+        const lg = lang;
+        const chunks = narrationSegments()
+            .map(seg => ttsClean(seg, lg))
+            .flatMap(seg => ttsSplit(seg, TTS_CHUNK_MAX))
+            .filter(Boolean);
+        if (!chunks.length) { resolve(false); return; }
+
+        const totalMs = estimateSpeechMs(chunks.join(' '));
+        const voice = ttsVoiceFor(lg);
+        ttsUpdateVoiceNote();
         let done = false;
 
         const finish = () => {
@@ -1021,19 +1130,20 @@ function speakNarration(opts){
             clearAnimTimers();
             if (autoAnim) stopClock();
             document.getElementById('voice-box').classList.remove('speaking');
-            document.getElementById('voice-status').innerText = T().voiceNote;
+            ttsUpdateVoiceNote();
             resolve(true);
         };
 
-        segs.forEach((text, i) => {
+        chunks.forEach((text, i) => {
             const u = new SpeechSynthesisUtterance(text);
-            u.lang = lang === 'th' ? 'th-TH' : 'en-US';
+            u.lang = lg === 'th' ? 'th-TH' : 'en-US';
             u.rate = SPEAK_RATE;
             if (voice) u.voice = voice;
             if (i === 0) {
                 u.onstart = () => {
                     document.getElementById('voice-box').classList.add('speaking');
                     document.getElementById('voice-status').innerText = T().playing;
+                    document.getElementById('voice-status').style.color = '';
                     if (!autoAnim) return;
                     setHour(0);
                     animStartTimer = setTimeout(startClock, ANIM_START_DELAY_MS);
@@ -1041,9 +1151,15 @@ function speakNarration(opts){
                         Math.max(ANIM_START_DELAY_MS + 1000, totalMs - ANIM_STOP_BEFORE_MS));
                 };
             }
-            if (i === segs.length - 1) { u.onend = finish; u.onerror = finish; }
+            if (i === chunks.length - 1) { u.onend = finish; u.onerror = finish; }
             speechSynthesis.speak(u);
         });
+
+        /* Chrome หยุดพูดเองเมื่อคิวยาว ต้องปลุกเป็นระยะ
+           ก้อนสั้นช่วยได้มากอยู่แล้ว ตัวนี้เป็นตาข่ายรองอีกชั้น */
+        ttsKeepAlive = setInterval(() => {
+            if (speechSynthesis.speaking) { try { speechSynthesis.resume(); } catch (e) {} }
+        }, 9000);
 
         // กันเหนียว เผื่อเสียงบางก้อนหลุดจนไม่มี onend ยิงกลับมา
         animGuardTimer = setTimeout(finish, totalMs + 20000);
@@ -1058,7 +1174,7 @@ function stopSpeak(){
     clearAnimTimers();
     stopClock();
     document.getElementById('voice-box').classList.remove('speaking');
-    document.getElementById('voice-status').innerText = T().voiceNote;
+    ttsUpdateVoiceNote();
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -1259,6 +1375,7 @@ function setLang(l){
     document.documentElement.lang = l;
     if (M) renderAll(); else { showEmpty(); document.querySelectorAll('[data-i18n]').forEach(el => {
         const v = T()[el.dataset.i18n]; if (typeof v === 'string') el.innerText = v; }); }
+    ttsUpdateVoiceNote();   // เตือนเรื่องเสียงต้องตามภาษาที่เพิ่งสลับด้วย
 }
 
 document.addEventListener('DOMContentLoaded', () => {
