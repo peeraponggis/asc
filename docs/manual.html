@@ -101,6 +101,14 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <a href="#m6-read"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">อ่านแต่ละส่วนของหน้า</a>
                 <a href="#m6-voice" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">เสียงบรรยายและวิดีโอ</a>
 
+                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 7 · ใบสั่งงานช่าง</div>
+                <a href="#m7-what"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ใบสั่งงานช่างคืออะไร</a>
+                <a href="#m7-prep"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">เตรียมข้อมูลก่อนใช้</a>
+                <a href="#m7-slide" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">อ่านทีละสไลด์</a>
+                <a href="#m7-photo" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ใส่รูปและป้ายกำกับ</a>
+                <a href="#m7-field" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">โหมดหน้างานและออฟไลน์</a>
+                <a href="#m7-out"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">พิมพ์และส่งต่อ</a>
+
                 <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">อ้างอิง</div>
                 <a href="#troubleshoot" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ปัญหาที่พบบ่อย</a>
                 <a href="#glossary"     class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">อภิธานศัพท์</a>
@@ -144,7 +152,8 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <p class="text-slate-600 leading-relaxed mb-6">
                     ทุกเมนูอยู่บนแถบด้านบน สลับไปมาได้ตลอดเวลาโดยข้อมูลไม่หาย
                     แต่ถ้าทำตามลำดับ 1 → 2 → 3 โปรแกรมจะเติมค่าให้อัตโนมัติเกือบทั้งหมด ไม่ต้องกรอกซ้ำ
-                    สามเมนูนี้คือแกนหลัก ส่วนเมนู 3 มิติ วางผังอุปกรณ์ และบทสรุประบบ เป็นส่วนเสริมที่หยิบใช้เมื่อต้องการ
+                    สามเมนูนี้คือแกนหลักของงานขาย และเมื่อปิดการขายได้แล้วจึงมาต่อขั้นที่ 4 คือออกใบสั่งงานให้ช่าง
+                    ส่วนเมนู 3 มิติ วางผังอุปกรณ์ และบทสรุประบบ เป็นส่วนเสริมที่หยิบใช้เมื่อต้องการ
                 </p>
 
                 <div class="space-y-3">
@@ -204,6 +213,20 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                             <p class="text-sm text-slate-600 leading-relaxed">
                                 จำลองการผลิตไฟรายชั่วโมงตลอดปี คำนวณจุดคุ้มทุน IRR NPV
                                 แล้วออกรายงาน PDF พร้อมกราฟสำหรับยื่นลูกค้าหรือธนาคาร
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="pl-9 text-slate-300"><i class="fa-solid fa-arrow-down"></i></div>
+
+                    <div class="flex gap-4 bg-white border border-slate-200 rounded-xl p-5">
+                        <div class="step-num bg-amber-100 text-amber-700">4</div>
+                        <div class="min-w-0">
+                            <h3 class="font-bold text-slate-800 mb-1">ใบสั่งงานช่าง <span class="text-slate-400 font-normal text-sm">— Site Brief · เมนู 7</span></h3>
+                            <p class="text-sm text-slate-600 leading-relaxed">
+                                เมื่อปิดการขายแล้ว ออกเอกสารบรีฟให้ช่างถือไปหน้างาน
+                                รวมข้อมูลลูกค้า แผนที่ ผังการวางแผง จุดขนานไฟ รายการวัสดุ และเช็กลิสต์
+                                เปิดบนมือถือที่ไซต์งานได้แม้ไม่มีสัญญาณ
                             </p>
                         </div>
                     </div>
@@ -1334,6 +1357,269 @@ Is_Bifacial = False</div>
                     เริ่มและหยุดอัดเอง แล้วกดปุ่ม ▶ กับปุ่มฟังคำอธิบายเองตามจังหวะที่ต้องการ
                     ส่วนปุ่ม <span class="btn-ref">พิมพ์ / PDF</span> ใช้เก็บเป็นเอกสารหน้าเดียวแนบอีเมลได้
                 </p>
+            </section>
+
+            <hr class="my-14 border-slate-200">
+
+            <!-- ═══════════ เมนู 7 ═══════════ -->
+            <div class="flex items-center gap-3 mb-6">
+                <div class="step-num bg-amber-600 text-white">7</div>
+                <h2 class="text-2xl font-bold text-slate-900">ใบสั่งงานช่าง</h2>
+            </div>
+            <p class="text-slate-600 leading-relaxed mb-8">
+                เอกสารบรีฟที่ช่างต้องอ่านก่อนออกไปติดตั้งหน้างาน เดิมทำด้วย PowerPoint ทีละงาน
+                ทั้งที่ตัวเลขเกือบทั้งหมดมีอยู่แล้วในเมนู 2 เมนูนี้จึงดึงมาเรียงให้เป็นเอกสารพร้อมพิมพ์
+                แล้วเติมเฉพาะสิ่งที่ระบบยังไม่รู้ คือรูปหน้างานกับข้อมูลติดต่อลูกค้า
+                ใช้ได้ทั้งพิมพ์เป็นกระดาษให้ช่างถือไป และเปิดบนมือถือที่หน้างานแบบไม่ต้องมีสัญญาณ
+            </p>
+
+            <section class="mb-12">
+                <h3 id="m7-what" class="text-lg font-bold text-slate-800 mb-3">ใบสั่งงานช่างคืออะไร</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    เอกสาร 7 สไลด์ หนึ่งสไลด์ต่อหนึ่งหน้ากระดาษเวลาสั่งพิมพ์
+                    <b>สไลด์ 1 ถึง 6 เติมให้เองทั้งหมดจากไฟล์ DB2</b> ไม่ต้องพิมพ์ซ้ำแม้แต่ช่องเดียว
+                    สิ่งที่ต้องทำเองมีแค่สองอย่างคือกรอกข้อมูลงานในเมนู 2 และแนบรูปหน้างาน
+                </p>
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-5">
+                    <h4 class="font-bold text-amber-900 text-sm mb-2"><i class="fa-solid fa-circle-info mr-1.5"></i> ต่างจากเมนู 6 อย่างไร</h4>
+                    <p class="text-sm text-amber-900 leading-relaxed">
+                        <b>เมนู 6 บทสรุประบบ</b> ทำให้ <b>ลูกค้า</b> ดู เน้นความคุ้มค่าและการตัดสินใจลงทุน<br>
+                        <b>เมนู 7 ใบสั่งงานช่าง</b> ทำให้ <b>ช่าง</b> ดู เน้นว่าไปที่ไหน ติดตั้งตรงไหน ใช้ของอะไร ต้องทำอะไรบ้าง
+                    </p>
+                </div>
+                <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        หน้านี้อ่านจาก <b>DB2</b> ไม่ใช่ DB3 จึงใช้ได้ตั้งแต่ออกแบบเสร็จ
+                        <b>ยังไม่ต้องรันผลจำลองในเมนู 5 ก็เปิดใบสั่งงานได้แล้ว</b>
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m7-prep" class="text-lg font-bold text-slate-800 mb-3">เตรียมข้อมูลก่อนใช้</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    สองอย่างนี้ต้องทำในเมนู 2 ก่อน ไม่งั้นใบสั่งงานจะมีช่องขึ้นขีดกลางเป็นแถบ
+                </p>
+                <ol class="space-y-4 mb-5">
+                    <li class="flex gap-4">
+                        <div class="step-num bg-amber-50 text-amber-700">1</div>
+                        <div class="pt-1">
+                            <p class="text-sm font-semibold text-slate-800 mb-1">กรอกการ์ด &ldquo;ข้อมูลงานและทีมติดตั้ง&rdquo; ในเมนู 2 ขั้นที่ 1</p>
+                            <p class="text-sm text-slate-600 leading-relaxed mb-2">
+                                อยู่ใต้ช่องค้นหาที่ตั้งโครงการ กรอกครบแล้วข้อมูลจะไหลไปกับ DB2 เอง ไม่ต้องกรอกซ้ำที่เมนู 7
+                            </p>
+                            <ul class="text-sm text-slate-600 leading-relaxed space-y-1">
+                                <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span><b>ชื่อลูกค้า เบอร์โทร ที่อยู่หน้างาน</b> — ชื่อจะเติมให้เองถ้าเคยนำเข้าไฟล์บิลค่าไฟ (DB0) แต่จะไม่ทับของที่พิมพ์เอง เพราะชื่อในบิลมักเป็นชื่อเจ้าของมิเตอร์ ไม่ใช่ผู้ว่าจ้าง</span></li>
+                                <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span><b>วันติดตั้ง</b> เลือกวันเริ่มกับวันจบ ถ้าอยู่เดือนเดียวกันใบสั่งงานจะย่อให้เป็น &ldquo;1-4 ก.ย. 2569&rdquo; เอง</span></li>
+                                <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span><b>เวลาถึงหน้างาน</b> จะขึ้นเป็นแถบสีเหลือง TARGET บนหน้าปก</span></li>
+                                <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span><b>การขออนุญาต</b> เลือกขนานไฟ ขายไฟ หรือไม่ขออนุญาต</span></li>
+                                <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span><b>วิศวกรผู้ควบคุมและช่างติดตั้ง</b> ช่างหลายคนให้คั่นด้วยจุลภาค เช่น <span class="kbd">ช่างเอ, ช่างบี</span></span></li>
+                                <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span><b>หมายเหตุถึงช่าง</b> ข้อความเตือนเฉพาะงานนี้ เช่น &ldquo;รางซีที่ใช้จับยึดท่อให้พ้นสี เก็บทุกชิ้น&rdquo;</span></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-amber-50 text-amber-700">2</div>
+                        <div class="pt-1">
+                            <p class="text-sm font-semibold text-slate-800 mb-1">กด <span class="btn-ref">คำนวณตารางวัสดุอุปกรณ์ (Generate BOM)</span> ในเมนู 2</p>
+                            <p class="text-sm text-slate-600 leading-relaxed">
+                                ตารางวัสดุในสไลด์ 6 มาจากตรงนี้ ถ้าไม่ได้กด สไลด์ 6 จะขึ้นข้อความบอกให้กลับไปกดก่อน
+                                กดแล้วอย่าลืม <b>ส่งออก DB2 ใหม่</b> ด้วย ไม่งั้นใบสั่งงานยังเห็นของเก่า
+                            </p>
+                        </div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-amber-50 text-amber-700">3</div>
+                        <div class="pt-1">
+                            <p class="text-sm font-semibold text-slate-800 mb-1">เปิดแท็บ <b>Site Brief</b></p>
+                            <p class="text-sm text-slate-600 leading-relaxed">
+                                ข้อมูลจะขึ้นเองทันที ถ้าเปิดหน้านี้เดี่ยว ๆ ให้กด <span class="btn-ref">เปิดไฟล์ DB2</span>
+                                หรือ <b>ลากไฟล์ DB2 มาวางบนหน้า</b> ก็ได้
+                            </p>
+                        </div>
+                    </li>
+                </ol>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m7-slide" class="text-lg font-bold text-slate-800 mb-3">อ่านทีละสไลด์</h3>
+                <div class="space-y-3 mb-5">
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">1 · หน้าปก</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            ผลิตภัณฑ์ (Ongrid หรือ Hybrid ตามว่ามีแบตเตอรี่ไหม พร้อมขนาด kWp และ DC/AC Ratio)
+                            รุ่นและจำนวนอินเวอร์เตอร์ รุ่นและจำนวนแผงพร้อมขนาดแผงเป็นมิลลิเมตร
+                            การขออนุญาต วันติดตั้ง วิศวกร ช่าง ลูกค้า
+                            ปิดท้ายด้วยแถบ <b>TARGET ถึงจุดหมายเวลา</b> และแถบหมายเหตุถึงช่างถ้ากรอกไว้
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">2 · แผนที่และการเดินทาง</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            ชื่อ เบอร์โทร ที่อยู่ พิกัด และชื่อที่ตั้งจากเมนู 2
+                            <b>เบอร์โทรกดโทรออกได้</b> และพิกัดมีลิงก์ <b>เปิดแผนที่นำทาง</b> ไปยัง Google Maps
+                            ช่องรูปสองช่องสำหรับภาพแผนที่และภาพจุดติดตั้งแผง
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">3 · ผังการวางแผงและการจัดสตริง</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            <b>การจัดสตริงเป็นบรรทัดสีแดง</b> เพราะเป็นเรื่องที่ช่างพลาดแล้วเสียเวลารื้อมากที่สุด
+                            เช่น &ldquo;20 Strings · 20 String(s) × 24 แผง&rdquo;
+                            ต่อด้วยจำนวนแผงและรุ่น ทิศกับมุมเอียงแยกรายหลังคา
+                            (แปลงองศาเป็นชื่อทิศให้แล้ว เช่น &ldquo;ทิศตะวันตกเฉียงเหนือ (306°) เอียง 5°&rdquo;)
+                            แล้วปิดท้ายด้วยจำนวนราง ตัวต่อราง L-Feet คลิปจับแผง และขนาดสาย DC กับชนิดท่อ
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">4 · ผังติดตั้งอินเวอร์เตอร์และจุดขนานไฟ</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            รุ่นและจำนวนอินเวอร์เตอร์พร้อมกำลัง AC รวม
+                            <b>เบรกเกอร์ที่ต้องเพิ่มเป็นบรรทัดสีแดง</b> เช่น &ldquo;AC 365AT สำหรับขนานโซลาร์เซลล์&rdquo;
+                            ต่อด้วยขนาดสาย AC ระยะเดินท่อแยก DC/AC/กราวด์ ชนิดท่อหรือราง และจำนวนคู่ MC4
+                            ถ้าไซต์นี้มีระบบออนกริดเดิมแบบ AC Coupling จะมีแถบสีเขียวบอกขนาดและรุ่นของระบบเดิมด้วย
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">5 · ระบบกราวด์</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            ขนาดสายกราวด์ ระยะเดินสาย จำนวน Ground Plate และ Ground Lug
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">6 · วัสดุที่ต้องเตรียม</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            ตารางวัสดุทั้งชุดจาก BOM ของเมนู 2 <b>ติ๊กช่องเบิกแล้วได้ทีละรายการ</b>
+                            มุมขวาบนนับให้ว่าเบิกไปกี่รายการจากทั้งหมด
+                            รายการที่ติ๊กแล้วจะขีดฆ่าให้เห็นชัด และช่องติ๊กจะไม่ติดไปกับกระดาษเวลาสั่งพิมพ์
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">7 · เช็กลิสต์หน้างาน</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            สองชุด <b>ขั้นตอนติดตั้ง 12 ข้อ</b> ไล่ตั้งแต่สำรวจหน้างาน ยึดโครงสร้าง วางแผง เดินท่อ
+                            ติดตั้งอินเวอร์เตอร์ ต่อกราวด์ วัดค่า ไปจนจ่ายไฟ
+                            และ <b>ส่งมอบงาน 7 ข้อ</b> ตั้งแต่เก็บพื้นที่ ถ่ายรูป สอนลูกค้าใช้งาน ไปจนให้เซ็นรับมอบ
+                            ติ๊กได้เหมือนกัน สถานะเก็บแยกตามโครงการ
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m7-photo" class="text-lg font-bold text-slate-800 mb-3">ใส่รูปและป้ายกำกับ</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    ทุกสไลด์มีช่องรูปที่กด <span class="btn-ref">+ เพิ่มรูป</span> ได้ เลือกได้หลายรูปพร้อมกัน
+                    รูปจะถูกย่อเหลือด้านยาว 1600 พิกเซลอัตโนมัติ ซึ่งคมพอทั้งบนจอและบนกระดาษ A4
+                </p>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    เมื่อมีรูปแล้วจะมีปุ่ม <span class="btn-ref">✏ ป้ายกำกับ</span> บนมุมขวาบนของรูป
+                    กดแล้วจะเปิดหน้าต่างวาดเต็มจอ มีเครื่องมือหกอย่าง
+                </p>
+                <div class="overflow-x-auto rounded-xl border border-slate-200 mb-5">
+                    <table class="w-full text-sm bg-white">
+                        <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                            <tr><th class="text-left px-4 py-3">เครื่องมือ</th><th class="text-left px-4 py-3">วิธีใช้</th><th class="text-left px-4 py-3">ใช้ตอนไหน</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr><td class="px-4 py-3 font-semibold text-slate-800">🏷 ป้ายข้อความ</td>
+                                <td class="px-4 py-3 text-slate-600">คลิกจุดที่ต้องการชี้ แล้วพิมพ์ข้อความ หรือใส่เลขเลือกจากรายการสำเร็จรูป</td>
+                                <td class="px-4 py-3 text-slate-600">บอกตำแหน่งอุปกรณ์ เช่น ตู้เมน มิเตอร์ จุดขนานไฟ</td></tr>
+                            <tr><td class="px-4 py-3 font-semibold text-slate-800">↗ ลูกศร</td>
+                                <td class="px-4 py-3 text-slate-600">ลากจากท้ายลูกศรไปหาปลายที่ต้องการชี้</td>
+                                <td class="px-4 py-3 text-slate-600">ชี้จุดเล็ก ๆ ที่ป้ายบังไม่ได้</td></tr>
+                            <tr><td class="px-4 py-3 font-semibold text-slate-800">▭ กรอบเน้น</td>
+                                <td class="px-4 py-3 text-slate-600">ลากคลุมบริเวณที่ต้องการเน้น</td>
+                                <td class="px-4 py-3 text-slate-600">วงพื้นที่ติดตั้งทั้งผืน</td></tr>
+                            <tr><td class="px-4 py-3 font-semibold text-slate-800">━ ท่อ IMC</td>
+                                <td class="px-4 py-3 text-slate-600">คลิกทีละจุดตามแนวท่อ ดับเบิลคลิกหรือกด <span class="kbd">Esc</span> เพื่อจบเส้น</td>
+                                <td class="px-4 py-3 text-slate-600">แนวท่อโลหะ วาดเป็นเส้นทึบสีเขียว</td></tr>
+                            <tr><td class="px-4 py-3 font-semibold text-slate-800">┅ ท่อ PVC</td>
+                                <td class="px-4 py-3 text-slate-600">วิธีเดียวกับ IMC</td>
+                                <td class="px-4 py-3 text-slate-600">แนวท่อพีวีซี วาดเป็นเส้นประสีม่วง แยกจาก IMC ได้ชัด</td></tr>
+                            <tr><td class="px-4 py-3 font-semibold text-slate-800">① หมุดลำดับ</td>
+                                <td class="px-4 py-3 text-slate-600">คลิกเพื่อปัก เลขไล่ให้เอง</td>
+                                <td class="px-4 py-3 text-slate-600">บอกลำดับขั้นตอนบนรูปเดียว</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <ul class="text-sm text-slate-600 leading-relaxed space-y-2 mb-5">
+                    <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span><b>ย้ายของที่วางแล้ว</b> ลากตัวป้ายได้เลย ทั้งชิ้นจะขยับตามพร้อมเส้นชี้</span></li>
+                    <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span><b>ลบ</b> คลิกเลือกแล้วกด <span class="kbd">Delete</span> หรือปุ่ม <span class="btn-ref">🗑 ลบที่เลือก</span> · ปุ่ม <span class="btn-ref">↩ ถอยหลัง</span> ลบชิ้นล่าสุด</span></li>
+                    <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span>กด <span class="btn-ref">✓ บันทึก</span> เพื่อเก็บ หรือ <span class="btn-ref">ยกเลิก</span> เพื่อทิ้งที่แก้ทั้งหมด</span></li>
+                </ul>
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-5">
+                    <h4 class="font-bold text-blue-900 text-sm mb-2"><i class="fa-solid fa-lightbulb mr-1.5"></i> ป้ายไม่เลื่อนไม่ว่าจะดูบนอะไร</h4>
+                    <p class="text-sm text-blue-800 leading-relaxed">
+                        ตำแหน่งป้ายถูกเก็บเทียบกับตัวรูปจริง ไม่ใช่เทียบกับหน้าจอ
+                        ป้ายจึงอยู่ตรงจุดเดิมเป๊ะทั้งบนมือถือ บนคอม และบนกระดาษที่พิมพ์ออกมา
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m7-field" class="text-lg font-bold text-slate-800 mb-3">โหมดหน้างานและออฟไลน์</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    กดปุ่ม <span class="btn-ref">📱 โหมดหน้างาน</span> บนหัวหน้า
+                    (เปิดบนมือถือจริงจะเข้าโหมดนี้ให้เองไม่ต้องกด) หน้าจะเปลี่ยนเป็นแบบที่ช่างใช้จริง
+                </p>
+                <ul class="text-sm text-slate-600 leading-relaxed space-y-2 mb-5">
+                    <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span><b>แถบงานติดบนสุด</b> ชื่อลูกค้า ที่อยู่ ปุ่มโทรออก และปุ่มนำทาง อยู่ตรงนั้นตลอดไม่ว่าจะเลื่อนไปไหน</span></li>
+                    <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span><b>ดูทีละสไลด์</b> มีแถบเลื่อนหน้าติดขอบล่าง กดด้วยนิ้วโป้งได้ จุดตรงกลางบอกว่าอยู่สไลด์ที่เท่าไร</span></li>
+                    <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span><b>แตะรูปเพื่อดูเต็มจอ</b> ป้ายกำกับติดไปด้วย กด <span class="kbd">Esc</span> หรือแตะนอกรูปเพื่อปิด</span></li>
+                    <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span>กดปุ่มเดิมอีกครั้ง (ตอนนี้ชื่อ <span class="btn-ref">🖥 โหมดเอกสาร</span>) เพื่อกลับไปดูแบบเต็มหน้า</span></li>
+                </ul>
+                <div class="bg-green-50 border border-green-200 rounded-xl p-5 mb-5">
+                    <h4 class="font-bold text-green-900 text-sm mb-2"><i class="fa-solid fa-wifi mr-1.5"></i> ใช้ได้ที่ไซต์งานที่ไม่มีสัญญาณ</h4>
+                    <p class="text-sm text-green-900 leading-relaxed mb-2">
+                        ทุกครั้งที่เปิดใบสั่งงานตอนมีเน็ต ระบบจะเก็บสำเนาโครงการ รูป และเช็กลิสต์ไว้ในเครื่องให้เอง
+                        พอไปถึงหน้างานแล้วไม่มีสัญญาณ เปิดหน้าเดิมได้ครบทุกอย่าง
+                        จะมีข้อความสีเหลืองบนหัวหน้าบอกว่า <b>&ldquo;เปิดจากสำเนาในเครื่อง&rdquo;</b> พร้อมวันเวลาที่บันทึกไว้ล่าสุด
+                    </p>
+                    <p class="text-sm text-green-900 leading-relaxed">
+                        <b>ต้องเปิดใบสั่งงานอย่างน้อยหนึ่งครั้งตอนยังมีเน็ต</b> ถึงจะมีสำเนาให้ใช้
+                        แนะนำให้เปิดเช็กก่อนออกจากออฟฟิศทุกครั้ง
+                    </p>
+                </div>
+                <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        รูปหน้างานเก็บอยู่ใน <b>เครื่องที่ใช้สร้างบรีฟเท่านั้น</b> ยังไม่ได้ซิงก์ขึ้นคลาวด์
+                        ถ้าเปิดโครงการเดียวกันจากเครื่องอื่น จะเห็นสไลด์และตัวเลขครบแต่ไม่มีรูป
+                        วิธีส่งต่อตอนนี้คือพิมพ์เป็น PDF แล้วส่งไฟล์ให้กัน
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m7-out" class="text-lg font-bold text-slate-800 mb-3">พิมพ์และส่งต่อ</h3>
+                <div class="space-y-3 mb-5">
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2"><span class="btn-ref">🖨 พิมพ์บรีฟ (PDF)</span></h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            ได้เอกสาร <b>A4 แนวนอน หนึ่งสไลด์ต่อหนึ่งหน้า</b> รวม 7 หน้า
+                            ปุ่มต่าง ๆ ช่องติ๊ก และแถบของโหมดหน้างานจะไม่ติดไปกับกระดาษ
+                            ถ้าค้างอยู่ในโหมดหน้างานก็สั่งพิมพ์ได้เลย ระบบบังคับให้ออกครบทุกสไลด์เสมอ
+                            ในหน้าต่างพิมพ์ของเบราว์เซอร์ให้เลือกปลายทางเป็น <b>Save as PDF</b>
+                            และเปิด <b>Background graphics</b> เพื่อให้แถบสีกับป้ายกำกับติดไปด้วย
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2"><span class="btn-ref">⬇ ส่งออก .json</span></h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            ไฟล์ข้อมูลของใบสั่งงานสำหรับเก็บเข้าแฟ้มงานหรือส่งต่อให้ระบบอื่น
+                            มีข้อมูลงาน อุปกรณ์ การจัดสตริง BOM สถานะเช็กลิสต์ทั้งสามชุด และเวกเตอร์ป้ายกำกับ
+                            <b>ไม่มีตัวรูปอยู่ในไฟล์</b> ไฟล์จึงเล็กระดับไม่กี่กิโลไบต์แทนที่จะเป็นหลายเมกะไบต์
+                        </p>
+                    </div>
+                </div>
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-5">
+                    <h4 class="font-bold text-amber-900 text-sm mb-2"><i class="fa-solid fa-triangle-exclamation mr-1.5"></i> แก้แบบแล้วอย่าลืมออกใบสั่งงานใหม่</h4>
+                    <p class="text-sm text-amber-900 leading-relaxed">
+                        ใบสั่งงานอ่านจาก DB2 ถ้ากลับไปแก้จำนวนแผง เปลี่ยนอินเวอร์เตอร์ หรือแก้ผังในเมนู 2
+                        ต้องกด Generate BOM และส่งออก DB2 ใหม่ แล้วเปิดใบสั่งงานอีกรอบ
+                        ไม่งั้นช่างจะถือกระดาษที่เป็นแบบเก่าออกไปหน้างาน
+                    </p>
+                </div>
             </section>
 
             <hr class="my-14 border-slate-200">
