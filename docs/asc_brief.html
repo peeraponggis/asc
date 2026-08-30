@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ใบสั่งงานช่าง — ProInventive Solar Suite</title>
+<link rel="icon" href="img/pilogo.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   ใบสั่งงานช่าง (Site Brief) — SPA เดี่ยว ไม่พึ่งไลบรารีภายนอก
+
+   แทนที่การทำสไลด์ PowerPoint ทีละงาน ตัวเลขเกือบทั้งหมดในบรีฟมีอยู่แล้ว
+   ใน DB2 ที่หน้าออกแบบสร้างไว้ หน้านี้จึงแค่จัดเรียงให้เป็นเอกสารที่ช่างอ่านได้
+   โครงสไลด์ยึดตามบรีฟที่ทีมใช้จริง เพื่อให้ช่างที่คุ้นของเดิมอ่านได้ทันที
+
+   ธีมและภาษาการออกแบบเดียวกับ asc_summary.html
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  --ink:#12263A; --ink-2:#3B4C5E; --mute:#7A8794;
+  --paper:#F3F6F8; --card:#FFFFFF; --line:#DCE3EA;
+  --sun:#E8A317; --sun-2:#F6C453; --pv:#1E5A8A; --bat:#1F8A70;
+  --warn:#C4432B; --night:#0F1E33; --ac:#0D9488;
+  --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:'Sarabun',system-ui,sans-serif;font-size:16px;line-height:1.55}
+h1,h2,h3,h4{font-family:'Kanit',system-ui,sans-serif;margin:0}
+button{font-family:inherit;cursor:pointer}
+a{color:var(--pv)}
+
+/* ── หัวเรื่องและปุ่มควบคุม ─────────────────────────────────────── */
+header{background:var(--night);color:#fff;padding:20px 0 22px;position:relative;overflow:hidden}
+header::after{content:"";position:absolute;right:-120px;top:-160px;width:420px;height:420px;border-radius:50%;
+  background:radial-gradient(circle,rgba(232,163,23,.35),transparent 65%);pointer-events:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+header .wrap{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
+.eyebrow{font-family:'Kanit';font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--sun-2);margin-bottom:6px}
+header h1{font-size:clamp(20px,3vw,30px);font-weight:600;line-height:1.15}
+header h1 small{display:block;font-weight:300;font-size:.5em;color:#B9C7D6;margin-top:6px}
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:#fff;
+  border-radius:999px;padding:8px 17px;font-family:'Kanit';font-size:13px}
+.btn:hover{background:rgba(255,255,255,.16)}
+.btn.primary{background:var(--sun);border-color:var(--sun);color:var(--night);font-weight:500}
+.btn.on{background:var(--sun);border-color:var(--sun);color:var(--night)}
+
+/* ── สไลด์ ─────────────────────────────────────────────────────── */
+#deck{padding:22px 0 70px}
+.slide{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:22px 26px 26px;margin-bottom:20px}
+.slide-head{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--line);
+  padding-bottom:10px;margin-bottom:16px}
+.slide-no{font-family:'Kanit';font-size:13px;font-weight:600;color:#fff;background:var(--pv);
+  border-radius:999px;padding:2px 11px;flex:none}
+.slide-head h2{font-size:21px;font-weight:600}
+.slide-head .note{margin-left:auto;font-size:12px;color:var(--mute)}
+
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.cols.wide-left{grid-template-columns:1.35fr .65fr}
+
+/* ตารางคู่ ป้าย/ค่า — รูปแบบหลักของบรีฟ อ่านเร็วกว่าย่อหน้า */
+.kv{width:100%;border-collapse:collapse}
+.kv th,.kv td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.kv th{width:38%;font-family:'Kanit';font-weight:500;color:var(--ink-2);background:var(--paper)}
+.kv td{font-weight:500}
+.kv td .sub{display:block;font-weight:400;font-size:13px;color:var(--mute)}
+.kv tr.hi td{color:var(--warn);font-weight:600}
+
+.banner{background:var(--sun);color:var(--night);font-family:'Kanit';font-weight:600;
+  border-radius:10px;padding:11px 16px;margin-top:14px;display:flex;align-items:center;gap:10px}
+.banner.calm{background:#EAF1F7;color:var(--pv)}
+.banner.ac{background:#E6F4EF;color:var(--bat)}
+
+/* ที่วางรูป — ขั้นนี้ยังเป็นช่องว่าง ตัวใส่ป้ายกำกับจะมาเติมทีหลัง */
+.shot{border:2px dashed var(--line);border-radius:12px;background:var(--paper);
+  min-height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;color:var(--mute);font-size:13px;text-align:center;padding:16px}
+.shot .cap{font-family:'Kanit';font-size:13px;color:var(--ink-2)}
+.shot-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ตารางวัสดุ */
+.mat{width:100%;border-collapse:collapse;font-size:14px}
+.mat th,.mat td{padding:6px 9px;border-bottom:1px solid var(--line);text-align:left}
+.mat thead th{background:var(--paper);font-family:'Kanit';font-weight:500;font-size:13px;color:var(--ink-2)}
+.mat td.q{text-align:right;white-space:nowrap;font-weight:600}
+.mat td.c{text-align:center;width:64px}
+.mat tbody tr.done{color:var(--mute);text-decoration:line-through}
+.mat tbody tr.done td.c{text-decoration:none}
+.cat{display:inline-block;font-family:'Kanit';font-size:11px;padding:1px 8px;border-radius:999px;
+  background:#EAF1F7;color:var(--pv)}
+.progress{font-family:'Kanit';font-size:13px;color:var(--mute);margin-left:auto}
+
+/* ── สถานะว่างเปล่า ────────────────────────────────────────────── */
+.empty{background:var(--card);border:2px dashed var(--line);border-radius:var(--r);
+  padding:44px 26px;text-align:center;margin-top:24px}
+.empty h2{font-size:21px;margin-bottom:8px}
+.empty p{color:var(--mute);max-width:620px;margin:0 auto 18px}
+.empty .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.empty .btn{background:var(--pv);border-color:var(--pv);color:#fff}
+.empty.drag{border-color:var(--sun);background:#FFF9EC}
+
+/* ── โหมดมือถือ (สั่งเองด้วยปุ่ม หรือจอเล็กจริง) ────────────────── */
+body.mobile .wrap{padding:0 12px}
+body.mobile .cols,body.mobile .cols.wide-left,body.mobile .shot-grid{grid-template-columns:1fr}
+body.mobile .slide{padding:16px 14px 18px;border-radius:10px}
+body.mobile .kv th{width:44%}
+@media(max-width:760px){
+  .cols,.cols.wide-left,.shot-grid{grid-template-columns:1fr}
+  .slide{padding:16px 14px 18px}
+  header .wrap{align-items:flex-start}
+}
+
+/* ── พิมพ์ : หนึ่งสไลด์ต่อหนึ่งหน้ากระดาษ ───────────────────────── */
+@media print{
+  @page{size:A4 landscape;margin:10mm}
+  header,.no-print,.empty{display:none !important}
+  html,body{background:#fff;font-size:12px}
+  .wrap{max-width:none;padding:0}
+  #deck{padding:0}
+  .slide{border:0;border-radius:0;padding:0 0 6mm;margin:0;
+         break-after:page;page-break-after:always;break-inside:avoid}
+  .slide:last-child{break-after:auto;page-break-after:auto}
+  .slide-head{margin-bottom:10px}
+  .shot{min-height:120px}
+  .mat{font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<header class="no-print">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Site Installation Brief</div>
+      <h1 id="hd-title">ใบสั่งงานช่าง<small id="hd-sub">บรีฟช่างก่อนออกติดตั้งหน้างาน</small></h1>
+    </div>
+    <div class="controls">
+      <button class="btn primary" onclick="window.print()"><span>🖨</span> พิมพ์บรีฟ (PDF)</button>
+      <button class="btn" id="btn-mobile" onclick="toggleMobile()">📱 โหมดมือถือ</button>
+      <button class="btn" onclick="exportBrief()">⬇ ส่งออก .json</button>
+      <button class="btn" onclick="document.getElementById('pick').click()">📂 เปิดไฟล์ DB2</button>
+      <input type="file" id="pick" accept=".txt,.json" style="display:none" onchange="importFile(this.files[0])">
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="empty" id="empty">
+    <h2>ยังไม่มีข้อมูลโครงการ</h2>
+    <p>ใบสั่งงานช่างสร้างจากไฟล์ <b>DB2</b> ของหน้าออกแบบระบบ — ไปที่แท็บ System Design
+       กรอกข้อมูลงานและทีมติดตั้ง กด <b>คำนวณตารางวัสดุอุปกรณ์</b> แล้วส่งออก DB2
+       หรือจะลากไฟล์ DB2 มาวางที่หน้านี้ก็ได้</p>
+    <div class="actions">
+      <button class="btn" onclick="document.getElementById('pick').click()">เลือกไฟล์ DB2…</button>
+      <button class="btn" onclick="gotoDesign()">ไปที่แท็บ System Design</button>
+    </div>
+  </div>
+
+  <div id="deck" style="display:none">
+
+    <!-- ══ 1 · หน้าปก ══ -->
+    <section class="slide" id="s1">
+      <div class="slide-head"><span class="slide-no">1</span><h2>บรีฟช่างก่อนออกติดตั้งหน้างาน</h2>
+        <span class="note" id="s1-proj">—</span></div>
+      <div class="cols wide-left">
+        <div>
+          <table class="kv">
+            <tr><th>ผลิตภัณฑ์</th><td id="k-product">—</td></tr>
+            <tr><th>INVERTER</th><td id="k-inv">—</td></tr>
+            <tr><th>SOLAR PANEL</th><td id="k-pv">—</td></tr>
+            <tr><th>แบตเตอรี่</th><td id="k-bat">—</td></tr>
+            <tr><th>การขออนุญาต</th><td id="k-permit">—</td></tr>
+            <tr><th>ติดตั้งวันที่</th><td id="k-date">—</td></tr>
+            <tr><th>ENGINEER</th><td id="k-eng">—</td></tr>
+            <tr><th>TECHNICIAN</th><td id="k-tech">—</td></tr>
+            <tr><th>ลูกค้า</th><td id="k-cust">—</td></tr>
+          </table>
+          <div class="banner" id="k-target">TARGET ถึงจุดหมายเวลา —</div>
+          <div class="banner calm" id="k-note" style="display:none"></div>
+        </div>
+        <div class="shot"><div class="cap">รูปผลิตภัณฑ์</div><div>ยังไม่มีรูป</div></div>
+      </div>
+    </section>
+
+    <!-- ══ 2 · แผนที่และการเดินทาง ══ -->
+    <section class="slide" id="s2">
+      <div class="slide-head"><span class="slide-no">2</span><h2>แผนที่และการเดินทาง</h2></div>
+      <div class="cols">
+        <div>
+          <table class="kv">
+            <tr><th>ชื่อลูกค้า</th><td id="m-name">—</td></tr>
+            <tr><th>เบอร์โทร</th><td id="m-phone">—</td></tr>
+            <tr><th>ที่อยู่</th><td id="m-addr">—</td></tr>
+            <tr><th>โลเคชัน</th><td id="m-coord">—</td></tr>
+            <tr><th>ที่ตั้ง</th><td id="m-loc">—</td></tr>
+          </table>
+        </div>
+        <div class="shot-grid">
+          <div class="shot"><div class="cap">แผนที่</div><div>ยังไม่มีรูป</div></div>
+          <div class="shot"><div class="cap">ตำแหน่งติดตั้งแผงโซลาร์เซลล์</div><div>ยังไม่มีรูป</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 3 · ผังการวางแผงและการจัดสตริง ══ -->
+    <section class="slide" id="s3">
+      <div class="slide-head"><span class="slide-no">3</span><h2>ผังการวางแผงและการจัดสตริง</h2></div>
+      <div class="cols">
+        <div>
+          <table class="kv">
+            <tr class="hi"><th>การจัดสตริง</th><td id="l-string">—</td></tr>
+            <tr><th>แผงโซลาร์เซลล์</th><td id="l-panels">—</td></tr>
+            <tr><th>ทิศและมุมเอียง</th><td id="l-orient">—</td></tr>
+            <tr><th>ราง / ตัวต่อราง</th><td id="l-rail">—</td></tr>
+            <tr><th>L-Feet / คลิปจับแผง</th><td id="l-clamp">—</td></tr>
+            <tr><th>สาย DC · ท่อ/ราง</th><td id="l-dc">—</td></tr>
+          </table>
+        </div>
+        <div class="shot"><div class="cap">ผังการวางแผงและแนวเดินท่อบนหลังคา</div><div>ยังไม่มีรูป</div></div>
+      </div>
+    </section>
+
+    <!-- ══ 4 · ผังติดตั้งอินเวอร์เตอร์และจุดขนานไฟ ══ -->
+    <section class="slide" id="s4">
+      <div class="slide-head"><span class="slide-no">4</span><h2>ผังติดตั้งอินเวอร์เตอร์และจุดขนานไฟ</h2></div>
+      <div class="cols">
+        <div>
+          <table class="kv">
+            <tr><th>อินเวอร์เตอร์</th><td id="i-inv">—</td></tr>
+            <tr class="hi"><th>เบรกเกอร์ที่ต้องเพิ่ม</th><td id="i-cb">—</td></tr>
+            <tr><th>สาย AC</th><td id="i-ac">—</td></tr>
+            <tr><th>ระยะเดินท่อ</th><td id="i-dist">—</td></tr>
+            <tr><th>ท่อ / ราง</th><td id="i-conduit">—</td></tr>
+            <tr><th>MC4</th><td id="i-mc4">—</td></tr>
+          </table>
+          <div class="banner ac" id="i-existing" style="display:none"></div>
+        </div>
+        <div class="shot"><div class="cap">ตำแหน่งอินเวอร์เตอร์ · แนวท่อ · จุดขนานไฟ</div><div>ยังไม่มีรูป</div></div>
+      </div>
+    </section>
+
+    <!-- ══ 5 · ระบบกราวด์ ══ -->
+    <section class="slide" id="s5">
+      <div class="slide-head"><span class="slide-no">5</span><h2>ระบบกราวด์</h2></div>
+      <div class="cols">
+        <div>
+          <table class="kv">
+            <tr><th>สายกราวด์</th><td id="g-cable">—</td></tr>
+            <tr><th>ระยะเดินสายกราวด์</th><td id="g-dist">—</td></tr>
+            <tr><th>Ground Plate</th><td id="g-plate">—</td></tr>
+            <tr><th>Ground Lug</th><td id="g-lug">—</td></tr>
+          </table>
+        </div>
+        <div class="shot"><div class="cap">บริเวณติดตั้งระบบกราวด์</div><div>ยังไม่มีรูป</div></div>
+      </div>
+    </section>
+
+    <!-- ══ 6 · วัสดุที่ต้องเตรียม ══ -->
+    <section class="slide" id="s6">
+      <div class="slide-head"><span class="slide-no">6</span><h2>วัสดุที่ต้องเตรียม</h2>
+        <span class="progress" id="mat-progress"></span></div>
+      <div id="mat-none" class="shot" style="min-height:110px">
+        <div class="cap">ยังไม่มีรายการวัสดุ</div>
+        <div>ไปที่แท็บ System Design แล้วกด “คำนวณตารางวัสดุอุปกรณ์ (Generate BOM)” แล้วส่งออก DB2 ใหม่</div>
+      </div>
+      <table class="mat" id="mat-table" style="display:none">
+        <thead><tr><th style="width:92px">หมวด</th><th>รายการ</th><th>สเปก</th>
+          <th class="q" style="width:110px">จำนวน</th><th class="c no-print">เบิกแล้ว</th></tr></thead>
+        <tbody id="mat-body"></tbody>
+      </table>
+    </section>
+
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ══════════════════════════════════════════════════════════════════
+   1) รับข้อมูล — สองทางเหมือน asc_summary
+      (ก) SYNC_PROJECT_STATE จาก master_shell  (ข) ลากไฟล์มาวาง/เลือกไฟล์
+   ══════════════════════════════════════════════════════════════════ */
+let M = null;                 // โมเดลที่แปลงแล้ว พร้อมวาด
+let PROJECT_ID = '';          // ใช้แยกสถานะเช็กลิสต์ของแต่ละโครงการ
+const inShell = (window.parent && window.parent !== window);
+
+window.addEventListener('message', ev => {
+    const d = ev.data;
+    if (!d || d.type !== 'SYNC_PROJECT_STATE') return;
+    PROJECT_ID = d.projectId || '';
+    const db2 = d.payload && d.payload.db2;
+    const db1 = d.payload && d.payload.db1;
+    if (db2 || db1) loadDB2(db2 || db1); else showEmpty();
+});
+
+function gotoDesign(){ try { window.parent.postMessage({type:'SWITCH_TAB', tab:'asc'}, '*'); } catch(e) {} }
+
+function importFile(file){
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = e => {
+        try {
+            const j = JSON.parse(e.target.result);
+            if (!(j.base_layout_db1 || j.step1_initialization)) {
+                alert('ไฟล์นี้ไม่ใช่ DB1/DB2 ของหน้าออกแบบระบบ');
+                return;
+            }
+            loadDB2(j);
+        } catch(err) { alert('อ่านไฟล์ไม่สำเร็จ: ' + err.message); }
+    };
+    r.readAsText(file);
+}
+document.addEventListener('dragover', e => { e.preventDefault(); const el=document.getElementById('empty'); if(el) el.classList.add('drag'); });
+document.addEventListener('dragleave', () => { const el=document.getElementById('empty'); if(el) el.classList.remove('drag'); });
+document.addEventListener('drop', e => {
+    e.preventDefault();
+    const el=document.getElementById('empty'); if(el) el.classList.remove('drag');
+    if (e.dataTransfer.files.length) importFile(e.dataTransfer.files[0]);
+});
+
+/* ══════════════════════════════════════════════════════════════════
+   2) แปลง DB2 → โมเดลกลาง
+
+   ทุกช่องมีค่าสำรอง ไฟล์ที่ยังไม่ได้กด Generate BOM หรือไฟล์รุ่นก่อนที่จะมี
+   ก้อน job จึงเปิดได้ตามปกติ แค่ช่องนั้นขึ้นขีดกลางแทน
+   ══════════════════════════════════════════════════════════════════ */
+const num = v => { const n = parseFloat(String(v).replace(/,/g,'')); return isFinite(n) ? n : 0; };
+const str = v => (v == null ? '' : String(v)).trim();
+const fmt = (v, d) => { const n = num(v); return n.toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0}); };
+const dash = v => { const s = str(v); return (s && s !== '-') ? s : '—'; };
+
+function loadDB2(raw){
+    const db1 = raw.base_layout_db1 || raw;
+    const s1 = db1.step1_initialization || {};
+    const s2 = db1.step2_equipment || {};
+    const s3 = db1.step3_design_and_layout || {};
+    const s4 = db1.step4_validation_results || {};
+    const eb = s4.engineering_and_bom || {};
+    const job = s1.job || {};
+    const cnt = s4.equipmentCounts || {};
+
+    M = {
+        projectName: dash(s1.projectName),
+        coordinates: str(s1.coordinates),
+        locationName: dash(s1.locationName),
+        job: {
+            customer: job.customer || {}, schedule: job.schedule || {},
+            team: job.team || {}, note: str(job.note)
+        },
+        // ชื่อลูกค้าจากบิลค่าไฟ ใช้เป็นตัวสำรองเมื่อยังไม่ได้กรอกในหน้าออกแบบ
+        db0Name: str(((s1.db0_reference || {}).metadata || {}).customerName),
+        pv: s2.pv || {}, inv1: s2.inv1 || {}, inv2: s2.inv2 || {}, bat: s2.bat || {},
+        existing: s2.existing || null,
+        counts: cnt,
+        kwp: num(s4.totalDcCapacity_kWp),
+        dcAcRatio: str(s4.dcAcRatio),
+        strings: s4.stringConfiguration_EIT_Standard || {},
+        roofs: Array.isArray(s3.roofPolygons) ? s3.roofPolygons : [],
+        bom: eb,
+        items: Array.isArray(eb.items) ? eb.items : []
+    };
+    render();
+}
+
+function showEmpty(){
+    document.getElementById('empty').style.display = '';
+    document.getElementById('deck').style.display = 'none';
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   3) วาดสไลด์
+   ══════════════════════════════════════════════════════════════════ */
+const set  = (id, v) => { const el = document.getElementById(id); if (el) el.innerHTML = v; };
+const qty  = (n, unit) => num(n) > 0 ? (fmt(n) + ' ' + unit) : '—';
+
+/* วันที่ ISO → รูปแบบไทยสั้น ๆ ที่ช่างอ่านแล้วเข้าใจทันที */
+const TH_MON = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function thaiDate(iso){
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str(iso));
+    if (!m) return '';
+    return Number(m[3]) + ' ' + TH_MON[Number(m[2]) - 1] + ' ' + (Number(m[1]) + 543);
+}
+function dateRange(a, b){
+    const x = thaiDate(a), y = thaiDate(b);
+    if (x && y && x !== y) {
+        // เดือนและปีเดียวกัน ย่อเหลือ "1-4 ก.ย. 2569" แบบที่บรีฟเดิมเขียน
+        const ma = /^(\d+) (.+)$/.exec(x), mb = /^(\d+) (.+)$/.exec(y);
+        if (ma && mb && ma[2] === mb[2]) return ma[1] + '-' + mb[1] + ' ' + mb[2];
+        return x + ' ถึง ' + y;
+    }
+    return x || y || '—';
+}
+
+function render(){
+    document.getElementById('empty').style.display = 'none';
+    document.getElementById('deck').style.display = '';
+
+    const j = M.job, cu = j.customer || {}, sc = j.schedule || {}, tm = j.team || {};
+    const custName = dash(cu.name || M.db0Name);
+    document.getElementById('hd-sub').innerText = M.projectName;
+    set('s1-proj', M.projectName);
+
+    /* ── 1 · หน้าปก ─────────────────────────────────────────────── */
+    const batQty = num(M.counts.batQty);
+    const sysType = batQty > 0 ? 'Hybrid + แบตเตอรี่' : 'Ongrid';
+    set('k-product', sysType + ' ' + fmt(M.kwp, 2) + ' kWp'
+        + '<span class="sub">DC/AC Ratio ' + dash(M.dcAcRatio) + '</span>');
+
+    const invLines = [];
+    if (num(M.counts.inv1Qty) > 0) invLines.push(dash(M.inv1.model) + ' · จำนวน ' + fmt(M.counts.inv1Qty) + ' ตัว');
+    if (num(M.counts.inv2Qty) > 0) invLines.push(dash(M.inv2.model) + ' · จำนวน ' + fmt(M.counts.inv2Qty) + ' ตัว');
+    set('k-inv', invLines.length ? invLines.join('<span class="sub"></span>') : '—');
+
+    set('k-pv', dash(M.pv.model) + ' ' + fmt(M.pv.pmax) + 'W'
+        + '<span class="sub">จำนวน ' + fmt(M.counts.totalPanels) + ' แผง · ขนาดแผง '
+        + fmt(M.pv.len) + '×' + fmt(M.pv.wid) + ' มม.</span>');
+
+    set('k-bat', batQty > 0 ? (dash(M.bat.model) + ' · จำนวน ' + fmt(batQty) + ' ชุด') : 'ไม่มี');
+    set('k-permit', dash(sc.permitType));
+    set('k-date', dateRange(sc.dateStart, sc.dateEnd));
+    set('k-eng', dash(tm.engineer));
+    set('k-tech', Array.isArray(tm.technicians) && tm.technicians.length ? tm.technicians.join(' · ') : '—');
+    set('k-cust', custName);
+
+    const at = str(sc.arriveTime);
+    set('k-target', '🎯 TARGET ถึงจุดหมายเวลา ' + (at ? at.replace(':', '.') + ' น.' : '—'));
+
+    const noteBox = document.getElementById('k-note');
+    if (M.job.note) { noteBox.style.display = ''; noteBox.innerHTML = '📌 หมายเหตุ: ' + M.job.note; }
+    else noteBox.style.display = 'none';
+
+    /* ── 2 · แผนที่ ─────────────────────────────────────────────── */
+    set('m-name', custName);
+    const ph = str(cu.phone);
+    set('m-phone', ph ? '<a href="tel:' + ph.replace(/[^0-9+]/g,'') + '">' + ph + '</a>' : '—');
+    set('m-addr', dash(cu.address));
+    const co = M.coordinates;
+    set('m-coord', co && co !== '-'
+        ? co + ' <span class="sub no-print"><a href="https://www.google.com/maps/search/?api=1&query='
+              + encodeURIComponent(co) + '" target="_blank" rel="noopener">เปิดแผนที่นำทาง</a></span>'
+        : '—');
+    set('m-loc', M.locationName);
+
+    /* ── 3 · ผังการวางแผง ───────────────────────────────────────── */
+    const st = M.strings;
+    const cfg = Array.isArray(st.arrayConfigSummary) ? st.arrayConfigSummary.join(' · ') : str(st.arrayConfigSummary);
+    set('l-string', dash(st.totalStringsUsed) + (cfg && cfg !== '-' ? '<span class="sub">' + cfg + '</span>' : ''));
+    set('l-panels', fmt(M.counts.totalPanels) + ' แผง · ' + dash(M.pv.model));
+
+    /* ทิศที่ช่างใช้จริงคือทิศที่หันหน้าแผง ไม่ใช่องศาเปล่า ๆ จึงแปลงให้ด้วย */
+    const dirName = a => {
+        const x = ((num(a) % 360) + 360) % 360;
+        return ['เหนือ','ตะวันออกเฉียงเหนือ','ตะวันออก','ตะวันออกเฉียงใต้','ใต้',
+                'ตะวันตกเฉียงใต้','ตะวันตก','ตะวันตกเฉียงเหนือ'][Math.round(x / 45) % 8];
+    };
+    set('l-orient', M.roofs.length
+        ? M.roofs.map((r, i) => 'ผืนที่ ' + (i+1) + ': ทิศ' + dirName(r.azimuth)
+            + ' (' + fmt(r.azimuth) + '°) เอียง ' + fmt(r.slope) + '°').join('<span class="sub"></span>')
+        : '—');
+
+    const ms = M.bom.mounting_structure || {};
+    set('l-rail',  qty(ms.rail_qty, 'เส้น') + ' / ' + qty(ms.rail_splice_qty, 'ตัว'));
+    set('l-clamp', qty(ms.l_feet_qty, 'ตัว') + ' / End ' + qty(ms.end_clamp_qty, 'ตัว')
+                 + ' · Mid ' + qty(ms.mid_clamp_qty, 'ตัว'));
+
+    const cs = M.bom.calculated_sizing || {};
+    set('l-dc', (num(cs.pv_cable_sqmm) > 0 ? fmt(cs.pv_cable_sqmm, 1) + ' ตร.มม.' : '—')
+              + '<span class="sub">' + dash(cs.conduit_or_wireway) + '</span>');
+
+    /* ── 4 · อินเวอร์เตอร์และจุดขนานไฟ ──────────────────────────── */
+    const acTotal = num(M.inv1.acKw) * num(M.counts.inv1Qty) + num(M.inv2.acKw) * num(M.counts.inv2Qty);
+    set('i-inv', (invLines.join(' · ') || '—')
+        + (acTotal > 0 ? '<span class="sub">กำลัง AC รวม ' + fmt(acTotal, 1) + ' kW</span>' : ''));
+
+    const pr = M.bom.protection || {};
+    set('i-cb', num(pr.ac_breaker_amp) > 0
+        ? 'AC ' + fmt(pr.ac_breaker_amp) + 'AT สำหรับขนานโซลาร์เซลล์'
+          + '<span class="sub">ฝั่ง DC ' + (num(pr.dc_breaker_amp) > 0 ? fmt(pr.dc_breaker_amp) + 'A' : '—') + '</span>'
+        : '—');
+    set('i-ac', num(cs.ac_cable_sqmm) > 0 ? fmt(cs.ac_cable_sqmm, 1) + ' ตร.มม.' : '—');
+
+    const ds = M.bom.distances || {};
+    set('i-dist', 'DC ' + qty(ds.dc_m, 'ม.') + ' · AC ' + qty(ds.ac_m, 'ม.') + ' · กราวด์ ' + qty(ds.gnd_m, 'ม.'));
+    set('i-conduit', dash(cs.conduit_or_wireway));
+    set('i-mc4', qty(cs.mc4_pairs_qty, 'คู่'));
+
+    const exBox = document.getElementById('i-existing');
+    const ex = M.existing;
+    if (ex && ex.enabled && num(ex.acKw) > 0) {
+        exBox.style.display = '';
+        exBox.innerHTML = '⚡ ไซต์นี้มีระบบออนกริดเดิม ' + fmt(ex.acKw, 1) + ' kW ('
+            + dash(ex.invModel) + ') — ต่อพ่วงฝั่ง AC'
+            + (ex.exportControl ? ' · มีระบบกันไฟไหลย้อน' : '');
+    } else exBox.style.display = 'none';
+
+    /* ── 5 · ระบบกราวด์ ─────────────────────────────────────────── */
+    set('g-cable', num(cs.gnd_cable_sqmm) > 0 ? fmt(cs.gnd_cable_sqmm, 1) + ' ตร.มม.' : '—');
+    set('g-dist',  qty(ds.gnd_m, 'ม.'));
+    set('g-plate', qty(ms.ground_plate_qty, 'ตัว'));
+    set('g-lug',   qty(ms.ground_lug_qty, 'ตัว'));
+
+    /* ── 6 · วัสดุ ──────────────────────────────────────────────── */
+    renderMaterials();
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   4) ตารางวัสดุและการติ๊กเบิกของ
+
+   สถานะติ๊กเป็นบูลีนไม่กี่ตัว เก็บใน localStorage ได้สบาย แยกตามโครงการ
+   (รูปหน้างานเป็นคนละเรื่อง จะไปอยู่ที่เก็บของมันเองในขั้นถัดไป)
+   ══════════════════════════════════════════════════════════════════ */
+const matKey = () => 'asc_brief_mat_' + (PROJECT_ID || M.projectName || 'local');
+function matState(){
+    try { return JSON.parse(localStorage.getItem(matKey())) || {}; } catch(e) { return {}; }
+}
+function matSave(s){ try { localStorage.setItem(matKey(), JSON.stringify(s)); } catch(e) {} }
+
+function renderMaterials(){
+    const tbl = document.getElementById('mat-table');
+    const none = document.getElementById('mat-none');
+    const body = document.getElementById('mat-body');
+    if (!M.items.length) { tbl.style.display = 'none'; none.style.display = ''; set('mat-progress',''); return; }
+    tbl.style.display = ''; none.style.display = 'none';
+
+    const done = matState();
+    body.innerHTML = M.items.map((it, i) => {
+        const k = 'i' + i;
+        const q = typeof it.qty === 'number'
+            ? (Number.isInteger(it.qty) ? fmt(it.qty) : fmt(it.qty, 2)) : str(it.qty);
+        return '<tr class="' + (done[k] ? 'done' : '') + '" id="mr' + i + '">'
+            + '<td><span class="cat">' + str(it.cat) + '</span></td>'
+            + '<td>' + str(it.name) + '</td>'
+            + '<td>' + str(it.spec) + '</td>'
+            + '<td class="q">' + q + ' <span style="font-weight:400;color:var(--mute)">' + str(it.unit) + '</span></td>'
+            + '<td class="c no-print"><input type="checkbox" ' + (done[k] ? 'checked' : '')
+            + ' onchange="toggleMat(' + i + ', this.checked)"></td></tr>';
+    }).join('');
+    updateMatProgress();
+}
+function toggleMat(i, on){
+    const s = matState(); if (on) s['i'+i] = 1; else delete s['i'+i];
+    matSave(s);
+    const row = document.getElementById('mr' + i);
+    if (row) row.className = on ? 'done' : '';
+    updateMatProgress();
+}
+function updateMatProgress(){
+    const n = Object.keys(matState()).length;
+    set('mat-progress', 'เบิกแล้ว ' + n + ' / ' + M.items.length + ' รายการ');
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   5) โหมดมือถือ และการส่งออก
+   ══════════════════════════════════════════════════════════════════ */
+function toggleMobile(){
+    const on = document.body.classList.toggle('mobile');
+    document.getElementById('btn-mobile').classList.toggle('on', on);
+}
+
+function exportBrief(){
+    if (!M) { alert('ยังไม่มีข้อมูลโครงการ'); return; }
+    const out = {
+        is_asc_brief: true, version: 1,
+        projectName: M.projectName, coordinates: M.coordinates, locationName: M.locationName,
+        job: M.job, equipment: { pv: M.pv, inv1: M.inv1, inv2: M.inv2, bat: M.bat, existing: M.existing },
+        counts: M.counts, kwp: M.kwp, strings: M.strings, bom: M.bom,
+        materialsPicked: matState()
+    };
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ใบสั่งงานช่าง_' + M.projectName.replace(/[\\/:*?"<>|]/g, '_') + '.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+/* ── เริ่มระบบ ─────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+    showEmpty();
+    // เปิดใน master_shell : ขอข้อมูลโครงการทันที (หน้าหลักจะ broadcast กลับมา)
+    if (inShell) { try { window.parent.postMessage({ type: 'REQUEST_SESSION' }, '*'); } catch(e) {} }
+});
+</script>
+</body>
+</html>
