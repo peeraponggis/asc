@@ -472,6 +472,51 @@
                         <div style="font-size: 0.8em; color: #64748b; margin-top: 6px; padding: 6px; background: #f1f5f9; border-radius: 4px;" id="locationName">ที่ตั้ง: -</div>
                     </div>
                     
+                    <!-- ══════════════════════════════════════════════════════════════
+                         ข้อมูลงานและทีมติดตั้ง
+
+                         ข้อมูลชุดนี้ไม่ได้ใช้คำนวณอะไรเลย แต่เป็นสิ่งที่ใบสั่งงานช่างต้องมี
+                         และเป็นสิ่งเดียวในบรีฟที่ระบบยังไม่รู้ ที่เหลือดึงจาก DB2 ได้หมด
+                         กรอกที่นี่เพราะเป็นหน้าที่นิยามตัวโครงการ แล้วไหลไปกับ DB2
+                         ให้ทุกเมนูปลายทางใช้ร่วมกัน ไม่ต้องกรอกซ้ำ
+                         ══════════════════════════════════════════════════════════════ -->
+                    <div class="form-group smart-db" id="jobCard" style="margin-top: 15px; border-left-color: #d97706; background: rgba(217,119,6,0.05);">
+                        <label style="color: #b45309; font-weight: bold; display:flex; align-items:center; gap:7px;">
+                            <i class="fa-solid fa-clipboard-list"></i> ข้อมูลงานและทีมติดตั้ง
+                            <span style="font-weight:normal; font-size:0.8em; color:#92400e;">(ใช้ในใบสั่งงานช่าง)</span>
+                        </label>
+                        <div style="margin-top:8px;">
+                            <div class="setting-row"><span class="sr-label">ชื่อลูกค้า:</span>
+                                <span class="sr-ctrl"><input type="text" id="jobCustName" value="" placeholder="ชื่อ-นามสกุล" style="width:190px;"></span></div>
+                            <div class="setting-row"><span class="sr-label">เบอร์โทร:</span>
+                                <span class="sr-ctrl"><input type="text" id="jobCustPhone" value="" placeholder="08x-xxx-xxxx" style="width:150px;"></span></div>
+                            <div class="setting-row" style="align-items:flex-start;"><span class="sr-label">ที่อยู่หน้างาน:</span>
+                                <span class="sr-ctrl"><textarea id="jobCustAddr" rows="2" placeholder="บ้านเลขที่ หมู่ ตำบล อำเภอ จังหวัด รหัสไปรษณีย์" style="width:190px; resize:vertical;"></textarea></span></div>
+
+                            <div class="setting-row" style="border-top:1px dashed #fcd34d; padding-top:8px;"><span class="sr-label">วันติดตั้ง:</span>
+                                <span class="sr-ctrl"><input type="date" id="jobDateStart" style="width:130px;">
+                                    ถึง <input type="date" id="jobDateEnd" style="width:130px;"></span></div>
+                            <div class="setting-row"><span class="sr-label">เวลาถึงหน้างาน:</span>
+                                <span class="sr-ctrl"><input type="time" id="jobArriveTime" value="09:00" style="width:100px;"></span></div>
+                            <div class="setting-row"><span class="sr-label">การขออนุญาต:</span>
+                                <span class="sr-ctrl"><select id="jobPermitType" style="width:150px;">
+                                    <option value="ขนานไฟ">ขนานไฟ</option>
+                                    <option value="ขายไฟ">ขายไฟ</option>
+                                    <option value="ไม่ขออนุญาต">ไม่ขออนุญาต</option>
+                                </select></span></div>
+
+                            <div class="setting-row" style="border-top:1px dashed #fcd34d; padding-top:8px;"><span class="sr-label">วิศวกรผู้ควบคุม:</span>
+                                <span class="sr-ctrl"><input type="text" id="jobEngineer" value="" placeholder="ชื่อวิศวกร" style="width:150px;"></span></div>
+                            <div class="setting-row"><span class="sr-label">ช่างติดตั้ง:</span>
+                                <span class="sr-ctrl"><input type="text" id="jobTechs" value="" placeholder="คั่นชื่อด้วยจุลภาค" style="width:190px;"></span></div>
+                            <div class="setting-row" style="align-items:flex-start;"><span class="sr-label">หมายเหตุถึงช่าง:</span>
+                                <span class="sr-ctrl"><textarea id="jobNote" rows="2" placeholder="เช่น รางซีที่ใช้จับยึดท่อให้พ้นสี เก็บทุกชิ้น" style="width:190px; resize:vertical;"></textarea></span></div>
+                        </div>
+                        <div style="font-size:0.75em; color:#92400e; margin-top:8px; line-height:1.4;">
+                            ข้อมูลนี้ไหลไปกับไฟล์ DB2 ใบสั่งงานช่างจะเติมให้เองโดยไม่ต้องพิมพ์ซ้ำ
+                        </div>
+                    </div>
+
                     <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <span>Image Overlay</span>
                         <button id="btnAddDroneBtn" style="background: #ea580c; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 0.9em; cursor: pointer; font-weight: bold; transition: 0.2s;"><i class="fa-solid fa-plus"></i> เพิ่มรูป</button>
@@ -2825,6 +2870,52 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
            ความละเอียดต้นฉบับ (w, h) ยังถูกบันทึกไว้เหมือนเดิม เมทริกซ์และ GCP
            จึงใช้ได้ต่อ และถ้าภายหลังเลือกไฟล์เต็มกลับมา ตำแหน่งก็ยังตรงเป๊ะ
            ═══════════════════════════════════════════════════════════════ */
+        /* ══════════════════════════════════════════════════════════════════
+           ข้อมูลงานและทีมติดตั้ง — อ่านและเขียนที่เดียว
+
+           ทุกช่องมีค่าสำรองเป็นสตริงว่าง ไฟล์ DB2 รุ่นก่อนหน้าไม่มีก้อนนี้ติดมา
+           เปิดแล้วต้องได้ฟอร์มเปล่า ไม่ใช่ error และไม่ใช่ค่าค้างจากโครงการก่อน
+           ══════════════════════════════════════════════════════════════════ */
+        function ascReadJob() {
+            const v = id => { const el = document.getElementById(id); return el ? String(el.value || '').trim() : ''; };
+            return {
+                customer: { name: v('jobCustName'), phone: v('jobCustPhone'), address: v('jobCustAddr') },
+                schedule: {
+                    dateStart: v('jobDateStart'), dateEnd: v('jobDateEnd'),
+                    arriveTime: v('jobArriveTime'), permitType: v('jobPermitType') || 'ขนานไฟ'
+                },
+                team: {
+                    engineer: v('jobEngineer'),
+                    // เก็บเป็นอาเรย์เพื่อให้ใบสั่งงานขึ้นบรรทัดต่อคนได้ ช่องกรอกยังเป็นบรรทัดเดียวตามเดิม
+                    technicians: v('jobTechs').split(/[,\uff0c]|\s{2,}/).map(t => t.trim()).filter(Boolean)
+                },
+                note: v('jobNote')
+            };
+        }
+
+        function ascRenderJob(job) {
+            const j = job || {};
+            const c = j.customer || {}, sc = j.schedule || {}, tm = j.team || {};
+            const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val == null ? '' : val; };
+            set('jobCustName',  c.name);
+            set('jobCustPhone', c.phone);
+            set('jobCustAddr',  c.address);
+            set('jobDateStart', sc.dateStart);
+            set('jobDateEnd',   sc.dateEnd);
+            set('jobArriveTime', sc.arriveTime || '09:00');
+            set('jobPermitType', sc.permitType || 'ขนานไฟ');
+            set('jobEngineer',  tm.engineer);
+            set('jobTechs',     Array.isArray(tm.technicians) ? tm.technicians.join(', ') : (tm.technicians || ''));
+            set('jobNote',      j.note);
+        }
+
+        /* ชื่อลูกค้ามีอยู่แล้วในไฟล์บิลค่าไฟ เติมให้เลยถ้าผู้ใช้ยังไม่ได้พิมพ์เอง
+           ไม่เขียนทับของที่พิมพ์ไว้ เพราะชื่อในบิลมักเป็นชื่อเจ้าของมิเตอร์ ไม่ใช่ผู้ว่าจ้าง */
+        function ascFillCustomerFromDB0(name) {
+            const el = document.getElementById('jobCustName');
+            if (el && !el.value.trim() && name && name !== '-') el.value = name;
+        }
+
         const ASC_THUMB_BUDGET = 700000;                       // ความยาว dataURL สูงสุดต่อภาพ (~0.7 MB)
         const ASC_THUMB_STEPS  = [[1600, 0.72], [1600, 0.55], [1280, 0.6], [1024, 0.6], [800, 0.55], [640, 0.5]];
 
@@ -3262,11 +3353,14 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     document.getElementById('projectTextInput').value = db1.step1_initialization.projectName || "Project : ";
                     document.getElementById('coordInput').value = db1.step1_initialization.coordinates || "";
                     document.getElementById('locationName').innerText = "ที่ตั้ง: " + (db1.step1_initialization.locationName || "-");
+                    // ไฟล์รุ่นก่อนไม่มีก้อน job ส่งค่าว่างเข้าไปเพื่อล้างฟอร์มให้เป็นของโครงการนี้จริง ๆ
+                    ascRenderJob(db1.step1_initialization.job);
 
                     if(db1.step1_initialization.db0_reference) {
                         state.rawDB0Data = db1.step1_initialization.db0_reference;
                         const db0Ref = state.rawDB0Data;
                         document.getElementById('db0CustomerName').innerText = db0Ref.metadata?.customerName || "-";
+                        ascFillCustomerFromDB0(db0Ref.metadata?.customerName);
                         document.getElementById('db0CalculatedPanels').innerText = db0Ref.targetPanelsCalc ? fmtInt(db0Ref.targetPanelsCalc) : "0";
                         // 🌟 กู้คืนกล่อง "กำลังผลิตแนะนำ" (เดิมหาย)
                         if (db0Ref.metadata && db0Ref.metadata.sourceTab === "AMR_Analysis" && db0Ref.energyData) {
@@ -3962,6 +4056,7 @@ document.getElementById('db0FileInput').addEventListener('change', function(e) {
             // บันทึกตัวเลขสำหรับนำไปคำนวณ และแสดงผลบน UI
             state.db0KwP = kwpForCalc;
             document.getElementById('db0CustomerName').innerText = customerName;
+            ascFillCustomerFromDB0(customerName);
             document.getElementById('db0KwPDisplay').innerHTML = displayHtml;
             document.getElementById('db0InfoDisplay').style.display = 'block';
 
@@ -6440,6 +6535,8 @@ function updateFinalDcLength() {
                     projectName: document.getElementById('projectTextInput').value.trim() || "Project",
                     coordinates: document.getElementById('coordInput').value || "-",
                     locationName: document.getElementById('locationName').innerText.replace('ที่ตั้ง: ', '').trim(),
+                    // ข้อมูลงานและทีมติดตั้ง ใช้ในใบสั่งงานช่าง ไม่เกี่ยวกับการคำนวณใด ๆ
+                    job: ascReadJob(),
                     // 🌟 ดึงข้อมูล DB0 ทั้งก้อน (รวม loadProfile24h_Percent) ลงไปใน DB1
                     db0_reference: state.rawDB0Data ? {
                         ...state.rawDB0Data,           // โยนข้อมูลทุกอย่างจาก DB0 ลงไป (metadata, energyData, loadProfile)
@@ -7289,7 +7386,12 @@ function ascFileStamp(projectName, kind) {
             const rowStyle = "border-bottom: 1px solid #f1f5f9;";
             const tdStyle = "padding: 8px 10px; vertical-align: top;";
             
+            /* เดิมตารางวัสดุถูกสร้างเป็น HTML อย่างเดียว รายการจึงไปไม่ถึง DB2
+               ใบสั่งงานช่างต้องใช้รายการนี้ทำเช็กลิสต์เบิกของ จึงเก็บควบคู่ไว้เป็นข้อมูลด้วย
+               ส่วนที่สร้าง HTML ไม่ถูกแตะ ตารางบนจอจึงเหมือนเดิมทุกแถว */
+            const bomItems = [];
             const addRow = (cat, name, spec, qty, unit, color) => {
+                bomItems.push({ cat, name, spec, qty, unit });
                 html += `<tr style="${rowStyle}">
                     <td style="${tdStyle} text-align: center; font-weight: bold; color: ${color};">${cat}</td>
                     <td style="${tdStyle} font-weight: 500; color: #1e293b;">${name}</td>
@@ -7447,6 +7549,7 @@ function ascFileStamp(projectName, kind) {
             // 🌟 บันทึกข้อมูลวิศวกรรมและ Mounting ลงใน State (เพื่อให้ส่งออกไปยัง db1 / db2 ได้)
             state.engineering_and_bom = {
                 ...state.engineering_and_bom,
+                items: bomItems,               // รายการวัสดุทั้งตาราง สำหรับใบสั่งงานช่าง
                 routing_strategy: routingStrategy,
                 distances: { dc_m: dcLength, ac_m: acLength, gnd_m: gndLength }, 
                 calculated_sizing: {
