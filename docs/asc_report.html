@@ -732,6 +732,73 @@
 					
 					</div>
                     
+                    <!-- ══════════════════════════════════════════════════════════════
+                         ฐานราคาและภาษีมูลค่าเพิ่ม
+
+                         สองปัญหาที่พบตอนเอารายงานไปกระทบกับใบเสนอราคา
+
+                         หนึ่ง ใบเสนอราคาเป็นยอดเหมารวม มีค่าโครงสร้าง ค่าขออนุญาต
+                         ค่าขนส่ง ส่วนลด และการปัดเศษ ซึ่งไม่มีทางลงตัวพอดีกับ
+                         อัตราต่อวัตต์ x ขนาดระบบ จึงเปิดให้กรอกยอดจริงลงไปตรง ๆ ได้
+
+                         สอง อัตราค่าไฟที่ได้จากบิลรวม VAT มาแล้ว (ดู calcBill)
+                         ส่วน CAPEX บาท/วัตต์ ที่วิศวกรพิมพ์มักเป็นราคาก่อน VAT
+                         สองฝั่งอยู่คนละฐาน คืนทุนจึงสวยกว่าจริงราวเท่ากับอัตรา VAT
+                         ตัวเลือกด้านล่างบังคับให้ทั้งสองฝั่งอยู่ฐานเดียวกัน
+
+                         ค่าเริ่มต้นคือ "ไม่ปรับ" ซึ่งให้ผลเท่ารุ่นก่อนหน้าทุกตัวเลข
+                         ไฟล์ DB3 เก่าที่เปิดกลับมาจึงไม่ขยับจากที่เคยเสนอลูกค้าไป
+                         ══════════════════════════════════════════════════════════════ -->
+                    <div class="border-t pt-5 mt-6">
+                        <h4 class="font-bold text-gray-700 mb-3 text-sm"><i class="fa-solid fa-file-invoice-dollar mr-2 text-blue-600"></i>ฐานราคาและภาษีมูลค่าเพิ่ม (VAT)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">ฐานราคาเงินลงทุน</label>
+                                <label class="flex items-center gap-2 cursor-pointer text-sm"><input type="radio" id="fin-pm-rate" name="finPriceMode" value="rate" checked onchange="ascUpdateFinBasis()"><span>คิดจากอัตราต่อวัตต์ (เดิม)</span></label>
+                                <label class="flex items-center gap-2 cursor-pointer text-sm"><input type="radio" id="fin-pm-lump" name="finPriceMode" value="lump" onchange="ascUpdateFinBasis()"><span>ราคาขายรวมจากใบเสนอราคา</span></label>
+                            </div>
+
+                            <div id="fin-lump-wrap" class="opacity-40">
+                                <label class="block text-sm text-gray-600">ราคาขายรวม (บาท)</label>
+                                <input type="text" id="fin-price-total" value="0" disabled class="w-full border rounded p-2 font-bold text-blue-700"
+                                       onfocus="this.value = this.value.replace(/,/g, '')"
+                                       onblur="this.value = formatNum(this.value.replace(/,/g, ''), 0); ascUpdateFinBasis()"
+                                       onkeyup="ascUpdateFinBasis()">
+                                <p class="text-[11px] text-gray-500 mt-1">ยอดเดียวแทนทั้งค่าแผงและค่าแบตเตอรี่</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">ราคาที่กรอกด้านบน</label>
+                                <label class="flex items-center gap-2 cursor-pointer text-sm"><input type="radio" id="fin-pv-ex" name="finPriceVat" value="ex" checked onchange="ascUpdateFinBasis()"><span>ยังไม่รวม VAT</span></label>
+                                <label class="flex items-center gap-2 cursor-pointer text-sm"><input type="radio" id="fin-pv-inc" name="finPriceVat" value="inc" onchange="ascUpdateFinBasis()"><span>รวม VAT แล้ว</span></label>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">อัตราค่าไฟ (Tariff) ที่แสดง</label>
+                                <label class="flex items-center gap-2 cursor-pointer text-sm"><input type="radio" id="fin-tv-inc" name="finTariffVat" value="inc" checked onchange="ascTariffVatTouched = true; ascUpdateFinBasis()"><span>รวม VAT แล้ว</span></label>
+                                <label class="flex items-center gap-2 cursor-pointer text-sm"><input type="radio" id="fin-tv-ex" name="finTariffVat" value="ex" onchange="ascTariffVatTouched = true; ascUpdateFinBasis()"><span>ยังไม่รวม VAT</span></label>
+                                <p class="text-[11px] text-gray-500 mt-1">ตั้งอัตโนมัติตามที่มาของตัวเลข แก้เองได้</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm text-gray-600">อัตรา VAT (%)</label>
+                                <input type="number" id="fin-vat-rate" value="7" step="0.5" class="w-full border rounded p-2 font-bold text-blue-700" onkeyup="ascUpdateFinBasis()" onchange="ascUpdateFinBasis()">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm text-gray-600">การจัดการ VAT ในการคำนวณ</label>
+                                <select id="fin-vat-mode" class="w-full border rounded p-2 font-bold" onchange="ascUpdateFinBasis()">
+                                    <option value="off">ไม่ปรับ (ใช้ตามที่กรอก)</option>
+                                    <option value="claim">ขอคืนภาษีซื้อได้ → ฐานก่อน VAT</option>
+                                    <option value="noclaim">ขอคืนไม่ได้ → ฐานรวม VAT</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="fin-vat-summary" class="mt-4 bg-blue-50 border border-blue-200 rounded p-3 text-[12px] leading-6"></div>
+                    </div>
+
                     <div class="text-center border-t pt-8 mt-6">
                         <button onclick="runSimulationEngine()" class="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full text-lg font-bold shadow-lg transform hover:scale-105 transition w-full md:w-2/3">
                             ▶ ประมวลผลและสร้างรายงาน (Run Simulation)
@@ -1227,6 +1294,8 @@
                 <h2 class="pdf-heading">พารามิเตอร์การเงิน (Financial Parameters)</h2>
                 <table class="w-full text-left">
                     <tr><th class="w-1/4">CAPEX (บาท/วัตต์)</th><td id="prt-fin-capex"></td><th class="w-1/4">อัตราเงินเฟ้อ O&M (%/ปี)</th><td id="prt-fin-inf"></td></tr>
+                    <tr><th>ฐานราคาเงินลงทุน</th><td id="prt-fin-pricemode"></td><th>ฐาน VAT ที่ใช้คำนวณ</th><td id="prt-fin-vatmode"></td></tr>
+                    <tr><th>เงินลงทุนที่ใช้คำนวณ</th><td id="prt-fin-invest"></td><th>อัตราค่าไฟที่ใช้คำนวณ</th><td id="prt-fin-tariff-used"></td></tr>
                     <tr><th>O&M (บาท/วัตต์/ปี)</th><td id="prt-fin-om"></td><th>Discount Rate (%/ปี)</th><td id="prt-fin-dr"></td></tr>
                     <tr><th>อัตราค่าไฟฟ้าเฉลี่ย</th><td id="prt-fin-tariff"></td><th>Degradation ปี 1 (%)</th><td id="prt-fin-deg"></td></tr>
                     <tr><th>อัตราเพิ่มค่าไฟฟ้า (%/ปี)</th><td id="prt-fin-tariff-inf"></td><th>Degradation ปี 2-30 (%)</th><td id="prt-fin-deg2"></td></tr>
@@ -1453,6 +1522,117 @@
 
     </div>
 <script>
+        /* ══════════════════════════════════════════════════════════════════
+           ฐานราคาและ VAT — แหล่งความจริงจุดเดียว
+
+           ทั้งแถบสรุปบนหน้าจอและเครื่องคำนวณการเงินเรียกฟังก์ชันนี้ตัวเดียวกัน
+           ตัวเลขที่วิศวกรเห็นก่อนกดประมวลผล จึงเป็นตัวเลขเดียวกับที่เข้ารายงานแน่นอน
+
+           โหมด off คืนค่าเท่าโค้ดเดิมทุกบรรทัด ไฟล์เก่าเปิดกลับมาแล้วต้องไม่ขยับ
+           ══════════════════════════════════════════════════════════════════ */
+        let ascTariffVatTouched = false;   // ผู้ใช้เลือกฐาน VAT ของค่าไฟเองแล้วหรือยัง
+
+        /* แจ้งข้อผิดพลาดให้ผู้ใช้เห็นจริง
+           โค้ดเดิมเขียนลง modal-error ซึ่งไม่มีอยู่ในหน้านี้ ทุกคำเตือนจึงหายไปเงียบ ๆ
+           ผู้ใช้กดประมวลผลแล้วไม่มีอะไรเกิดขึ้น โดยไม่รู้ว่าติดตรงไหน */
+        function ascShowError(msg) {
+            const list = document.getElementById('error-list');
+            const modal = document.getElementById('modal-error');
+            if (list) list.innerHTML = '<li>' + msg + '</li>';
+            if (modal) { modal.classList.remove('hidden'); return; }
+            alert(msg);
+        }
+
+        function ascFinBasis() {
+            const pick = (nm, dv) => { const el = document.querySelector('input[name="' + nm + '"]:checked'); return el ? el.value : dv; };
+            const vat          = Math.max(0, getVal('fin-vat-rate', 7)) / 100;
+            const priceMode    = pick('finPriceMode', 'rate');
+            const priceIncVat  = pick('finPriceVat', 'ex') === 'inc';
+            const tariffIncVat = pick('finTariffVat', 'inc') === 'inc';
+            const selVat       = document.getElementById('fin-vat-mode');
+            const vatMode      = selVat ? selVat.value : 'off';
+
+            const pnom      = getVal('inp-pnom') || (typeof calcPnom === 'function' ? calcPnom() : 0);
+            const rateSolar = pnom * 1000 * getVal('fin-capex');
+            const rateBat   = getVal('inp-bat-qty', 0) * getVal('inp-bat-kwh', 0) * getVal('fin-capex-bat', 10000);
+            const lumpSum   = getVal('fin-price-total', 0);
+            const entered   = priceMode === 'lump' ? lumpSum : (rateSolar + rateBat);
+
+            const priceEx  = priceIncVat ? entered / (1 + vat) : entered;
+            const priceInc = priceEx * (1 + vat);
+
+            const tariffRaw = getVal('fin-tariff');
+            const tariffEx  = tariffIncVat ? tariffRaw / (1 + vat) : tariffRaw;
+            const tariffInc = tariffEx * (1 + vat);
+
+            /* rateFactor ใช้กับค่าที่คิดต่อวัตต์อย่าง O&M และค่าเปลี่ยนอินเวอร์เตอร์
+               ซึ่งปกติเสนอราคากันก่อน VAT ถ้าคิดทั้งโครงการบนฐานรวม VAT
+               ก็ต้องบวก VAT ให้ค่าพวกนี้ด้วย ไม่งั้นจะเหลื่อมฐานกันอีกจุด */
+            let investment = entered, tariff = tariffRaw, rateFactor = 1;
+            if (vatMode === 'claim')        { investment = priceEx;  tariff = tariffEx; }
+            else if (vatMode === 'noclaim') { investment = priceInc; tariff = tariffInc; rateFactor = 1 + vat; }
+
+            return { vat, vatMode, priceMode, priceIncVat, tariffIncVat, pnom,
+                     rateSolar, rateBat, lumpSum, entered, priceEx, priceInc,
+                     tariffRaw, tariffEx, tariffInc, investment, tariff, rateFactor };
+        }
+
+        function ascResetFinBasis() {
+            setVal('fin-vat-rate', 7); setVal('fin-price-total', 0);
+            const sel = document.getElementById('fin-vat-mode'); if (sel) sel.value = 'off';
+            ['fin-pm-rate', 'fin-pv-ex', 'fin-tv-inc'].forEach(id => { const el = document.getElementById(id); if (el) el.checked = true; });
+            ascTariffVatTouched = false;
+            ascUpdateFinBasis();
+        }
+
+        /* ตั้งฐาน VAT ของอัตราค่าไฟตามที่มาของตัวเลข เว้นแต่ผู้ใช้เลือกเองไปแล้ว */
+        function ascSetTariffVat(kind) {
+            if (ascTariffVatTouched) return;
+            const el = document.getElementById(kind === 'inc' ? 'fin-tv-inc' : 'fin-tv-ex');
+            if (el) el.checked = true;
+            ascUpdateFinBasis();
+        }
+
+        function ascUpdateFinBasis() {
+            const isLump = (document.querySelector('input[name="finPriceMode"]:checked') || {}).value === 'lump';
+            const wrap = document.getElementById('fin-lump-wrap');
+            const inp  = document.getElementById('fin-price-total');
+            if (wrap) wrap.classList.toggle('opacity-40', !isLump);
+            if (inp)  inp.disabled = !isLump;
+
+            const box = document.getElementById('fin-vat-summary');
+            if (!box) return;
+            const b = ascFinBasis();
+            const perW = b.pnom > 0 ? b.investment / (b.pnom * 1000) : 0;
+            const cell = (k, v) => '<div><span class="text-gray-500">' + k + '</span><br><b class="text-blue-800">' + v + '</b></div>';
+
+            const note = b.vatMode === 'off'
+                ? 'ไม่ปรับฐาน VAT — ใช้ตัวเลขตามที่กรอก เหมือนรุ่นก่อนหน้าทุกประการ'
+                : (b.vatMode === 'claim'
+                    ? 'คิดบนฐานก่อน VAT ทั้งเงินลงทุนและค่าไฟที่ประหยัดได้ เหมาะกับลูกค้านิติบุคคลที่ขอคืนภาษีซื้อได้'
+                    : 'คิดบนฐานรวม VAT ทั้งเงินลงทุน ค่าไฟ ค่าดูแลรักษา และค่าเปลี่ยนอินเวอร์เตอร์ เหมาะกับลูกค้าบ้านหรือผู้ที่ขอคืนภาษีซื้อไม่ได้');
+
+            let warn = '';
+            if (isLump && !(b.lumpSum > 0)) {
+                warn = '<div class="mt-2 text-red-700 font-bold">ยังไม่ได้กรอกราคาขายรวม — กรอกก่อนกดประมวลผล</div>';
+            } else if (isLump) {
+                warn = '<div class="mt-2 text-gray-600">โหมดราคาขายรวม — ช่อง CAPEX บาท/วัตต์ และต้นทุนแบตเตอรี่รวม เป็นข้อมูลอ้างอิงเท่านั้น ไม่ถูกนำไปคิดเงินลงทุน</div>';
+            }
+
+            box.innerHTML =
+                '<div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2">' +
+                cell('ราคาก่อน VAT', formatNum(b.priceEx, 0) + ' บาท') +
+                cell('VAT ' + formatNum(b.vat * 100, 2) + '%', formatNum(b.priceInc - b.priceEx, 0) + ' บาท') +
+                cell('ราคารวม VAT', formatNum(b.priceInc, 0) + ' บาท') +
+                cell('เทียบเป็น', formatNum(perW, 2) + ' บาท/วัตต์') +
+                '</div>' +
+                '<div class="grid grid-cols-2 gap-x-4 mt-2 pt-2 border-t border-blue-200">' +
+                cell('เงินลงทุนที่ใช้คำนวณ', formatNum(b.investment, 0) + ' บาท') +
+                cell('อัตราค่าไฟที่ใช้คำนวณ', formatNum(b.tariff, 4) + ' บาท/หน่วย') +
+                '</div>' +
+                '<div class="mt-2 text-gray-700">' + note + '</div>' + warn;
+        }
+
         function updateBatTotal() {
             let batQty = getVal('inp-bat-qty', 0);
             let batKwh = getVal('inp-bat-kwh', 0);
@@ -1777,7 +1957,8 @@
             if (rc && !rc.checked) { rc.checked = true; if (typeof toggleObjectiveMode === 'function') toggleObjectiveMode(); }
 
             setVal('inp-bill-unit', unit);
-            setVal('fin-tariff', rate.toFixed(4));
+            /* อัตราที่ผู้ใช้พิมพ์เองในกล่องตัวอย่าง เป็นค่าไฟต่อหน่วยดิบ ยังไม่รวม VAT */
+            setVal('fin-tariff', rate.toFixed(4)); ascSetTariffVat('ex');
 
             const key = (document.getElementById('sel-demo-load') || {}).value || 'factory_day';
             const pct = ascLoadShapeToPct(ASC_LOAD_SHAPES[key] || ASC_LOAD_SHAPES.factory_day);
@@ -1859,6 +2040,7 @@
             setVal('inp-tou-rate-on', 4.1839); setVal('inp-tou-rate-off', 2.6037);
             setVal('fin-capex', 22); setVal('fin-om', 0.06); setVal('fin-inf', 3.0); setVal('fin-dr', 6.5); 
             setVal('fin-deg', 0.5); setVal('fin-deg-2', 0.5); setVal('fin-tariff-inf', 3.0); setVal('fin-inv-rep', 3.5);
+            ascResetFinBasis();
             
             // 🌟 แก้ไขบั๊กตัวแปรภาพที่เคยสะกดผิด
             if (typeof projectImagesBase64 !== 'undefined') { projectImagesBase64 = []; }
@@ -2045,6 +2227,10 @@
                         validateLoad();
                         calcPnom();
                         updateBatTotal();
+                        /* ไฟล์ DB3 ที่บันทึกก่อนมีฟีเจอร์นี้ ไม่มีก้อน finBasis ติดมาด้วย
+                           ถ้าไม่รีเซ็ต ค่าที่ตั้งไว้ให้โครงการก่อนหน้าซึ่งยังค้างบนจอ จะติดมากับ
+                           โครงการนี้เงียบ ๆ แล้วตัวเลขการเงินจะเปลี่ยนโดยไม่มีใครสังเกต */
+                        if (jsonData.finBasis) ascUpdateFinBasis(); else ascResetFinBasis();
 
                         // 🌟 อัปเดต UI Checkbox ซ่อน/แสดงกราฟ ตามค่าที่กู้คืนมาจาก DB3
                         if (typeof toggleSections === 'function') toggleSections();
@@ -2316,7 +2502,8 @@
 
 						// โยนค่าลง Hidden Input
 						setVal('inp-bill-unit', totalUnitsMonth);
-						setVal('fin-tariff', avgRate.toFixed(4)); 
+						/* avgRate มาจากยอดบิลจริงในไฟล์ DB0 จึงถือว่ารวม VAT มาแล้ว */
+						setVal('fin-tariff', avgRate.toFixed(4)); ascSetTariffVat('inc');
 
 						// นำ Load Profile 24h มาหยอดลงตาราง
 						if (loadProfile && loadProfile.length === 24) {
@@ -2552,7 +2739,9 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
             }
             if(document.getElementById('display-total-bill')) document.getElementById('display-total-bill').innerText = formatNum(finalBill, 2);
             if(document.getElementById('display-daily-kwh')) document.getElementById('display-daily-kwh').innerText = formatNum(totalUnit / 30, 2);
-            if(totalUnit > 0) setVal('fin-tariff', (finalBill / totalUnit).toFixed(2));
+            /* ยอดบิลตรงนี้คูณ VAT ไว้แล้ว อัตราต่อหน่วยที่ได้จึงเป็นราคารวม VAT */
+            if(totalUnit > 0) { setVal('fin-tariff', (finalBill / totalUnit).toFixed(2)); ascSetTariffVat('inc'); }
+            if (typeof ascUpdateFinBasis === 'function') ascUpdateFinBasis();
         }
 
         function runSimulationEngine(autoSwitch = true) {
@@ -2886,19 +3075,34 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                     } else exBox.style.display = 'none';
                 }
 
+                /* ฐานราคาและ VAT คิดที่เดียวกับที่แสดงบนหน้าจอ ตัวเลขจึงตรงกันเสมอ */
+                const finBasis = ascFinBasis();
+                if (finBasis.priceMode === 'lump' && !(finBasis.lumpSum > 0)) {
+                    throw new Error("เลือกฐานราคาเป็น \"ราคาขายรวมจากใบเสนอราคา\" แล้ว แต่ยังไม่ได้กรอกยอด — กรอกในพารามิเตอร์การเงินก่อน");
+                }
+                db3.finBasis = {
+                    vatRatePct: Number((finBasis.vat * 100).toFixed(2)),
+                    vatMode: finBasis.vatMode, priceMode: finBasis.priceMode,
+                    priceEx: Number(finBasis.priceEx.toFixed(2)),
+                    priceInc: Number(finBasis.priceInc.toFixed(2)),
+                    investment: Number(finBasis.investment.toFixed(2)),
+                    tariffUsed: Number(finBasis.tariff.toFixed(4)),
+                    tariffRaw: Number(finBasis.tariffRaw.toFixed(4))
+                };
+
                 db3.projectName = getStr('inp-proj');
                 sessionStorage.setItem('db3', JSON.stringify(db3, null, 2));
 
-                let capex = getVal('fin-capex'); let om = getVal('fin-om');
+                let om = getVal('fin-om');
                 let infOM = getVal('fin-inf'); let dr = getVal('fin-dr'); 
                 let deg1 = getVal('fin-deg'); let deg2 = getVal('fin-deg-2'); let tariffInf = getVal('fin-tariff-inf');
-                let capexBat = getVal('fin-capex-bat', 10000); 
+                // อัตราต่อวัตต์และต้นทุนแบตเตอรี่ อ่านผ่าน ascFinBasis() แล้ว ไม่ต้องอ่านซ้ำที่นี่
                 
                 // 🌟 ดึงค่าใช้จ่ายเปลี่ยน Inverter
                 let invRepRate = getVal('fin-inv-rep', 3.5); 
                 
-                let solarInvestment = pnom * 1000 * capex; let batteryInvestment = batQty * batKwh * capexBat;
-                let initialInvestment = solarInvestment + batteryInvestment; 
+                let initialInvestment = finBasis.investment;
+                let finTariff = finBasis.tariff;
                 let cumulative = -initialInvestment; let currentDegRate = 1.0;
 
                 AppState.financials = [];
@@ -2920,15 +3124,15 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                     
                     // บันทึกความเสื่อมสภาพทางวิศวกรรมลงตาราง
                     AppState.aging25.push({ year: y, degFactor: currentDegRate, mismatch: mismatchLossPct, eGrid: energy, pr: currentPR });
-                    let currentTariff = tariff * Math.pow(1 + (tariffInf/100), y-1); 
+                    let currentTariff = finTariff * Math.pow(1 + (tariffInf/100), y-1); 
                     let savings = energy * currentTariff;
                     
                     // 🌟 คำนวณค่า O&M ปกติ
-                    let omCost = (pnom * 1000 * om) * Math.pow(1 + (infOM/100), y-1); 
+                    let omCost = (pnom * 1000 * om * finBasis.rateFactor) * Math.pow(1 + (infOM/100), y-1); 
                     
                     // 🌟 แทรกค่าเปลี่ยน Inverter ในปีที่ 15
                     if (y === 15) {
-                        omCost += (pnom * 1000 * invRepRate);
+                        omCost += (pnom * 1000 * invRepRate * finBasis.rateFactor);
                     }
                     
                     let netFlow = savings - omCost; 
@@ -2948,8 +3152,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 }
 
             } catch (err) {
-                let errList = document.getElementById('error-list'); if(errList) errList.innerHTML = `<li>${err.message}</li>`;
-                let errModal = document.getElementById('modal-error'); if(errModal) errModal.classList.remove('hidden');
+                ascShowError(err.message);
             }
         }
 
@@ -6352,7 +6555,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
 			}
 
         async function generatePDF() {
-            if(!AppState.results.pnom) { let mE = document.getElementById('modal-error'); let eL = document.getElementById('error-list'); if(eL) eL.innerHTML = `<li>กรุณากดปุ่มประมวลผล (Run Simulation) ก่อนการพิมพ์เอกสาร</li>`; if(mE) mE.classList.remove('hidden'); return; }
+            if(!AppState.results.pnom) { ascShowError('กรุณากดปุ่มประมวลผล (Run Simulation) ก่อนการพิมพ์เอกสาร'); return; }
             
             // 🌟 สร้างหน้าปก PDF (Cover Page) พร้อมรูปภาพโครงการ 2 รูป และรายละเอียด
             let coverPage = document.getElementById('pdf-cover-page');
@@ -6440,6 +6643,17 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             let sumNight = 0; for(let i=22; i<=23; i++) sumNight+=getVal(`ld24-${i}`); for(let i=0; i<=5; i++) sumNight+=getVal(`ld24-${i}`);
             document.getElementById('prt-ld-1').innerText = getSum(6, 9) + u; document.getElementById('prt-ld-2').innerText = getSum(9, 15) + u; document.getElementById('prt-ld-3').innerText = getSum(15, 22) + u; document.getElementById('prt-ld-4').innerText = sumNight.toFixed(1) + u;
             document.getElementById('prt-fin-capex').innerText = getStr('fin-capex'); document.getElementById('prt-fin-om').innerText = getStr('fin-om'); document.getElementById('prt-fin-tariff').innerText = getStr('fin-tariff') + " บาท"; document.getElementById('prt-fin-tariff-inf').innerText = getStr('fin-tariff-inf'); document.getElementById('prt-fin-inf').innerText = getStr('fin-inf'); document.getElementById('prt-fin-dr').innerText = getStr('fin-dr'); document.getElementById('prt-fin-deg').innerText = getStr('fin-deg'); document.getElementById('prt-fin-deg2').innerText = getStr('fin-deg-2');
+            /* ฐานราคาและ VAT ต้องอยู่ในรายงานด้วย ลูกค้าจะได้รู้ว่าตัวเลขคิดบนฐานไหน */
+            (function(){
+                const b = ascFinBasis();
+                const PM = { rate:'อัตราต่อวัตต์', lump:'ราคาขายรวมจากใบเสนอราคา' };
+                const VM = { off:'ไม่ปรับ (ตามที่กรอก)', claim:'ก่อน VAT (ขอคืนภาษีซื้อได้)', noclaim:'รวม VAT (ขอคืนไม่ได้)' };
+                const set = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
+                set('prt-fin-pricemode', PM[b.priceMode] || '-');
+                set('prt-fin-vatmode', (VM[b.vatMode] || '-') + ' @ ' + formatNum(b.vat * 100, 2) + '%');
+                set('prt-fin-invest', formatNum(b.investment, 0) + ' บาท');
+                set('prt-fin-tariff-used', formatNum(b.tariff, 4) + ' บาท/หน่วย');
+            })();
 
             // 🌟 เพิ่ม Try-Catch ป้องกัน Error ถอดรูปกราฟ
             try {
