@@ -79,6 +79,18 @@ header h1 small{display:block;font-weight:300;font-size:.5em;color:#B9C7D6;margi
   gap:6px;color:var(--mute);font-size:13px;text-align:center;padding:16px}
 .shot .cap{font-family:'Kanit';font-size:13px;color:var(--ink-2)}
 .shot-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.shot.filled{border-style:solid;border-color:var(--line);background:#000;padding:0;position:relative;overflow:hidden;display:block}
+.shot .frame{position:relative;line-height:0}
+.shot .frame img{width:100%;display:block}
+.shot .tools{position:absolute;right:8px;top:8px;display:flex;gap:6px;z-index:2}
+.shot .tools button{background:rgba(15,30,51,.82);color:#fff;border:0;border-radius:8px;
+  padding:5px 10px;font-family:'Kanit';font-size:12px}
+.shot .tools button:hover{background:var(--sun);color:var(--night)}
+.shot .cap-bar{background:var(--card);color:var(--ink-2);font-size:12.5px;padding:6px 10px;
+  text-align:left;line-height:1.4;border-top:1px solid var(--line)}
+.shot .add{background:var(--pv);color:#fff;border:0;border-radius:9px;padding:7px 15px;
+  font-family:'Kanit';font-size:13px;margin-top:4px}
+.shot .warn{color:var(--warn);font-size:12px}
 
 /* ตารางวัสดุ */
 .mat{width:100%;border-collapse:collapse;font-size:14px}
@@ -140,8 +152,10 @@ body.mobile .kv th{width:44%}
       <button class="btn primary" onclick="window.print()"><span>🖨</span> พิมพ์บรีฟ (PDF)</button>
       <button class="btn" id="btn-mobile" onclick="toggleMobile()">📱 โหมดมือถือ</button>
       <button class="btn" onclick="exportBrief()">⬇ ส่งออก .json</button>
+      <span id="photo-usage" style="font-size:12px;color:#B9C7D6"></span>
       <button class="btn" onclick="document.getElementById('pick').click()">📂 เปิดไฟล์ DB2</button>
       <input type="file" id="pick" accept=".txt,.json" style="display:none" onchange="importFile(this.files[0])">
+      <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="onPhotoChosen(this)">
     </div>
   </div>
 </header>
@@ -180,7 +194,7 @@ body.mobile .kv th{width:44%}
           <div class="banner" id="k-target">TARGET ถึงจุดหมายเวลา —</div>
           <div class="banner calm" id="k-note" style="display:none"></div>
         </div>
-        <div class="shot"><div class="cap">รูปผลิตภัณฑ์</div><div>ยังไม่มีรูป</div></div>
+        <div class="shot" data-slot="product" data-cap="รูปผลิตภัณฑ์"></div>
       </div>
     </section>
 
@@ -198,8 +212,8 @@ body.mobile .kv th{width:44%}
           </table>
         </div>
         <div class="shot-grid">
-          <div class="shot"><div class="cap">แผนที่</div><div>ยังไม่มีรูป</div></div>
-          <div class="shot"><div class="cap">ตำแหน่งติดตั้งแผงโซลาร์เซลล์</div><div>ยังไม่มีรูป</div></div>
+          <div class="shot" data-slot="map" data-cap="แผนที่"></div>
+          <div class="shot" data-slot="site" data-cap="ตำแหน่งติดตั้งแผงโซลาร์เซลล์"></div>
         </div>
       </div>
     </section>
@@ -218,7 +232,7 @@ body.mobile .kv th{width:44%}
             <tr><th>สาย DC · ท่อ/ราง</th><td id="l-dc">—</td></tr>
           </table>
         </div>
-        <div class="shot"><div class="cap">ผังการวางแผงและแนวเดินท่อบนหลังคา</div><div>ยังไม่มีรูป</div></div>
+        <div class="shot" data-slot="panel" data-cap="ผังการวางแผงและแนวเดินท่อบนหลังคา"></div>
       </div>
     </section>
 
@@ -237,7 +251,7 @@ body.mobile .kv th{width:44%}
           </table>
           <div class="banner ac" id="i-existing" style="display:none"></div>
         </div>
-        <div class="shot"><div class="cap">ตำแหน่งอินเวอร์เตอร์ · แนวท่อ · จุดขนานไฟ</div><div>ยังไม่มีรูป</div></div>
+        <div class="shot" data-slot="inverter" data-cap="ตำแหน่งอินเวอร์เตอร์ · แนวท่อ · จุดขนานไฟ"></div>
       </div>
     </section>
 
@@ -253,7 +267,7 @@ body.mobile .kv th{width:44%}
             <tr><th>Ground Lug</th><td id="g-lug">—</td></tr>
           </table>
         </div>
-        <div class="shot"><div class="cap">บริเวณติดตั้งระบบกราวด์</div><div>ยังไม่มีรูป</div></div>
+        <div class="shot" data-slot="ground" data-cap="บริเวณติดตั้งระบบกราวด์"></div>
       </div>
     </section>
 
@@ -275,6 +289,8 @@ body.mobile .kv th{width:44%}
   </div>
 </div>
 
+<script src="asc-brief-store.js"></script>
+<script src="asc-brief-annot.js"></script>
 <script>
 "use strict";
 /* ══════════════════════════════════════════════════════════════════
@@ -502,6 +518,9 @@ function render(){
 
     /* ── 6 · วัสดุ ──────────────────────────────────────────────── */
     renderMaterials();
+
+    // รูปอยู่คนละที่เก็บ โหลดแยกแบบไม่ต้องรอ สไลด์จึงขึ้นทันทีไม่ค้าง
+    loadPhotos();
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -551,7 +570,98 @@ function updateMatProgress(){
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   5) โหมดมือถือ และการส่งออก
+   5) รูปหน้างานพร้อมป้ายกำกับ
+
+   รูปเก็บใน IndexedDB ผ่าน AscBriefStore ไม่ผ่าน localStorage เด็ดขาด
+   เพราะก้อนโครงการมีงบรูปแค่ 2 MB และถ้าเกินจะทิ้งรูปทั้งชุด
+   ตัวใบสั่งงานที่ส่งออกเก็บแค่เวกเตอร์ป้ายกับรหัสรูป ไม่พารูปไปด้วย
+   ══════════════════════════════════════════════════════════════════ */
+let PHOTOS = {};        // slot -> [ระเบียนรูป]
+
+async function loadPhotos(){
+    if (!global_store()) return;
+    try { PHOTOS = await AscBriefStore.bySlot(PROJECT_ID); }
+    catch(e) { PHOTOS = {}; console.warn('อ่านรูปไม่สำเร็จ', e); }
+    renderPhotos();
+    showUsage();
+}
+function global_store(){ return typeof AscBriefStore !== 'undefined'; }
+
+async function showUsage(){
+    const el = document.getElementById('photo-usage');
+    if (!el || !global_store()) return;
+    const n = Object.values(PHOTOS).reduce((a, v) => a + v.length, 0);
+    const u = await AscBriefStore.usage();
+    el.innerText = n ? (n + ' รูป' + (u ? ' · ใช้พื้นที่ ' + u.usedMB.toFixed(1) + ' MB' : '')) : '';
+}
+
+function renderPhotos(){
+    document.querySelectorAll('.shot[data-slot]').forEach(box => {
+        const slot = box.dataset.slot, cap = box.dataset.cap || '';
+        const list = PHOTOS[slot] || [];
+        if (!list.length) {
+            box.className = 'shot';
+            box.innerHTML = '<div class="cap">' + cap + '</div>'
+                + (global_store()
+                    ? '<div>ยังไม่มีรูป</div><button class="add no-print" onclick="pickPhoto(\'' + slot + '\')">+ เพิ่มรูป</button>'
+                    : '<div class="warn">เบราว์เซอร์นี้เก็บรูปไม่ได้</div>');
+            return;
+        }
+        // ช่องหนึ่งเก็บได้หลายรูป แต่บรีฟใช้รูปแรกเป็นหลัก ที่เหลือเรียงต่อลงมา
+        box.className = 'shot filled';
+        box.innerHTML = '';
+        list.forEach(rec => {
+            const wrap = document.createElement('div'); wrap.className = 'frame';
+            const im = document.createElement('img'); im.src = rec.dataUrl; im.alt = cap;
+            wrap.appendChild(im);
+            wrap.appendChild(AscBriefAnnot.buildSVG(rec));
+            const tools = document.createElement('div'); tools.className = 'tools no-print';
+            tools.innerHTML = '<button onclick="editPhoto(\'' + slot + '\',\'' + rec.photoId + '\')">✏ ป้ายกำกับ</button>'
+                            + '<button onclick="dropPhoto(\'' + slot + '\',\'' + rec.photoId + '\')">✕</button>';
+            wrap.appendChild(tools);
+            box.appendChild(wrap);
+        });
+        const bar = document.createElement('div'); bar.className = 'cap-bar';
+        bar.innerHTML = cap + ' <button class="add no-print" style="margin:0 0 0 8px;padding:3px 10px;font-size:12px"'
+                      + ' onclick="pickPhoto(\'' + slot + '\')">+ เพิ่ม</button>';
+        box.appendChild(bar);
+    });
+}
+
+let _pickSlot = null;
+function pickPhoto(slot){
+    _pickSlot = slot;
+    document.getElementById('photo-input').click();
+}
+async function onPhotoChosen(input){
+    const files = [...(input.files || [])];
+    input.value = '';
+    if (!files.length || !_pickSlot) return;
+    for (const f of files) {
+        try {
+            const rec = await AscBriefStore.addFile(PROJECT_ID, _pickSlot, f, { maxPx: 1600 });
+            (PHOTOS[_pickSlot] = PHOTOS[_pickSlot] || []).push(rec);
+        } catch(e) { alert('เพิ่มรูปไม่สำเร็จ: ' + e.message); }
+    }
+    renderPhotos(); showUsage();
+}
+function editPhoto(slot, photoId){
+    const rec = (PHOTOS[slot] || []).find(r => r.photoId === photoId);
+    if (!rec) return;
+    AscBriefAnnot.open(rec, async saved => {
+        try { await AscBriefStore.put(saved); } catch(e) { alert('บันทึกป้ายกำกับไม่สำเร็จ: ' + e.message); }
+        renderPhotos();
+    });
+}
+async function dropPhoto(slot, photoId){
+    if (!confirm('ลบรูปนี้ทิ้ง?')) return;
+    try { await AscBriefStore.del(PROJECT_ID, photoId); } catch(e) {}
+    PHOTOS[slot] = (PHOTOS[slot] || []).filter(r => r.photoId !== photoId);
+    renderPhotos(); showUsage();
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   6) โหมดมือถือ และการส่งออก
    ══════════════════════════════════════════════════════════════════ */
 function toggleMobile(){
     const on = document.body.classList.toggle('mobile');
@@ -565,7 +675,13 @@ function exportBrief(){
         projectName: M.projectName, coordinates: M.coordinates, locationName: M.locationName,
         job: M.job, equipment: { pv: M.pv, inv1: M.inv1, inv2: M.inv2, bat: M.bat, existing: M.existing },
         counts: M.counts, kwp: M.kwp, strings: M.strings, bom: M.bom,
-        materialsPicked: matState()
+        materialsPicked: matState(),
+        /* เก็บแค่รหัสรูปกับเวกเตอร์ป้าย ซึ่งเล็กมาก ตัวรูปอยู่ใน IndexedDB ของเครื่อง
+           ไฟล์ที่ส่งต่อจึงไม่บวมเป็นหลายเมกะไบต์ */
+        photos: Object.keys(PHOTOS).flatMap(slot => PHOTOS[slot].map(r => ({
+            slot: slot, photoId: r.photoId, w: r.w, h: r.h,
+            caption: r.caption || '', annotations: r.annotations || []
+        })))
     };
     const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
