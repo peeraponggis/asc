@@ -477,7 +477,14 @@ function loadDB3(db3){
         daily, monthly: Array.isArray(st.monthlyBalances) ? st.monthlyBalances : [],
         financials: fin, investment, payback,
         y1savings: num(y1.savings), y1energy: num(y1.energy),
-        cover: (Array.isArray(st.projectImagesBase64) && st.projectImagesBase64[0]) || null
+        cover: (Array.isArray(st.projectImagesBase64) && st.projectImagesBase64[0]) || null,
+        /* ระบบออนกริดเดิม (AC coupling) — ไซต์ที่ไม่มีจะเป็น null ทุกอย่างจึงแสดงเหมือนเดิม
+           ตัวเลขผลลัพธ์อยู่ที่ระดับบนของ DB3 ส่วนสเปกอยู่ใน app_state */
+        existing: st.existing ? {
+            acKw: num(st.existing.acKw), invModel: str(st.existing.invModel) || '-',
+            annual: num(db3.exAcSum), base: num(db3.exUsefulBase),
+            delta: num(db3.usefulDelta), curtailed: num(db3.exCurtailSum)
+        } : null
     };
     M.sim = simulate(M);
     document.getElementById('tariff').value = M.tariff;
@@ -568,6 +575,9 @@ function renderEquip(){
     if (M.bat.cap > 0)
         rows.push([IC.bat, `${fmt(M.bat.qty)} × ${(M.bat.mfr && M.bat.mfr !== '-') ? M.bat.mfr + ' ' : ''}${M.bat.model || t.bat}`,
                    `${fmt(M.bat.cap, 1)} kWh · ${fmt(M.bat.dkw, 1)} kW`]);
+    if (M.existing && M.existing.acKw > 0)
+        rows.push([IC.grid, (lang === 'th' ? 'ระบบออนกริดเดิม (ต่อพ่วงฝั่ง AC)' : 'Existing on-grid (AC coupled)'),
+                   `${fmt(M.existing.acKw, 1)} kW · ${M.existing.invModel}`]);
     rows.push([IC.house, t.house, `${t.legend.load.replace(' (kW)','')} ≈ ${fmt(avgLoad(), 2)} kW`]);
     document.getElementById('eq-list').innerHTML =
         rows.map(r => `<li>${r[0]}<div><b>${r[1]}</b><span>${r[2]}</span></div></li>`).join('');
@@ -604,7 +614,12 @@ function renderROI(){
         cells.map(c => `<div class="stat"><div class="v">${c[0]}</div><div class="l">${c[1]}</div></div>`).join('');
     document.getElementById('pb-bar').style.width = pb ? Math.min(100, pb / 25 * 100) + '%' : '100%';
     document.getElementById('pb-note').innerText = pb ? t.pbNote(fmt(pb, 1)) : t.pbNone;
-    document.getElementById('roi-tip').innerText = t.roiTip(fmt(saveY1), fmt(tariff, 2));
+    document.getElementById('roi-tip').innerText = t.roiTip(fmt(saveY1), fmt(tariff, 2)) +
+        (M.existing && M.existing.acKw > 0
+          ? (lang === 'th'
+             ? ` ไซต์นี้มีระบบออนกริดเดิม ${fmt(M.existing.acKw, 1)} kW อยู่แล้ว ตัวเลขที่แสดงคิดเฉพาะส่วนเพิ่มจากการลงทุนครั้งนี้ ไม่ได้นับผลงานของระบบเดิมรวมเข้ามาด้วย`
+             : ` This site already has a ${fmt(M.existing.acKw, 1)} kW on-grid system. The figures shown count only the incremental gain from this investment, not what the existing system already delivers.`)
+          : '');
 }
 document.getElementById('tariff').addEventListener('input', () => { if (M) renderROI(); });
 

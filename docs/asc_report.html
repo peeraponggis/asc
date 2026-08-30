@@ -591,6 +591,15 @@
 
                                 <div class="text-sm flex justify-between"><span>แปลงเป็น AC (หัก INV Loss):</span> <span id="sim-total-ac" class="font-bold text-gray-800">-</span></div>
                                 <div class="text-sm flex justify-between"><span>พลังงานเหลือชาร์จแบตฯ (Surplus):</span> <span id="sim-surplus" class="font-bold text-gray-800">-</span></div>
+                                <!-- ระบบออนกริดเดิม (AC Coupling) โผล่เฉพาะไซต์ที่เปิดใช้ -->
+                                <div id="sim-ex-box" style="display:none; margin-top:6px; padding:7px 9px; border-radius:5px; background:#f0fdfa; border:1px solid #99f6e4;">
+                                    <div class="text-sm font-bold" style="color:#0f766e;">⚡ ระบบออนกริดเดิม (AC Coupling)</div>
+                                    <div class="text-sm flex justify-between"><span>ระบบเดิมผลิตได้/ปี:</span> <span id="sim-ex-annual" class="font-bold text-gray-800">-</span></div>
+                                    <div class="text-sm flex justify-between"><span>ระบบเดิมลดค่าไฟได้อยู่แล้ว:</span> <span id="sim-ex-base" class="font-bold text-gray-800">-</span></div>
+                                    <div class="text-sm flex justify-between"><span>ส่วนเพิ่มที่ใช้คิดคืนทุน:</span> <span id="sim-ex-delta" class="font-bold text-green-700">-</span></div>
+                                    <div class="text-sm flex justify-between"><span>ไฟส่วนเกินที่ถูกตัดทิ้ง:</span> <span id="sim-ex-curtail" class="font-bold text-amber-700">-</span></div>
+                                    <div class="text-[9px] text-gray-500 mt-1">ค่าประหยัดและระยะคืนทุนในรายงานคิดจาก "ส่วนเพิ่ม" เท่านั้น ไม่ได้นับผลงานของระบบเดิมเป็นผลของการลงทุนใหม่ · ไฟที่ถูกตัดทิ้งมากแปลว่าแบตเตอรี่ยังเล็กเกินไป</div>
+                                </div>
 								<div class="text-[9px] flex justify-between"><span>Surplus คือการนำ "พลังงานส่วนเกินที่เหลือ" ไปเก็บ ส่วน Peak Shaving คือการนำ "พลังงานที่เก็บหรือผลิตได้" มาจ่ายออกไปเพื่อตัดยอดการใช้ไฟช่วงพีค</div>
                             </div>
                         </div>
@@ -1477,7 +1486,10 @@
         Chart.register(window.ChartDataLabels);
         google.charts.load('current', {'packages':['sankey']});
         
-        const AppState = { monthlyBalances: [], daily8760: [], financials: [], results: {}, charts: {}, bomData: null, equipData: null, hourlyMeteo: [] };
+        const AppState = { monthlyBalances: [], daily8760: [], financials: [], results: {}, charts: {}, bomData: null, equipData: null, hourlyMeteo: [],
+                           /* ระบบออนกริดเดิมสำหรับงาน AC coupling — ปิดไว้จนกว่าไฟล์ DB2 จะบอกว่าเปิด
+                              ไฟล์รุ่นก่อนไม่มีก้อนนี้ ทุกอย่างจึงทำงานเหมือนเดิมทุกประการ */
+                           existing: null };
         const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         let projectImagesBase64 = []; 
         
@@ -2006,6 +2018,7 @@
                             if(jsonData.app_state.daily8760) AppState.daily8760 = jsonData.app_state.daily8760;
                             if(jsonData.app_state.financials) AppState.financials = jsonData.app_state.financials;
                             if(jsonData.app_state.results) AppState.results = jsonData.app_state.results;
+                            if(jsonData.app_state.existing !== undefined) AppState.existing = jsonData.app_state.existing;
                             
                             // 🌟 กู้คืนรูปภาพหน้าปกโครงการเข้าสู่หน่วยความจำหลัก
                             // 💡 กฎเหล็ก: จะเอาภาพจาก DB3 มาทับ ก็ต่อเมื่อ DB3 นั้น "มีรูปภาพเซฟไว้อยู่จริง (length > 0)"
@@ -2062,6 +2075,9 @@
                     const db1 = jsonData.base_layout_db1 || {};
                     const step1 = db1.step1_initialization || {};
                     const step2 = db1.step2_equipment || {};
+                    /* ระบบออนกริดเดิม — รับมาทั้งก้อน ใช้เฉพาะเมื่อ enabled และมีขนาดจริง */
+                    AppState.existing = (step2.existing && step2.existing.enabled
+                                         && parseFloat(step2.existing.acKw) > 0) ? step2.existing : null;
                     const step3 = db1.step3_design_and_layout || {};
                     const step4 = db1.step4_validation_results || {};
 					const step5 = db1.step5_bom_inputs || {}; // ดึงข้อมูล Step 5
@@ -2373,6 +2389,111 @@
             setVal('fin-om', batQty > 0 ? 1 : 0.6);
         }
 
+        /* ══════════════════════════════════════════════════════════════════
+           เส้นการผลิตรายชั่วโมงของระบบออนกริดเดิม (8,760 ค่า หน่วย kW)
+
+           ทำเป็นพรีพาสแยกจากลูปคำนวณหลัก เพื่อไม่ให้ไปแตะฟิสิกส์ของระบบใหม่
+           แม้แต่บรรทัดเดียว ลูปหลักแค่หยิบค่าจากอาเรย์นี้มาบวกเข้าบัส AC
+
+           รองรับข้อมูลสามระดับตามที่หน้างานมีจริง
+             estimate — รู้แค่ขนาด ทิศ มุมเอียง ให้ประมาณจากแบบจำลองแสงชุดเดียวกัน
+             monthly  — มีผลผลิตรายเดือน ใช้รูปทรงจากแบบจำลองแล้วปรับสเกลให้ยอดตรงรายเดือน
+             hourly   — มีเส้นจริงจากพอร์ทัลอินเวอร์เตอร์เดิม ใช้ตรง ๆ
+           ══════════════════════════════════════════════════════════════════ */
+        function ascExistingHourly(ex, lat, lon, GHI_annual) {
+            const N = 8760, out = new Float64Array(N);
+            if (!ex || !(parseFloat(ex.acKw) > 0)) return out;
+
+            const acKw = parseFloat(ex.acKw) || 0;
+            const tilt = (parseFloat(ex.tilt) || 0) * Math.PI / 180;
+            const azi  = (parseFloat(ex.azimuth) || 180) * Math.PI / 180;
+            const pr   = ex.production || {};
+            const hrs  = Array.isArray(pr.hourly) ? pr.hourly : [];
+
+            // มีเส้นรายชั่วโมงจริงทั้งปี ใช้ได้เลย ไม่ต้องจำลอง
+            if (hrs.length === N) { for (let i = 0; i < N; i++) out[i] = Math.max(0, hrs[i] || 0); return out; }
+
+            // รูปทรงพื้นฐานจากแบบจำลองแสง ใช้ทั้งโหมด estimate และเป็นฐานให้โหมด monthly
+            const shape = new Float64Array(N);
+            const monSum = new Array(12).fill(0);
+            const monOf  = new Array(N);
+            let i = 0;
+            for (let d = 0; d < 365; d++) {
+                const date = new Date(2025, 0, 1);
+                date.setDate(date.getDate() + d);
+                const m = date.getMonth();
+                for (let h = 0; h < 24; h++, i++) {
+                    monOf[i] = m;
+                    date.setHours(h, 30, 0);
+                    const sp = SunCalc.getPosition(date, lat, lon);
+                    const alt = sp.altitude;
+                    if (alt <= 0) continue;
+                    const zen = (Math.PI / 2) - alt;
+                    const sunAzi = sp.azimuth + Math.PI;
+                    const am = 1 / Math.cos(zen);
+                    let DNI = 1367 * Math.pow(0.7, Math.pow(am, 0.678));
+                    let DHI = 0.3 * (1367 - DNI) * Math.sin(alt);
+                    let GHI = DNI * Math.sin(alt) + DHI;
+                    const adj = (GHI_annual / 1850);
+                    DNI *= adj; DHI *= adj; GHI *= adj;
+
+                    const cosAoi = Math.cos(zen) * Math.cos(tilt)
+                                 + Math.sin(zen) * Math.sin(tilt) * Math.cos(sunAzi - azi);
+                    const poa = Math.max(0, DNI * cosAoi)
+                              + DHI * (1 + Math.cos(tilt)) / 2
+                              + GHI * 0.2 * (1 - Math.cos(tilt)) / 2;
+                    if (poa <= 0) continue;
+                    shape[i] = poa;                    // เก็บเป็นรูปทรงความเข้มแสงก่อน ค่อยปรับสเกลทีหลัง
+                    monSum[m] += poa;
+                }
+            }
+
+            const mode = pr.mode || 'estimate';
+
+            /* ปรับสเกลรูปทรงให้ได้ยอดต่อปีตามผลผลิตจำเพาะที่ตั้งไว้ แล้วตัดยอดที่พิกัดอินเวอร์เตอร์
+
+               ไม่ใช้ความเข้มแสงคูณตรง ๆ เพราะแบบจำลองท้องฟ้าโปร่งในเครื่องนี้ให้ค่า POA
+               สูงกว่าค่าจริงของไทยพอสมควร ระบบเดิมจะดูผลิตเก่งเกินจริง แล้วไปกดส่วนเพิ่ม
+               ของการลงทุนใหม่ให้ต่ำผิด จึงยึดผลผลิตจำเพาะเป็นตัวกำหนดขนาด
+               ใช้รูปทรงจากแบบจำลองแค่บอกว่าไฟมาชั่วโมงไหนมากน้อยแค่ไหน */
+            const scaleToAnnual = (target) => {
+                let raw = 0;
+                for (let k = 0; k < N; k++) raw += shape[k];
+                if (raw <= 0 || target <= 0) return;
+                let f = target / raw;
+                // ตัดยอดที่พิกัดอินเวอร์เตอร์ แล้วเกลี่ยส่วนที่หายกลับเข้าไปให้ยอดรวมยังตรง
+                for (let pass = 0; pass < 6; pass++) {
+                    let sum = 0, headroom = 0;
+                    for (let k = 0; k < N; k++) {
+                        const v = shape[k] * f;
+                        sum += Math.min(v, acKw);
+                        if (v < acKw) headroom += (acKw - v);
+                    }
+                    if (sum >= target - 1 || headroom <= 0) break;
+                    f *= target / sum;
+                }
+                for (let k = 0; k < N; k++) out[k] = Math.min(shape[k] * f, acKw);
+            };
+            const yieldPerKw = parseFloat(pr.specificYield) > 0 ? parseFloat(pr.specificYield) : 1400;
+
+            // มีเส้นวันเฉลี่ย 24 ค่า ใช้ซ้ำทุกวันตลอดปี
+            if (mode === 'hourly' && hrs.length === 24) {
+                for (let k = 0; k < N; k++) out[k] = Math.max(0, hrs[k % 24] || 0);
+                return out;
+            }
+
+            // มีผลผลิตรายเดือน ปรับสเกลรูปทรงให้ยอดแต่ละเดือนตรงกับของจริง
+            if (mode === 'monthly' && Array.isArray(pr.monthly) && pr.monthly.length === 12) {
+                const f = pr.monthly.map((v, m) => (monSum[m] > 0 ? (parseFloat(v) || 0) / monSum[m] : 0));
+                for (let k = 0; k < N; k++) out[k] = Math.min(shape[k] * f[monOf[k]], acKw);
+                return out;
+            }
+
+            // ไม่มีข้อมูลจริง ใช้ผลผลิตจำเพาะที่ตั้งไว้เป็นตัวกำหนดยอดรวมต่อปี
+            scaleToAnnual(parseFloat(pr.annualKWh) > 0 ? parseFloat(pr.annualKWh) : acKw * yieldPerKw);
+            return out;
+        }
+
         // 🌟 ฟังก์ชันดึงค่าแสงที่อัปเกรดแล้ว (รองรับค่า GHI สำรองจากไฟล์ DB2)
 async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
     try {
@@ -2527,6 +2648,18 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 let currentSoC = 0;
                 let minSoC = totalBatCap * 0.25;
 
+                /* ระบบออนกริดเดิม (AC coupling)
+                   สร้างเส้นผลิตไว้ล่วงหน้าเป็นอาเรย์ 8,760 ค่า ลูปหลักแค่หยิบมาบวกเข้าบัส AC
+                   ถ้าไม่ได้เปิดใช้ EX เป็น null ทุกอย่างจึงเดินเหมือนเดิมทุกบรรทัด
+
+                   usefulBaseSum คือพลังงานที่ระบบเดิม "ลดค่าไฟได้อยู่แล้ว" ก่อนลงทุนเพิ่ม
+                   ใช้เป็นฐานเปรียบเทียบ ค่าประหยัดที่เอาไปคิดคืนทุนจึงเป็นส่วนเพิ่มจริง
+                   ไม่ใช่ไปนับผลงานของระบบเดิมเป็นผลงานของเงินก้อนใหม่ */
+                const EX = (AppState.existing && currentMode === 'commercial')
+                         ? ascExistingHourly(AppState.existing, lat, lon, GHI_annual) : null;
+                const exNoExport = !!(AppState.existing && AppState.existing.exportControl);
+                let exAcSum = 0, usefulBaseSum = 0, exCurtailSum = 0;
+
                 for (let d = 0; d < 365; d++) {
                     let date = new Date(2025, 0, 1);
                     date.setDate(date.getDate() + d);
@@ -2609,22 +2742,38 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                         let surplus = hourAC - hourLoad;
                         if(surplus > 0) db3.surplusSum += surplus;
 
+                        /* กำลังจากระบบเดิมเข้าบัส AC เดียวกันกับระบบใหม่
+                           ไฟที่ระบบเดิมผลิตเกินโหลด คือไฟที่แบตเตอรี่ใหม่จะเก็บไว้แทนการไหลย้อน
+                           ซึ่งเป็นเหตุผลทั้งหมดของการทำ AC coupling */
+                        const exAC = EX ? EX[d * 24 + h] : 0;
+                        if (exAC > 0) {
+                            exAcSum += exAC;
+                            usefulBaseSum += Math.min(exAC, hourLoad);   // ฐาน : ระบบเดิมอย่างเดียว ไม่มีแบตเตอรี่
+                        }
+                        const busAC = hourAC + exAC;
+
                         // 🌟 แก้ไข: ควบคุมปริมาณพลังงานที่ใช้ประเมินรายได้ (Self-Consumption Logic)
                         let usefulThisHour = 0;
                         if (currentMode === 'commercial') {
-                            if (hourAC > hourLoad) {
+                            if (busAC > hourLoad) {
                                 usefulThisHour = hourLoad; // ดึงไปใช้เท่าที่มีโหลด
-                                let remainingSurplus = hourAC - hourLoad;
+                                let remainingSurplus = busAC - hourLoad;
                                 // ชาร์จแบตเตอรี่ด้วยพลังงานส่วนเกิน
                                 if (totalBatCap > 0) {
                                     let chargeLimit = getVal('bat-Max_Continuous_Charge_Power_kw') > 0 ? (batQty * getVal('bat-Max_Continuous_Charge_Power_kw')) : invKw;
                                     let chargePwr = Math.min(remainingSurplus, chargeLimit);
-                                    if (currentSoC + chargePwr <= totalBatCap) { currentSoC += chargePwr; } 
+                                    const socBefore = currentSoC;
+                                    if (currentSoC + chargePwr <= totalBatCap) { currentSoC += chargePwr; }
                                     else { currentSoC = totalBatCap; }
+                                    /* ไซต์ที่กันไฟไหลย้อน ส่วนที่แบตเตอรี่รับไม่ทันคือไฟที่ถูกตัดทิ้งจริง
+                                       ตัวเลขนี้บอกได้ว่าแบตเตอรี่เล็กเกินไปหรือยัง */
+                                    if (exNoExport) exCurtailSum += Math.max(0, remainingSurplus - (currentSoC - socBefore));
+                                } else if (exNoExport) {
+                                    exCurtailSum += remainingSurplus;
                                 }
                             } else {
-                                usefulThisHour = hourAC; // ใช้พลังงาน PV ทั้งหมดเพราะโหลดเยอะกว่า
-                                let deficit = hourLoad - hourAC;
+                                usefulThisHour = busAC; // ใช้พลังงานจากบัสทั้งหมดเพราะโหลดเยอะกว่า
+                                let deficit = hourLoad - busAC;
                                 // คายประจุแบตเตอรี่ช่วยลดโหลด
                                 if (totalBatCap > 0) {
                                     let disLimit = getVal('bat-Max_Continuous_Discharge_Power_kw') > 0 ? (batQty * getVal('bat-Max_Continuous_Discharge_Power_kw')) : invKw;
@@ -2659,6 +2808,17 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                     }
                 }
 
+                /* ══ ค่าประหยัดที่เอาไปคิดคืนทุน ══
+                   ไซต์ที่มีระบบเดิมอยู่แล้ว ต้องหักส่วนที่ระบบเดิมลดค่าไฟได้อยู่ก่อนแล้วออก
+                   ไม่งั้นจะไปนับผลงานของระบบเดิมเป็นผลงานของเงินก้อนใหม่ คืนทุนจะสวยเกินจริง
+                   ไซต์ที่ไม่มีระบบเดิม EX เป็น null ค่านี้จึงเท่ากับของเดิมทุกประการ */
+                const usefulForMoney = EX ? Math.max(0, totalUsefulEnergy - usefulBaseSum) : totalUsefulEnergy;
+                db3.exAcSum      = Number(exAcSum.toFixed(2));        // ระบบเดิมผลิตได้ทั้งปี
+                db3.exUsefulBase = Number(usefulBaseSum.toFixed(2));  // ระบบเดิมลดค่าไฟได้อยู่แล้วเท่าไร
+                db3.exCurtailSum = Number(exCurtailSum.toFixed(2));   // ไฟส่วนเกินที่ถูกตัดทิ้ง
+                db3.usefulTotal  = Number(totalUsefulEnergy.toFixed(2));
+                db3.usefulDelta  = Number(usefulForMoney.toFixed(2));
+
                 let totalEGrid = 0;
                 let globInc_annual = 0;
                 monthlyData.forEach(md => {
@@ -2671,7 +2831,13 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 AppState.daily8760 = aggregatedDaily;
                 AppState.monthlyBalances = monthlyData;
                 let averagePR = totalEGrid / (globInc_annual * pnom);
-                AppState.results = { pnom, effPR: averagePR, totalEGrid, totalTarget: globInc_annual*pnom, globInc_annual, loss_Env, loss_Temp: 6.0, loss_Wiring: loss_Wiring + 3.5, invLoss,
+                AppState.results = { pnom, effPR: averagePR, totalEGrid, totalTarget: globInc_annual*pnom, globInc_annual,
+                    existing: AppState.existing ? {
+                        acKw: parseFloat(AppState.existing.acKw) || 0,
+                        invModel: AppState.existing.invModel || '-',
+                        annualKWh: db3.exAcSum, usefulBase: db3.exUsefulBase,
+                        curtailed: db3.exCurtailSum, usefulDelta: db3.usefulDelta
+                    } : null, loss_Env, loss_Temp: 6.0, loss_Wiring: loss_Wiring + 3.5, invLoss,
                     loss_Mismatch: ASC_LOSS_MISMATCH, loss_Avail: ASC_LOSS_AVAILABILITY, loss_Spectral: ASC_LOSS_SPECTRAL, loss_Transformer: ASC_LOSS_TRANSFORMER,
                     loss_IAM: beamWSum > 0 ? (iamLossWSum / beamWSum) * 100 : 0,
                     loss_Shading: beamWSum > 0 ? (shadeLossWSum / beamWSum) * 100 : 0 };
@@ -2704,6 +2870,18 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 document.getElementById('sim-total-ac').innerText = formatNum(db3.acSum, 2) + " kWh/y";
                 document.getElementById('sim-surplus').innerText = formatNum(db3.surplusSum, 2) + " kWh/y";
 
+                /* สรุปผลของระบบเดิม — ซ่อนไว้ถ้าไม่ได้เปิดใช้ หน้าจอจึงเหมือนเดิมทุกประการ */
+                const exBox = document.getElementById('sim-ex-box');
+                if (exBox) {
+                    if (AppState.existing) {
+                        exBox.style.display = 'block';
+                        document.getElementById('sim-ex-annual').innerText  = formatNum(db3.exAcSum, 0) + " kWh/y";
+                        document.getElementById('sim-ex-base').innerText    = formatNum(db3.exUsefulBase, 0) + " kWh/y";
+                        document.getElementById('sim-ex-delta').innerText   = formatNum(db3.usefulDelta, 0) + " kWh/y";
+                        document.getElementById('sim-ex-curtail').innerText = formatNum(db3.exCurtailSum, 0) + " kWh/y";
+                    } else exBox.style.display = 'none';
+                }
+
                 db3.projectName = getStr('inp-proj');
                 sessionStorage.setItem('db3', JSON.stringify(db3, null, 2));
 
@@ -2733,7 +2911,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                     let mismatchFactor = 1 - (mismatchLossPct / 100);
                     
                     // 🌟 แก้ไข: ใช้พลังงานที่เกิดประโยชน์จริง (totalUsefulEnergy) ในการคิดรายได้ แทนพลังงานรวม (totalEGrid)
-                    let energy = (currentMode === 'commercial' ? totalUsefulEnergy : totalEGrid) * currentDegRate * mismatchFactor; 
+                    let energy = (currentMode === 'commercial' ? usefulForMoney : totalEGrid) * currentDegRate * mismatchFactor; 
                     let currentPR = (averagePR * 100) * currentDegRate * mismatchFactor;
                     
                     // บันทึกความเสื่อมสภาพทางวิศวกรรมลงตาราง
@@ -2816,6 +2994,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 daily8760: AppState.daily8760 || [],
                 financials: AppState.financials || [],
                 results: AppState.results || {},
+                existing: AppState.existing || null,   // ระบบออนกริดเดิม ส่งต่อให้หน้าบทสรุปอ่าน
                 // 🌟 เพิ่มการแบคอัปรูปภาพหน้าปกลงในไฟล์ DB3
                 projectImagesBase64: typeof projectImagesBase64 !== 'undefined' ? projectImagesBase64 : []
             };

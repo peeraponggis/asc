@@ -538,6 +538,58 @@
                         </div>
                         <div class="file-upload-row">upload EVC: <input type="file" id="evFile" accept=".txt"></div>
                     </div>
+
+                    <!-- ══ ระบบออนกริดเดิม (AC Coupling) ══
+                         ไซต์ที่มีระบบอยู่แล้วและจะเติมไฮบริดเข้าไปทางฝั่ง AC
+                         ระบบเดิมไม่ได้ต่อกับแผงที่วาดไว้ จึงไม่เข้าไปยุ่งกับ DC/AC ratio
+                         และการคิดสตริงของระบบใหม่ แต่ต้องเข้าไปอยู่ในสมดุลพลังงานรายชั่วโมง
+                         เพราะไฟที่ระบบเดิมผลิตเกินโหลดคือไฟที่แบตเตอรี่ใหม่จะเก็บไว้แทนการไหลย้อน -->
+                    <div class="form-group smart-db" id="exCard" style="margin-top: 15px; border-left-color: #0d9488; background: rgba(13,148,136,0.05);">
+                        <label style="color: #0f766e; font-weight: bold; display:flex; align-items:center; gap:7px; cursor:pointer;">
+                            <input type="checkbox" id="exEnabled" style="width:15px; height:15px;">
+                            ระบบออนกริดเดิม (AC Coupling)
+                        </label>
+                        <div id="exFields" style="display:none; margin-top:8px;">
+                            <div class="setting-row"><span class="sr-label">ขนาด AC ของระบบเดิม:</span>
+                                <span class="sr-ctrl"><input type="number" id="exAcKw" value="0" min="0" step="0.1" style="width:78px;"> kW</span></div>
+                            <div class="setting-row"><span class="sr-label">รุ่นอินเวอร์เตอร์เดิม:</span>
+                                <span class="sr-ctrl"><input type="text" id="exInvModel" value="-" style="width:150px;"></span></div>
+                            <div class="setting-row"><span class="sr-label">มุมเอียง / ทิศ ของแผงเดิม:</span>
+                                <span class="sr-ctrl"><input type="number" id="exTilt" value="15" min="0" max="90" step="1" style="width:52px;"> °
+                                    <input type="number" id="exAzi" value="180" min="0" max="359" step="1" style="width:56px;"> °</span></div>
+                            <div class="setting-row"><span class="sr-label">ปีที่ติดตั้ง / เสื่อมปีละ:</span>
+                                <span class="sr-ctrl"><input type="number" id="exYear" value="" placeholder="พ.ศ./ค.ศ." style="width:78px;">
+                                    <input type="number" id="exDeg" value="0.5" min="0" max="5" step="0.1" style="width:52px;"> %</span></div>
+
+                            <div class="setting-row"><span class="sr-label">ข้อมูลการผลิตที่มี:</span>
+                                <span class="sr-ctrl"><select id="exMode" style="width:auto; font-size:0.85em;">
+                                    <option value="estimate">รู้แค่ขนาด — ให้ระบบประมาณให้</option>
+                                    <option value="monthly">มีผลผลิตรายเดือน</option>
+                                    <option value="hourly">มีผลผลิตรายชั่วโมง</option>
+                                </select></span></div>
+
+                            <div id="exEstimateBox" style="margin-top:6px;">
+                                <div class="setting-row"><span class="sr-label">ผลผลิตจำเพาะที่คาด:</span>
+                                    <span class="sr-ctrl"><input type="number" id="exYield" value="1400" min="600" max="2200" step="10" style="width:72px;"> kWh/kW/ปี</span></div>
+                                <div style="font-size:0.72em; color:#64748b;">ค่ากลางของไทยอยู่ราว 1,300–1,500 ปรับได้ถ้ารู้ผลจริงของระบบเดิม</div>
+                            </div>
+                            <div id="exMonthlyBox" style="display:none; margin-top:6px;">
+                                <div style="font-size:0.75em; color:#475569; margin-bottom:3px;">หน่วยที่ผลิตได้รายเดือน (kWh) — ม.ค. ถึง ธ.ค. คั่นด้วยจุลภาคหรือเว้นบรรทัด</div>
+                                <textarea id="exMonthly" rows="2" style="width:100%; font-size:0.78em; font-family:ui-monospace,monospace;" placeholder="4200, 4350, 4800, ..."></textarea>
+                            </div>
+                            <div id="exHourlyBox" style="display:none; margin-top:6px;">
+                                <div class="file-upload-row">ไฟล์ผลผลิตรายชั่วโมง: <input type="file" id="exHourlyFile" accept=".txt,.csv"></div>
+                                <div style="font-size:0.72em; color:#64748b;">รับ 8,760 ค่า (ทั้งปี) หรือ 24 ค่า (วันเฉลี่ย) หน่วย kW คั่นด้วยจุลภาคหรือขึ้นบรรทัดใหม่</div>
+                                <div id="exHourlyInfo" style="font-size:0.75em; color:#0f766e; font-weight:bold; margin-top:3px;"></div>
+                            </div>
+
+                            <label style="display:flex; align-items:center; gap:6px; font-size:0.8em; color:#475569; margin-top:8px; cursor:pointer;">
+                                <input type="checkbox" id="exExportControl" checked style="width:14px; height:14px;">
+                                มีระบบกันไฟไหลย้อน (Gateway / CT) — ไฟเหลือจะถูกเก็บเข้าแบตเตอรี่แทนการส่งออก
+                            </label>
+                            <div id="exSummary" style="font-size:0.78em; margin-top:8px; padding:6px 9px; border-radius:5px; background:#f0fdfa; border:1px solid #99f6e4; color:#115e59; line-height:1.5;"></div>
+                        </div>
+                    </div>
 					
 					<!-- 🌟 ย้ายกล่อง DB0 (Load Profile) มาไว้ใต้ระบบเสริม 🌟 -->
 					<div class="form-group smart-db smart-db-pv" style="margin-top: 15px; border-left-color: #8b5cf6; background: rgba(139, 92, 246, 0.04);">
@@ -1776,6 +1828,12 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
             batMfg: "-", batModel: "-", batCap: 0, batQty: 0,
             optMfg: "-", optModel: "-", optQty: 0,
             evMfg: "-", evModel: "-", evQty: 0, evAcKw: 0,
+            /* ระบบออนกริดเดิมสำหรับงาน AC coupling — ปิดไว้เป็นค่าตั้งต้น
+               ตราบใดที่ยังปิดอยู่ ทุกการคำนวณต้องได้ผลเท่าเดิมทุกตัวเลข */
+            existing: { enabled: false, acKw: 0, invModel: "-", tilt: 15, azimuth: 180,
+                        commissionedYear: null, degradationPctPerYear: 0.5,
+                        exportControl: true,
+                        production: { mode: 'estimate', specificYield: 1400, annualKWh: 0, monthly: [], hourly: [] } },
             
             maxPanelsPerString: 15, minPanelsPerString: 0, maxSystemStrings: 0, maxSystemPanels: 0,
             rowsPerGroup: 10, rowWalkwayGapCm: 80, colsPerGroup: 2, colWalkwayGapCm: 80,
@@ -3305,6 +3363,39 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                             document.getElementById('evQty').value = state.evQty;
                             setLoadedText('evSelect', state.evMfg, state.evModel);
                         }
+                        /* ระบบออนกริดเดิม — ไฟล์รุ่นก่อนไม่มีก้อนนี้ ให้คงค่าปิดไว้เหมือนเดิม */
+                        if (eq.existing) {
+                            const d = state.existing, x = eq.existing;
+                            d.enabled = !!x.enabled;
+                            d.acKw = parseFloat(x.acKw) || 0;
+                            d.invModel = x.invModel || '-';
+                            d.tilt = isFinite(parseFloat(x.tilt)) ? parseFloat(x.tilt) : 15;
+                            d.azimuth = isFinite(parseFloat(x.azimuth)) ? parseFloat(x.azimuth) : 180;
+                            d.commissionedYear = isFinite(parseFloat(x.commissionedYear)) ? parseFloat(x.commissionedYear) : null;
+                            d.degradationPctPerYear = isFinite(parseFloat(x.degradationPctPerYear)) ? parseFloat(x.degradationPctPerYear) : 0.5;
+                            d.exportControl = x.exportControl !== false;
+                            const pr = x.production || {};
+                            d.production.mode = ['estimate','monthly','hourly'].includes(pr.mode) ? pr.mode : 'estimate';
+                            d.production.monthly = Array.isArray(pr.monthly) ? pr.monthly.slice(0, 12) : [];
+                            d.production.hourly  = Array.isArray(pr.hourly) ? pr.hourly : [];
+                            d.production.annualKWh = parseFloat(pr.annualKWh) || 0;
+                            d.production.specificYield = parseFloat(pr.specificYield) > 0 ? parseFloat(pr.specificYield) : 1400;
+
+                            const g = id => document.getElementById(id);
+                            if (g('exEnabled')) {
+                                g('exAcKw').value = d.acKw; g('exInvModel').value = d.invModel;
+                                g('exTilt').value = d.tilt; g('exAzi').value = d.azimuth;
+                                g('exYear').value = d.commissionedYear === null ? '' : d.commissionedYear;
+                                g('exDeg').value = d.degradationPctPerYear;
+                                g('exExportControl').checked = d.exportControl;
+                                g('exMode').value = d.production.mode;
+                                g('exYield').value = d.production.specificYield;
+                                g('exMonthly').value = d.production.monthly.join(', ');
+                                g('exHourlyInfo').innerText = d.production.hourly.length
+                                    ? ('โหลดแล้ว ' + fmtInt(d.production.hourly.length) + ' ค่า') : '';
+                                if (typeof ascRenderExistingUI === 'function') ascRenderExistingUI();
+                            }
+                        }
                         // Industrial Settings
                         if(eq.industrial_settings) {
                             state.transformerRatingKva = eq.industrial_settings.transformerRatingKva || 250;
@@ -3624,6 +3715,127 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
         document.getElementById('batFile').addEventListener('change', e => parseAndApplyEquipmentFile(e, 'bat', 'outBatName', 'batSelect'));
         document.getElementById('optFile').addEventListener('change', e => parseAndApplyEquipmentFile(e, 'opt', 'outOptName', 'optSelect'));
         document.getElementById('evFile').addEventListener('change', e => parseAndApplyEquipmentFile(e, 'ev', 'outEvName', 'evSelect'));
+
+        /* ══════════════════════════════════════════════════════════════════
+           ระบบออนกริดเดิม (AC Coupling)
+
+           ระบบเดิมไม่ได้ต่อกับแผงที่วาดไว้ จึงต้องไม่เข้าไปอยู่ใน pnom
+           DC/AC ratio หรือการคิดสตริงของระบบใหม่เด็ดขาด ค่าที่กรอกตรงนี้
+           ถูกส่งต่อไปเป็นก้อน existing ใน DB2 แล้วเครื่องจำลองในหน้ารายงาน
+           จะเอาไปรวมในสมดุลพลังงานรายชั่วโมงเอง
+
+           ตราบใดที่ยังไม่ติ๊กเปิด ทุกอย่างต้องทำงานเหมือนเดิมทุกประการ
+           ══════════════════════════════════════════════════════════════════ */
+        function ascParseNumList(txt) {
+            return String(txt || '').split(/[^0-9.eE+-]+/)
+                .map(v => parseFloat(v)).filter(v => isFinite(v));
+        }
+
+        function ascReadExisting() {
+            const g = id => document.getElementById(id);
+            const ex = state.existing;
+            ex.enabled  = !!(g('exEnabled') && g('exEnabled').checked);
+            ex.acKw     = parseFloat(g('exAcKw').value) || 0;
+            ex.invModel = (g('exInvModel').value || '-').trim() || '-';
+            ex.tilt     = parseFloat(g('exTilt').value);
+            ex.azimuth  = parseFloat(g('exAzi').value);
+            if (!isFinite(ex.tilt))    ex.tilt = 15;
+            if (!isFinite(ex.azimuth)) ex.azimuth = 180;
+            const yr = parseFloat(g('exYear').value);
+            ex.commissionedYear = isFinite(yr) ? yr : null;
+            ex.degradationPctPerYear = parseFloat(g('exDeg').value);
+            if (!isFinite(ex.degradationPctPerYear)) ex.degradationPctPerYear = 0.5;
+            ex.exportControl = !!g('exExportControl').checked;
+
+            ex.production.mode = g('exMode').value || 'estimate';
+            ex.production.specificYield = parseFloat(g('exYield').value) || 1400;
+            ex.production.monthly = ascParseNumList(g('exMonthly').value).slice(0, 12);
+            ex.production.annualKWh = ex.production.mode === 'monthly'
+                ? ex.production.monthly.reduce((a, b) => a + b, 0)
+                : (ex.production.hourly.length ? 0 : ex.production.annualKWh);
+
+            ascRenderExistingUI();
+            if (typeof saveMapState === 'function') saveMapState();
+        }
+
+        function ascRenderExistingUI() {
+            const g = id => document.getElementById(id);
+            if (!g('exCard')) return;
+            const ex = state.existing;
+            g('exEnabled').checked = !!ex.enabled;
+            g('exFields').style.display = ex.enabled ? 'block' : 'none';
+            g('exEstimateBox').style.display = (ex.production.mode === 'estimate') ? 'block' : 'none';
+            g('exMonthlyBox').style.display = (ex.production.mode === 'monthly') ? 'block' : 'none';
+            g('exHourlyBox').style.display  = (ex.production.mode === 'hourly')  ? 'block' : 'none';
+            if (!ex.enabled) return;
+
+            /* กำลัง AC รวมที่จุดรวมสาย ใช้คิดสายเมนและเบรกเกอร์
+               ระบบเดิมกับระบบใหม่จ่ายเข้าบัสเดียวกัน ผลรวมจึงเป็นตัวกำหนดพิกัด */
+            const newAc = (state.inv1Qty || 0) * (state.inv1AcKw || 0)
+                        + (state.inv2Qty || 0) * (state.inv2AcKw || 0);
+            const totalAc = newAc + ex.acKw;
+            const kva = (parseFloat(state.transformerRatingKva) || 0) * (parseFloat(state.transformerQty) || 1);
+
+            let msg = 'กำลัง AC ที่จุดรวมสาย : ระบบใหม่ ' + fmtNum(newAc, 1) +
+                      ' + ระบบเดิม ' + fmtNum(ex.acKw, 1) + ' = <b>' + fmtNum(totalAc, 1) + ' kW</b>';
+            if (kva > 0) {
+                const pct = totalAc / kva * 100;
+                msg += '<br>เทียบหม้อแปลง ' + fmtNum(kva, 0) + ' kVA = ' + fmtNum(pct, 0) + '%';
+                if (pct > 100) msg += ' <b style="color:#dc2626;">⚠ เกินพิกัดหม้อแปลง</b>';
+                else if (pct > 80) msg += ' <b style="color:#b45309;">⚠ ใกล้เต็มพิกัด</b>';
+            }
+            if (ex.production.mode === 'monthly') {
+                const n = ex.production.monthly.length, sum = ex.production.monthly.reduce((a, b) => a + b, 0);
+                msg += '<br>ผลผลิตรายเดือนที่กรอก ' + n + '/12 เดือน รวม <b>' + fmtInt(sum) + ' kWh/ปี</b>';
+                if (n && n < 12) msg += ' <b style="color:#b45309;">⚠ ยังไม่ครบ 12 เดือน</b>';
+            } else if (ex.production.mode === 'hourly') {
+                const n = ex.production.hourly.length;
+                msg += n ? ('<br>ผลผลิตรายชั่วโมงที่โหลดไว้ <b>' + fmtInt(n) + ' ค่า</b>')
+                         : '<br><b style="color:#b45309;">⚠ ยังไม่ได้โหลดไฟล์ผลผลิตรายชั่วโมง</b>';
+            } else {
+                const y = ex.production.specificYield || 1400;
+                msg += '<br>ประมาณจากผลผลิตจำเพาะ ' + fmtInt(y) + ' kWh/kW/ปี = <b>' + fmtInt(ex.acKw * y) + ' kWh/ปี</b>' +
+                       ' <span style="color:#64748b;">(ตัวเลขจริงคำนวณตอนประมวลผลในเมนูรายงาน)</span>';
+            }
+            g('exSummary').innerHTML = msg;
+        }
+
+        (function ascBindExisting() {
+            const ids = ['exEnabled','exAcKw','exInvModel','exTilt','exAzi','exYear','exDeg',
+                         'exMode','exYield','exMonthly','exExportControl'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input',
+                                    ascReadExisting);
+            });
+            const f = document.getElementById('exHourlyFile');
+            if (f) f.addEventListener('change', e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const rd = new FileReader();
+                rd.onload = ev => {
+                    const arr = ascParseNumList(ev.target.result);
+                    /* รับได้สองแบบ ทั้งปี 8760 ค่า หรือวันเฉลี่ย 24 ค่า
+                       อย่างอื่นไม่รับ เพราะเดาไม่ได้ว่าผู้ใช้หมายถึงอะไร */
+                    if (arr.length !== 8760 && arr.length !== 24) {
+                        alert('ไฟล์นี้มี ' + arr.length + ' ค่า\nรองรับเฉพาะ 8,760 ค่า (ทั้งปี) หรือ 24 ค่า (วันเฉลี่ย)');
+                        e.target.value = ''; return;
+                    }
+                    state.existing.production.hourly = arr;
+                    state.existing.production.annualKWh = arr.length === 24
+                        ? arr.reduce((a, b) => a + b, 0) * 365
+                        : arr.reduce((a, b) => a + b, 0);
+                    document.getElementById('exHourlyInfo').innerText =
+                        'โหลดแล้ว ' + fmtInt(arr.length) + ' ค่า · รวม ' + fmtInt(state.existing.production.annualKWh) + ' kWh/ปี';
+                    ascReadExisting();
+                };
+                rd.readAsText(file);
+                e.target.value = '';
+            });
+            ascRenderExistingUI();
+        })();
+
 
         // --- เริ่ม: โค้ดปุ่มเคลียร์อุปกรณ์ทั้งหมด ---
         document.getElementById('btnClearInv1').addEventListener('click', function() {
@@ -6241,6 +6453,9 @@ function updateFinalDcLength() {
                     bat: { ...state.rawEquipData.bat, model: state.batMfg + " " + state.batModel, qty: state.batQty, selectValue: document.getElementById('batSelect') ? document.getElementById('batSelect').value : "" },
                     opt: { ...state.rawEquipData.opt, model: state.optMfg + " " + state.optModel, qty: state.optQty, ratio: document.getElementById('optRatio') ? document.getElementById('optRatio').value : "1", selectValue: document.getElementById('optSelect') ? document.getElementById('optSelect').value : "" },
                     ev: { ...state.rawEquipData.ev, model: state.evMfg + " " + state.evModel, qty: state.evQty, selectValue: document.getElementById('evSelect') ? document.getElementById('evSelect').value : "" },
+                    /* ระบบออนกริดเดิม — ส่งเป็นก้อนแยก ไม่ปนกับ inv1/inv2 ซึ่งเป็นของใหม่
+                       ปิดอยู่ก็ยังส่งไปด้วย ปลายทางเช็ค enabled เอง ไฟล์เก่าที่ไม่มีก้อนนี้ก็ยังอ่านได้ */
+                    existing: JSON.parse(JSON.stringify(state.existing)),
                     // 🌟 เพิ่มข้อมูลสถานีไฟฟ้าและระบบจ่ายไฟโรงงาน (Industrial Settings)
                     industrial_settings: {
                         transformerRatingKva: state.transformerRatingKva,
