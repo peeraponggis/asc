@@ -330,6 +330,7 @@ const I18N = {
      capSub:'ขนาดติดตั้ง (kWp) คือกำลังรวมของแผงทั้งหมด · พลังงานที่ผลิตได้/ปี มาจากผลจำลองรายชั่วโมงตลอดทั้งปี · Performance Ratio (PR) เทียบพลังงานที่ได้จริงกับค่าทางทฤษฎี ยิ่งสูงแปลว่าการสูญเสียในระบบยิ่งน้อย',
      roiSub:'เทียบเงินลงทุนกับค่าไฟที่ประหยัดได้ในแต่ละปี ระยะคืนทุนคือปีที่เงินสะสมจากการประหยัดกลับมาเท่ากับเงินลงทุน (ปรับค่าไฟที่หัวหน้าเพื่อดูผลต่างได้)',
      pv:'แผงโซลาร์', hinv:'อินเวอร์เตอร์', bat:'แบตเตอรี่', house:'อาคาร', grid:'การไฟฟ้า', sun:'แสงแดด',
+     exNode:'ระบบเดิม',
      kwp:'ขนาดติดตั้ง (DC)', egrid:'พลังงานที่ผลิตได้/ปี', pr:'Performance Ratio', peakdc:'กำลังผลิตสูงสุด',
      surplus:'ไฟส่วนเกิน/ปี', selfuse:'ใช้เองโดยประมาณ/วัน', yieldSpec:'ผลผลิตจำเพาะ',
      cost:'เงินลงทุน', save:'ประหยัดปีแรก (ประมาณ)', payback:'ระยะคืนทุน', costkwp:'ต้นทุนต่อ kWp', years:'ปี',
@@ -337,7 +338,7 @@ const I18N = {
      pbNone:'ยังไม่คืนทุนภายใน 25 ปี ตามสมมุติฐานปัจจุบัน',
      roiTip:(u,t)=>`ที่ค่าไฟ ${t} บาท/หน่วย ระบบช่วยลดค่าไฟราว ${u} บาทต่อปีในปีแรก ตัวเลขจริงขึ้นกับสัดส่วนการใช้ไฟตรงเวลาที่ระบบผลิตได้`,
      state:{night:'กลางคืน · แบตเตอรี่/การไฟฟ้าจ่ายไฟ',morn:'เช้า · แผงเริ่มผลิตไฟ',day:'กลางวัน · ผลิตไฟ ชาร์จแบตเตอรี่ และจ่ายโหลด',eve:'หัวค่ำ · แบตเตอรี่จ่ายไฟ'},
-     legend:{pv:'กำลังผลิต PV (kW)',load:'โหลดอาคาร (kW)',soc:'แบตเตอรี่ (%)',grid:'ซื้อจากกริด (kW)'},
+     legend:{pv:'กำลังผลิต PV (kW)',load:'โหลดอาคาร (kW)',soc:'แบตเตอรี่ (%)',grid:'ซื้อจากกริด (kW)',ex:'ระบบเดิม (kW)'},
      moTitle:'พลังงานที่ผลิตได้รายเดือน', moSub:'จากผลจำลองรายชั่วโมงตลอดทั้งปี (E_Grid, kWh) — เดือนที่ผลิตได้มากคือช่วงแดดแรงและกลางวันยาว ส่วนฤดูฝนผลผลิตลดลงตามปริมาณเมฆ ใช้ดูแนวโน้มรายได้/การประหยัดในแต่ละช่วงของปี',
      advTitle:'คำแนะนำในการตัดสินใจลงทุนติดตั้งระบบ', advSub:'ข้อสังเกตสร้างขึ้นอัตโนมัติจากตัวเลขผลจำลองของโครงการนี้ ใช้ประกอบการตัดสินใจร่วมกับการตรวจหน้างานจริง',
      finTitle:'กระแสเงินสดตลอด 25 ปี', finSub:'ตัวเลขจากหน้ารายงาน (รวมค่า O&M การเสื่อมสภาพของแผง และอัตราค่าไฟตามสมมุติฐาน)',
@@ -369,6 +370,7 @@ const I18N = {
      capSub:'Installed size (kWp) is the total panel power · Annual production comes from the full-year hourly simulation · Performance Ratio (PR) compares actual to theoretical yield — higher means lower system losses',
      roiSub:'Compares the investment against yearly electricity savings. Payback is the year cumulative savings equal the investment (adjust the tariff above to explore).',
      pv:'PV array', hinv:'Inverter', bat:'Battery', house:'Building', grid:'Utility grid', sun:'Sunlight',
+     exNode:'Existing PV',
      kwp:'Installed DC size', egrid:'Annual production', pr:'Performance Ratio', peakdc:'Peak output',
      surplus:'Annual surplus', selfuse:'Approx. self-use / day', yieldSpec:'Specific yield',
      cost:'Investment', save:'Year-1 savings (est.)', payback:'Payback', costkwp:'Cost per kWp', years:'yrs',
@@ -376,7 +378,7 @@ const I18N = {
      pbNone:'No payback within 25 years under current assumptions',
      roiTip:(u,t)=>`At ${t} THB/kWh the system saves about ${u} THB in year 1. Actual savings depend on how much load coincides with generation.`,
      state:{night:'Night · battery / grid supplies',morn:'Morning · PV ramping up',day:'Daytime · generating, charging & supplying',eve:'Evening · battery discharging'},
-     legend:{pv:'PV output (kW)',load:'Building load (kW)',soc:'Battery (%)',grid:'Grid import (kW)'},
+     legend:{pv:'PV output (kW)',load:'Building load (kW)',soc:'Battery (%)',grid:'Grid import (kW)',ex:'Existing system (kW)'},
      moTitle:'Monthly energy production', moSub:'From the full-year hourly simulation (E_Grid, kWh) — strong months are the sunny, long-day season; the rainy season dips with cloud cover. Use this to gauge savings through the year.',
      advTitle:'Investment decision guidance', advSub:'Auto-generated observations from this project\'s simulation figures — use alongside a real site survey',
      finTitle:'25-year cash flow', finSub:'Figures from the report page (incl. O&M, panel degradation and tariff assumptions)',
@@ -511,22 +513,25 @@ function simulate(m){
     const cLim = m.bat.ckw > 0 ? m.bat.ckw : m.inv.kw;
     const dLim = m.bat.dkw > 0 ? m.bat.dkw : m.inv.kw;
     for (let h = 0; h < 24; h++) {
-        let pv, load;
-        if (m.daily) { pv = m.daily[h].pv || 0; load = m.daily[h].load || 0; }
+        let pv, load, ex = 0;
+        if (m.daily) { pv = m.daily[h].pv || 0; load = m.daily[h].load || 0; ex = m.daily[h].ex || 0; }
         else {        // ไม่มี daily8760 (ไฟล์รุ่นเก่า) ใช้เส้นโค้งมาตรฐานจากยอดสูงสุด
             const s = Math.sin(Math.PI * (h - 6) / 12);
             pv = (h >= 6 && h <= 18) ? m.dcPeak * Math.pow(Math.max(0, s), 1.3) : 0;
             load = m.eGrid / 365 / 12;
         }
+        /* ไซต์ที่ต่อพ่วงระบบเดิมทางฝั่ง AC แบตเตอรี่ทำงานกับกำลังรวมของทั้งบัส
+           ไซต์ที่ไม่มีระบบเดิม ex เป็นศูนย์ ผลจึงเท่ากับก่อนแก้ทุกประการ */
+        const bus = pv + ex;
         let bat = 0, grid = 0, exp = 0;
-        const surplus = pv - load;
+        const surplus = bus - load;
         if (m.bat.cap > 0) {
             if (surplus > 0) { const room = m.bat.cap - soc; const c = Math.min(surplus, cLim, room); soc += c; bat = -c; exp = surplus - c; }
             else { const need = -surplus; const d = Math.min(need, dLim, Math.max(0, soc - m.bat.cap * 0.25)); soc -= d; bat = d; grid = need - d; }
         } else {
             if (surplus > 0) exp = surplus; else grid = -surplus;
         }
-        rows.push({ h, pv, load, bat, grid, exp, soc: m.bat.cap > 0 ? soc / m.bat.cap * 100 : 0 });
+        rows.push({ h, pv, ex, bus, load, bat, grid, exp, soc: m.bat.cap > 0 ? soc / m.bat.cap * 100 : 0 });
     }
     return rows;
 }
@@ -626,6 +631,9 @@ document.getElementById('tariff').addEventListener('input', () => { if (M) rende
 /* ── แผนภาพการไหล ─ โหนด + เส้นทางพลังงานที่ติด/ดับตามชั่วโมง ─── */
 function renderFlow(){
     const t = T(), hasBat = M.bat.cap > 0;
+    /* ไซต์ที่ต่อพ่วงระบบเดิมทางฝั่ง AC ต้องมีโหนดของมันด้วย
+       ไม่งั้นผู้ชมจะเห็นไฟไหลเข้าแบตเตอรี่โดยไม่รู้ว่ามาจากไหน */
+    const hasEx = !!(M.existing && M.existing.acKw > 0);
     document.getElementById('flow-svg').innerHTML = `
     <svg viewBox="0 0 640 330" role="img" aria-label="${t.flowT}">
       <g transform="translate(60,18)" id="n-sun">${IC.sun.replace('<svg viewBox="0 0 40 40">','<svg viewBox="0 0 40 40" width="46" height="46">')}
@@ -645,6 +653,11 @@ function renderFlow(){
         <text class="node-label" x="25" y="66" text-anchor="middle">${t.bat}</text>
         <text class="node-sub" x="25" y="81" text-anchor="middle">${fmt(M.bat.cap,1)} kWh</text>
         <text class="kw" id="kw-soc" x="25" y="-8" text-anchor="middle" fill="#1F8A70"></text></g>` : ''}
+      ${hasEx ? `
+      <g transform="translate(44,232)">${IC.pv.replace('<svg viewBox="0 0 40 40">','<svg viewBox="0 0 40 40" width="48" height="48">')}
+        <text class="node-label" x="24" y="64" text-anchor="middle">${t.exNode}</text>
+        <text class="node-sub" x="24" y="79" text-anchor="middle">${fmt(M.existing.acKw,1)} kW</text>
+        <text class="kw" id="kw-ex" x="24" y="-8" text-anchor="middle" fill="#0D9488"></text></g>` : ''}
       <g transform="translate(535,235)">${IC.grid.replace('<svg viewBox="0 0 40 40">','<svg viewBox="0 0 40 40" width="50" height="50">')}
         <text class="node-label" x="25" y="66" text-anchor="middle">${t.grid}</text>
         <text class="kw" id="kw-grid" x="25" y="-8" text-anchor="middle" fill="#6B7A8F"></text></g>
@@ -652,6 +665,7 @@ function renderFlow(){
       <path id="e-pv"   class="edge" stroke="#1E5A8A" d="M100,148 C170,148 220,148 282,148"/>
       <path id="e-house" class="edge" stroke="#E8A317" d="M345,140 C420,110 470,95 528,90"/>
       ${hasBat ? `<path id="e-bat" class="edge" stroke="#1F8A70" d="M315,180 C316,200 318,215 320,232"/>` : ''}
+      ${hasEx ? `<path id="e-ex" class="edge" stroke="#0D9488" d="M96,254 C170,254 240,215 296,178"/>` : ''}
       <path id="e-exp"  class="edge" stroke="#6B7A8F" d="M345,160 C430,185 480,225 532,252"/>
       <path id="e-imp"  class="edge rev" stroke="#C4432B" d="M560,232 C560,175 560,130 560,120"/>
     </svg>`;
@@ -672,12 +686,14 @@ function setHour(h){
     on('e-pv', r.pv > 0.05);
     on('e-house', r.pv > 0.05 || r.bat > 0.05);
     on('e-bat', Math.abs(r.bat) > 0.05, r.bat > 0);   // ชาร์จ = ไหลลง, คาย = ไหลกลับ
+    on('e-ex', (r.ex || 0) > 0.05);
     on('e-exp', r.exp > 0.05);
     on('e-imp', r.grid > 0.05);
 
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     set('kw-pv', fmt(r.pv, 1) + ' kW');
     set('kw-load', fmt(r.load, 1) + ' kW');
+    set('kw-ex', (r.ex || 0) > 0.05 ? fmt(r.ex, 1) + ' kW' : '');
     set('kw-soc', M.bat.cap > 0 ? fmt(r.soc, 0) + ' %' : '');
     set('kw-grid', r.grid > 0.05 ? fmt(r.grid, 1) + ' kW' : (r.exp > 0.05 ? '↗ ' + fmt(r.exp, 1) + ' kW' : ''));
     drawDayCursor();
@@ -699,7 +715,8 @@ function togglePlay(){ if (timer) stopClock(); else startClock(); }
 function renderDayChart(){
     const t = T(), W = 640, H = 190, P = {l: 34, r: 34, t: 12, b: 22};
     const iw = W - P.l - P.r, ih = H - P.t - P.b;
-    const maxKw = Math.max(1, ...M.sim.map(r => Math.max(r.pv, r.load, r.grid))) * 1.15;
+    const hasEx = M.sim.some(r => (r.ex || 0) > 0.001);
+    const maxKw = Math.max(1, ...M.sim.map(r => Math.max(r.pv, r.ex || 0, r.load, r.grid))) * 1.15;
     const x = h => P.l + h / 23 * iw;
     const y = v => P.t + ih - v / maxKw * ih;
     const ys = v => P.t + ih - v / 100 * ih;
@@ -715,6 +732,7 @@ function renderDayChart(){
         ${gridLines}${hourTicks}
         <path d="${area}" fill="rgba(22,163,74,.16)"/>
         <path d="${line('pv', y)}" stroke="#16A34A" stroke-width="2.2" fill="none"/>
+        ${hasEx ? `<path d="${line('ex', y)}" stroke="#0D9488" stroke-width="2" fill="none" stroke-dasharray="6 3"/>` : ''}
         <path d="${line('load', y)}" stroke="#C4432B" stroke-width="2" fill="none"/>
         <path d="${line('grid', y)}" stroke="#6B7A8F" stroke-width="1.8" fill="none" stroke-dasharray="5 4"/>
         ${M.bat.cap > 0 ? `<path d="${line('soc', ys)}" stroke="#EC4899" stroke-width="1.8" fill="none" stroke-dasharray="2 4"/>` : ''}
@@ -723,6 +741,7 @@ function renderDayChart(){
     document.getElementById('day-svg').dataset.px = JSON.stringify({l: P.l, iw, t: P.t, ih});
     document.getElementById('day-legend').innerHTML =
         `<span><i style="background:#16A34A"></i>${t.legend.pv}</span>` +
+        (hasEx ? `<span><i style="background:#0D9488"></i>${t.legend.ex}</span>` : '') +
         `<span><i style="background:#C4432B"></i>${t.legend.load}</span>` +
         `<span><i style="background:#6B7A8F"></i>${t.legend.grid}</span>` +
         (M.bat.cap > 0 ? `<span><i style="background:#EC4899"></i>${t.legend.soc}</span>` : '');
@@ -858,6 +877,7 @@ function narrationSegments(){
     const th = lang === 'th';
     const pb = M.payback ? fmt(M.payback, 1) : null;
     const hasBat = M.bat.cap > 0;
+    const hasEx  = !!(M.existing && M.existing.acKw > 0);
     const strip = x => String(x || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 
     let peakPv = 0, peakHour = 12, peakLoad = 0;
@@ -873,6 +893,8 @@ function narrationSegments(){
         let s1 = `ระบบโซลาร์เซลล์โครงการ ${M.name} ขนาดติดตั้ง ${fmt(M.pnom, 2)} กิโลวัตต์ ` +
                  `ใช้แผงจำนวน ${fmt(M.pv.qty)} แผง ผลิตพลังงานได้ประมาณปีละ ${fmt(M.eGrid)} หน่วย `;
         if (hasBat) s1 += `พร้อมแบตเตอรี่ความจุ ${fmt(M.bat.cap, 1)} กิโลวัตต์ชั่วโมง เก็บไฟกลางวันไว้ใช้กลางคืน `;
+        if (hasEx) s1 += `ไซต์นี้มีระบบออนกริดเดิมขนาด ${fmt(M.existing.acKw, 1)} กิโลวัตต์อยู่ก่อนแล้ว ` +
+                         `ระบบใหม่ต่อพ่วงเข้าทางฝั่งไฟสลับ ตัวเลขความคุ้มค่าที่จะกล่าวถึงคิดเฉพาะส่วนที่เพิ่มขึ้นจากการลงทุนครั้งนี้ `;
         s1 += `เงินลงทุน ${fmt(M.investment)} บาท ` + (pb ? `คาดว่าคืนทุนในเวลาประมาณ ${pb} ปี` : '');
         segs.push(s1);
 
@@ -886,6 +908,8 @@ function narrationSegments(){
               : `ส่วนที่เหลือจะถูกส่งออกสู่ระบบของการไฟฟ้า `) +
             `เมื่อหมดแสงแดด อาคารจะรับไฟจาก` +
             (hasBat ? `แบตเตอรี่ก่อน หากไม่พอจึงซื้อไฟจากการไฟฟ้า ` : `การไฟฟ้าตามปกติ `) +
+            (hasEx ? `ทางซ้ายล่างคือระบบออนกริดเดิม ซึ่งจ่ายไฟเข้าบัสเดียวกันกับระบบใหม่ ` +
+                     `ไฟที่ระบบเดิมผลิตเกินความต้องการจะถูกเก็บเข้าแบตเตอรี่แทนการไหลย้อนออกไปเปล่า ` : '') +
             `เส้นที่กำลังวิ่งอยู่ในแผนภาพ คือเส้นทางที่มีพลังงานไหลจริงในชั่วโมงนั้น`);
 
         /* ③ กราฟ */
@@ -915,6 +939,8 @@ function narrationSegments(){
     let e1 = `The ${M.name} solar system is ${fmt(M.pnom, 2)} kilowatts, using ${fmt(M.pv.qty)} panels, ` +
              `producing about ${fmt(M.eGrid)} units per year. `;
     if (hasBat) e1 += `A ${fmt(M.bat.cap, 1)} kilowatt-hour battery stores daytime energy for the night. `;
+    if (hasEx) e1 += `This site already has a ${fmt(M.existing.acKw, 1)} kilowatt on-grid system; the new equipment is AC coupled to it, ` +
+                     `so the investment figures cover only the incremental gain. `;
     e1 += `The investment is ${fmt(M.investment)} baht` + (pb ? `, with payback in about ${pb} years.` : '.');
     segs.push(e1);
 
@@ -928,6 +954,8 @@ function narrationSegments(){
           : `Any surplus is exported to the grid. `) +
         `After sunset the building draws from ` +
         (hasBat ? `the battery first, and buys from the grid only when that runs short. ` : `the utility grid. `) +
+        (hasEx ? `The lower left is the existing on-grid system, feeding the same AC bus. ` +
+                 `Whatever it produces beyond the load now charges the battery instead of being exported for nothing. ` : '') +
         `The animated lines show which paths actually carry power in that hour.`);
 
     /* ③ Chart */

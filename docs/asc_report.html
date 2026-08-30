@@ -2639,7 +2639,10 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 let totalBatCap = batKwh * batQty;
 
                 let db3 = { zenithMax: 0, sunAziMax: 0, aoiEffSum: 0, aoiEffCount: 0, poaBeamSum: 0, poaTotalSum: 0, dcPeak: 0, dcSum: 0, acSum: 0, surplusSum: 0, mpptDcSum: [] };
-                let aggregatedDaily = Array(24).fill().map((_, i) => ({h: i, pv: 0, load: 0, bat: 0}));
+                /* ex = กำลังของระบบออนกริดเดิม แยกช่องไว้ต่างหากจาก pv ของระบบใหม่
+                   กราฟรายวันต้องเห็นทั้งสองเส้น ไม่งั้นจะดูเหมือนแบตเตอรี่ชาร์จได้เองทั้งที่
+                   เส้น PV ยังต่ำกว่าโหลด เพราะไฟจริงมาจากระบบเดิมที่ไม่ได้ถูกวาด */
+                let aggregatedDaily = Array(24).fill().map((_, i) => ({h: i, pv: 0, load: 0, bat: 0, ex: 0}));
                 let monthlyData = Array(12).fill().map((_, i) => ({ month: months[i], globHor: 0, globInc: 0, T_amb: 0, eArray: 0, eGrid: 0, targetGrid: 0, pr: 0, count: 0 }));
                 let Tamb_dist = [26, 27, 29, 31, 30, 29, 28, 28, 27, 27, 27, 26];
 
@@ -2797,6 +2800,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
 
                         aggregatedDaily[h].pv += hourAC / 365;
                         aggregatedDaily[h].load += hourLoad / 365;
+                        aggregatedDaily[h].ex += exAC / 365;
                         
                         monthlyData[m].globHor += GHI / 1000;
                         monthlyData[m].globInc += hourGlobInc / 1000;
@@ -3908,18 +3912,22 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 // 💰 โหมด Commercial: ทำงานร่วมกับ Load ตามคณิตศาสตร์เดิม 100%
                 dData.forEach(d => {
                     let h = d.h; let canDischarge = (h < 9 && canDisBefore) || (h >= 15 && canDisAfter);
-                    d.bat = 0; d.pvToLoad = Math.min(d.pv, d.load);
+                    /* ไซต์ที่ต่อพ่วงระบบเดิมทางฝั่ง AC แบตเตอรี่ทำงานกับกำลังรวมของทั้งบัส
+                       ไม่ใช่เฉพาะระบบใหม่ ไซต์ที่ไม่มีระบบเดิม ex เป็นศูนย์ ผลจึงเท่าเดิมทุกประการ */
+                    let bus = d.pv + (d.ex || 0);
+                    d.bat = 0; d.pvToLoad = Math.min(bus, d.load);
                     if(totalBatCap > 0) {
-                        if(d.pv > d.load) { 
-                            let surplus = d.pv - d.load; let chargePwr = Math.min(surplus, invKw);
+                        if(bus > d.load) { 
+                            let surplus = bus - d.load; let chargePwr = Math.min(surplus, invKw);
                             if(currentSoC + chargePwr <= totalBatCap) { d.bat = chargePwr; currentSoC += chargePwr; } else { d.bat = totalBatCap - currentSoC; currentSoC = totalBatCap; }
-                        } else if (d.pv < d.load && canDischarge) { 
-                            let deficit = d.load - d.pv; let disPwr = Math.min(deficit, invKw);
+                        } else if (bus < d.load && canDischarge) { 
+                            let deficit = d.load - bus; let disPwr = Math.min(deficit, invKw);
                             if(currentSoC - disPwr >= minSoC) { d.bat = -disPwr; currentSoC -= disPwr; } else { d.bat = -(currentSoC - minSoC); currentSoC = minSoC; }
                             if(d.bat > 0) d.bat = 0; 
                         }
                     }
                 });
+                const hasEx = dData.some(d => (d.ex || 0) > 0.001);
 
                 // 🌟 ธีม ASC: โทนสีนุ่มอ่านง่าย PV=เขียวมรกต / Load=ส้มอำพัน / Battery=คราม
                 datasetsConfig = [
@@ -3928,6 +3936,12 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                     { label: 'Load (ความต้องการใช้ไฟ)', data: dData.map(d=>d.load), borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.06)', tension: 0.4, fill: true, pointRadius: 0, pointHoverRadius: 5, borderWidth: 2.5, datalabels: { display: false } },
                     { label: 'Battery (ชาร์จ +/คาย −)', data: dData.map(d=>d.bat), borderColor: '#6366f1', backgroundColor: '#6366f1', borderDash: [6, 4], tension: 0, fill: false, pointRadius: 0, stepped: true, borderWidth: 2, datalabels: { display: false } }
                 ];
+                /* เส้นระบบเดิมโผล่เฉพาะไซต์ที่ต่อพ่วงจริง ไซต์อื่นกราฟหน้าตาเหมือนเดิมทุกอย่าง */
+                if (hasEx) datasetsConfig.splice(1, 0,
+                    { label: 'ระบบออนกริดเดิม (AC Coupling)', data: dData.map(d=>d.ex||0),
+                      borderColor: '#0d9488', backgroundColor: 'rgba(13,148,136,0.10)', borderDash: [5, 3],
+                      tension: 0.4, fill: true, pointRadius: 0, pointHoverRadius: 5, borderWidth: 2.2,
+                      datalabels: { display: false } });
             }
 
             if(window.myChartjsDaily) { window.myChartjsDaily.destroy(); }
