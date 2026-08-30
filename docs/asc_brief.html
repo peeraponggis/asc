@@ -60,6 +60,23 @@ header h1 small{display:block;font-weight:300;font-size:.5em;color:#B9C7D6;margi
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .cols.wide-left{grid-template-columns:1.35fr .65fr}
 
+/* ── หัวกระดาษบริษัทผู้ติดตั้ง ─────────────────────────────────── */
+.lh{display:flex;align-items:center;gap:14px;border-bottom:2px solid var(--pv);
+  padding-bottom:11px;margin-bottom:16px}
+.lh img{height:46px;width:auto;max-width:180px;object-fit:contain;flex:none}
+.lh .t{line-height:1.45;min-width:0}
+.lh .nm{font-family:'Kanit';font-size:15px;font-weight:700;color:var(--ink)}
+.lh .ad,.lh .ct{font-size:11.5px;color:var(--mute)}
+.lh-slim{display:none}
+
+/* ── ช่องที่ผู้ใช้กรอกเองได้ในหน้านี้ ──────────────────────────── */
+.ed{outline:none;border-bottom:1px dashed transparent;padding:0 3px;border-radius:3px;
+  transition:background .12s}
+.ed:hover{border-bottom-color:var(--sun);background:#FFF9EC;cursor:text}
+.ed:focus{background:#FFF9EC;border-bottom-color:var(--sun)}
+.ed.empty::before{content:attr(data-ph);color:#A9B4C0;font-style:italic;font-weight:400}
+.edit-hint{font-size:12px;color:var(--mute);margin-top:10px;display:flex;align-items:center;gap:6px}
+
 /* ตารางคู่ ป้าย/ค่า — รูปแบบหลักของบรีฟ อ่านเร็วกว่าย่อหน้า */
 .kv{width:100%;border-collapse:collapse}
 .kv th,.kv td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
@@ -174,6 +191,16 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
   html,body{background:#fff;font-size:12px}
   .wrap{max-width:none;padding:0}
   #deck{padding:0}
+  /* หัวกระดาษแบบเต็มอยู่หน้าแรก หน้าถัด ๆ ไปใช้แถบบางแทน
+     เอกสารที่ส่งให้ลูกค้าหรือแนบเบิกของ ทุกแผ่นควรบอกได้ว่ามาจากใคร */
+  .lh-slim{display:flex !important;align-items:center;gap:9px;border-bottom:1px solid #cbd5e1;
+    padding-bottom:5px;margin-bottom:9px;font-size:9.5px;color:#64748b}
+  .lh-slim img{height:20px;width:auto;max-width:90px;object-fit:contain}
+  .lh-slim b{font-family:'Kanit';font-size:11px;color:#0f172a}
+  /* ช่องกรอกเองต้องดูเหมือนข้อความธรรมดาบนกระดาษ ไม่มีเส้นประหรือพื้นเหลือง */
+  .ed{border:0 !important;background:none !important;padding:0}
+  .ed.empty::before{content:'—';font-style:normal;color:#94a3b8}
+  .edit-hint{display:none !important}
   /* โหมดหน้างานซ่อนสไลด์ที่ไม่ได้เปิดอยู่ ตอนพิมพ์ต้องได้ครบทุกใบเสมอ */
   #jobbar,#pager,#lightbox{display:none !important}
   body.mobile #deck .slide{display:block}
@@ -232,6 +259,14 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
 
     <!-- ══ 1 · หน้าปก ══ -->
     <section class="slide" id="s1">
+      <div class="lh" id="letterhead" style="display:none">
+        <img id="lh-logo" alt="" style="display:none">
+        <div class="t">
+          <div class="nm" id="lh-name"></div>
+          <div class="ad" id="lh-addr"></div>
+          <div class="ct" id="lh-contact"></div>
+        </div>
+      </div>
       <div class="slide-head"><span class="slide-no">1</span><h2>บรีฟช่างก่อนออกติดตั้งหน้างาน</h2>
         <span class="note" id="s1-proj">—</span></div>
       <div class="cols wide-left">
@@ -241,14 +276,19 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
             <tr><th>INVERTER</th><td id="k-inv">—</td></tr>
             <tr><th>SOLAR PANEL</th><td id="k-pv">—</td></tr>
             <tr><th>แบตเตอรี่</th><td id="k-bat">—</td></tr>
-            <tr><th>การขออนุญาต</th><td id="k-permit">—</td></tr>
-            <tr><th>ติดตั้งวันที่</th><td id="k-date">—</td></tr>
-            <tr><th>ENGINEER</th><td id="k-eng">—</td></tr>
-            <tr><th>TECHNICIAN</th><td id="k-tech">—</td></tr>
-            <tr><th>ลูกค้า</th><td id="k-cust">—</td></tr>
+            <tr><th>การขออนุญาต</th><td><span class="ed" data-edit="permit" data-ph="เลือกหรือพิมพ์ เช่น ขนานไฟ"></span></td></tr>
+            <tr><th>ติดตั้งวันที่</th><td><span class="ed" data-edit="date" data-ph="เช่น 1-4 ก.ย. 2569"></span></td></tr>
+            <tr><th>ENGINEER</th><td><span class="ed" data-edit="eng" data-ph="ชื่อวิศวกรผู้ควบคุม"></span></td></tr>
+            <tr><th>TECHNICIAN</th><td><span class="ed" data-edit="tech" data-ph="ชื่อช่าง คั่นด้วยจุลภาค"></span></td></tr>
+            <tr><th>ลูกค้า</th><td><span class="ed" data-edit="cust" data-ph="ชื่อลูกค้า"></span></td></tr>
           </table>
-          <div class="banner" id="k-target">TARGET ถึงจุดหมายเวลา —</div>
-          <div class="banner calm" id="k-note" style="display:none"></div>
+          <div class="banner">🎯 TARGET ถึงจุดหมายเวลา
+            <span class="ed" data-edit="arrive" data-ph="เช่น 09.00"></span> น.</div>
+          <div class="banner calm">📌 หมายเหตุ:
+            <span class="ed" data-edit="note" data-ph="ข้อความเตือนช่างสำหรับงานนี้"></span></div>
+          <p class="edit-hint no-print"><i class="fa-solid fa-pen"></i>
+            ช่องที่มีเส้นประคลิกแล้วพิมพ์แก้ได้เลย ระบบจำไว้ให้เฉพาะใบสั่งงานนี้
+            ถ้าอยากให้ติดไปกับโครงการถาวร ให้กรอกที่การ์ดข้อมูลงานในเมนู 2</p>
         </div>
         <div class="shot" data-slot="product" data-cap="รูปผลิตภัณฑ์"></div>
       </div>
@@ -260,9 +300,10 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
       <div class="cols">
         <div>
           <table class="kv">
-            <tr><th>ชื่อลูกค้า</th><td id="m-name">—</td></tr>
-            <tr><th>เบอร์โทร</th><td id="m-phone">—</td></tr>
-            <tr><th>ที่อยู่</th><td id="m-addr">—</td></tr>
+            <tr><th>ชื่อลูกค้า</th><td><span class="ed" data-edit="cust" data-ph="ชื่อลูกค้า"></span></td></tr>
+            <tr><th>เบอร์โทร</th><td><span class="ed" data-edit="phone" data-ph="08x-xxx-xxxx"></span>
+              <span class="sub no-print" id="m-phone-link"></span></td></tr>
+            <tr><th>ที่อยู่</th><td><span class="ed" data-edit="addr" data-ph="ที่อยู่หน้างาน"></span></td></tr>
             <tr><th>โลเคชัน</th><td id="m-coord">—</td></tr>
             <tr><th>ที่ตั้ง</th><td id="m-loc">—</td></tr>
           </table>
@@ -385,10 +426,22 @@ let M = null;                 // โมเดลที่แปลงแล้�
 let PROJECT_ID = '';          // ใช้แยกสถานะเช็กลิสต์ของแต่ละโครงการ
 const inShell = (window.parent && window.parent !== window);
 
+/* ข้อมูลบริษัทผู้ติดตั้ง กรอกไว้ที่หน้า Dashboard แล้วใช้ร่วมกันทุกโครงการ
+   เก็บสำเนาใน localStorage เพราะหน้านี้ถูกเปิดเดี่ยวและใช้ออฟไลน์ได้
+   ก้อนนี้เล็กมาก (ไม่กี่ร้อยไบต์) ไม่กระทบโควตาที่ข้อมูลโครงการใช้อยู่ */
+const CO_KEY = 'proinventive_company';
+let COMPANY = {};
+try { COMPANY = JSON.parse(localStorage.getItem(CO_KEY) || '{}'); } catch(e) {}
+
 window.addEventListener('message', ev => {
     const d = ev.data;
     if (!d || d.type !== 'SYNC_PROJECT_STATE') return;
     PROJECT_ID = d.projectId || '';
+    if (d.company && Object.keys(d.company).length) {
+        COMPANY = d.company;
+        try { localStorage.setItem(CO_KEY, JSON.stringify(d.company)); } catch(e) {}
+        renderLetterhead();
+    }
     const db2 = d.payload && d.payload.db2;
     const db1 = d.payload && d.payload.db1;
     if (db2 || db1) loadDB2(db2 || db1); else showEmpty();
@@ -460,6 +513,10 @@ function loadDB2(raw){
         bom: eb,
         items: Array.isArray(eb.items) ? eb.items : []
     };
+    /* ข้อมูลสดเข้ามาแล้ว ป้าย "เปิดจากสำเนาในเครื่อง" ต้องหายไป
+       ไม่งั้นผู้ใช้จะเข้าใจว่ากำลังดูของเก่าทั้งที่เพิ่งซิงก์มาสด ๆ */
+    const note = document.getElementById('offline-note');
+    if (note) { note.style.display = 'none'; note.innerText = ''; }
     render();
     cacheForOffline();
 }
@@ -478,6 +535,7 @@ async function cacheForOffline(){
     try {
         const st = await AscBriefStore.getState(PROJECT_ID);
         st.model = M;
+        st.company = COMPANY;      // หัวกระดาษต้องขึ้นได้ตอนออฟไลน์ด้วย
         st.savedAt = Date.now();
         await AscBriefStore.setState(PROJECT_ID, st);
         try { localStorage.setItem(LAST_KEY, PROJECT_ID || 'local'); } catch(e) {}
@@ -494,6 +552,7 @@ async function restoreOffline(){
         if (!st || !st.model) return false;
         PROJECT_ID = id;
         M = st.model;
+        if (st.company && Object.keys(st.company).length) COMPANY = st.company;
         render();
         const note = document.getElementById('offline-note');
         if (note) {
@@ -508,6 +567,146 @@ async function restoreOffline(){
 function showEmpty(){
     document.getElementById('empty').style.display = '';
     document.getElementById('deck').style.display = 'none';
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   หัวกระดาษบริษัทผู้ติดตั้ง
+
+   แบบเต็มอยู่หน้าแรก ส่วนหน้าถัด ๆ ไปแทรกแถบบางที่โผล่เฉพาะตอนพิมพ์
+   เอกสารที่ช่างถือไปหน้างานหรือแนบเบิกของ ทุกแผ่นควรบอกได้ว่ามาจากใคร
+   ยังไม่ได้กรอกข้อมูลบริษัทก็ไม่เป็นไร หัวกระดาษจะไม่ขึ้นเลย
+   ไม่ทิ้งช่องว่างหรือกรอบเปล่าไว้บนเอกสาร
+   ══════════════════════════════════════════════════════════════════ */
+function coInfo(){
+    const c = COMPANY || {};
+    return {
+        name:    str(c.company_name), address: str(c.company_address),
+        phone:   str(c.company_phone), email:  str(c.company_email),
+        website: str(c.company_website), logo:  str(c.company_logo_url),
+        taxId:   str(c.company_tax_id)
+    };
+}
+
+function renderLetterhead(){
+    const co = coInfo();
+    const box = document.getElementById('letterhead');
+    if (!box) return;
+    const has = !!(co.name || co.logo);
+    box.style.display = has ? '' : 'none';
+    if (!has) { document.querySelectorAll('.lh-slim').forEach(n => n.remove()); return; }
+
+    const lg = document.getElementById('lh-logo');
+    if (co.logo) { lg.src = co.logo; lg.style.display = ''; } else lg.style.display = 'none';
+    set('lh-name', co.name);
+    set('lh-addr', co.address);
+    set('lh-contact', [co.phone && ('โทร. ' + co.phone), co.email, co.website].filter(Boolean).join(' · '));
+
+    /* แถบบางบนสไลด์ที่ 2 เป็นต้นไป สร้างครั้งเดียวแล้วอัปเดตเนื้อหาเมื่อข้อมูลเปลี่ยน */
+    document.querySelectorAll('#deck .slide').forEach((sl, i) => {
+        if (i === 0) return;
+        let bar = sl.querySelector('.lh-slim');
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.className = 'lh-slim';
+            sl.insertBefore(bar, sl.firstChild);
+        }
+        bar.innerHTML = (co.logo ? '<img src="' + co.logo + '" alt="">' : '')
+            + '<b>' + co.name + '</b>'
+            + (co.phone ? '<span>โทร. ' + co.phone + '</span>' : '')
+            + '<span style="margin-left:auto">' + (M ? M.projectName : '') + '</span>';
+    });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   ช่องที่ผู้ใช้กรอกเองได้ในหน้านี้
+
+   ค่าตั้งต้นมาจาก DB2 แต่บางงานยังไม่ได้กรอกที่เมนู 2 หรือมีการเปลี่ยน
+   นาทีสุดท้าย เช่น สลับช่างหรือเลื่อนวัน จึงให้แก้ตรงนี้ได้เลย
+
+   สิ่งที่พิมพ์ทับเก็บเป็น "ค่าแทนที่" แยกไว้ในเครื่อง ไม่เขียนกลับไปที่ DB2
+   เพราะ DB2 เป็นของหน้าออกแบบ ถ้าเขียนกลับจะกลายเป็นสองแหล่งที่แก้กันไปมา
+   แล้วไม่รู้ว่าอันไหนจริง ค่าที่ควรอยู่ถาวรให้กรอกที่การ์ดข้อมูลงานในเมนู 2
+
+   ตั้งใจให้แก้ได้เฉพาะข้อมูลงานกับผู้ติดต่อ ตัวเลขวิศวกรรมอย่างจำนวนแผง
+   การจัดสตริง หรือขนาดเบรกเกอร์ แก้ไม่ได้ เพราะถ้าพิมพ์ทับได้จะเกิดใบสั่งงาน
+   ที่ไม่ตรงกับแบบที่คำนวณไว้ ซึ่งอันตรายกว่าการปล่อยให้ว่าง
+   ══════════════════════════════════════════════════════════════════ */
+let OV = {};      // ค่าแทนที่ที่ผู้ใช้พิมพ์เอง
+
+/* ค่าตั้งต้นของแต่ละช่อง อ่านจากโมเดลที่แปลงจาก DB2 */
+function baseVal(key){
+    if (!M) return '';
+    const j = M.job || {}, cu = j.customer || {}, sc = j.schedule || {}, tm = j.team || {};
+    switch (key) {
+        case 'cust':   return str(cu.name) || M.db0Name;
+        case 'phone':  return str(cu.phone);
+        case 'addr':   return str(cu.address);
+        case 'permit': return str(sc.permitType);
+        case 'date':   return dateRange(sc.dateStart, sc.dateEnd) === '—' ? '' : dateRange(sc.dateStart, sc.dateEnd);
+        case 'arrive': return str(sc.arriveTime).replace(':', '.');
+        case 'eng':    return str(tm.engineer);
+        case 'tech':   return Array.isArray(tm.technicians) ? tm.technicians.join(' · ') : str(tm.technicians);
+        case 'note':   return str(j.note);
+    }
+    return '';
+}
+const fieldVal = key => (OV[key] != null && OV[key] !== '') ? OV[key] : baseVal(key);
+
+function renderEditable(){
+    document.querySelectorAll('.ed[data-edit]').forEach(el => {
+        const key = el.dataset.edit, v = fieldVal(key);
+        el.innerText = v;
+        el.classList.toggle('empty', !v);
+        if (!el.dataset.bound) {
+            el.dataset.bound = '1';
+            el.setAttribute('contenteditable', 'true');
+            el.setAttribute('spellcheck', 'false');
+            el.addEventListener('focus', () => el.classList.remove('empty'));
+            el.addEventListener('blur',  () => commitEdit(el));
+            /* บันทึกระหว่างพิมพ์ด้วย ไม่รอ blur อย่างเดียว
+               ถ้าผู้ใช้ปิดแท็บหรือสลับหน้าไปเลย blur อาจไม่ทันยิง แล้วสิ่งที่พิมพ์จะหายเงียบ */
+            el.addEventListener('input', () => {
+                clearTimeout(el._t);
+                el._t = setTimeout(() => commitEdit(el, true), 700);
+            });
+            // Enter ต้องจบการแก้ ไม่ใช่ขึ้นบรรทัดใหม่ในช่องบรรทัดเดียว
+            el.addEventListener('keydown', ev => {
+                if (ev.key === 'Enter') { ev.preventDefault(); el.blur(); }
+                if (ev.key === 'Escape') { el.innerText = fieldVal(key); el.blur(); }
+            });
+        }
+    });
+    syncPhoneLink();
+}
+
+/* quiet = กำลังพิมพ์อยู่ อย่าไปเขียนทับช่องที่เคอร์เซอร์ค้างอยู่ เดี๋ยวเคอร์เซอร์เด้งไปท้าย */
+function commitEdit(el, quiet){
+    const key = el.dataset.edit;
+    const v = el.innerText.replace(/\s+/g, ' ').trim();
+    if (v === baseVal(key)) delete OV[key]; else OV[key] = v;   // เท่าค่าตั้งต้น ไม่ต้องเก็บซ้ำ
+    saveOverrides();
+    // ช่องเดียวกันอาจโผล่หลายที่ (เช่น ชื่อลูกค้าอยู่ทั้งสไลด์ 1 และ 2) อัปเดตให้ตรงกันหมด
+    document.querySelectorAll('.ed[data-edit="' + key + '"]').forEach(o => {
+        if (quiet && o === el) return;
+        o.innerText = fieldVal(key);
+        o.classList.toggle('empty', !fieldVal(key));
+    });
+    syncPhoneLink();
+    renderJobBar();
+}
+
+function syncPhoneLink(){
+    const box = document.getElementById('m-phone-link');
+    if (!box) return;
+    const ph = fieldVal('phone');
+    box.innerHTML = ph ? '<a href="tel:' + ph.replace(/[^0-9+]/g,'') + '">กดโทรออก</a>' : '';
+}
+
+function saveOverrides(){
+    if (typeof AscBriefStore === 'undefined') return;
+    AscBriefStore.getState(PROJECT_ID)
+        .then(st => AscBriefStore.setState(PROJECT_ID, Object.assign({}, st, { overrides: OV })))
+        .catch(e => console.warn('บันทึกค่าที่กรอกเองไม่สำเร็จ', e));
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -539,9 +738,10 @@ function render(){
     document.getElementById('deck').style.display = '';
 
     const j = M.job, cu = j.customer || {}, sc = j.schedule || {}, tm = j.team || {};
-    const custName = dash(cu.name || M.db0Name);
     document.getElementById('hd-sub').innerText = M.projectName;
     set('s1-proj', M.projectName);
+    renderLetterhead();
+    renderEditable();
 
     /* ── 1 · หน้าปก ─────────────────────────────────────────────── */
     const batQty = num(M.counts.batQty);
@@ -559,24 +759,8 @@ function render(){
         + fmt(M.pv.len) + '×' + fmt(M.pv.wid) + ' มม.</span>');
 
     set('k-bat', batQty > 0 ? (dash(M.bat.model) + ' · จำนวน ' + fmt(batQty) + ' ชุด') : 'ไม่มี');
-    set('k-permit', dash(sc.permitType));
-    set('k-date', dateRange(sc.dateStart, sc.dateEnd));
-    set('k-eng', dash(tm.engineer));
-    set('k-tech', Array.isArray(tm.technicians) && tm.technicians.length ? tm.technicians.join(' · ') : '—');
-    set('k-cust', custName);
-
-    const at = str(sc.arriveTime);
-    set('k-target', '🎯 TARGET ถึงจุดหมายเวลา ' + (at ? at.replace(':', '.') + ' น.' : '—'));
-
-    const noteBox = document.getElementById('k-note');
-    if (M.job.note) { noteBox.style.display = ''; noteBox.innerHTML = '📌 หมายเหตุ: ' + M.job.note; }
-    else noteBox.style.display = 'none';
 
     /* ── 2 · แผนที่ ─────────────────────────────────────────────── */
-    set('m-name', custName);
-    const ph = str(cu.phone);
-    set('m-phone', ph ? '<a href="tel:' + ph.replace(/[^0-9+]/g,'') + '">' + ph + '</a>' : '—');
-    set('m-addr', dash(cu.address));
     const co = M.coordinates;
     set('m-coord', co && co !== '-'
         ? co + ' <span class="sub no-print"><a href="https://www.google.com/maps/search/?api=1&query='
@@ -645,10 +829,24 @@ function render(){
     /* ── 6 · วัสดุ ──────────────────────────────────────────────── */
     renderMaterials();
 
-    /* ── แถบงานติดบนสุดของโหมดหน้างาน ───────────────────────────── */
-    set('jb-name', custName);
-    set('jb-addr', [dash(cu.address) !== '—' ? cu.address : '', M.locationName !== '—' ? M.locationName : '']
-                    .filter(Boolean).join(' · ') || M.projectName);
+    renderJobBar();
+
+    /* ── เช็กลิสต์ ค่าที่กรอกเอง และรูป อยู่คนละที่เก็บ โหลดแยกไม่ให้สไลด์ค้างรอ ──── */
+    (async () => {
+        await loadChecklists();
+        renderMaterials(); renderChecklists();
+        renderEditable(); renderJobBar();     // ค่าแทนที่เพิ่งโหลดมา วาดทับให้ตรง
+    })();
+    loadPhotos();
+    showPage(0);
+}
+
+/* แถบงานติดบนสุดของโหมดหน้างาน ใช้ค่าที่กรอกเองด้วย ไม่ใช่ค่าจาก DB2 อย่างเดียว */
+function renderJobBar(){
+    if (!M) return;
+    const ph = fieldVal('phone'), ad = fieldVal('addr'), co = M.coordinates;
+    set('jb-name', fieldVal('cust') || M.projectName);
+    set('jb-addr', [ad, M.locationName !== '—' ? M.locationName : ''].filter(Boolean).join(' · ') || M.projectName);
     const callBtn = document.getElementById('jb-call');
     if (ph) { callBtn.href = 'tel:' + ph.replace(/[^0-9+]/g,''); callBtn.style.display = '';
               callBtn.innerText = 'โทร ' + ph; }
@@ -657,11 +855,6 @@ function render(){
     if (co && co !== '-') { mapBtn.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(co);
                             mapBtn.style.display = ''; }
     else mapBtn.style.display = 'none';
-
-    /* ── เช็กลิสต์และรูป ที่เก็บคนละที่ โหลดแยกไม่ให้สไลด์ค้างรอ ──── */
-    (async () => { await loadChecklists(); renderMaterials(); renderChecklists(); })();
-    loadPhotos();
-    showPage(0);
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -705,6 +898,7 @@ async function loadChecklists(){
     try {
         const st = await AscBriefStore.getState(PROJECT_ID);
         CK = { mat: st.mat || {}, steps: st.steps || {}, hand: st.hand || {} };
+        OV = st.overrides || {};
     } catch(e) { console.warn('อ่านสถานะเช็กลิสต์ไม่สำเร็จ', e); }
 }
 /* อ่านก้อนเดิมมาก่อนแล้วค่อยเขียนทับเฉพาะส่วนเช็กลิสต์
@@ -926,6 +1120,8 @@ function exportBrief(){
         projectName: M.projectName, coordinates: M.coordinates, locationName: M.locationName,
         job: M.job, equipment: { pv: M.pv, inv1: M.inv1, inv2: M.inv2, bat: M.bat, existing: M.existing },
         counts: M.counts, kwp: M.kwp, strings: M.strings, bom: M.bom,
+        company: coInfo(),
+        fieldOverrides: OV,
         checklists: { materials: CK.mat, steps: CK.steps, handover: CK.hand },
         checklistLabels: { steps: STEP_LIST, handover: HAND_LIST },
         /* เก็บแค่รหัสรูปกับเวกเตอร์ป้าย ซึ่งเล็กมาก ตัวรูปอยู่ใน IndexedDB ของเครื่อง

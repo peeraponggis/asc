@@ -105,6 +105,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <a href="#m7-what"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ใบสั่งงานช่างคืออะไร</a>
                 <a href="#m7-prep"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">เตรียมข้อมูลก่อนใช้</a>
                 <a href="#m7-slide" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">อ่านทีละสไลด์</a>
+                <a href="#m7-fill"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">หัวกระดาษและช่องกรอกเอง</a>
                 <a href="#m7-photo" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ใส่รูปและป้ายกำกับ</a>
                 <a href="#m7-field" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">โหมดหน้างานและออฟไลน์</a>
                 <a href="#m7-out"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">พิมพ์และส่งต่อ</a>
@@ -1378,7 +1379,9 @@ Is_Bifacial = False</div>
                 <p class="text-slate-600 leading-relaxed mb-5">
                     เอกสาร 7 สไลด์ หนึ่งสไลด์ต่อหนึ่งหน้ากระดาษเวลาสั่งพิมพ์
                     <b>สไลด์ 1 ถึง 6 เติมให้เองทั้งหมดจากไฟล์ DB2</b> ไม่ต้องพิมพ์ซ้ำแม้แต่ช่องเดียว
-                    สิ่งที่ต้องทำเองมีแค่สองอย่างคือกรอกข้อมูลงานในเมนู 2 และแนบรูปหน้างาน
+                    หัวกระดาษบริษัทดึงจากที่กรอกไว้หน้า Dashboard
+                    ส่วนช่องข้อมูลงานที่ยังว่างก็คลิกกรอกในหน้านี้ได้เลย
+                    สิ่งที่ต้องเตรียมเองจริง ๆ จึงมีแค่รูปหน้างาน
                 </p>
                 <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-5">
                     <h4 class="font-bold text-amber-900 text-sm mb-2"><i class="fa-solid fa-circle-info mr-1.5"></i> ต่างจากเมนู 6 อย่างไร</h4>
@@ -1503,6 +1506,65 @@ Is_Bifacial = False</div>
                             ติ๊กได้เหมือนกัน สถานะเก็บแยกตามโครงการ
                         </p>
                     </div>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m7-fill" class="text-lg font-bold text-slate-800 mb-3">หัวกระดาษและช่องกรอกเอง</h3>
+
+                <h4 class="font-bold text-slate-800 text-sm mb-2">หัวกระดาษบริษัท</h4>
+                <p class="text-slate-600 leading-relaxed mb-4">
+                    ด้านบนสุดของสไลด์แรกจะมีโลโก้ ชื่อบริษัท ที่อยู่ และเบอร์โทร อีเมล เว็บไซต์
+                    <b>ดึงมาจากข้อมูลบริษัทที่กรอกไว้ในหน้า Dashboard</b> ไม่ต้องกรอกซ้ำทุกงาน
+                    แก้ที่เดียวแล้วเปลี่ยนทุกใบสั่งงานพร้อมกัน
+                </p>
+                <ul class="text-sm text-slate-600 leading-relaxed space-y-2 mb-5">
+                    <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span>ยังไม่ได้กรอกข้อมูลบริษัทก็ใช้ได้ หัวกระดาษจะไม่ขึ้นเลย ไม่ทิ้งกรอบเปล่าไว้บนเอกสาร</span></li>
+                    <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span>เวลาสั่งพิมพ์ <b>หน้าที่ 2 เป็นต้นไปจะมีแถบบางบอกชื่อบริษัทกับชื่อโครงการ</b> ทุกแผ่นจึงบอกได้ว่ามาจากใครและเป็นงานไหน</span></li>
+                    <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span>ข้อมูลบริษัทถูกเก็บสำเนาไว้ในเครื่องด้วย หัวกระดาษจึงขึ้นตอนเปิดออฟไลน์ที่หน้างานเหมือนกัน</span></li>
+                </ul>
+
+                <h4 class="font-bold text-slate-800 text-sm mb-2">ช่องที่กรอกเองได้ในหน้านี้</h4>
+                <p class="text-slate-600 leading-relaxed mb-4">
+                    ช่องข้อมูลงานทั้ง 9 ช่องบนสไลด์ 1 กับ 2 <b>คลิกแล้วพิมพ์แก้ได้เลย</b>
+                    ช่องที่ยังว่างจะมีคำใบ้สีจาง ๆ บอกว่าควรใส่อะไร
+                    เอาไว้ใช้ตอนยังไม่ได้กรอกที่เมนู 2 หรือมีการเปลี่ยนนาทีสุดท้าย เช่น สลับช่างหรือเลื่อนวัน
+                </p>
+                <div class="overflow-x-auto rounded-xl border border-slate-200 mb-5">
+                    <table class="w-full text-sm bg-white">
+                        <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                            <tr><th class="text-left px-4 py-3">สไลด์</th><th class="text-left px-4 py-3">ช่องที่แก้ได้</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr><td class="px-4 py-3 font-semibold text-slate-800">1 หน้าปก</td>
+                                <td class="px-4 py-3 text-slate-600">การขออนุญาต · ติดตั้งวันที่ · ENGINEER · TECHNICIAN · ลูกค้า · เวลาถึงหน้างาน · หมายเหตุถึงช่าง</td></tr>
+                            <tr><td class="px-4 py-3 font-semibold text-slate-800">2 แผนที่</td>
+                                <td class="px-4 py-3 text-slate-600">ชื่อลูกค้า · เบอร์โทร · ที่อยู่</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <ul class="text-sm text-slate-600 leading-relaxed space-y-2 mb-5">
+                    <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span>กด <span class="kbd">Enter</span> เพื่อจบการแก้ หรือ <span class="kbd">Esc</span> เพื่อยกเลิกกลับเป็นค่าเดิม</span></li>
+                    <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span>ชื่อลูกค้าอยู่ทั้งสไลด์ 1 และ 2 แก้ที่ไหนก็ตรงกันทั้งสองที่ รวมถึงแถบงานในโหมดหน้างานด้วย</span></li>
+                    <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span>แก้เบอร์โทรแล้ว <b>ปุ่มโทรออกจะเปลี่ยนตามทันที</b></span></li>
+                    <li class="flex gap-2"><span class="text-amber-500 shrink-0">·</span><span>บันทึกให้เองระหว่างพิมพ์ ไม่ต้องกดปุ่มบันทึก และเส้นประกับพื้นสีจะไม่ติดไปกับกระดาษเวลาพิมพ์</span></li>
+                </ul>
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-5">
+                    <h4 class="font-bold text-amber-900 text-sm mb-2"><i class="fa-solid fa-circle-info mr-1.5"></i> สิ่งที่พิมพ์ทับอยู่แค่ในใบสั่งงานนี้</h4>
+                    <p class="text-sm text-amber-900 leading-relaxed">
+                        ค่าที่แก้ตรงนี้ <b>ไม่ถูกเขียนกลับไปที่ DB2</b> เพราะ DB2 เป็นของหน้าออกแบบ
+                        ถ้าเขียนกลับจะกลายเป็นสองแหล่งที่แก้กันไปมาแล้วไม่รู้ว่าอันไหนจริง
+                        ค่าที่ควรอยู่ถาวรกับโครงการให้กรอกที่การ์ดข้อมูลงานในเมนู 2
+                        ส่วนที่พิมพ์ทับตรงนี้จะจำไว้ให้เฉพาะเครื่องนี้และโครงการนี้
+                        และถ้าพิมพ์กลับให้เท่าค่าเดิม ระบบจะถือว่าไม่มีการแก้และกลับไปใช้ค่าจาก DB2 เอง
+                    </p>
+                </div>
+                <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        <b>ตัวเลขวิศวกรรมแก้ไม่ได้โดยตั้งใจ</b> เช่น จำนวนแผง การจัดสตริง ขนาดเบรกเกอร์ ระยะเดินท่อ
+                        เพราะถ้าพิมพ์ทับได้จะเกิดใบสั่งงานที่ไม่ตรงกับแบบที่คำนวณไว้
+                        ซึ่งอันตรายกว่าการปล่อยให้ว่าง ถ้าตัวเลขไม่ถูกต้องให้กลับไปแก้ที่เมนู 2 แล้วออก DB2 ใหม่
+                    </p>
                 </div>
             </section>
 
