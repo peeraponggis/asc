@@ -23,8 +23,9 @@
     'use strict';
 
     const DB_NAME = 'asc_brief';
-    const DB_VER  = 1;
+    const DB_VER  = 2;
     const STORE   = 'brief_photos';
+    const SSTORE  = 'brief_state';    // สถานะเช็กลิสต์ ก้อนเดียวต่อโครงการ
 
     let _db = null;
 
@@ -41,14 +42,20 @@
                     // ค้นรูปทั้งหมดของโครงการเดียวได้โดยไม่ต้องกวาดทั้งฐาน
                     st.createIndex('projectId', 'projectId', { unique: false });
                 }
+                /* เช็กลิสต์อยู่ที่เดียวกับรูป ไม่ไปเบียดโควตา localStorage ที่ก้อนโครงการใช้อยู่
+                   และเวลาล้างข้อมูลบรีฟของโครงการหนึ่ง ก็ล้างได้ครบในที่เดียว */
+                if (!db.objectStoreNames.contains(SSTORE)) {
+                    db.createObjectStore(SSTORE, { keyPath: 'projectId' });
+                }
             };
             rq.onsuccess = () => { _db = rq.result; res(_db); };
             rq.onerror   = () => rej(rq.error || new Error('เปิดฐานข้อมูลรูปไม่สำเร็จ'));
         });
     }
 
-    function tx(mode) {
-        return open().then(db => db.transaction(STORE, mode).objectStore(STORE));
+    function tx(mode, name) {
+        const st = name || STORE;
+        return open().then(db => db.transaction(st, mode).objectStore(st));
     }
     function wrap(rq) {
         return new Promise((res, rej) => {
@@ -157,6 +164,10 @@
             const rows = await this.list(projectId);
             const st = await tx('readwrite');
             await Promise.all(rows.map(r => wrap(st.delete(r.key))));
+            try {
+                const ss = await tx('readwrite', SSTORE);
+                await wrap(ss.delete(String(projectId || 'local')));
+            } catch (e) {}
             return rows.length;
         },
 
@@ -168,6 +179,22 @@
                 const e = await navigator.storage.estimate();
                 return { usedMB: (e.usage || 0) / 1048576, quotaMB: (e.quota || 0) / 1048576 };
             } catch (err) { return null; }
+        },
+
+        /* ══ สถานะเช็กลิสต์ ══
+           เก็บเป็นก้อนเดียวต่อโครงการ เพราะอ่านทีเดียวใช้ทั้งหน้า และเขียนไม่บ่อย
+           ไม่ต้องแยกเป็นแถวต่อรายการให้ยุ่งยากโดยไม่ได้อะไรเพิ่ม */
+        async getState(projectId) {
+            try {
+                const st = await tx('readonly', SSTORE);
+                const row = await wrap(st.get(String(projectId || 'local')));
+                return (row && row.data) || {};
+            } catch (e) { return {}; }
+        },
+
+        async setState(projectId, data) {
+            const st = await tx('readwrite', SSTORE);
+            await wrap(st.put({ projectId: String(projectId || 'local'), data: data || {}, savedAt: Date.now() }));
         },
 
         downscale: downscale,

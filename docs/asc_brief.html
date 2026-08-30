@@ -113,11 +113,54 @@ header h1 small{display:block;font-weight:300;font-size:.5em;color:#B9C7D6;margi
 .empty .btn{background:var(--pv);border-color:var(--pv);color:#fff}
 .empty.drag{border-color:var(--sun);background:#FFF9EC}
 
-/* ── โหมดมือถือ (สั่งเองด้วยปุ่ม หรือจอเล็กจริง) ────────────────── */
+/* ── เช็กลิสต์ขั้นตอนและส่งมอบงาน ───────────────────────────────── */
+.ck{list-style:none;margin:0;padding:0}
+.ck li{display:flex;gap:10px;align-items:flex-start;padding:9px 4px;border-bottom:1px solid var(--line)}
+.ck li.done span{color:var(--mute);text-decoration:line-through}
+.ck input{width:19px;height:19px;flex:none;margin-top:2px}
+.ck li .n{font-family:'Kanit';font-size:12px;color:var(--mute);flex:none;min-width:20px}
+
+/* ── โหมดหน้างาน (สั่งเองด้วยปุ่ม หรือจอเล็กจริง) ────────────────── */
 body.mobile .wrap{padding:0 12px}
 body.mobile .cols,body.mobile .cols.wide-left,body.mobile .shot-grid{grid-template-columns:1fr}
 body.mobile .slide{padding:16px 14px 18px;border-radius:10px}
 body.mobile .kv th{width:44%}
+
+/* แถบงานติดบนสุด — สิ่งที่ช่างต้องใช้ระหว่างเดินทางและตอนถึงหน้างาน */
+#jobbar{display:none}
+body.mobile #jobbar{display:block;position:sticky;top:0;z-index:40;background:var(--night);color:#fff;
+  padding:10px 14px;box-shadow:0 3px 12px rgba(0,0,0,.25)}
+#jobbar .n{font-family:'Kanit';font-weight:600;font-size:15px;line-height:1.3}
+#jobbar .a{font-size:12px;color:#B9C7D6;margin-top:2px;line-height:1.35}
+#jobbar .row{display:flex;gap:8px;margin-top:9px}
+#jobbar a.act{flex:1;text-align:center;background:var(--sun);color:var(--night);text-decoration:none;
+  border-radius:9px;padding:8px 0;font-family:'Kanit';font-size:13.5px;font-weight:500}
+#jobbar a.act.ghost{background:rgba(255,255,255,.12);color:#fff}
+
+/* ดูทีละสไลด์ — เลื่อนยาว ๆ 7 ใบบนมือถือหาของไม่เจอ */
+body.mobile #deck .slide{display:none}
+body.mobile #deck .slide.cur{display:block}
+#pager{display:none}
+body.mobile #pager{display:flex;position:sticky;bottom:0;z-index:40;gap:8px;align-items:center;
+  background:var(--card);border-top:1px solid var(--line);padding:9px 12px;
+  box-shadow:0 -3px 12px rgba(0,0,0,.08)}
+#pager button{background:var(--pv);color:#fff;border:0;border-radius:9px;padding:9px 16px;
+  font-family:'Kanit';font-size:14px}
+#pager button:disabled{background:var(--line);color:var(--mute)}
+#pager .dots{flex:1;display:flex;gap:5px;justify-content:center}
+#pager .dots i{width:8px;height:8px;border-radius:50%;background:var(--line);display:block}
+#pager .dots i.on{background:var(--sun);width:20px;border-radius:999px}
+
+/* แตะรูปเพื่อดูเต็มจอ ป้ายกำกับติดไปด้วย */
+#lightbox{position:fixed;inset:0;background:rgba(8,16,28,.94);z-index:9998;display:none;
+  align-items:center;justify-content:center;padding:12px}
+#lightbox.on{display:flex}
+#lightbox .box{position:relative;max-width:100%;max-height:100%;line-height:0}
+#lightbox img{max-width:100%;max-height:92vh;display:block}
+#lightbox .x{position:absolute;right:8px;top:8px;background:rgba(15,30,51,.85);color:#fff;border:0;
+  border-radius:9px;padding:7px 13px;font-family:'Kanit';font-size:14px;z-index:2}
+body.mobile .shot.filled .frame{cursor:zoom-in}
+
 @media(max-width:760px){
   .cols,.cols.wide-left,.shot-grid{grid-template-columns:1fr}
   .slide{padding:16px 14px 18px}
@@ -131,6 +174,9 @@ body.mobile .kv th{width:44%}
   html,body{background:#fff;font-size:12px}
   .wrap{max-width:none;padding:0}
   #deck{padding:0}
+  /* โหมดหน้างานซ่อนสไลด์ที่ไม่ได้เปิดอยู่ ตอนพิมพ์ต้องได้ครบทุกใบเสมอ */
+  #jobbar,#pager,#lightbox{display:none !important}
+  body.mobile #deck .slide{display:block}
   .slide{border:0;border-radius:0;padding:0 0 6mm;margin:0;
          break-after:page;page-break-after:always;break-inside:avoid}
   .slide:last-child{break-after:auto;page-break-after:auto}
@@ -150,15 +196,25 @@ body.mobile .kv th{width:44%}
     </div>
     <div class="controls">
       <button class="btn primary" onclick="window.print()"><span>🖨</span> พิมพ์บรีฟ (PDF)</button>
-      <button class="btn" id="btn-mobile" onclick="toggleMobile()">📱 โหมดมือถือ</button>
+      <button class="btn" id="btn-mobile" onclick="toggleMobile()">📱 โหมดหน้างาน</button>
       <button class="btn" onclick="exportBrief()">⬇ ส่งออก .json</button>
       <span id="photo-usage" style="font-size:12px;color:#B9C7D6"></span>
+      <span id="offline-note" style="display:none;font-size:12px;color:#F6C453"></span>
       <button class="btn" onclick="document.getElementById('pick').click()">📂 เปิดไฟล์ DB2</button>
       <input type="file" id="pick" accept=".txt,.json" style="display:none" onchange="importFile(this.files[0])">
       <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="onPhotoChosen(this)">
     </div>
   </div>
 </header>
+
+<div id="jobbar" class="no-print">
+  <div class="n" id="jb-name">—</div>
+  <div class="a" id="jb-addr"></div>
+  <div class="row">
+    <a class="act" id="jb-call" href="#">โทรหาลูกค้า</a>
+    <a class="act ghost" id="jb-map" href="#" target="_blank" rel="noopener">นำทาง</a>
+  </div>
+</div>
 
 <div class="wrap">
   <div class="empty" id="empty">
@@ -286,6 +342,34 @@ body.mobile .kv th{width:44%}
       </table>
     </section>
 
+    <!-- ══ 7 · เช็กลิสต์หน้างาน ══ -->
+    <section class="slide" id="s7">
+      <div class="slide-head"><span class="slide-no">7</span><h2>เช็กลิสต์หน้างาน</h2>
+        <span class="progress" id="ck-progress"></span></div>
+      <div class="cols">
+        <div>
+          <h3 style="font-family:Kanit;font-size:15px;margin:0 0 6px">ขั้นตอนติดตั้ง</h3>
+          <ul class="ck" id="ck-steps"></ul>
+        </div>
+        <div>
+          <h3 style="font-family:Kanit;font-size:15px;margin:0 0 6px">ส่งมอบงาน</h3>
+          <ul class="ck" id="ck-hand"></ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <div id="pager" class="no-print">
+    <button id="pg-prev" onclick="pageBy(-1)">‹ ก่อนหน้า</button>
+    <div class="dots" id="pg-dots"></div>
+    <button id="pg-next" onclick="pageBy(1)">ถัดไป ›</button>
+  </div>
+</div>
+
+<div id="lightbox" onclick="closeLightbox()">
+  <div class="box" onclick="event.stopPropagation()">
+    <button class="x" onclick="closeLightbox()">✕ ปิด</button>
   </div>
 </div>
 
@@ -377,6 +461,48 @@ function loadDB2(raw){
         items: Array.isArray(eb.items) ? eb.items : []
     };
     render();
+    cacheForOffline();
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   เก็บโครงการไว้เปิดตอนไม่มีสัญญาณ
+
+   ที่ไซต์งานมักไม่มีเน็ต และ master_shell ก็เปิดไม่ได้ ตัวหน้าถูกแคชไว้
+   ด้วย service worker แล้วก็จริง แต่ถ้าไม่มีข้อมูลโครงการก็ได้หน้าเปล่า
+   โมเดลที่แปลงแล้วมีขนาดไม่กี่กิโลไบต์ เก็บคู่กับเช็กลิสต์ไปเลย
+   ══════════════════════════════════════════════════════════════════ */
+const LAST_KEY = 'asc_brief_last';     // เก็บแค่รหัสโครงการล่าสุด ไม่กี่สิบไบต์
+
+async function cacheForOffline(){
+    if (typeof AscBriefStore === 'undefined' || !M) return;
+    try {
+        const st = await AscBriefStore.getState(PROJECT_ID);
+        st.model = M;
+        st.savedAt = Date.now();
+        await AscBriefStore.setState(PROJECT_ID, st);
+        try { localStorage.setItem(LAST_KEY, PROJECT_ID || 'local'); } catch(e) {}
+    } catch(e) { console.warn('เก็บสำเนาไว้ใช้ออฟไลน์ไม่สำเร็จ', e); }
+}
+
+async function restoreOffline(){
+    if (M || typeof AscBriefStore === 'undefined') return false;
+    let id = '';
+    try { id = localStorage.getItem(LAST_KEY) || ''; } catch(e) {}
+    if (!id) return false;
+    try {
+        const st = await AscBriefStore.getState(id);
+        if (!st || !st.model) return false;
+        PROJECT_ID = id;
+        M = st.model;
+        render();
+        const note = document.getElementById('offline-note');
+        if (note) {
+            note.style.display = '';
+            note.innerText = 'เปิดจากสำเนาในเครื่อง' +
+                (st.savedAt ? ' (บันทึกล่าสุด ' + new Date(st.savedAt).toLocaleString('th-TH') + ')' : '');
+        }
+        return true;
+    } catch(e) { return false; }
 }
 
 function showEmpty(){
@@ -519,21 +645,105 @@ function render(){
     /* ── 6 · วัสดุ ──────────────────────────────────────────────── */
     renderMaterials();
 
-    // รูปอยู่คนละที่เก็บ โหลดแยกแบบไม่ต้องรอ สไลด์จึงขึ้นทันทีไม่ค้าง
+    /* ── แถบงานติดบนสุดของโหมดหน้างาน ───────────────────────────── */
+    set('jb-name', custName);
+    set('jb-addr', [dash(cu.address) !== '—' ? cu.address : '', M.locationName !== '—' ? M.locationName : '']
+                    .filter(Boolean).join(' · ') || M.projectName);
+    const callBtn = document.getElementById('jb-call');
+    if (ph) { callBtn.href = 'tel:' + ph.replace(/[^0-9+]/g,''); callBtn.style.display = '';
+              callBtn.innerText = 'โทร ' + ph; }
+    else callBtn.style.display = 'none';
+    const mapBtn = document.getElementById('jb-map');
+    if (co && co !== '-') { mapBtn.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(co);
+                            mapBtn.style.display = ''; }
+    else mapBtn.style.display = 'none';
+
+    /* ── เช็กลิสต์และรูป ที่เก็บคนละที่ โหลดแยกไม่ให้สไลด์ค้างรอ ──── */
+    (async () => { await loadChecklists(); renderMaterials(); renderChecklists(); })();
     loadPhotos();
+    showPage(0);
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   4) ตารางวัสดุและการติ๊กเบิกของ
+   4) เช็กลิสต์ — วัสดุ ขั้นตอนติดตั้ง และส่งมอบงาน
 
-   สถานะติ๊กเป็นบูลีนไม่กี่ตัว เก็บใน localStorage ได้สบาย แยกตามโครงการ
-   (รูปหน้างานเป็นคนละเรื่อง จะไปอยู่ที่เก็บของมันเองในขั้นถัดไป)
+   สถานะติ๊กทั้งสามชุดอยู่ก้อนเดียวใน IndexedDB ที่เดียวกับรูป
+   ไม่ไปเบียดโควตา localStorage ที่ก้อนข้อมูลโครงการใช้อยู่ และเวลาล้าง
+   ข้อมูลบรีฟของโครงการหนึ่ง ก็ล้างได้ครบในคำสั่งเดียว
    ══════════════════════════════════════════════════════════════════ */
-const matKey = () => 'asc_brief_mat_' + (PROJECT_ID || M.projectName || 'local');
-function matState(){
-    try { return JSON.parse(localStorage.getItem(matKey())) || {}; } catch(e) { return {}; }
+
+/* รายการมาตรฐานของงานติดตั้งบนหลังคา ปรับให้ตรงกับกระบวนการของทีมได้ภายหลัง */
+const STEP_LIST = [
+    'สำรวจหน้างานและยืนยันตำแหน่งติดตั้งกับลูกค้า',
+    'ติดตั้งจุดยึดเชือกนิรภัยและอุปกรณ์กันตก',
+    'ติดตั้ง L-Feet และรางยึดแผง',
+    'วางแผงและขันคลิปจับแผงตามค่าแรงบิดที่กำหนด',
+    'เดินท่อและร้อยสาย DC บนหลังคา',
+    'ติดตั้งอินเวอร์เตอร์และตู้ DC/AC',
+    'เดินสาย AC เข้าตู้เมนและติดตั้งเบรกเกอร์ที่เพิ่ม',
+    'ปักแท่งกราวด์และต่อสายกราวด์ให้ครบทุกจุด',
+    'วัดความต้านทานกราวด์และความเป็นฉนวนของสาย DC',
+    'ตรวจขั้วและแรงดันของแต่ละสตริงก่อนจ่ายไฟ',
+    'จ่ายไฟและตรวจการทำงานของอินเวอร์เตอร์',
+    'ตรวจการทำงานของระบบกันไฟไหลย้อน (ถ้ามี)'
+];
+const HAND_LIST = [
+    'เก็บวัสดุเหลือและทำความสะอาดพื้นที่ทำงาน',
+    'ถ่ายรูปงานที่ติดตั้งเสร็จให้ครบทุกจุด',
+    'ทดสอบระบบให้ลูกค้าดูและอธิบายการทำงาน',
+    'สอนวิธีดูค่าผ่านแอปและวิธีปิดระบบฉุกเฉิน',
+    'ส่งมอบคู่มือและเอกสารรับประกัน',
+    'ให้ลูกค้าเซ็นรับมอบงาน',
+    'แจ้งทีมออฟฟิศเพื่อดำเนินการขออนุญาตและตรวจรับ'
+];
+
+let CK = { mat: {}, steps: {}, hand: {} };   // ก้อนสถานะที่กำลังใช้อยู่
+
+async function loadChecklists(){
+    CK = { mat: {}, steps: {}, hand: {} };
+    if (typeof AscBriefStore === 'undefined') return;
+    try {
+        const st = await AscBriefStore.getState(PROJECT_ID);
+        CK = { mat: st.mat || {}, steps: st.steps || {}, hand: st.hand || {} };
+    } catch(e) { console.warn('อ่านสถานะเช็กลิสต์ไม่สำเร็จ', e); }
 }
-function matSave(s){ try { localStorage.setItem(matKey(), JSON.stringify(s)); } catch(e) {} }
+/* อ่านก้อนเดิมมาก่อนแล้วค่อยเขียนทับเฉพาะส่วนเช็กลิสต์
+   ถ้าเขียนทับทั้งก้อน สำเนาโครงการที่เก็บไว้ใช้ออฟไลน์จะหายไปทันทีที่ติ๊กครั้งแรก */
+function saveChecklists(){
+    if (typeof AscBriefStore === 'undefined') return;
+    AscBriefStore.getState(PROJECT_ID)
+        .then(st => AscBriefStore.setState(PROJECT_ID,
+            Object.assign({}, st, { mat: CK.mat, steps: CK.steps, hand: CK.hand })))
+        .catch(e => console.warn('บันทึกเช็กลิสต์ไม่สำเร็จ', e));
+}
+
+function renderChecklists(){
+    const build = (ulId, list, bag, key) => {
+        const ul = document.getElementById(ulId);
+        if (!ul) return;
+        ul.innerHTML = list.map((txt, i) =>
+            '<li class="' + (bag[i] ? 'done' : '') + '" id="' + key + i + '">'
+            + '<input type="checkbox" ' + (bag[i] ? 'checked' : '')
+            + ' onchange="toggleCk(\'' + key + '\',' + i + ',this.checked)">'
+            + '<span class="n">' + (i + 1) + '.</span><span>' + txt + '</span></li>').join('');
+    };
+    build('ck-steps', STEP_LIST, CK.steps, 'steps');
+    build('ck-hand',  HAND_LIST, CK.hand,  'hand');
+    updateCkProgress();
+}
+function toggleCk(key, i, on){
+    if (on) CK[key][i] = 1; else delete CK[key][i];
+    saveChecklists();
+    const li = document.getElementById(key + i);
+    if (li) li.className = on ? 'done' : '';
+    updateCkProgress();
+}
+function updateCkProgress(){
+    const a = Object.keys(CK.steps).length, b = Object.keys(CK.hand).length;
+    set('ck-progress', 'ติดตั้ง ' + a + '/' + STEP_LIST.length + ' · ส่งมอบ ' + b + '/' + HAND_LIST.length);
+}
+
+function matState(){ return CK.mat; }
 
 function renderMaterials(){
     const tbl = document.getElementById('mat-table');
@@ -558,8 +768,8 @@ function renderMaterials(){
     updateMatProgress();
 }
 function toggleMat(i, on){
-    const s = matState(); if (on) s['i'+i] = 1; else delete s['i'+i];
-    matSave(s);
+    if (on) CK.mat['i'+i] = 1; else delete CK.mat['i'+i];
+    saveChecklists();
     const row = document.getElementById('mr' + i);
     if (row) row.className = on ? 'done' : '';
     updateMatProgress();
@@ -615,6 +825,10 @@ function renderPhotos(){
             const im = document.createElement('img'); im.src = rec.dataUrl; im.alt = cap;
             wrap.appendChild(im);
             wrap.appendChild(AscBriefAnnot.buildSVG(rec));
+            wrap.addEventListener('click', ev => {
+                if (ev.target.closest('.tools')) return;          // กดปุ่มบนรูป ไม่ใช่ขอซูม
+                if (document.body.classList.contains('mobile')) openLightbox(rec.dataUrl, rec);
+            });
             const tools = document.createElement('div'); tools.className = 'tools no-print';
             tools.innerHTML = '<button onclick="editPhoto(\'' + slot + '\',\'' + rec.photoId + '\')">✏ ป้ายกำกับ</button>'
                             + '<button onclick="dropPhoto(\'' + slot + '\',\'' + rec.photoId + '\')">✕</button>';
@@ -663,9 +877,46 @@ async function dropPhoto(slot, photoId){
 /* ══════════════════════════════════════════════════════════════════
    6) โหมดมือถือ และการส่งออก
    ══════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════
+   โหมดหน้างาน — ดูทีละสไลด์ และแตะรูปเพื่อดูเต็มจอ
+
+   บนมือถือการเลื่อนยาว ๆ ผ่านเจ็ดสไลด์ทำให้ช่างหาของไม่เจอ
+   จึงแสดงทีละใบพร้อมแถบเลื่อนหน้าติดขอบล่าง ให้กดสลับได้ด้วยนิ้วโป้ง
+   ตอนพิมพ์ CSS สั่งให้แสดงครบทุกใบเสมอ ไม่ว่าจะเปิดโหมดไหนค้างไว้
+   ══════════════════════════════════════════════════════════════════ */
+let PAGE = 0;
+const slides = () => [...document.querySelectorAll('#deck .slide')];
+
+function showPage(i){
+    const list = slides();
+    if (!list.length) return;
+    PAGE = Math.max(0, Math.min(list.length - 1, i));
+    list.forEach((el, k) => el.classList.toggle('cur', k === PAGE));
+    const dots = document.getElementById('pg-dots');
+    if (dots) dots.innerHTML = list.map((_, k) => '<i class="' + (k === PAGE ? 'on' : '') + '"></i>').join('');
+    const prev = document.getElementById('pg-prev'), next = document.getElementById('pg-next');
+    if (prev) prev.disabled = PAGE === 0;
+    if (next) next.disabled = PAGE === list.length - 1;
+}
+function pageBy(d){ showPage(PAGE + d); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+function openLightbox(dataUrl, rec){
+    const lb = document.getElementById('lightbox'), box = lb.querySelector('.box');
+    [...box.querySelectorAll('img,svg')].forEach(n => n.remove());
+    const im = document.createElement('img'); im.src = dataUrl;
+    box.appendChild(im);
+    if (rec) box.appendChild(AscBriefAnnot.buildSVG(rec));   // ป้ายกำกับต้องไปด้วย ไม่งั้นซูมแล้วไม่รู้ว่าดูอะไร
+    lb.classList.add('on');
+}
+function closeLightbox(){ document.getElementById('lightbox').classList.remove('on'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
 function toggleMobile(){
     const on = document.body.classList.toggle('mobile');
     document.getElementById('btn-mobile').classList.toggle('on', on);
+    document.getElementById('btn-mobile').innerText = on ? '🖥 โหมดเอกสาร' : '📱 โหมดหน้างาน';
+    if (on) showPage(PAGE); else closeLightbox();
+    window.scrollTo({ top: 0 });
 }
 
 function exportBrief(){
@@ -675,7 +926,8 @@ function exportBrief(){
         projectName: M.projectName, coordinates: M.coordinates, locationName: M.locationName,
         job: M.job, equipment: { pv: M.pv, inv1: M.inv1, inv2: M.inv2, bat: M.bat, existing: M.existing },
         counts: M.counts, kwp: M.kwp, strings: M.strings, bom: M.bom,
-        materialsPicked: matState(),
+        checklists: { materials: CK.mat, steps: CK.steps, handover: CK.hand },
+        checklistLabels: { steps: STEP_LIST, handover: HAND_LIST },
         /* เก็บแค่รหัสรูปกับเวกเตอร์ป้าย ซึ่งเล็กมาก ตัวรูปอยู่ใน IndexedDB ของเครื่อง
            ไฟล์ที่ส่งต่อจึงไม่บวมเป็นหลายเมกะไบต์ */
         photos: Object.keys(PHOTOS).flatMap(slot => PHOTOS[slot].map(r => ({
@@ -694,8 +946,21 @@ function exportBrief(){
 /* ── เริ่มระบบ ─────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
     showEmpty();
+    // เปิดบนมือถือจริง ให้เข้าโหมดหน้างานเลย ไม่ต้องให้ช่างมาหาปุ่มเอง
+    if (window.matchMedia && window.matchMedia('(max-width: 760px)').matches) toggleMobile();
     // เปิดใน master_shell : ขอข้อมูลโครงการทันที (หน้าหลักจะ broadcast กลับมา)
     if (inShell) { try { window.parent.postMessage({ type: 'REQUEST_SESSION' }, '*'); } catch(e) {} }
+
+    /* service worker แคชหน้านี้ไว้เปิดตอนไม่มีสัญญาณ
+       เดิมมีแต่ mobi.html ที่ลงทะเบียนให้ ช่างที่เข้าใบสั่งงานทางเดียวจึงไม่เคยได้แคชเลย
+       ตัว sw ดักเฉพาะไฟล์ในรายการของมัน หน้าอื่นของ ASC จึงไม่ถูกแตะ */
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+        navigator.serviceWorker.register('sw.js').catch(e => console.warn('ลงทะเบียน service worker ไม่สำเร็จ', e));
+    }
+
+    /* ไม่มีข้อมูลเข้ามาภายในเวลาสั้น ๆ แปลว่าเปิดเดี่ยวหรือออฟไลน์
+       ลองกู้สำเนาโครงการล่าสุดจากเครื่องแทนที่จะปล่อยให้เห็นหน้าเปล่า */
+    setTimeout(() => { restoreOffline(); }, 1200);
 });
 </script>
 </body>
