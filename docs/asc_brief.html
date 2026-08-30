@@ -117,6 +117,13 @@ header h1 small{display:block;font-weight:300;font-size:.5em;color:#B9C7D6;margi
 .mat td.c{text-align:center;width:64px}
 .mat tbody tr.done{color:var(--mute);text-decoration:line-through}
 .mat tbody tr.done td.c{text-decoration:none}
+/* รายการที่เลือกไม่แสดง ยังเห็นบนจอแบบจาง ๆ เพื่อกดกลับมาได้ แต่หายไปจากกระดาษ */
+.mat tbody tr.off{opacity:.35}
+.mat tbody tr.off td.c{opacity:1}
+.mat-tools{display:flex;gap:6px;align-items:center;margin-bottom:10px}
+.mat-tools button{background:var(--paper);border:1px solid var(--line);border-radius:8px;
+  padding:5px 12px;font-family:'Kanit';font-size:12.5px;color:var(--ink-2)}
+.mat-tools button:hover{background:#EAF1F7;border-color:var(--pv);color:var(--pv)}
 .cat{display:inline-block;font-family:'Kanit';font-size:11px;padding:1px 8px;border-radius:999px;
   background:#EAF1F7;color:var(--pv)}
 .progress{font-family:'Kanit';font-size:13px;color:var(--mute);margin-left:auto}
@@ -197,6 +204,8 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
     padding-bottom:5px;margin-bottom:9px;font-size:9.5px;color:#64748b}
   .lh-slim img{height:20px;width:auto;max-width:90px;object-fit:contain}
   .lh-slim b{font-family:'Kanit';font-size:11px;color:#0f172a}
+  .mat tbody tr.off{display:none}
+  .mat-tools{display:none !important}
   /* ช่องกรอกเองต้องดูเหมือนข้อความธรรมดาบนกระดาษ ไม่มีเส้นประหรือพื้นเหลือง */
   .ed{border:0 !important;background:none !important;padding:0}
   .ed.empty::before{content:'—';font-style:normal;color:#94a3b8}
@@ -376,9 +385,16 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
         <div class="cap">ยังไม่มีรายการวัสดุ</div>
         <div>ไปที่แท็บ System Design แล้วกด “คำนวณตารางวัสดุอุปกรณ์ (Generate BOM)” แล้วส่งออก DB2 ใหม่</div>
       </div>
+      <div class="mat-tools no-print" id="mat-tools" style="display:none">
+        <span style="font-size:12.5px;color:var(--mute)">เลือกรายการที่จะให้ขึ้นในเอกสาร:</span>
+        <button onclick="showAllMat(true)">แสดงทั้งหมด</button>
+        <button onclick="showAllMat(false)">ไม่แสดงทั้งหมด</button>
+        <button onclick="showOnlyUnpicked()">แสดงเฉพาะที่ยังไม่เบิก</button>
+      </div>
       <table class="mat" id="mat-table" style="display:none">
         <thead><tr><th style="width:92px">หมวด</th><th>รายการ</th><th>สเปก</th>
-          <th class="q" style="width:110px">จำนวน</th><th class="c no-print">เบิกแล้ว</th></tr></thead>
+          <th class="q" style="width:110px">จำนวน</th>
+          <th class="c no-print">แสดง</th><th class="c no-print">เบิกแล้ว</th></tr></thead>
         <tbody id="mat-body"></tbody>
       </table>
     </section>
@@ -890,14 +906,17 @@ const HAND_LIST = [
     'แจ้งทีมออฟฟิศเพื่อดำเนินการขออนุญาตและตรวจรับ'
 ];
 
-let CK = { mat: {}, steps: {}, hand: {} };   // ก้อนสถานะที่กำลังใช้อยู่
+/* mat = เบิกแล้ว · hide = เลือกไม่ให้ขึ้นในเอกสาร
+   เก็บเฉพาะรายการที่ "ซ่อน" ไม่ใช่รายการที่ "แสดง" เพราะค่าปกติคือแสดงทุกรายการ
+   ก้อนสถานะจึงว่างเปล่าตอนเริ่ม และไฟล์เก่าที่ไม่มีก้อนนี้ก็แสดงครบเหมือนเดิม */
+let CK = { mat: {}, steps: {}, hand: {}, hide: {} };
 
 async function loadChecklists(){
-    CK = { mat: {}, steps: {}, hand: {} };
+    CK = { mat: {}, steps: {}, hand: {}, hide: {} };
     if (typeof AscBriefStore === 'undefined') return;
     try {
         const st = await AscBriefStore.getState(PROJECT_ID);
-        CK = { mat: st.mat || {}, steps: st.steps || {}, hand: st.hand || {} };
+        CK = { mat: st.mat || {}, steps: st.steps || {}, hand: st.hand || {}, hide: st.hide || {} };
         OV = st.overrides || {};
     } catch(e) { console.warn('อ่านสถานะเช็กลิสต์ไม่สำเร็จ', e); }
 }
@@ -907,7 +926,7 @@ function saveChecklists(){
     if (typeof AscBriefStore === 'undefined') return;
     AscBriefStore.getState(PROJECT_ID)
         .then(st => AscBriefStore.setState(PROJECT_ID,
-            Object.assign({}, st, { mat: CK.mat, steps: CK.steps, hand: CK.hand })))
+            Object.assign({}, st, { mat: CK.mat, steps: CK.steps, hand: CK.hand, hide: CK.hide })))
         .catch(e => console.warn('บันทึกเช็กลิสต์ไม่สำเร็จ', e));
 }
 
@@ -939,38 +958,78 @@ function updateCkProgress(){
 
 function matState(){ return CK.mat; }
 
+const matShown = i => !CK.hide['i' + i];      // ไม่อยู่ในรายการซ่อน แปลว่าแสดง
+
 function renderMaterials(){
     const tbl = document.getElementById('mat-table');
     const none = document.getElementById('mat-none');
+    const tools = document.getElementById('mat-tools');
     const body = document.getElementById('mat-body');
-    if (!M.items.length) { tbl.style.display = 'none'; none.style.display = ''; set('mat-progress',''); return; }
-    tbl.style.display = ''; none.style.display = 'none';
+    if (!M.items.length) {
+        tbl.style.display = 'none'; tools.style.display = 'none';
+        none.style.display = ''; set('mat-progress',''); return;
+    }
+    tbl.style.display = ''; tools.style.display = ''; none.style.display = 'none';
 
     const done = matState();
     body.innerHTML = M.items.map((it, i) => {
-        const k = 'i' + i;
+        const k = 'i' + i, shown = matShown(i);
         const q = typeof it.qty === 'number'
             ? (Number.isInteger(it.qty) ? fmt(it.qty) : fmt(it.qty, 2)) : str(it.qty);
-        return '<tr class="' + (done[k] ? 'done' : '') + '" id="mr' + i + '">'
+        return '<tr class="' + (done[k] ? 'done ' : '') + (shown ? '' : 'off') + '" id="mr' + i + '">'
             + '<td><span class="cat">' + str(it.cat) + '</span></td>'
             + '<td>' + str(it.name) + '</td>'
             + '<td>' + str(it.spec) + '</td>'
             + '<td class="q">' + q + ' <span style="font-weight:400;color:var(--mute)">' + str(it.unit) + '</span></td>'
+            + '<td class="c no-print"><input type="checkbox" ' + (shown ? 'checked' : '')
+            + ' title="ให้รายการนี้ขึ้นในเอกสารที่พิมพ์" onchange="toggleShowMat(' + i + ', this.checked)"></td>'
             + '<td class="c no-print"><input type="checkbox" ' + (done[k] ? 'checked' : '')
-            + ' onchange="toggleMat(' + i + ', this.checked)"></td></tr>';
+            + ' title="เบิกของรายการนี้แล้ว" onchange="toggleMat(' + i + ', this.checked)"></td></tr>';
     }).join('');
     updateMatProgress();
+}
+
+function rowClass(i){
+    const done = matState()['i' + i];
+    return (done ? 'done ' : '') + (matShown(i) ? '' : 'off');
 }
 function toggleMat(i, on){
     if (on) CK.mat['i'+i] = 1; else delete CK.mat['i'+i];
     saveChecklists();
     const row = document.getElementById('mr' + i);
-    if (row) row.className = on ? 'done' : '';
+    if (row) row.className = rowClass(i);
     updateMatProgress();
 }
+
+/* เลือกว่ารายการไหนจะขึ้นในเอกสารที่พิมพ์
+   บางงานไม่ต้องให้ช่างเห็นทั้งตาราง เช่น ของที่ออฟฟิศเตรียมไปให้แล้ว
+   หรือของที่สั่งตรงถึงหน้างาน เอาออกจากใบเบิกได้โดยไม่ต้องแก้ BOM ที่เมนู 2 */
+function toggleShowMat(i, on){
+    if (on) delete CK.hide['i'+i]; else CK.hide['i'+i] = 1;
+    saveChecklists();
+    const row = document.getElementById('mr' + i);
+    if (row) row.className = rowClass(i);
+    updateMatProgress();
+}
+function showAllMat(on){
+    CK.hide = {};
+    if (!on) M.items.forEach((_, i) => { CK.hide['i'+i] = 1; });
+    saveChecklists();
+    renderMaterials();
+}
+/* ใบเบิกของมักอยากได้เฉพาะที่ยังไม่ได้เบิก จะได้ไม่ต้องไล่หาในตารางยาว ๆ */
+function showOnlyUnpicked(){
+    CK.hide = {};
+    M.items.forEach((_, i) => { if (matState()['i'+i]) CK.hide['i'+i] = 1; });
+    saveChecklists();
+    renderMaterials();
+}
+
 function updateMatProgress(){
-    const n = Object.keys(matState()).length;
-    set('mat-progress', 'เบิกแล้ว ' + n + ' / ' + M.items.length + ' รายการ');
+    const picked = Object.keys(matState()).length;
+    const shown = M.items.filter((_, i) => matShown(i)).length;
+    set('mat-progress', 'แสดง ' + shown + ' / ' + M.items.length
+        + ' รายการ · เบิกแล้ว ' + picked);
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -1123,6 +1182,8 @@ function exportBrief(){
         company: coInfo(),
         fieldOverrides: OV,
         checklists: { materials: CK.mat, steps: CK.steps, handover: CK.hand },
+        /* รายการที่เลือกไม่ให้ขึ้นในเอกสาร เก็บเป็นดัชนีของ bom.items */
+        materialsHidden: Object.keys(CK.hide).map(k => Number(k.slice(1))).filter(n => !isNaN(n)).sort((a,b)=>a-b),
         checklistLabels: { steps: STEP_LIST, handover: HAND_LIST },
         /* เก็บแค่รหัสรูปกับเวกเตอร์ป้าย ซึ่งเล็กมาก ตัวรูปอยู่ใน IndexedDB ของเครื่อง
            ไฟล์ที่ส่งต่อจึงไม่บวมเป็นหลายเมกะไบต์ */
