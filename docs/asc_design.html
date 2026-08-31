@@ -3777,12 +3777,40 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
 
                 state.rawEquipData[type] = rawData;
 
-                let msg = `ข้อมูลที่นำเข้าสำเร็จ (${type.toUpperCase()}):\n`;
-                msg += `--------------------------------\n`;
-                for(let key in rawData) {
-                    msg += `${key}: ${rawData[key]}\n`;
-                }
-                alert(msg);
+                /* รายงานผลการอ่านไฟล์ เก็บระหว่างทางแล้วแสดงทีเดียวตอนท้าย
+                   alias  = ฟิลด์ที่อ่านได้แต่มาจากชื่อคีย์สำรอง ไม่ใช่ชื่อหลักของเทมเพลต
+                   missing = ฟิลด์บังคับที่หาไม่เจอหรือเป็นศูนย์ ต้องเตือนให้เห็นก่อนออกแบบต่อ */
+                const report = { alias: [], missing: [], used: [] };
+
+                /* อ่านค่าตัวเลขจากคีย์ตัวแรกที่เจอในลิสต์
+                   ดาต้าชีตแต่ละแหล่งเรียกฟิลด์เดียวกันคนละชื่อ ตัวแรกคือชื่อที่เทมเพลตปัจจุบันใช้ */
+                const pickNum = (names, fallback, label) => {
+                    for (let i = 0; i < names.length; i++) {
+                        const v = rawData[names[i]];
+                        if (v === undefined || v === null || v === '' || v === '-') continue;
+                        const n = parseFloat(v);
+                        if (!isFinite(n)) continue;
+                        if (i > 0) report.alias.push(`${label} อ่านจากคีย์ ${names[i]} (เทมเพลตปัจจุบันใช้ ${names[0]})`);
+                        report.used.push(`${label} = ${n}`);
+                        return n;
+                    }
+                    report.missing.push(`${label} — ไม่พบคีย์ ${names[0]} ใช้ค่าเริ่มต้น ${fallback}`);
+                    return fallback;
+                };
+
+                /* ฟิลด์บังคับที่ขาดไม่ได้ ถ้าหายหรือเป็นศูนย์ การออกแบบจะเพี้ยนแบบเงียบ ๆ */
+                const REQUIRED = {
+                    pv:  [['Pmax_Wp','กำลังไฟสูงสุด (Wp)'], ['Voc_V','แรงดันเปิดวงจร Voc'],
+                          ['Vmp_V','แรงดันทำงาน Vmp'], ['Isc_A','กระแสลัดวงจร Isc'],
+                          ['Imp_A','กระแสทำงาน Imp'], ['Length_mm','ความยาวแผง'], ['Width_mm','ความกว้างแผง']],
+                    inv: [['Max_DC_Input_Voltage_V','แรงดัน DC สูงสุด'], ['MPPT_Voltage_Min_V','แรงดัน MPPT ต่ำสุด'],
+                          ['Number_of_MPPTs','จำนวน MPPT'], ['Inputs_per_MPPT','จำนวนขาเข้าต่อ MPPT'],
+                          ['Rated_AC_Output_Power_kW','กำลังไฟ AC ที่พิกัด']]
+                };
+                (REQUIRED[type === 'inv1' || type === 'inv2' ? 'inv' : type] || []).forEach(([k, label]) => {
+                    const n = parseFloat(rawData[k]);
+                    if (!isFinite(n) || n === 0) report.missing.push(`${label} — คีย์ ${k} ไม่มีค่าหรือเป็นศูนย์`);
+                });
 
                 const mfg = rawData["Manufacturer"] || "Custom";
                 const mod = rawData["Model_Name"] || "Model";
@@ -3796,8 +3824,23 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     state.pvPmax = rawData["Pmax_Wp"] || 0;
                     state.pvIsc = rawData["Isc_A"] || 0; // ดึงค่ากระแสลัดวงจรชิ้นงานจริง
                     state.pvImp = rawData["Imp_A"] || 0; // ดึงค่ากระแสทำงานสูงสุดชิ้นงานจริง
-                    state.pvTempPmax = rawData["Temperature_Coefficient_Pmax_per_C"] || -0.35;
-                    state.pvTempVoc = rawData["Temperature_Coefficient_Voc_per_C"] || -0.27;
+                    /* สัมประสิทธิ์อุณหภูมิ — เทมเพลตโครงสร้าง 3.x ใช้ชื่อ Tk_*_Pct_Per_C
+                       ของเดิมอ่านแต่ชื่อ Temperature_Coefficient_* จึงตกไปใช้ค่าเริ่มต้นทุกครั้ง
+                       ตรวจคลังดาต้าชีตแล้ว แผง 35 จาก 35 ไฟล์ใช้ชื่อ Tk_* ไม่มีไฟล์ไหนใช้ชื่อเดิมเลย
+                       ค่าที่คลาดเคลื่อนตรงนี้ไปโผล่ที่พลังงานรายปีและ NPV โดยไม่มีคำเตือนอะไร */
+                    state.pvTempPmax = pickNum(['Tk_Pmax_Pct_Per_C', 'Temperature_Coefficient_Pmax_per_C',
+                                                'Temp_Coeff_Pmax_per_C', 'Temp_Coeff_Pmax'],
+                                               -0.35, 'สัมประสิทธิ์อุณหภูมิ Pmax');
+                    state.pvTempVoc  = pickNum(['Tk_Voc_Pct_Per_C', 'Temperature_Coefficient_Voc_per_C',
+                                                'Temp_Coeff_Voc_per_C', 'Temp_Coeff_Voc'],
+                                               -0.27, 'สัมประสิทธิ์อุณหภูมิ Voc');
+                    /* หยอดลงช่องพารามิเตอร์อุณหภูมิทันที ไม่รอให้ผู้ใช้เดินไปถึงขั้นที่ 3
+                       generateDB1() อ่านค่าจากช่องนี้ ไม่ได้อ่านจาก state ถ้ายังไม่หยอด
+                       DB2 ที่บันทึกก่อนถึงขั้นที่ 3 จะพาค่าเริ่มต้นติดไปแทนค่าจากดาต้าชีต */
+                    const tcP = document.getElementById('tempCoeffPmax');
+                    const tcV = document.getElementById('tempCoeffVoc');
+                    if (tcP) tcP.value = state.pvTempPmax;
+                    if (tcV) tcV.value = state.pvTempVoc;
                     document.getElementById(labelId).innerText = `${mfg} ${mod} (${state.pvPmax}W)`;
                     processPolygonsAndPanels();
                 } else if (type === 'inv1' || type === 'inv2') {
@@ -3818,7 +3861,11 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     calculateStringSizing();
                 } else if (type === 'bat') {
                     state.batMfg = mfg; state.batModel = mod;
-                    state.batCap = rawData["Nominal_Capacity_kWh"] || rawData["Capacity_kWh"] || 0;
+                    /* ความจุแบตเตอรี่ — ไฟล์ระดับโมดูลบางแบรนด์กรอกแต่ Usable หรือ Module
+                       เดิมอ่านแค่สองชื่อ ถ้าไม่เจอจะได้ 0 แล้วผ่านไปเงียบ ๆ */
+                    state.batCap = pickNum(['Nominal_Capacity_kWh', 'Usable_Capacity_kWh',
+                                            'Module_Capacity_kWh', 'Capacity_kWh'],
+                                           0, 'ความจุแบตเตอรี่ (kWh)');
                     state.batQty = 1; document.getElementById('batQty').value = 1;
                     document.getElementById(labelId).innerText = `${mfg} ${mod} (${state.batCap}kWh)`;
                     calculateStringSizing();
@@ -3839,7 +3886,33 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                         sel.options[0].text = `📁 ${mfg} ${mod}`;
                     }
                 }
-                e.target.value = ''; 
+
+                /* สรุปผลการอ่านไฟล์ เอาคำเตือนขึ้นก่อนเสมอ
+                   ของเดิมเทคีย์ทั้งหมดออกมาเป็นร้อยบรรทัด ปัญหาจริงเลยจมหายไปในกอง
+                   ค่าดิบทั้งไฟล์ยังเก็บครบใน state.rawEquipData และไหลต่อไป DB2 เหมือนเดิม */
+                (function () {
+                    const head = `นำเข้าไฟล์สำเร็จ (${type.toUpperCase()})\n${mfg} ${mod}\n`;
+                    let msg = head + '─'.repeat(34) + '\n';
+                    if (report.missing.length) {
+                        msg += `\n⚠️ ต้องตรวจสอบ ${report.missing.length} รายการ\n`;
+                        report.missing.forEach(m => { msg += '  • ' + m + '\n'; });
+                    }
+                    if (report.alias.length) {
+                        msg += `\nℹ️ อ่านจากชื่อคีย์สำรอง ${report.alias.length} รายการ\n`;
+                        report.alias.forEach(m => { msg += '  • ' + m + '\n'; });
+                    }
+                    if (report.used.length) {
+                        msg += '\nค่าที่โปรแกรมนำไปคำนวณ\n';
+                        report.used.forEach(m => { msg += '  • ' + m + '\n'; });
+                    }
+                    if (!report.missing.length && !report.alias.length) {
+                        msg += '\n✅ ฟิลด์บังคับครบถ้วน ตรงกับชื่อคีย์ของเทมเพลตทุกตัว\n';
+                    }
+                    msg += `\nอ่านได้ทั้งหมด ${Object.keys(rawData).length} ฟิลด์ เก็บครบทุกตัวลงไฟล์ DB2`;
+                    alert(msg);
+                })();
+
+                e.target.value = '';
                 updatePreviews();
             };
             reader.readAsText(file);
