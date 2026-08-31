@@ -3742,12 +3742,34 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 const lines = text.split(/\r?\n/);
                 const rawData = {};
                 
+                /* ตัดคอมเมนต์ที่ขึ้นต้นด้วย ; ออกจากบรรทัดค่า
+
+                   ดาต้าชีตโครงสร้าง 3.0 เขียนแท็กต่อท้ายบรรทัดค่า เช่น
+                       Length_mm = 2382 ; [NOT FOUND IN DATASHEET]
+                   ถ้าไม่ตัดออก val จะเป็น "2382 ; [NOT FOUND...]" ซึ่ง isNaN เป็นจริง
+                   ค่าจึงถูกเก็บเป็นข้อความ แล้ว state.pvLen / 1000 กลายเป็น NaN
+                   ผังแผงทั้งใบเพี้ยนโดยไม่มีคำเตือนอะไรเลย
+                   (รูปแบบ 3.1 ย้ายแท็กขึ้นไปเป็นบรรทัดของตัวเองแล้ว แต่ไฟล์เก่ายังมีอยู่)
+
+                   ค่าที่อยู่ในเครื่องหมายคำพูดต้องไม่ถูกตัด เพราะข้อความจริงอาจมี ; อยู่ */
+                const stripComment = (raw) => {
+                    const s = String(raw).trim();
+                    if (s.charAt(0) === '"') {
+                        const end = s.indexOf('"', 1);
+                        return end === -1 ? s : s.slice(0, end + 1);
+                    }
+                    const i = s.indexOf(';');
+                    return i === -1 ? s : s.slice(0, i).trim();
+                };
+
                 lines.forEach(line => {
-                    if(line.trim() === "" || line.startsWith("#") || !line.includes("=")) return;
-                    const parts = line.split("=");
+                    const t = line.trim();
+                    // บรรทัดคอมเมนต์เต็มบรรทัด ข้ามทิ้ง แม้จะมีเครื่องหมายเท่ากับปนอยู่ก็ตาม
+                    if (t === "" || t.startsWith("#") || t.startsWith(";") || !t.includes("=")) return;
+                    const parts = t.split("=");
                     const key = parts[0].trim();
-                    let val = parts.slice(1).join("=").trim().replace(/^"|"$/g, '');
-                    
+                    let val = stripComment(parts.slice(1).join("=")).replace(/^"|"$/g, '').trim();
+
                     if (val === "") val = "-";
                     if (val !== "-" && !isNaN(val)) rawData[key] = parseFloat(val);
                     else rawData[key] = val;
