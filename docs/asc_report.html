@@ -479,6 +479,8 @@
                         <div><label class="block text-xs font-bold text-red-600">Temp Coeff Pmax (%/°C)</label><input type="number" step="0.01" id="inp-pv-tc-pmax" value="0" class="w-full border rounded p-2 text-sm"></div>
                         <div><label class="block text-xs font-bold text-red-600">Temp Coeff Voc (%/°C)</label><input type="number" step="0.01" id="inp-pv-tc-voc" value="0" class="w-full border rounded p-2 text-sm"></div>
                     </div>
+                    <!-- เตือนเมื่อค่าที่บันทึกไว้ใน DB2 ไม่ตรงกับดาต้าชีตของแผง โผล่เฉพาะตอนที่ไม่ตรงจริง -->
+                    <div id="tc-mismatch" class="hidden mt-2 text-xs bg-amber-50 border border-amber-300 rounded p-2 text-amber-900 leading-relaxed"></div>
 
                     <h4 class="text-sm font-bold text-orange-600 mb-2 mt-4">การสูญเสียในระบบ (Loss Parameters)</h4>
                     <div class="grid grid-cols-4 gap-4">
@@ -1542,6 +1544,59 @@
         try { RPT_LANG = localStorage.getItem('asc_report_lang') === 'en' ? 'en' : 'th'; } catch (e) {}
         const RT = (th, en) => (RPT_LANG === 'en' && en) ? en : th;
 
+        /* ══════════════════════════════════════════════════════════════════
+           เทียบสัมประสิทธิ์อุณหภูมิที่บันทึกไว้ กับค่าที่ดาต้าชีตของแผงระบุ
+
+           หน้าออกแบบเคยอ่านชื่อคีย์ผิด (มองหา Temperature_Coefficient_* ทั้งที่
+           เทมเพลตใช้ Tk_*_Pct_Per_C) ไฟล์ DB2 ที่บันทึกก่อนแก้จึงพาค่าเริ่มต้น
+           -0.35 / -0.27 ติดไปด้วย แล้วบดบังค่าจริงจากดาต้าชีตในหน้ารายงาน
+           ผลคือพลังงานรายปีต่ำกว่าความจริงราวครึ่งถึงสองเปอร์เซ็นต์แบบไม่มีใครรู้
+
+           ไม่แก้ค่าให้เอง เพราะวิศวกรมีสิทธิ์กรอกทับด้วยเหตุผลของตัวเอง
+           แต่ต้องเห็นว่าไม่ตรง และกดใช้ค่าจากดาต้าชีตได้ในคลิกเดียว
+           ══════════════════════════════════════════════════════════════════ */
+        function ascCheckTempCoeffMismatch(pv) {
+            const box = document.getElementById('tc-mismatch');
+            if (!box) return;
+            box.classList.add('hidden');
+            box.innerHTML = '';
+            if (!pv) return;
+
+            const rows = [
+                { id: 'inp-pv-tc-pmax', sheet: parseFloat(pv.Tk_Pmax_Pct_Per_C), label: 'Temp Coeff Pmax' },
+                { id: 'inp-pv-tc-voc',  sheet: parseFloat(pv.Tk_Voc_Pct_Per_C),  label: 'Temp Coeff Voc'  }
+            ].filter(r => {
+                if (!isFinite(r.sheet) || r.sheet === 0) return false;      // ดาต้าชีตไม่มีค่าให้เทียบ
+                const cur = parseFloat(document.getElementById(r.id) ? document.getElementById(r.id).value : NaN);
+                r.cur = cur;
+                return isFinite(cur) && Math.abs(cur - r.sheet) > 0.001;
+            });
+            if (!rows.length) return;
+
+            window.__tcSheet = {};
+            rows.forEach(r => { window.__tcSheet[r.id] = r.sheet; });
+
+            box.innerHTML =
+                `<b>⚠ ค่าสัมประสิทธิ์อุณหภูมิไม่ตรงกับดาต้าชีตของแผง</b><br>` +
+                rows.map(r => `${r.label}: ใช้อยู่ <b>${r.cur}</b> · ดาต้าชีตระบุ <b>${r.sheet}</b>`).join('<br>') +
+                `<br><span class="text-[11px]">ไฟล์ DB2 ที่บันทึกก่อนรุ่นนี้พาค่าเริ่มต้นติดมาแทนค่าจริงจากดาต้าชีต ` +
+                `ถ้าไม่ได้ตั้งใจกรอกทับ ให้กดใช้ค่าจากดาต้าชีตแล้วประมวลผลใหม่</span><br>` +
+                `<button type="button" onclick="ascApplySheetTempCoeff()" class="mt-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold py-1 px-2.5 rounded">ใช้ค่าจากดาต้าชีต</button>`;
+            box.classList.remove('hidden');
+        }
+
+        function ascApplySheetTempCoeff() {
+            const m = window.__tcSheet || {};
+            Object.keys(m).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = m[id];
+            });
+            const box = document.getElementById('tc-mismatch');
+            if (box) {
+                box.innerHTML = '<b>✅ ใช้ค่าจากดาต้าชีตแล้ว</b> กด ▶ ประมวลผลและสร้างรายงาน อีกครั้งเพื่อให้ตัวเลขอัปเดต';
+            }
+        }
+
         /* หมายเหตุแรงดันตก ประกอบประโยคตอนแสดงผล ไม่ใช่ตอนนำเข้า
            ท้ายประโยค (rawNote) มาจากไฟล์ DB2 ที่หน้าออกแบบเขียนไว้ จึงเป็นภาษาไทยเสมอ */
         function ascWiringNote() {
@@ -2434,6 +2489,10 @@
                     }
                     setVal('pv-Module_Efficiency_Pct', pvEff.toFixed(2));
                     setVal('inp-pv-tc-pmax', thermal.tempCoeffPmax || pv.Tk_Pmax_Pct_Per_C || -0.35); setVal('inp-pv-tc-voc', thermal.tempCoeffVoc || pv.Tk_Voc_Pct_Per_C || -0.27);
+                    /* ไฟล์ DB2 ที่บันทึกก่อนแก้บั๊กหน้าออกแบบ พาค่าเริ่มต้นติดมาแทนค่าจากดาต้าชีต
+                       ค่าเริ่มต้นเป็นตัวเลขจริงจึงชนะในสายเงื่อนไขข้างบน ดาต้าชีตถูกมองข้ามเงียบ ๆ
+                       ตรงนี้ไม่แก้ค่าให้เอง เพราะวิศวกรอาจตั้งใจกรอกทับ แต่ต้องบอกให้เห็นและกดใช้ได้ในคลิกเดียว */
+                    ascCheckTempCoeffMismatch(pv);
                     
                     let totalPanels = (step4.equipmentCounts && step4.equipmentCounts.totalPanels) || pv.qty || 0;
                     setVal('inp-pv-qty', totalPanels);

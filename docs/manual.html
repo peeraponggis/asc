@@ -94,6 +94,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
 
                 <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 5 · รายงาน</div>
                 <a href="#m3-import" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">นำเข้าข้อมูล</a>
+                <a href="#m3-tcwarn" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">เตือนสัมประสิทธิ์อุณหภูมิ</a>
                 <a href="#m3-param"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ตั้งค่าการเงิน</a>
                 <a href="#m3-run"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ประมวลผลและออก PDF</a>
                 <a href="#m3-lang"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ออกรายงานภาษาอังกฤษ</a>
@@ -1155,11 +1156,30 @@ Is_Bifacial = False</div>
                     เลือกไฟล์ DB0 DB1 หรือ DB2 ที่เคยดาวน์โหลดไว้ นำเข้าเองได้
                     เมื่อสำเร็จจะขึ้นข้อความ <b>ระบบกวาดข้อมูลสำเร็จ</b>
                 </p>
-                <p class="text-slate-600 leading-relaxed">
+                <p class="text-slate-600 leading-relaxed mb-5">
                     ที่หัวข้อ <b>วัตถุประสงค์การวิเคราะห์</b> ให้เลือกโหมดจำลองให้ตรงกับงาน
                     เช่นระบบขายไฟคืน ระบบใช้เองล้วน หรือระบบที่มีแบตเตอรี่
                     เพราะแต่ละโหมดคิดผลตอบแทนคนละแบบ
                 </p>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-5">
+                    <h4 id="m3-tcwarn" class="font-bold text-amber-900 text-sm mb-2"><i class="fa-solid fa-triangle-exclamation mr-1.5"></i> ถ้าขึ้นเตือนว่าสัมประสิทธิ์อุณหภูมิไม่ตรงกับดาต้าชีต</h4>
+                    <p class="text-sm text-amber-900 leading-relaxed mb-3">
+                        ใต้ช่อง <b>Temp Coeff Pmax</b> และ <b>Temp Coeff Voc</b> อาจมีแถบสีเหลืองขึ้นมาบอกว่า
+                        ค่าที่กำลังใช้ไม่ตรงกับที่ดาต้าชีตของแผงระบุ เกิดกับ<b>ไฟล์ DB2 ที่บันทึกไว้ก่อนหน้านี้</b>
+                        เพราะหน้าออกแบบรุ่นเก่าอ่านชื่อคีย์ในดาต้าชีตไม่เจอ แล้วบันทึกค่าเริ่มต้น −0.35 กับ −0.27 ติดไปแทนค่าจริง
+                    </p>
+                    <ul class="text-sm text-amber-900 space-y-1.5 mb-3">
+                        <li>• ถ้า<b>ไม่ได้ตั้งใจกรอกทับเอง</b> ให้กด <span class="btn-ref">ใช้ค่าจากดาต้าชีต</span> แล้วกด ▶ ประมวลผลใหม่</li>
+                        <li>• ถ้า<b>ตั้งใจกรอกทับ</b> ด้วยเหตุผลของงานนั้น ไม่ต้องกด ปล่อยไว้ได้เลย โปรแกรมไม่แก้ค่าให้เอง</li>
+                        <li>• งานที่ออกแบบใหม่ตั้งแต่รุ่นนี้เป็นต้นไปจะไม่เจอปัญหานี้ เพราะหน้าออกแบบอ่านค่าจากดาต้าชีตได้ถูกต้องแล้ว</li>
+                    </ul>
+                    <p class="text-xs text-amber-800 leading-relaxed">
+                        ค่านี้มีผลกับพลังงานรายปีจริง ทดสอบกับงานขนาด 312 kWp ที่ดาต้าชีตระบุ −0.29
+                        แต่ไฟล์ค้างไว้ที่ −0.35 พบว่าพลังงานต่างกัน 2,878 kWh/ปี หรือราว 0.48%
+                        แผงที่ดาต้าชีตระบุ −0.26 ช่องว่างจะกว้างกว่านี้
+                    </p>
+                </div>
             </section>
 
             <section class="mb-12">
