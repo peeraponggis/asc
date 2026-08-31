@@ -3758,8 +3758,14 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                         const end = s.indexOf('"', 1);
                         return end === -1 ? s : s.slice(0, end + 1);
                     }
-                    const i = s.indexOf(';');
-                    return i === -1 ? s : s.slice(0, i).trim();
+                    /* ตัดที่เครื่องหมายคอมเมนต์ตัวแรกที่เจอ รับทั้ง ; และ #
+                       เทมเพลตรุ่นเก่า (Inverter_Structure.txt) เขียนคำอธิบายต่อท้ายด้วย #
+                           Rated_AC_Output_Power_kW = 50.0        # กำลังไฟฟ้าขาออกพิกัด
+                       ถ้าไม่ตัด ค่าจะกลายเป็นข้อความ แล้ว state.inv1AcKw > 0 เป็นเท็จ
+                       ผลคือเช็กลิสต์ก่อนบันทึกขึ้นว่ายังไม่ได้เลือกอุปกรณ์ ทั้งที่เลือกไปแล้ว */
+                    const cut = [s.indexOf(';'), s.indexOf('#')].filter(i => i >= 0);
+                    if (!cut.length) return s;
+                    return s.slice(0, Math.min.apply(null, cut)).trim();
                 };
 
                 lines.forEach(line => {
@@ -3914,6 +3920,9 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
 
                 e.target.value = '';
                 updatePreviews();
+                /* รีเฟรชเช็กลิสต์ทันทีที่โหลดอุปกรณ์เสร็จ ไม่ต้องรอให้ผู้ใช้ไปแตะอย่างอื่น
+                   ไม่งั้นสถานะที่เห็นในขั้นบันทึกอาจเป็นของรอบก่อนหน้า */
+                if (typeof updateSaveChecklist === 'function') updateSaveChecklist();
             };
             reader.readAsText(file);
         }
@@ -7287,7 +7296,19 @@ function ascFileStamp(projectName, kind) {
                 el.classList.toggle('chk-no', !ok);
             };
             const panels = parseInt(document.getElementById('finalPanelCount') ? document.getElementById('finalPanelCount').value : 0) || 0;
-            setChk('chk-equip', (state.pvPmax > 0 && state.inv1AcKw > 0));
+
+            /* แยกให้ชัดว่าขาดฝั่งไหน ของเดิมขึ้นแค่ "ยังไม่ทำ" ทั้งที่อาจเลือกแผงแล้ว
+               แต่ค่าที่อ่านจากดาต้าชีตเป็นข้อความเพราะมีคอมเมนต์ต่อท้ายบรรทัด
+               เทียบด้วย parseFloat จึงไม่พลาดกรณีค่าที่มาจากไฟล์รุ่นเก่าเป็นข้อความตัวเลข */
+            const pvW  = parseFloat(state.pvPmax);
+            const invW = parseFloat(state.inv1AcKw);
+            const pvOk  = isFinite(pvW)  && pvW  > 0;
+            const invOk = isFinite(invW) && invW > 0;
+            setChk('chk-equip', pvOk && invOk,
+                (pvOk && invOk) ? null
+                : (!pvOk && !invOk) ? 'ยังไม่ได้เลือกแผงและอินเวอร์เตอร์'
+                : (!pvOk) ? 'ยังไม่ได้เลือกแผง (ไม่มีค่า Pmax)'
+                : 'ยังไม่ได้เลือกอินเวอร์เตอร์ (ไม่มีค่ากำลังไฟ AC)');
             setChk('chk-roof', panels > 0, panels > 0 ? fmtInt(panels) + ' แผง' : 'ยังไม่มีแผง');
             setChk('chk-bom', !!state.engineering_and_bom);
             setChk('chk-db1', !!sessionStorage.getItem('db1'));
