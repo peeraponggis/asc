@@ -73,6 +73,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 2 · ออกแบบระบบ</div>
                 <a href="#m2-prep"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้นเตรียม · ดาต้าชีตอุปกรณ์</a>
                 <a href="#m2-step1"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 1 · ข้อมูลและอุปกรณ์</a>
+                <a href="#m2-accouple" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ระบบออนกริดเดิม (AC Coupling)</a>
                 <a href="#m2-step2"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 2 · วางผังบนแผนที่</a>
                 <a href="#m2-overlay" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ตรึงภาพโดรนด้วย GCP</a>
                 <a href="#m2-zone"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">พื้นที่วางแผงและล็อกแผง</a>
@@ -95,6 +96,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <a href="#m3-import" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">นำเข้าข้อมูล</a>
                 <a href="#m3-param"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ตั้งค่าการเงิน</a>
                 <a href="#m3-run"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ประมวลผลและออก PDF</a>
+                <a href="#m3-lang"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ออกรายงานภาษาอังกฤษ</a>
 
                 <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 6 · บทสรุประบบ</div>
                 <a href="#m6-load"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">เปิดและนำเข้าข้อมูล</a>
@@ -621,6 +623,26 @@ Is_Bifacial = False</div>
                         </p></div>
                     </li>
                 </ol>
+
+                <div class="bg-white border border-teal-200 rounded-xl p-5 mb-5">
+                    <h4 id="m2-accouple" class="font-bold text-teal-800 text-sm mb-2">⚡ ระบบออนกริดเดิม (AC Coupling)</h4>
+                    <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                        ใช้เมื่อไซต์มีระบบโซลาร์อยู่ก่อนแล้ว และจะเติมไฮบริดเข้าไปทางฝั่ง AC
+                        ติ๊กเปิดการ์ดนี้แล้วกรอกข้อมูลระบบเดิม โปรแกรมจะเอาไปรวมในสมดุลพลังงานรายชั่วโมง
+                        เพื่อให้ไฟที่ระบบเดิมผลิตเกินโหลดถูกเก็บเข้าแบตเตอรี่ใหม่แทนที่จะไหลย้อนทิ้ง
+                    </p>
+                    <ul class="text-sm text-slate-600 space-y-2.5">
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ขนาด AC ของระบบเดิม</b> — พิกัดอินเวอร์เตอร์เดิม ใช้คิดกำลัง AC รวมที่จุดรวมสาย และเป็นเพดานตัดยอดของเส้นผลิตรายชั่วโมง</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>แผงเดิม วัตต์/จำนวนแผง</b> — กรอกวัตต์ต่อแผงกับจำนวนแผง โปรแกรมคูณให้เป็นขนาดฝั่ง DC (kWp) แล้วขึ้นให้เห็นใต้ช่องพร้อมค่า DC/AC ของระบบเดิม</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ผลผลิตจำเพาะที่คาด</b> — คำนวณให้อัตโนมัติ ไม่ต้องกรอก จาก <b>PSH 4.3 ชม./วัน × 365 วัน × PR 0.75 = 1,177 kWh/kW/ปี</b> ใช้เมื่อเลือก "รู้แค่ขนาด — ให้ระบบประมาณให้"</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ตัวตั้งของการประมาณคือขนาด DC</b> — พลังงานต่อปี = kWp จากแผงเดิม × 1,177 ถ้ายังไม่กรอกแผง โปรแกรมจะใช้ขนาด AC เป็นตัวตั้งแทนไปก่อน</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ถ้ามีข้อมูลจริง ให้ใช้ข้อมูลจริง</b> — เลือก "มีผลผลิตรายเดือน" แล้วกรอก 12 เดือน หรือ "มีผลผลิตรายชั่วโมง" แล้วโหลดไฟล์ 8,760 ค่า จะแม่นกว่าการประมาณมาก</span></li>
+                    </ul>
+                    <p class="text-xs text-slate-500 leading-relaxed mt-3">
+                        ค่าประหยัดและระยะคืนทุนในรายงานคิดจาก <b>ส่วนเพิ่ม</b> เท่านั้น
+                        ไม่ได้นับไฟที่ระบบเดิมผลิตอยู่แล้วเป็นผลงานของการลงทุนใหม่
+                    </p>
+                </div>
 
                 <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
                     <p class="text-sm text-slate-700 leading-relaxed">
@@ -1192,6 +1214,26 @@ Is_Bifacial = False</div>
                         </p></div>
                     </li>
                 </ol>
+
+                <div class="bg-white border border-slate-200 rounded-xl p-5 mb-5">
+                    <h4 id="m3-lang" class="font-bold text-slate-800 text-sm mb-3">ออกรายงานเป็นภาษาอังกฤษ</h4>
+                    <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                        บนแถบด้านบนข้างปุ่ม <span class="btn-ref">Export PDF</span> มีปุ่ม
+                        <span class="btn-ref">ไทย</span> กับ <span class="btn-ref">EN</span>
+                        กดสลับได้ทุกเมื่อ กล่องวิเคราะห์บนหน้าจอจะเปลี่ยนภาษาทันที
+                        สิ่งที่เห็นบนจอคือสิ่งที่จะพิมพ์ออกมา ตรวจก่อนกด Export ได้เลย
+                        โปรแกรมจำภาษาที่เลือกไว้ให้ เปิดหน้าใหม่ก็ยังเป็นภาษาเดิม
+                        และชื่อไฟล์จะลงท้ายด้วย <b>_report_TH_</b> หรือ <b>_report_EN_</b> ตามภาษาที่ใช้ออก
+                    </p>
+                    <ul class="text-sm text-slate-600 space-y-2.5">
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ตัวเลขไม่ขยับ</b> — การสลับภาษาเปลี่ยนแค่ข้อความ ผลจำลอง ตารางการเงิน และ BOM เป็นชุดเดียวกันทุกภาษา</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>เอกสารข้อเสนอลูกค้าเปลี่ยนตามด้วย</b> — ปุ่มบนแถบบนคุมทั้งรายงานหลักและเอกสารข้อเสนอ 6 หน้า</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ยังเป็นไทยอยู่สองอย่าง</b> — หน้าภาคผนวก "คำอธิบายโดยละเอียด" ที่ติ๊กเลือกเอง
+                            และข้อความที่ติดมากับไฟล์ DB2 เช่น ชื่อสถานที่ตั้ง ชนิดรางเดินสาย และหมายเหตุแรงดันตกจากหน้าออกแบบ
+                            สองอย่างนี้เป็นข้อมูลของโครงการ ไม่ใช่ข้อความของแบบฟอร์มรายงาน</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ฟอร์มกรอกพารามิเตอร์ด้านซ้ายยังเป็นไทย</b> — ตั้งใจไว้แบบนั้น เพราะคนกรอกคือวิศวกรผู้ออกแบบ</span></li>
+                    </ul>
+                </div>
 
                 <div class="bg-white border border-slate-200 rounded-xl p-5">
                     <h4 class="font-bold text-slate-800 text-sm mb-3">เลือกหัวข้อให้เหมาะกับคนอ่าน</h4>

@@ -599,9 +599,10 @@
                                 <span class="sr-ctrl"><input type="number" id="exAcKw" value="0" min="0" step="0.1" style="width:78px;"> kW</span></div>
                             <div class="setting-row"><span class="sr-label">รุ่นอินเวอร์เตอร์เดิม:</span>
                                 <span class="sr-ctrl"><input type="text" id="exInvModel" value="-" style="width:150px;"></span></div>
-                            <div class="setting-row"><span class="sr-label">มุมเอียง / ทิศ ของแผงเดิม:</span>
-                                <span class="sr-ctrl"><input type="number" id="exTilt" value="15" min="0" max="90" step="1" style="width:52px;"> °
-                                    <input type="number" id="exAzi" value="180" min="0" max="359" step="1" style="width:56px;"> °</span></div>
+                            <div class="setting-row"><span class="sr-label">แผงเดิม วัตต์/จำนวนแผง:</span>
+                                <span class="sr-ctrl"><input type="number" id="exPanelW" value="0" min="0" step="5" style="width:70px;"> W/แผง
+                                    <input type="number" id="exPanelQty" value="0" min="0" step="1" style="width:64px;"> แผง</span></div>
+                            <div id="exDcNote" style="font-size:0.72em; color:#64748b; margin:-2px 0 4px 0;"></div>
                             <div class="setting-row"><span class="sr-label">ปีที่ติดตั้ง / เสื่อมปีละ:</span>
                                 <span class="sr-ctrl"><input type="number" id="exYear" value="" placeholder="พ.ศ./ค.ศ." style="width:78px;">
                                     <input type="number" id="exDeg" value="0.5" min="0" max="5" step="0.1" style="width:52px;"> %</span></div>
@@ -615,8 +616,8 @@
 
                             <div id="exEstimateBox" style="margin-top:6px;">
                                 <div class="setting-row"><span class="sr-label">ผลผลิตจำเพาะที่คาด:</span>
-                                    <span class="sr-ctrl"><input type="number" id="exYield" value="1400" min="600" max="2200" step="10" style="width:72px;"> kWh/kW/ปี</span></div>
-                                <div style="font-size:0.72em; color:#64748b;">ค่ากลางของไทยอยู่ราว 1,300–1,500 ปรับได้ถ้ารู้ผลจริงของระบบเดิม</div>
+                                    <span class="sr-ctrl"><input type="number" id="exYield" value="1177" readonly title="คำนวณให้อัตโนมัติจาก PSH 4.3 และ PR 0.75" style="width:72px; background:#f1f5f9; color:#334155; cursor:not-allowed;"> kWh/kW/ปี</span></div>
+                                <div style="font-size:0.72em; color:#64748b;">คำนวณให้อัตโนมัติ: PSH 4.3 ชม./วัน × 365 วัน × PR 0.75 = 1,177 kWh/kW/ปี</div>
                             </div>
                             <div id="exMonthlyBox" style="display:none; margin-top:6px;">
                                 <div style="font-size:0.75em; color:#475569; margin-bottom:3px;">หน่วยที่ผลิตได้รายเดือน (kWh) — ม.ค. ถึง ธ.ค. คั่นด้วยจุลภาคหรือเว้นบรรทัด</div>
@@ -1862,8 +1863,15 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
 			saveMapState();
         });
 
+        /* ผลผลิตจำเพาะที่ใช้ประมาณการระบบออนกริดเดิม เมื่อผู้ใช้รู้แค่ขนาด
+           PSH 4.3 ชม./วัน เป็นค่ากลางของประเทศไทย และ PR 0.75 เป็นเกณฑ์ระบบที่ใช้งานมาแล้วระยะหนึ่ง
+           แก้ที่นี่ที่เดียว ทั้งช่องกรอก ข้อความสรุป และไฟล์ DB2 อ้างค่าเดียวกันหมด */
+        const ASC_EX_PSH   = 4.3;
+        const ASC_EX_PR    = 0.75;
+        const ASC_EX_YIELD = Math.round(ASC_EX_PSH * 365 * ASC_EX_PR);   // 1,177 kWh/kW/ปี
+
         const state = {
-			
+
 			db0KwP: 0, // 🌟 เพิ่มตัวแปรเก็บค่า kWp จาก DB0
 			rawDB0Data: null, // 🌟 เพิ่มตัวแปรนี้เพื่อเก็บข้อมูล DB0 ทั้งก้อน (รวม loadProfile)
 			pvLen: 0, pvWid: 0, pvVoc: 0, pvVmp: 0, pvPmax: 0, pvIsc: 0, pvImp: 0, pvMfg: "-", pvModel: "-", pvTempPmax: -0.35, pvTempVoc: -0.27,
@@ -1875,10 +1883,15 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
             evMfg: "-", evModel: "-", evQty: 0, evAcKw: 0,
             /* ระบบออนกริดเดิมสำหรับงาน AC coupling — ปิดไว้เป็นค่าตั้งต้น
                ตราบใดที่ยังปิดอยู่ ทุกการคำนวณต้องได้ผลเท่าเดิมทุกตัวเลข */
-            existing: { enabled: false, acKw: 0, invModel: "-", tilt: 15, azimuth: 180,
+            existing: { enabled: false, acKw: 0, invModel: "-",
+                        panelW: 0, panelQty: 0, dcKwp: 0,
+                        /* มุมเอียงกับทิศไม่มีช่องให้กรอกแล้ว แต่ยังเก็บไว้เพราะเครื่องจำลอง
+                           ในหน้ารายงานใช้กำหนด "รูปทรง" ของเส้นผลิตรายชั่วโมง ไม่ได้กำหนดยอดรวม
+                           ยอดรวมมาจากผลผลิตจำเพาะ ไฟล์ DB2 เก่าที่มีค่าจริงก็ยังอ่านมาใช้ได้ */
+                        tilt: 15, azimuth: 180,
                         commissionedYear: null, degradationPctPerYear: 0.5,
                         exportControl: true,
-                        production: { mode: 'estimate', specificYield: 1400, annualKWh: 0, monthly: [], hourly: [] } },
+                        production: { mode: 'estimate', specificYield: ASC_EX_YIELD, annualKWh: 0, monthly: [], hourly: [] } },
             
             maxPanelsPerString: 15, minPanelsPerString: 0, maxSystemStrings: 0, maxSystemPanels: 0,
             rowsPerGroup: 10, rowWalkwayGapCm: 80, colsPerGroup: 2, colWalkwayGapCm: 80,
@@ -3473,12 +3486,19 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                             d.production.monthly = Array.isArray(pr.monthly) ? pr.monthly.slice(0, 12) : [];
                             d.production.hourly  = Array.isArray(pr.hourly) ? pr.hourly : [];
                             d.production.annualKWh = parseFloat(pr.annualKWh) || 0;
-                            d.production.specificYield = parseFloat(pr.specificYield) > 0 ? parseFloat(pr.specificYield) : 1400;
+                            /* ผลผลิตจำเพาะคำนวณจาก PSH/PR ที่ตั้งไว้เสมอ ไม่ยึดค่าที่ค้างในไฟล์เก่า
+                               เพื่อให้ทุกงานใช้สมมติฐานชุดเดียวกัน */
+                            d.production.specificYield = ASC_EX_YIELD;
+
+                            /* แผงเดิม ไฟล์รุ่นก่อนไม่มีสองช่องนี้ ให้เป็นศูนย์แล้วตกไปใช้ขนาด AC แทน */
+                            d.panelW   = parseFloat(x.panelW) || 0;
+                            d.panelQty = parseFloat(x.panelQty) || 0;
+                            d.dcKwp    = (d.panelW * d.panelQty) / 1000;
 
                             const g = id => document.getElementById(id);
                             if (g('exEnabled')) {
                                 g('exAcKw').value = d.acKw; g('exInvModel').value = d.invModel;
-                                g('exTilt').value = d.tilt; g('exAzi').value = d.azimuth;
+                                g('exPanelW').value = d.panelW; g('exPanelQty').value = d.panelQty;
                                 g('exYear').value = d.commissionedYear === null ? '' : d.commissionedYear;
                                 g('exDeg').value = d.degradationPctPerYear;
                                 g('exExportControl').checked = d.exportControl;
@@ -3831,8 +3851,11 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
             ex.enabled  = !!(g('exEnabled') && g('exEnabled').checked);
             ex.acKw     = parseFloat(g('exAcKw').value) || 0;
             ex.invModel = (g('exInvModel').value || '-').trim() || '-';
-            ex.tilt     = parseFloat(g('exTilt').value);
-            ex.azimuth  = parseFloat(g('exAzi').value);
+            /* แผงเดิม ใช้บอกขนาดฝั่ง DC ซึ่งเป็นตัวตั้งของผลผลิตจำเพาะ (kWh ต่อ kWp ต่อปี) */
+            ex.panelW   = parseFloat(g('exPanelW').value) || 0;
+            ex.panelQty = parseFloat(g('exPanelQty').value) || 0;
+            ex.dcKwp    = (ex.panelW * ex.panelQty) / 1000;
+            /* มุมเอียงกับทิศไม่มีช่องกรอกแล้ว คงค่าที่มีอยู่ไว้ (จากไฟล์เก่าหรือค่าตั้งต้น) */
             if (!isFinite(ex.tilt))    ex.tilt = 15;
             if (!isFinite(ex.azimuth)) ex.azimuth = 180;
             const yr = parseFloat(g('exYear').value);
@@ -3842,7 +3865,9 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
             ex.exportControl = !!g('exExportControl').checked;
 
             ex.production.mode = g('exMode').value || 'estimate';
-            ex.production.specificYield = parseFloat(g('exYield').value) || 1400;
+            /* ผลผลิตจำเพาะคำนวณให้เอง ไม่รับค่าจากช่องกรอก ช่องนั้นเป็นแบบอ่านอย่างเดียว */
+            ex.production.specificYield = ASC_EX_YIELD;
+            g('exYield').value = ASC_EX_YIELD;
             ex.production.monthly = ascParseNumList(g('exMonthly').value).slice(0, 12);
             ex.production.annualKWh = ex.production.mode === 'monthly'
                 ? ex.production.monthly.reduce((a, b) => a + b, 0)
@@ -3858,10 +3883,22 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
             const ex = state.existing;
             g('exEnabled').checked = !!ex.enabled;
             g('exFields').style.display = ex.enabled ? 'block' : 'none';
+            /* ช่องผลผลิตจำเพาะเป็นแบบอ่านอย่างเดียว ต้องเติมค่าที่คำนวณไว้ทุกครั้งที่วาดใหม่
+               เพราะรูทีนล้างฟอร์มตอนเปิดหน้าจะรีเซ็ตช่องตัวเลขทุกช่องเป็นศูนย์ */
+            g('exYield').value = ex.production.specificYield || ASC_EX_YIELD;
             g('exEstimateBox').style.display = (ex.production.mode === 'estimate') ? 'block' : 'none';
             g('exMonthlyBox').style.display = (ex.production.mode === 'monthly') ? 'block' : 'none';
             g('exHourlyBox').style.display  = (ex.production.mode === 'hourly')  ? 'block' : 'none';
             if (!ex.enabled) return;
+
+            /* บอกขนาดฝั่ง DC ที่ได้จากแผงเดิม ใต้ช่องกรอกทันที จะได้เห็นว่ากรอกถูกหรือยัง */
+            const dcNote = g('exDcNote');
+            if (dcNote) {
+                dcNote.innerHTML = ex.dcKwp > 0
+                    ? ('รวม <b>' + fmtNum(ex.dcKwp, 2) + ' kWp</b> ฝั่ง DC' +
+                       (ex.acKw > 0 ? ' · DC/AC = <b>' + fmtNum(ex.dcKwp / ex.acKw, 2) + '</b>' : ''))
+                    : 'ยังไม่ได้กรอกแผงเดิม จะใช้ขนาด AC เป็นตัวตั้งในการประมาณการแทน';
+            }
 
             /* กำลัง AC รวมที่จุดรวมสาย ใช้คิดสายเมนและเบรกเกอร์
                ระบบเดิมกับระบบใหม่จ่ายเข้าบัสเดียวกัน ผลรวมจึงเป็นตัวกำหนดพิกัด */
@@ -3887,16 +3924,24 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 msg += n ? ('<br>ผลผลิตรายชั่วโมงที่โหลดไว้ <b>' + fmtInt(n) + ' ค่า</b>')
                          : '<br><b style="color:#b45309;">⚠ ยังไม่ได้โหลดไฟล์ผลผลิตรายชั่วโมง</b>';
             } else {
-                const y = ex.production.specificYield || 1400;
-                msg += '<br>ประมาณจากผลผลิตจำเพาะ ' + fmtInt(y) + ' kWh/kW/ปี = <b>' + fmtInt(ex.acKw * y) + ' kWh/ปี</b>' +
+                /* ตัวตั้งคือขนาดฝั่ง DC จากแผงเดิม เพราะผลผลิตจำเพาะเป็น kWh ต่อ kWp
+                   ถ้ายังไม่กรอกแผง ใช้ขนาด AC แทนไปก่อน เพื่อให้ยังได้ตัวเลขคร่าว ๆ */
+                const y = ex.production.specificYield || ASC_EX_YIELD;
+                const base = ex.dcKwp > 0 ? ex.dcKwp : ex.acKw;
+                const baseTxt = ex.dcKwp > 0
+                    ? (fmtNum(ex.dcKwp, 2) + ' kWp (DC จากแผงเดิม)')
+                    : (fmtNum(ex.acKw, 1) + ' kW (AC เพราะยังไม่ได้กรอกแผงเดิม)');
+                msg += '<br>ประมาณจาก ' + baseTxt + ' × ผลผลิตจำเพาะ ' + fmtInt(y) +
+                       ' kWh/kW/ปี (PSH ' + ASC_EX_PSH + ' × 365 × PR ' + ASC_EX_PR + ')' +
+                       ' = <b>' + fmtInt(base * y) + ' kWh/ปี</b>' +
                        ' <span style="color:#64748b;">(ตัวเลขจริงคำนวณตอนประมวลผลในเมนูรายงาน)</span>';
             }
             g('exSummary').innerHTML = msg;
         }
 
         (function ascBindExisting() {
-            const ids = ['exEnabled','exAcKw','exInvModel','exTilt','exAzi','exYear','exDeg',
-                         'exMode','exYield','exMonthly','exExportControl'];
+            const ids = ['exEnabled','exAcKw','exInvModel','exPanelW','exPanelQty','exYear','exDeg',
+                         'exMode','exMonthly','exExportControl'];
             ids.forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
