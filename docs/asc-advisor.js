@@ -22,6 +22,12 @@
     'use strict';
 
     const num = (v, d) => { const n = parseFloat(v); return isFinite(n) ? n : (d === undefined ? null : d); };
+
+    /* ชื่อเล่มมาตรฐานและเลขข้อ อ่านจาก asc-eit.js
+       อ่านตอนเรียกใช้ ไม่ใช่ตอนโหลด เพื่อไม่ผูกกับลำดับของแท็กสคริปต์
+       ถ้าไฟล์นั้นหาย ยังคืนชื่อเล่มได้ ผลตรวจจึงไม่หายไปทั้งข้อ */
+    const eitStd    = () => (global.AscEIT && global.AscEIT.STD) || 'วสท. 022013-25';
+    const eitClause = k => (global.AscEIT && global.AscEIT.clause && global.AscEIT.clause[k]) || null;
     const fmt = (v, d) => (v === null || v === undefined || !isFinite(v)) ? '—' : Number(v).toFixed(d === undefined ? 2 : d);
 
     /* ── ดึงข้อมูลที่ต้องใช้ออกจากไฟล์ DB2/DB3 ให้อยู่ในรูปเดียวกัน ─────
@@ -42,6 +48,7 @@
                 projectName: s1.projectName || '',
                 coords: String(s1.coordinates || ''),
                 pv: s2.pv || {}, inv1: s2.inv1 || {}, inv2: s2.inv2 || {}, opt: s2.opt || {},
+                bat: s2.bat || {},
                 industrial: s2.industrial_settings || {},
                 polys: s3.roofPolygons || [],
                 mapFeatures: (b.mapGeoJSON && b.mapGeoJSON.features) || [],
@@ -64,6 +71,7 @@
             inv1: (src.equipData && src.equipData.inv1) || {},
             inv2: (src.equipData && src.equipData.inv2) || {},
             opt: (src.equipData && src.equipData.opt) || {},
+            bat: (src.equipData && src.equipData.bat) || {},
             industrial: (src.equipData && src.equipData.industrial_settings) || {},
             polys: src.sysPolygons || [],
             mapFeatures: [],
@@ -161,23 +169,48 @@
                           'ตรวจว่าจำนวนออปติไมเซอร์ต่อสตริงอยู่ในช่วงต่ำสุดถึงสูงสุดที่กำหนด'],
                     kb: 'voc-cold' };
             }
-            const TMIN = 15;                       // ค่าอนุรักษ์นิยมสำหรับภาคกลางและภาคใต้
-            const vocCold = voc * (1 + (tk / 100) * (TMIN - 25));
+            /* อุณหภูมิออกแบบ อ่านจาก asc-eit.js เพื่อให้ตรงกับหน้าออกแบบเสมอ
+               เดิมตรึงไว้ 15 °C ขณะที่หน้าออกแบบใช้ 10 °C ตัวตรวจจึงหย่อนกว่าตัวสร้าง
+               ซึ่งแปลว่าไม่มีวันจับอะไรได้ อันตรายกว่าไม่มีตัวตรวจเพราะทำให้วางใจผิด */
+            const TMIN = (global.AscEIT && global.AscEIT.T_MIN_COLD) || 10;
+
+            /* วสท. ข้อ 4.2 ให้ปรับแก้ได้สองวิธี คือสมการ (4.1) หรือตารางที่ 4.1
+               ตารางเข้มกว่าสมการในช่วงอุณหภูมิของไทย จึงต้องคิดทั้งสองทางแล้วเลือกที่เข้มกว่า
+               ไม่ใช่เลือกทางที่ให้ตัวเลขสวยกว่า */
+            const vf = (global.AscEIT && global.AscEIT.vocFactor)
+                     ? global.AscEIT.vocFactor(tk, TMIN)
+                     : { k: 1 + (tk / 100) * (TMIN - 25), method: 'สมการ (4.1)' };
+            const vocCold = voc * vf.k;
             const total = vocCold * perStr;
-            const pct = total / vmax * 100;
-            const ev = 'Voc ' + fmt(voc) + ' V · Tk ' + fmt(tk) + ' %/°C · ที่ ' + TMIN + ' °C = ' + fmt(vocCold) +
-                       ' V × ' + perStr + ' แผง = ' + fmt(total, 1) + ' V เทียบพิกัด ' + fmt(vmax, 0) + ' V';
-            if (total > vmax) return { level: 'error', title: 'แรงดันสตริงตอนอากาศเย็นเกินพิกัดอินเวอร์เตอร์',
-                detail: 'คำนวณที่ ' + TMIN + ' °C ได้ ' + fmt(total, 1) + ' V ซึ่งเกิน ' + fmt(vmax, 0) + ' V เป็นเรื่องความปลอดภัย ไม่ใช่ประสิทธิภาพ',
+
+            /* เพดานมีสองตัว ไม่ใช่ตัวเดียว พิกัดอินเวอร์เตอร์ และพิกัดของตัวแผงเอง
+               ตัวที่ต่ำกว่าคือตัวที่บังคับจริง ต้องบอกด้วยว่าตัวไหนเป็นตัวบังคับ */
+            const pvMax = num(d.pv.Max_System_Voltage_V);
+            const caps = [{ v: vmax, who: 'พิกัดขาเข้าอินเวอร์เตอร์' }];
+            if (pvMax) caps.push({ v: pvMax, who: 'พิกัดของตัวแผง (Max_System_Voltage)' });
+            caps.sort((a, b) => a.v - b.v);
+            const cap = caps[0];
+            const pct = total / cap.v * 100;
+
+            const ev = 'Voc ' + fmt(voc) + ' V · Tk ' + fmt(tk) + ' %/°C · ที่ ' + TMIN + ' °C ปรับแก้ ×' +
+                       fmt(vf.k, 4) + ' (' + vf.method + ') = ' + fmt(vocCold) +
+                       ' V × ' + perStr + ' แผง = ' + fmt(total, 1) + ' V เทียบ' + cap.who + ' ' + fmt(cap.v, 0) + ' V';
+
+            if (total > cap.v) return { level: 'error', title: 'แรงดันสตริงตอนอากาศเย็นเกิน' + cap.who,
+                detail: 'คำนวณที่ ' + TMIN + ' °C ได้ ' + fmt(total, 1) + ' V ซึ่งเกิน ' + fmt(cap.v, 0) +
+                        ' V เป็นเรื่องความปลอดภัย ไม่ใช่ประสิทธิภาพ',
                 evidence: ev,
-                fix: ['ลดจำนวนแผงต่อสตริงลงเหลือไม่เกิน ' + Math.floor(vmax / vocCold) + ' แผง',
-                      'ถ้าไซต์อยู่ภาคเหนือหรืออีสานบน ต้องคำนวณใหม่ที่ 8–10 °C ซึ่งจะยิ่งเข้มกว่านี้'],
-                kb: 'voc-cold' };
+                fix: ['ลดจำนวนแผงต่อสตริงลงเหลือไม่เกิน ' + Math.floor(cap.v / vocCold) + ' แผง',
+                      'ถ้าไซต์อยู่ภาคเหนือหรืออีสานบน ต้องตั้ง Tmin ให้ต่ำกว่า ' + TMIN + ' °C ซึ่งจะยิ่งเข้มกว่านี้'],
+                kb: 'voc-cold', eit: (global.AscEIT && global.AscEIT.clause.vocCold) || '4.2 · ตารางที่ 4.1' };
             if (pct > 95) return { level: 'warn', title: 'แรงดันสตริงตอนอากาศเย็นใกล้ชนพิกัด',
-                detail: 'ใช้ไปแล้ว ' + fmt(pct, 1) + ' % ของพิกัด เหลือเผื่อน้อย',
-                evidence: ev, fix: ['พิจารณาลดจำนวนแผงต่อสตริงลงหนึ่งแผ่นเพื่อความปลอดภัย'], kb: 'voc-cold' };
+                detail: 'ใช้ไปแล้ว ' + fmt(pct, 1) + ' % ของ' + cap.who + ' เหลือเผื่อน้อย',
+                evidence: ev, fix: ['พิจารณาลดจำนวนแผงต่อสตริงลงหนึ่งแผ่นเพื่อความปลอดภัย'],
+                kb: 'voc-cold', eit: (global.AscEIT && global.AscEIT.clause.vocCold) || '4.2 · ตารางที่ 4.1' };
             return { level: 'ok', title: 'แรงดันสตริงตอนอากาศเย็นอยู่ในพิกัด',
-                detail: fmt(total, 1) + ' V คิดเป็น ' + fmt(pct, 1) + ' % ของพิกัด', evidence: ev, kb: 'voc-cold' };
+                detail: fmt(total, 1) + ' V คิดเป็น ' + fmt(pct, 1) + ' % ของ' + cap.who,
+                evidence: ev, kb: 'voc-cold',
+                eit: (global.AscEIT && global.AscEIT.clause.vocCold) || '4.2 · ตารางที่ 4.1' };
         }
     },
 
@@ -188,14 +221,28 @@
             const perStr = panelsPerString(d.strings.minPanelsPerString);
             if (!vmp || !vmin || !perStr) return null;
             if (num(d.opt.qty, 0) > 0) return null;   // ใช้ออปติไมเซอร์ แรงดันไม่ได้มาจากผลรวมของแผง
-            // แผงร้อนจัดกลางวัน Vmp ตกลงราว 15 % เทียบกับสภาวะมาตรฐาน
-            const vmpHot = vmp * 0.85;
+            /* เดิมใช้ตัวคูณ 0.85 ตายตัว ซึ่งหย่อนกว่าหน้าออกแบบที่คิดจาก Tk_Pmax จริง
+               แผงที่ Tk_Pmax แรงกว่า -0.33 %/°C จะได้ตัวคูณต่ำกว่า 0.85
+               ตัวตรวจแบบเดิมจึงปล่อยสตริงสั้นที่หน้าออกแบบไม่ยอมให้ผ่านไปได้ */
+            const TMAX = (global.AscEIT && global.AscEIT.T_MAX_HOT) || 70;
+            const TSTC = (global.AscEIT && global.AscEIT.T_STC)     || 25;
+            const tkP  = num(d.pv.Tk_Pmax_Pct_Per_C);
+            const hotFactor = tkP ? (1 + (tkP / 100) * (TMAX - TSTC)) : 0.85;
+            const how = tkP
+                ? 'ที่ ' + TMAX + ' °C ด้วย Tk_Pmax ' + fmt(tkP) + ' %/°C → ×' + fmt(hotFactor, 4)
+                : 'ประมาณ ×0.85 เพราะดาต้าชีตไม่ระบุ Tk_Pmax';
+            const vmpHot = vmp * hotFactor;
             const total = vmpHot * perStr;
-            const ev = 'Vmp ' + fmt(vmp) + ' V · แผงร้อนประมาณ ' + fmt(vmpHot) + ' V × ' + perStr +
+            const ev = 'Vmp ' + fmt(vmp) + ' V · แผงร้อน ' + how + ' = ' + fmt(vmpHot) + ' V × ' + perStr +
                        ' แผง = ' + fmt(total, 1) + ' V เทียบ MPPT ขั้นต่ำ ' + fmt(vmin, 0) + ' V';
             if (total < vmin) return { level: 'error', title: 'แรงดันสตริงตอนแผงร้อนต่ำกว่าช่วง MPPT',
                 detail: 'สตริงที่สั้นที่สุดให้ ' + fmt(total, 1) + ' V ซึ่งต่ำกว่า ' + fmt(vmin, 0) + ' V อินเวอร์เตอร์จะหลุดจากจุดกำลังสูงสุดในวันที่ร้อนจัด',
                 evidence: ev, fix: ['เพิ่มจำนวนแผงต่อสตริงเป็นอย่างน้อย ' + Math.ceil(vmin / vmpHot) + ' แผง'],
+                kb: 'mppt-window' };
+            if (!tkP) return { level: 'warn', title: 'ตรวจช่วง MPPT ด้วยค่าประมาณ เพราะดาต้าชีตไม่มี Tk_Pmax',
+                detail: 'ใช้ตัวคูณประมาณ 0.85 แทนการคิดจากสัมประสิทธิ์อุณหภูมิจริง ผลจึงเป็นการประมาณ ' +
+                        'ถ้าแผงมี Tk_Pmax แรงกว่า -0.33 %/°C ค่าจริงจะต่ำกว่านี้',
+                evidence: ev, fix: ['เปิดดาต้าชีตแผงแล้วกรอก Tk_Pmax_Pct_Per_C ให้ครบ แล้วประมวลผลใหม่'],
                 kb: 'mppt-window' };
             return { level: 'ok', title: 'แรงดันสตริงอยู่ในช่วง MPPT',
                 detail: fmt(total, 1) + ' V สูงกว่าขั้นต่ำ ' + fmt(vmin, 0) + ' V', evidence: ev, kb: 'mppt-window' };
@@ -497,32 +544,374 @@
             const need = iac * 1.25;
             const ev = 'กระแสขาออกอินเวอร์เตอร์ ' + fmt(iac, 0) + ' A × 1.25 = ต้องใช้อย่างน้อย ' +
                        fmt(need, 0) + ' A · เลือกไว้ ' + fmt(brk, 0) + ' A';
+            /* ตัวคูณ 1.25 มาจากข้อกำหนดโหลดต่อเนื่องในมาตรฐานการติดตั้งทางไฟฟ้าเล่มหลัก
+               ไม่ได้มาจาก 022013-25 จึงต้องระบุเล่มให้ตรง ไม่งั้นจะกลายเป็นอ้างผิดเล่ม
+               ในเอกสารที่มีผลผูกพันกับลูกค้า */
+            const STD_MAIN = 'วสท. 022001-22 มาตรฐานการติดตั้งทางไฟฟ้าสำหรับประเทศไทย';
             if (brk < need) return { level: 'error', title: 'เบรกเกอร์ฝั่งไฟสลับเล็กกว่าที่มาตรฐานกำหนด',
                 detail: 'ระบบโซลาร์จัดเป็นโหลดต่อเนื่อง ต้องใช้ตัวคูณ 1.25 เบรกเกอร์จะตัดขณะใช้งานปกติ',
                 evidence: ev, fix: ['เปลี่ยนเป็นเบรกเกอร์ขนาดอย่างน้อย ' + fmt(Math.ceil(need / 5) * 5, 0) + ' A'],
-                kb: 'breaker-sizing' };
+                kb: 'breaker-sizing', eitStd: STD_MAIN };
             if (brk > need * 1.6) return { level: 'warn', title: 'เบรกเกอร์ฝั่งไฟสลับใหญ่เกินไป',
                 detail: 'เบรกเกอร์ที่ใหญ่เกินจะไม่ตัดวงจรก่อนที่สายจะร้อนเกินพิกัด ต้องตรวจว่าสายรับกระแสได้ถึงพิกัดเบรกเกอร์',
-                evidence: ev, fix: ['ตรวจความสามารถนำกระแสของสายเทียบกับพิกัดเบรกเกอร์'], kb: 'breaker-sizing' };
+                evidence: ev, fix: ['ตรวจความสามารถนำกระแสของสายเทียบกับพิกัดเบรกเกอร์ ตารางที่ 5-20'],
+                kb: 'breaker-sizing', eitStd: STD_MAIN };
             return { level: 'ok', title: 'ขนาดเบรกเกอร์ฝั่งไฟสลับเหมาะสม',
-                detail: fmt(brk, 0) + ' A จากที่ต้องการอย่างน้อย ' + fmt(need, 0) + ' A', evidence: ev, kb: 'breaker-sizing' };
+                detail: fmt(brk, 0) + ' A จากที่ต้องการอย่างน้อย ' + fmt(need, 0) + ' A', evidence: ev,
+                kb: 'breaker-sizing', eitStd: STD_MAIN };
         }
     },
 
     {
-        id: 'dc-breaker',
+        /* วสท. ข้อ 3.4.3.1 (1) หน้า 25-26 · การป้องกันกระแสเกินใน PV string
+
+           กฎเดิมชื่อ dc-breaker ตรวจแค่ครึ่งซ้ายของอสมการ คือฟิวส์ต้องไม่เล็กเกินไป
+           แต่มาตรฐานกำหนดขอบเขตไว้ทั้งสองด้าน
+
+               สมการ (3.2)  I_STRING_MAX = 1.25 × I_SC_MOD
+               สมการ (3.1)  I_STRING_MAX < I_n ≤ I_MOD_MAX_OCPR
+
+           ขอบบนคือเรื่องความปลอดภัย ฟิวส์ที่ใหญ่เกินพิกัดของแผงจะไม่ตัดทันเวลา
+           สายภายในแผงอาจไหม้ก่อน ค่านี้มีอยู่ในดาต้าชีตทุกไฟล์ชื่อ Max_Series_Fuse_Rating_A
+           กฎเดิมจึงเคยประทับตราว่า "เหมาะสม" ให้ฟิวส์ที่ใหญ่เกินพิกัดแผงได้
+
+           อีกเรื่องที่มาตรฐานกำหนดคือ ไม่ใช่ทุกระบบต้องมีฟิวส์สตริง
+               ต้องมีก็ต่อเมื่อ  I_F_STRING + I_BFtotal > I_MOD_MAX_OCPR
+               โดย I_F_STRING = (N_S − 1) × I_STRING_MAX
+           ระบบที่ขนานกันน้อยสตริงจึงไม่ต้องมี การใส่มาก็ไม่ผิด แต่เป็นต้นทุนที่ไม่บังคับ */
+        id: 'string-ocpr',
         run(d) {
-            const isc = num(d.pv.Isc_A);
+            const isc  = num(d.pv.Isc_A);
+            if (!isc) return null;
+
+            const brk  = num(d.bom.protection && d.bom.protection.dc_breaker_amp);
+            const ocpr = num(d.pv.Max_Series_Fuse_Rating_A);
+            const nS   = num(d.strings.totalStringsUsed);   // มาจาก innerText จึงเป็นสตริง ต้องแปลงก่อน
+            const K    = (global.AscEIT && global.AscEIT.STRING_MAX_FACTOR) || 1.25;
+            const CL   = eitClause('stringFuse') || '3.4.3.1';
+
+            const iStrMax = K * isc;                                    // สมการ (3.2)
+            const iFStr   = (nS && nS > 1) ? (nS - 1) * iStrMax : null; // I_F_STRING
+            const required = (ocpr && iFStr !== null) ? (iFStr > ocpr) : null;
+
+            /* ข้อความบอกว่าตามมาตรฐานแล้วต้องมีฟิวส์หรือไม่ ใช้ต่อท้ายทุกกรณี */
+            const need = (required === null)
+                ? 'ตัดสินไม่ได้ว่าจำเป็นต้องมีฟิวส์หรือไม่ เพราะขาดจำนวนสตริงหรือพิกัดฟิวส์สูงสุดของแผง'
+                : required
+                    ? 'ระบบนี้ต้องมีฟิวส์สตริงตามมาตรฐาน เพราะ I_F_STRING ' + fmt(iFStr, 1) +
+                      ' A เกินพิกัดฟิวส์สูงสุดของแผง ' + fmt(ocpr, 0) + ' A'
+                    : 'ระบบนี้ไม่จำเป็นต้องมีฟิวส์สตริงตามมาตรฐาน เพราะ I_F_STRING ' + fmt(iFStr, 1) +
+                      ' A ไม่เกินพิกัดฟิวส์สูงสุดของแผง ' + fmt(ocpr, 0) + ' A';
+
+            const ev = 'Isc ' + fmt(isc) + ' A × ' + K + ' = I_STRING_MAX ' + fmt(iStrMax, 1) + ' A' +
+                       (ocpr ? ' · พิกัดฟิวส์สูงสุดของแผง ' + fmt(ocpr, 0) + ' A' : ' · แผงไม่ระบุพิกัดฟิวส์สูงสุด') +
+                       (nS ? ' · ' + fmt(nS, 0) + ' สตริงขนาน I_F_STRING ' + (iFStr === null ? '—' : fmt(iFStr, 1) + ' A') : '') +
+                       (brk ? ' · BOM เลือกไว้ ' + fmt(brk, 0) + ' A' : ' · BOM ไม่มีฟิวส์สตริง');
+
+            /* ── ไม่มีฟิวส์ใน BOM ──────────────────────────────────────── */
+            if (!brk) {
+                if (required === true) return { level: 'error', title: 'ขาดฟิวส์สตริงที่มาตรฐานบังคับ',
+                    detail: need + ' แต่รายการวัสดุไม่มีอุปกรณ์ป้องกันฝั่งไฟตรง',
+                    evidence: ev, fix: ['เพิ่มฟิวส์สตริงพิกัดระหว่าง ' + fmt(iStrMax, 1) + ' A ถึง ' + fmt(ocpr, 0) + ' A'],
+                    kb: 'eit-string-ocpr', eit: CL };
+                if (required === false) return { level: 'ok', title: 'ไม่ต้องมีฟิวส์สตริง และรายการวัสดุก็ไม่มี',
+                    detail: need, evidence: ev, kb: 'eit-string-ocpr', eit: CL };
+                return null;                       // ข้อมูลไม่พอ ต้องเงียบตามกติกาของไฟล์นี้
+            }
+
+            /* ── ขอบล่าง · ฟิวส์เล็กเกินไป จะตัดขณะใช้งานปกติ ──────────── */
+            if (brk <= iStrMax) return { level: 'error', title: 'ฟิวส์สตริงเล็กกว่าที่มาตรฐานกำหนด',
+                detail: 'มาตรฐานกำหนด I_STRING_MAX < I_n ฟิวส์ที่ไม่เกิน ' + fmt(iStrMax, 1) +
+                        ' A จะตัดวงจรขณะใช้งานปกติ · ' + need,
+                evidence: ev,
+                fix: ['เปลี่ยนเป็นพิกัดมากกว่า ' + fmt(iStrMax, 1) + ' A' +
+                      (ocpr ? ' แต่ไม่เกิน ' + fmt(ocpr, 0) + ' A' : '')],
+                kb: 'eit-string-ocpr', eit: CL };
+
+            /* ── ไม่มีพิกัดฟิวส์สูงสุดของแผง ตรวจขอบบนไม่ได้ ────────────
+               กรณีนี้ห้ามเงียบ เพราะ "ไม่รู้" ในเรื่องนี้แปลว่าอันตราย */
+            if (!ocpr) return { level: 'warn', title: 'ตรวจขอบบนของฟิวส์สตริงไม่ได้ ดาต้าชีตแผงไม่ระบุพิกัดฟิวส์สูงสุด',
+                detail: 'ผ่านขอบล่างแล้ว แต่มาตรฐานกำหนดขอบบนไว้ด้วยว่า I_n ≤ I_MOD_MAX_OCPR ' +
+                        'ฟิวส์ที่ใหญ่เกินพิกัดแผงจะไม่ตัดทันเวลา สายภายในแผงอาจไหม้ก่อน',
+                evidence: ev,
+                fix: ['เปิดดาต้าชีตแผงหาค่า Maximum Series Fuse Rating แล้วกรอกลงฟิลด์ Max_Series_Fuse_Rating_A',
+                      'เทียบด้วยมือว่าฟิวส์ ' + fmt(brk, 0) + ' A ไม่เกินค่านั้น'],
+                kb: 'eit-string-ocpr', eit: CL };
+
+            /* ── ขอบบน · ฟิวส์ใหญ่เกินพิกัดของแผง ───────────────────────── */
+            if (brk > ocpr) return { level: 'error', title: 'ฟิวส์สตริงใหญ่เกินพิกัดที่แผงทนได้',
+                detail: 'มาตรฐานกำหนด I_n ≤ I_MOD_MAX_OCPR แต่เลือกไว้ ' + fmt(brk, 0) +
+                        ' A ซึ่งเกิน ' + fmt(ocpr, 0) + ' A ของแผง ฟิวส์จะไม่ตัดทันเวลา ' +
+                        'สายภายในแผงอาจไหม้ก่อน · ' + need,
+                evidence: ev,
+                fix: ['เปลี่ยนเป็นพิกัดไม่เกิน ' + fmt(ocpr, 0) + ' A',
+                      'สูตรที่หน้าออกแบบใช้ปัดขึ้นทีละ 5 A จากกระแสทำงาน จึงข้ามพิกัดแผงได้ ต้องเลือกด้วยมือในกรณีนี้'],
+                kb: 'eit-string-ocpr', eit: CL };
+
+            /* ── ใช้พิกัดของแผงเต็มพอดี ยังผ่านมาตรฐาน แต่ไม่เหลือเผื่อ ── */
+            if (brk === ocpr) return { level: 'info', title: 'ฟิวส์สตริงใช้พิกัดของแผงเต็มพอดี ไม่เหลือเผื่อ',
+                detail: 'พิกัด ' + fmt(brk, 0) + ' A เท่ากับพิกัดสูงสุดที่แผงทนได้พอดี ซึ่งมาตรฐานยอมรับ ' +
+                        'เพราะเขียนไว้ว่า I_n ≤ I_MOD_MAX_OCPR แต่ถ้าเปลี่ยนรุ่นแผงเป็นรุ่นที่พิกัดต่ำกว่านี้ ' +
+                        'จะกลายเป็นเกินทันที · ' + need,
+                evidence: ev, fix: ['ถ้ามีพิกัดรองที่ต่ำกว่าและยังเกิน ' + fmt(iStrMax, 1) + ' A ควรเลือกตัวนั้นแทน'],
+                kb: 'eit-string-ocpr', eit: CL };
+
+            /* ── ผ่านทั้งสองขอบ แต่ตามมาตรฐานแล้วไม่จำเป็นต้องมี ────────── */
+            if (required === false) return { level: 'info', title: 'ขนาดฟิวส์สตริงถูกต้อง แต่มาตรฐานไม่ได้บังคับให้มี',
+                detail: need + ' ฟิวส์ที่ใส่มาจึงเป็นการเผื่อไว้ ไม่ผิดมาตรฐาน แต่เป็นต้นทุนที่เพิ่มโดยไม่บังคับ',
+                evidence: ev,
+                fix: ['ถ้าต้องการลดต้นทุน ตัดฟิวส์สตริงออกได้ตามมาตรฐาน แต่ยังต้องมีสวิตช์ตัดตอนฝั่งไฟตรง',
+                      'ถ้าจะเก็บไว้ ให้ระบุในเอกสารว่าเป็นการเผื่อโดยตั้งใจ'],
+                kb: 'eit-string-ocpr', eit: CL };
+
+            return { level: 'ok', title: 'ขนาดฟิวส์สตริงอยู่ในเกณฑ์ทั้งขอบล่างและขอบบน',
+                detail: fmt(iStrMax, 1) + ' A < ' + fmt(brk, 0) + ' A ≤ ' + fmt(ocpr, 0) + ' A · ' + need,
+                evidence: ev, kb: 'eit-string-ocpr', eit: CL };
+        }
+    },
+
+
+    {
+        /* วสท. ข้อ 3.1 หน้า 23 · เพดานแรงดันของระบบตามประเภทอาคาร
+               (1) ไม่เกิน 1,000 V สำหรับอาคารที่พักอาศัย
+               (2) ไม่เกิน 1,500 V สำหรับอาคารอื่น solar farm และ solar floating
+
+           DB2 ยังไม่มีฟิลด์ประเภทอาคาร รอบนี้จึงตัดสินได้เต็มปากเฉพาะเพดาน 1,500 V
+           ส่วนช่วง 1,000-1,500 V ต้องให้ผู้ออกแบบยืนยันประเภทอาคารเอง
+           วิธีนี้ไม่ต้องแก้โครงสร้าง DB2 และไม่เดาแทนผู้ใช้ */
+        id: 'sys-voltage',
+        run(d) {
+            const voc = num(d.pv.Voc_V), tk = num(d.pv.Tk_Voc_Pct_Per_C);
+            const perStr = panelsPerString(d.strings.maxPanelsPerString);
+            if (!voc || !tk || !perStr) return null;
+            if (num(d.opt.qty, 0) > 0) return null;   // ออปติไมเซอร์คุมแรงดันเอง คิดแบบนี้ไม่ได้
+
+            const E = global.AscEIT;
+            const TMIN = (E && E.T_MIN_COLD) || 10;
+            const vf = (E && E.vocFactor) ? E.vocFactor(tk, TMIN)
+                                          : { k: 1 + (tk / 100) * (TMIN - 25), method: 'สมการ (4.1)' };
+            const total = voc * vf.k * perStr;
+            const RES = (E && E.SYS_V_RESIDENTIAL) || 1000;
+            const OTH = (E && E.SYS_V_OTHER)       || 1500;
+            const CL  = eitClause('sysVolt') || '3.1';
+            const ev = 'แรงดันสตริงที่ ' + TMIN + ' °C = ' + fmt(total, 1) + ' V (' + perStr +
+                       ' แผง × ' + fmt(voc * vf.k) + ' V) · เพดานที่พักอาศัย ' + RES +
+                       ' V · เพดานอาคารอื่น ' + OTH + ' V';
+
+            if (total > OTH) return { level: 'error', title: 'แรงดันระบบเกินเพดานสูงสุดที่มาตรฐานอนุญาต',
+                detail: 'มาตรฐานกำหนดเพดานไว้ที่ ' + OTH + ' V สำหรับอาคารทุกประเภท ' +
+                        'ค่าที่ออกแบบไว้ ' + fmt(total, 1) + ' V จึงเกินไม่ว่าอาคารจะเป็นประเภทใด',
+                evidence: ev,
+                fix: ['ลดจำนวนแผงต่อสตริงลงเหลือไม่เกิน ' + Math.floor(OTH / (voc * vf.k)) + ' แผง'],
+                kb: 'voc-cold', eit: CL };
+
+            if (total > RES) return { level: 'warn', title: 'แรงดันระบบเกิน ' + RES + ' V ใช้กับอาคารที่พักอาศัยไม่ได้',
+                detail: 'มาตรฐานจำกัดอาคารที่พักอาศัยไว้ที่ ' + RES + ' V ส่วนอาคารอื่น solar farm ' +
+                        'และ solar floating ใช้ได้ถึง ' + OTH + ' V ต้องยืนยันประเภทอาคารก่อนสั่งอุปกรณ์',
+                evidence: ev,
+                fix: ['ถ้าเป็นบ้านหรืออาคารที่พักอาศัย ลดจำนวนแผงต่อสตริงลงเหลือไม่เกิน ' +
+                      Math.floor(RES / (voc * vf.k)) + ' แผง',
+                      'ถ้าเป็นโรงงาน อาคารพาณิชย์ หรือ solar farm ให้ระบุประเภทอาคารไว้ในเอกสารประกอบการยื่น'],
+                kb: 'voc-cold', eit: CL };
+
+            return { level: 'ok', title: 'แรงดันระบบอยู่ในเพดานของอาคารทุกประเภท',
+                detail: fmt(total, 1) + ' V ไม่เกิน ' + RES + ' V จึงใช้ได้ทั้งที่พักอาศัยและอาคารอื่น',
+                evidence: ev, kb: 'voc-cold', eit: CL };
+        }
+    },
+
+    {
+        /* วสท. ข้อ 3.6.2 (3) และตารางที่ 3.2 หน้า 32-33 · อุปกรณ์ป้องกันไฟกระชาก
+
+           ตารางที่ 3.2 กำหนด class I ฝั่งไฟตรง เมื่ออาคารมีระบบป้องกันฟ้าผ่าภายนอก
+           ที่รักษาระยะแยก S ไว้ไม่ได้ ซึ่งโปรแกรมไม่มีทางรู้จากข้อมูลที่กรอก
+           จึงต้องเตือนให้ผู้ออกแบบยืนยันเอง ไม่ใช่เงียบหรือประทับตราว่าผ่าน */
+        id: 'spd',
+        run(d) {
+            const p = d.bom.protection;
+            if (!p) return null;
+            const CL = eitClause('spd') || '3.6.2 · ตารางที่ 3.2';
+            const isNew = (p.dc_spd_class !== undefined) || (p.ac_spd_class !== undefined) ||
+                          (p.signage_sets !== undefined);
+
+            /* ไฟล์ DB2 ที่สร้างก่อนมีฟิลด์นี้ ต้องไม่กลายเป็น error จากการขาดฟิลด์ */
+            if (!isNew) return { level: 'warn', title: 'ไฟล์นี้ยังไม่มีข้อมูลชนิด SPD จึงตรวจให้ไม่ได้',
+                detail: 'ไฟล์ถูกสร้างก่อนที่ระบบจะบันทึกชนิด SPD ลง DB2 มาตรฐานบังคับให้มี SPD ' +
+                        'ทั้งฝั่งไฟตรงและฝั่งไฟสลับ ต้องตรวจจากรายการวัสดุด้วยตาแทน',
+                evidence: 'ไม่พบฟิลด์ dc_spd_class และ ac_spd_class ใน engineering_and_bom.protection',
+                fix: ['เปิดโครงการในหน้าออกแบบแล้วกด Generate BOM ใหม่ ข้อมูลจะครบและตรวจได้อัตโนมัติ'],
+                kb: 'eit-spd', eit: CL };
+
+            const miss = [];
+            if (!p.dc_spd_class) miss.push('ฝั่งไฟตรง');
+            if (!p.ac_spd_class) miss.push('ฝั่งไฟสลับ');
+            const ev = 'SPD ฝั่งไฟตรง ' + (p.dc_spd_class ? 'class ' + p.dc_spd_class : 'ไม่มี') +
+                       ' · ฝั่งไฟสลับ ' + (p.ac_spd_class ? 'class ' + p.ac_spd_class : 'ไม่มี') +
+                       (d.inv1.DC_SPD_Type ? ' · อินเวอร์เตอร์ระบุ DC ' + d.inv1.DC_SPD_Type : '');
+
+            if (miss.length) return { level: 'error', title: 'ขาดอุปกรณ์ป้องกันไฟกระชาก ' + miss.join(' และ '),
+                detail: 'มาตรฐานบังคับให้มี SPD ทั้งสองฝั่ง การขาดฝั่งใดฝั่งหนึ่งทำให้อุปกรณ์ปลายทาง ' +
+                        'เสียหายได้จากฟ้าผ่าเหนี่ยวนำ ซึ่งเกิดบ่อยในไทย',
+                evidence: ev, fix: ['เพิ่ม SPD ' + miss.join(' และ ') + ' ลงในรายการวัสดุ'],
+                kb: 'eit-spd', eit: CL };
+
+            return { level: 'info', title: 'มี SPD ครบทั้งสองฝั่ง แต่ต้องยืนยัน class เอง',
+                detail: 'ระบบใส่ class II ให้เป็นค่าเริ่มต้น ซึ่งครอบคลุมกรณีทั่วไป ' +
+                        'แต่ตารางที่ 3.2 กำหนด class I ฝั่งไฟตรง เมื่ออาคารมีระบบป้องกันฟ้าผ่าภายนอก ' +
+                        'ที่รักษาระยะแยก S ไว้ไม่ได้ โปรแกรมไม่รู้เรื่องระบบล่อฟ้าของอาคาร จึงตัดสินแทนไม่ได้',
+                evidence: ev,
+                fix: ['ตรวจว่าอาคารมีระบบป้องกันฟ้าผ่าภายนอกหรือไม่ และรักษาระยะแยก S ได้หรือไม่',
+                      'ถ้ารักษาระยะแยกไม่ได้ ต้องเปลี่ยน SPD ฝั่งไฟตรงเป็น class I'],
+                kb: 'eit-spd', eit: CL };
+        }
+    },
+
+    {
+        /* วสท. ข้อ 4.3.6 และภาคผนวก ณ หน้า 133 · พิกัดนำกระแสของสายฝั่งไฟตรง
+
+           การเลือกสายต้องผ่านสองด่าน หน้าออกแบบทำด่านแรกแล้ว คือแรงดันตก
+           ด่านที่สองคือพิกัดกระแสต้องไม่ต่ำกว่าอุปกรณ์ป้องกัน ซึ่งยังไม่มีใครตรวจ
+
+           เทียบด้วยตารางสาย PVC 70 °C ซึ่งเป็นการเทียบแบบอนุรักษ์นิยม เพราะสาย PV1-F
+           ทน 90 °C และมีพิกัดสูงกว่า จึงคืนเป็น warn ไม่ใช่ error */
+        id: 'dc-cable-ampacity',
+        run(d) {
+            const sq  = num(d.bom.calculated_sizing && d.bom.calculated_sizing.pv_cable_sqmm);
             const brk = num(d.bom.protection && d.bom.protection.dc_breaker_amp);
-            if (!isc || !brk) return null;
-            const need = isc * 1.25;
-            const ev = 'Isc ของแผง ' + fmt(isc) + ' A × 1.25 = ต้องใช้อย่างน้อย ' + fmt(need, 1) +
-                       ' A · เลือกไว้ ' + fmt(brk, 0) + ' A';
-            if (brk < need) return { level: 'error', title: 'อุปกรณ์ป้องกันฝั่งไฟตรงเล็กกว่าที่มาตรฐานกำหนด',
-                detail: 'ต้องไม่น้อยกว่า 1.25 เท่าของกระแสลัดวงจรของแผง',
-                evidence: ev, fix: ['เปลี่ยนเป็นขนาดอย่างน้อย ' + Math.ceil(need) + ' A'], kb: 'breaker-sizing' };
-            return { level: 'ok', title: 'ขนาดอุปกรณ์ป้องกันฝั่งไฟตรงเหมาะสม',
-                detail: fmt(brk, 0) + ' A จากที่ต้องการอย่างน้อย ' + fmt(need, 1) + ' A', evidence: ev, kb: 'breaker-sizing' };
+            if (!sq || !brk) return null;
+            const E = global.AscEIT;
+            const amp = (E && E.ampacity) ? E.ampacity(sq) : null;
+            const CL  = eitClause('cableDc') || '4.3.6 · ภาคผนวก ณ';
+            const rise = (E && E.ROOF_CONDUIT_TEMP_RISE_C) || 33;
+            if (amp === null) return null;
+
+            const ev = 'สาย ' + fmt(sq, 1) + ' ตร.มม. พิกัดอ้างอิง ' + fmt(amp, 0) +
+                       ' A (ทองแดง PVC 70 °C ในท่อ ที่ 40 °C) · อุปกรณ์ป้องกัน ' + fmt(brk, 0) + ' A';
+            const hot = 'ภาคผนวก ณ ระบุว่าท่อที่วางชิดหลังคา คือห่างน้อยกว่า 1 นิ้ว ทำให้อุณหภูมิ' +
+                        'โดยรอบของสายเพิ่มอีก ' + rise + ' °C ซึ่งกินพิกัดกระแสหายไปมาก';
+
+            if (amp < brk) return { level: 'warn', title: 'พิกัดกระแสของสายฝั่งไฟตรงอาจต่ำกว่าอุปกรณ์ป้องกัน',
+                detail: 'พิกัดอ้างอิงของสาย ' + fmt(amp, 0) + ' A ต่ำกว่าอุปกรณ์ป้องกัน ' + fmt(brk, 0) +
+                        ' A ซึ่งแปลว่าสายอาจร้อนเกินก่อนที่ฟิวส์จะตัด · ตัวเลขนี้เทียบจากตารางสาย PVC 70 °C ' +
+                        'ส่วนสาย PV1-F ที่ใช้จริงทน 90 °C และมีพิกัดสูงกว่า จึงต้องเปิดตารางของสายที่ใช้จริงยืนยัน · ' + hot,
+                evidence: ev,
+                fix: ['เปิดตารางพิกัดกระแสของสาย PV1-F รุ่นที่ใช้ แล้วยืนยันว่าไม่ต่ำกว่า ' + fmt(brk, 0) + ' A',
+                      'ถ้าไม่พอ ให้เพิ่มขนาดสาย หรือลดพิกัดอุปกรณ์ป้องกันลงเท่าที่มาตรฐานยอมให้',
+                      'ยกท่อให้ห่างจากผิวหลังคาเกิน 1 นิ้ว ซึ่งถูกกว่าการเพิ่มขนาดสาย'],
+                kb: 'eit-dc-cable', eit: CL };
+
+            return { level: 'ok', title: 'พิกัดกระแสของสายฝั่งไฟตรงไม่ต่ำกว่าอุปกรณ์ป้องกัน',
+                detail: fmt(amp, 0) + ' A ไม่ต่ำกว่า ' + fmt(brk, 0) + ' A · ยังต้องดูอุณหภูมิด้วย เพราะ' + hot,
+                evidence: ev, kb: 'eit-dc-cable', eit: CL };
+        }
+    },
+
+    {
+        /* วสท. ข้อ 4.1 (4) หน้า 35 · อุปกรณ์ที่ติดตั้งภายนอกต้องมีพิกัดไม่ต่ำกว่า IP54
+
+           ดาต้าชีตเขียนพิกัด IP ไว้หลายรูปแบบ IP66 IP65 และ IP 66
+           จึงต้องดึงตัวเลขด้วยตัวช่วยของ asc-eit.js ไม่ใช่ parseFloat */
+        id: 'ip-rating',
+        run(d) {
+            const E = global.AscEIT;
+            const parse = (E && E.parseIP) ? E.parseIP : (t => {
+                const m = String(t || '').match(/IP\s*(\d)\s*(\d)/i);
+                return m ? parseInt(m[1] + m[2], 10) : null;
+            });
+            const MIN = (E && E.MIN_IP_OUTDOOR) || 54;
+            const CL  = eitClause('ip') || '4.1 (4)';
+
+            const devs = [
+                { name: 'อินเวอร์เตอร์ 1', o: d.inv1 },
+                { name: 'อินเวอร์เตอร์ 2', o: d.inv2 },
+                { name: 'ออปติไมเซอร์',    o: d.opt },
+                { name: 'แบตเตอรี่',       o: d.bat || {} }
+            ].filter(x => x.o && (x.o.Model_Name || x.o.model))
+             .map(x => ({ name: x.name, model: x.o.Model_Name || x.o.model, ip: parse(x.o.IP_Rating) }))
+             .filter(x => x.ip !== null);
+
+            if (!devs.length) return null;
+            const bad = devs.filter(x => x.ip < MIN);
+            const ev = devs.map(x => x.name + ' IP' + x.ip).join(' · ');
+
+            if (bad.length) return { level: 'warn', title: 'อุปกรณ์บางตัวมีพิกัด IP ต่ำกว่าเกณฑ์สำหรับติดตั้งภายนอก',
+                detail: bad.map(x => x.name + ' (' + x.model + ') พิกัด IP' + x.ip).join(' · ') +
+                        ' ซึ่งต่ำกว่า IP' + MIN + ' ที่มาตรฐานกำหนดสำหรับอุปกรณ์ติดตั้งภายนอก ' +
+                        'ถ้าติดตั้งในที่ร่มมิดชิดก็ใช้ได้ แต่ต้องระบุไว้ในแบบ',
+                evidence: ev,
+                fix: ['ย้ายไปติดตั้งในที่ร่มที่กันฝนและฝุ่นได้ แล้วระบุไว้ในแบบ',
+                      'หรือเปลี่ยนเป็นรุ่นที่มีพิกัดตั้งแต่ IP' + MIN + ' ขึ้นไป'],
+                kb: 'eit-labels', eit: CL };
+
+            return { level: 'ok', title: 'พิกัด IP ของอุปกรณ์ผ่านเกณฑ์ติดตั้งภายนอก',
+                detail: 'ทุกตัวมีพิกัดตั้งแต่ IP' + MIN + ' ขึ้นไป', evidence: ev, eit: CL };
+        }
+    },
+
+    {
+        /* วสท. บทที่ 6 หน้า 81-86 · ป้ายและเอกสาร
+
+           ป้ายเป็นข้อบังคับ และเป็นรายการที่หายไปจากใบเสนอราคาบ่อยที่สุด
+           แล้วไปโผล่เป็นค่าใช้จ่ายหน้างาน */
+        id: 'labels',
+        run(d) {
+            const p = d.bom.protection;
+            if (!p) return null;
+            const CL  = eitClause('label') || '6.3-6.5';
+            const qty = num(p.signage_sets);
+            const hasBat = num(d.counts.batQty, 0) > 0;
+
+            const list = ['ป้ายแจ้งว่าอาคารมีระบบผลิตไฟฟ้าพลังงานแสงอาทิตย์ ที่จุดเข้าถึงหลัก',
+                          'ป้ายที่อุปกรณ์ตัดวงจรทุกตัว ระบุว่าตัดอะไร และฝั่งใดยังมีแรงดันค้าง',
+                          'ป้ายจุดสั่งหยุดฉุกเฉิน หรือ rapid shutdown ถ้าระบบมี'];
+            if (hasBat) list.push('ป้ายเตือนสำหรับระบบกักเก็บพลังงานแบตเตอรี่');
+
+            if (!qty) return { level: 'warn', title: 'ยังไม่มีป้ายในรายการวัสดุ ทั้งที่มาตรฐานบังคับ',
+                detail: 'ป้ายไม่ใช่ของแถม เป็นสิ่งเดียวที่บอกเจ้าหน้าที่ดับเพลิงและช่างที่มาซ่อมทีหลัง ' +
+                        'ว่าอาคารนี้ตัดเบรกเกอร์เมนแล้วยังมีไฟอยู่' +
+                        (hasBat ? ' โครงการนี้มีแบตเตอรี่ จึงต้องมีป้ายเตือน BESS เพิ่มด้วย' : ''),
+                evidence: 'ไม่พบ signage_sets ใน engineering_and_bom.protection' +
+                          (hasBat ? ' · โครงการมีแบตเตอรี่ ' + fmt(num(d.counts.batQty), 0) + ' ชุด' : ''),
+                fix: list.map(x => 'ต้องมี: ' + x).concat(['กด Generate BOM ใหม่ ระบบจะคำนวณจำนวนป้ายให้']),
+                kb: 'eit-labels', eit: CL };
+
+            return { level: 'ok', title: 'มีป้ายในรายการวัสดุแล้ว',
+                detail: 'รวม ' + fmt(qty, 0) + ' ป้าย ครอบคลุม ' + list.length + ' ประเภท' +
+                        (hasBat ? ' รวมป้ายเตือนระบบกักเก็บพลังงาน' : ''),
+                evidence: 'signage_sets = ' + fmt(qty, 0), kb: 'eit-labels', eit: CL };
+        }
+    },
+
+    {
+        /* วสท. ข้อ 4.3.1 (1) หน้า 36 · มอดูลที่แรงดันเกิน 50 V DC ควรมีไดโอดบายพาส
+
+           ระดับเป็น info เท่านั้นโดยตั้งใจ เพราะในคลังดาต้าชีต 12 จาก 35 รุ่น
+           มีค่าเป็น 0 ซึ่งแปลว่า "เอกสารไม่ระบุ" ไม่ใช่ "ไม่มีไดโอด"
+           ถ้าตั้งเป็น warn จะกลายเป็นเตือนผิดหนึ่งในสามของคลัง แล้วผู้ใช้จะเลิกเชื่อคำเตือน */
+        id: 'bypass-diode',
+        run(d) {
+            const voc = num(d.pv.Voc_V);
+            if (!voc) return null;
+            const E = global.AscEIT;
+            const TH = (E && E.BYPASS_DIODE_V_THRESHOLD) || 50;
+            const CL = eitClause('bypassDiode') || '4.3.1 (1)';
+            if (voc <= TH) return null;                 // ต่ำกว่าเกณฑ์ ไม่ต้องพูดถึง
+
+            const n = num(d.pv.Number_of_Bypass_Diodes);
+            const ev = 'Voc ' + fmt(voc) + ' V เกิน ' + TH + ' V · ดาต้าชีตระบุไดโอดบายพาส ' +
+                       (n ? fmt(n, 0) + ' ตัว' : 'เป็น 0 หรือไม่ระบุ');
+
+            if (!n) return { level: 'info', title: 'ดาต้าชีตไม่ได้ระบุจำนวนไดโอดบายพาสของแผง',
+                detail: 'มาตรฐานกำหนดว่ามอดูลที่แรงดันเกิน ' + TH + ' V DC ควรมีไดโอดบายพาสภายใน ' +
+                        'ค่า 0 ในดาต้าชีตชุดนี้แปลว่าเอกสารไม่ได้ระบุ ไม่ได้แปลว่าแผงไม่มีไดโอด ' +
+                        'แผงที่ผลิตขายทั่วไปมีไดโอดมาให้อยู่แล้ว ข้อนี้จึงเป็นการชวนให้ไปยืนยัน ไม่ใช่คำเตือน',
+                evidence: ev,
+                fix: ['เปิดเอกสารผู้ผลิตหาหัวข้อ Bypass diodes แล้วกรอกลงฟิลด์ Number_of_Bypass_Diodes'],
+                kb: 'shading-loss', eit: CL };
+
+            return { level: 'ok', title: 'แผงมีไดโอดบายพาสตามที่มาตรฐานกำหนด',
+                detail: fmt(n, 0) + ' ตัว สำหรับมอดูลที่แรงดันเกิน ' + TH + ' V DC',
+                evidence: ev, kb: 'shading-loss', eit: CL };
         }
     },
 
@@ -801,6 +1190,8 @@
                     st.mark + ' [' + st.label + '] ' + esc(f.title) + '</div>' +
                 (f.detail ? '<div style="color:#334155;font-size:0.83em;line-height:1.55;margin-top:3px;">' + esc(f.detail) + '</div>' : '') +
                 (f.evidence ? '<div style="color:#64748b;font-size:0.76em;font-family:monospace;margin-top:3px;word-break:break-word;">' + esc(f.evidence) + '</div>' : '') +
+                ((f.eit || f.eitStd) ? '<div style="color:#94a3b8;font-size:0.73em;margin-top:3px;">อ้างอิง ' +
+                    esc(f.eitStd || eitStd()) + (f.eit ? ' ข้อ ' + esc(f.eit) : '') + '</div>' : '') +
                 (fixes ? '<ul style="list-style:disc;padding-left:18px;margin-top:5px;color:#334155;font-size:0.8em;line-height:1.5;">' + fixes + '</ul>' : '') +
                 kb +
             '</div>';
@@ -816,6 +1207,7 @@
             '<b style="color:#166534">ผ่าน ' + s.ok + '</b>';
     }
 
-    global.AscAdvisor = { analyze, renderHTML, summaryHTML, _rules: RULES, _normalize: normalize, _style: STYLE };
+    global.AscAdvisor = { analyze, renderHTML, summaryHTML, _rules: RULES, _normalize: normalize,
+                          _style: STYLE, _eitStd: eitStd, _eitClause: eitClause };
 
 })(window);

@@ -98,6 +98,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <a href="#m3-param"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ตั้งค่าการเงิน</a>
                 <a href="#m3-run"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ประมวลผลและออก PDF</a>
                 <a href="#m3-lang"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ออกรายงานภาษาอังกฤษ</a>
+                <a href="#m3-eit"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ผลตรวจตามมาตรฐาน วสท.</a>
 
                 <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 6 · บทสรุประบบ</div>
                 <a href="#m6-load"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">เปิดและนำเข้าข้อมูล</a>
@@ -1253,6 +1254,71 @@ Is_Bifacial = False</div>
                             สองอย่างนี้เป็นข้อมูลของโครงการ ไม่ใช่ข้อความของแบบฟอร์มรายงาน</span></li>
                         <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ฟอร์มกรอกพารามิเตอร์ด้านซ้ายยังเป็นไทย</b> — ตั้งใจไว้แบบนั้น เพราะคนกรอกคือวิศวกรผู้ออกแบบ</span></li>
                     </ul>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl p-5">
+                    <h4 id="m3-eit" class="font-bold text-slate-800 text-sm mb-3">ผลตรวจตามมาตรฐาน วสท. 022013-25</h4>
+                    <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                        กล่อง <b>ตรวจแบบอัตโนมัติ</b> ในหน้าออกแบบและหน้ารายงาน ตรวจด้วยกฎที่เขียนตรงๆ
+                        ไม่ได้ใช้โมเดลภาษา ทุกข้อจึงแนบตัวเลขที่ใช้ตัดสินมาด้วยเสมอ และตรวจย้อนกลับได้
+                        ผลตรวจข้อไหนที่อ้างมาตรฐาน จะมีบรรทัดเล็กใต้บรรทัดหลักฐานบอก <b>เลขข้อ</b> ที่อ้าง
+                        เช่น <span class="btn-ref">อ้างอิง วสท. 022013-25 (พ.ศ. 2568) ข้อ 3.4.3.1</span>
+                        เปิดเล่มตามเลขข้อนั้นได้ทันทีตอนถูกผู้ตรวจแบบถาม
+                    </p>
+                    <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                        ข้อที่ตัวคูณ 1.25 ของเบรกเกอร์ฝั่งไฟสลับมาจากมาตรฐานการติดตั้งเล่มหลัก
+                        จะเขียนว่า <b>วสท. 022001-22</b> ไม่ใช่เล่ม 022013-25 เพื่อไม่ให้อ้างผิดเล่ม
+                    </p>
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-3">
+                        <p class="text-sm text-amber-900 leading-relaxed">
+                            <b>สามข้อที่ผลตรวจของโครงการเดิมจะขยับ</b> หลังปรับให้ตรงมาตรฐาน
+                            ตัวเลขผลจำลองและการเงินไม่เปลี่ยน เพราะตัวตรวจเป็นชั้นตรวจอย่างเดียว
+                            ไม่ได้อยู่ในเส้นทางคำนวณ
+                        </p>
+                    </div>
+                    <ul class="text-sm text-slate-600 space-y-2.5 mb-4">
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">1.</span><span>
+                            <b>แรงดันสตริงตอนอากาศเย็น เข้มขึ้น</b> — เดิมตัวตรวจคิดที่ 15 °C
+                            ขณะที่หน้าออกแบบคิดที่ 10 °C ตัวตรวจจึงหย่อนกว่าตัวสร้าง ตอนนี้อ่านค่าเดียวกันแล้ว
+                            และคิดตาม <b>ตารางที่ 4.1</b> ควบคู่กับสมการ แล้วเลือกทางที่เข้มกว่า
+                            (ที่ 10 °C ตารางให้ตัวคูณ 1.06 ส่วนสมการมักให้ราว 1.04)
+                            สตริงยาวที่เคยขึ้นว่า "ใกล้ชนพิกัด" บางชุดจะกลายเป็น "ต้องแก้"
+                        </span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">2.</span><span>
+                            <b>ฟิวส์สตริง ตรวจครบสองด้านแล้ว</b> — เดิมตรวจแค่ว่าไม่เล็กเกินไป
+                            ตอนนี้ตรวจว่าไม่ใหญ่เกิน <b>พิกัดฟิวส์สูงสุดที่แผงทนได้</b> ด้วย
+                            (ฟิลด์ Max_Series_Fuse_Rating_A ในดาต้าชีต) และตรวจว่า
+                            <b>ระบบนี้ต้องมีฟิวส์หรือไม่</b> ตามสมการของมาตรฐาน
+                            ระบบบ้าน 2 สตริงส่วนใหญ่ไม่จำเป็นต้องมี จะขึ้นเป็นข้อสังเกตว่าที่ใส่มาเป็นการเผื่อ
+                        </span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">3.</span><span>
+                            <b>ช่วง MPPT คิดจาก Tk_Pmax จริง</b> — เดิมใช้ตัวคูณ 0.85 ตายตัว
+                            ตอนนี้คิดจากสัมประสิทธิ์อุณหภูมิของแผงที่เลือกจริง ตรงกับที่หน้าออกแบบใช้
+                            ถ้าดาต้าชีตไม่มีค่านี้ จะขึ้นเตือนว่ากำลังตรวจด้วยค่าประมาณ
+                        </span></li>
+                    </ul>
+                    <p class="text-sm text-slate-600 leading-relaxed mb-2"><b>ข้อตรวจที่เพิ่มเข้ามา</b></p>
+                    <ul class="text-sm text-slate-600 space-y-2.5 mb-4">
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>เพดานแรงดันของระบบ</b> (ข้อ 3.1) — 1,000 V สำหรับที่พักอาศัย และ 1,500 V สำหรับอาคารอื่น
+                            เกิน 1,500 V ขึ้นว่าต้องแก้ทันที ส่วนช่วง 1,000-1,500 V ขึ้นให้ยืนยันประเภทอาคารก่อน</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>อุปกรณ์ป้องกันไฟกระชาก SPD</b> (ข้อ 3.6.2 ตารางที่ 3.2) — ต้องมีทั้งสองฝั่ง
+                            และเตือนให้ยืนยันว่าต้องใช้ class I หรือ class II ตามระบบป้องกันฟ้าผ่าของอาคาร ซึ่งโปรแกรมตัดสินแทนไม่ได้</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>พิกัดกระแสของสายฝั่งไฟตรง</b> (ข้อ 4.3.6 ภาคผนวก ณ) — สายต้องรับกระแสได้ไม่ต่ำกว่าอุปกรณ์ป้องกัน
+                            พร้อมเตือนว่าท่อที่วางชิดหลังคาทำให้อุณหภูมิสายเพิ่มอีก 33 °C</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>พิกัด IP ของอุปกรณ์ภายนอก</b> (ข้อ 4.1 (4)) — ต้องไม่ต่ำกว่า IP54</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ป้ายตามบทที่ 6</b> — ป้ายเป็นข้อบังคับ ไม่ใช่ของแถม ตอนนี้มีแถวป้ายอยู่ใน BOM แล้ว
+                            <b class="text-amber-700">ราคารวมในใบเสนอราคาจึงขยับขึ้นตามจำนวนป้าย</b> ซึ่งเดิมเป็นต้นทุนที่ไปโผล่หน้างาน</span></li>
+                        <li class="flex gap-3"><span class="text-slate-400 shrink-0">•</span><span><b>ไดโอดบายพาส</b> (ข้อ 4.3.1 (1)) — เป็นข้อสังเกตเท่านั้น เพราะค่า 0 ในดาต้าชีตแปลว่าเอกสารไม่ระบุ
+                            ไม่ได้แปลว่าแผงไม่มีไดโอด</span></li>
+                    </ul>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            <b>เปิดโครงการเก่าได้ตามปกติ</b> ไฟล์ DB2 ที่บันทึกไว้ก่อนหน้านี้ยังไม่มีข้อมูลชนิด SPD
+                            และจำนวนป้าย ข้อตรวจสองข้อนั้นจะขึ้นเป็นคำเตือนที่บอกตรงๆ ว่าตรวจให้ไม่ได้
+                            ไม่ใช่ขึ้นว่าผิด กด <span class="btn-ref">Generate BOM</span> ใหม่ในหน้าออกแบบ
+                            ข้อมูลจะครบและตรวจได้อัตโนมัติ
+                        </p>
+                    </div>
                 </div>
 
                 <div class="bg-white border border-slate-200 rounded-xl p-5">

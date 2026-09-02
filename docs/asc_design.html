@@ -1406,8 +1406,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
     <script src="https://unpkg.com/leaflet-imageoverlay-rotated@0.2.1/Leaflet.ImageOverlay.Rotated.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
-	
-	
+
+    <!-- ค่าคงที่จากเล่มมาตรฐาน วสท. 022013-25 ต้องโหลดก่อนสคริปต์ก้อนใหญ่ข้างล่าง
+         เพราะก้อนนั้นอ่านค่าคงที่ตั้งแต่ตอนแจงไฟล์ ไม่ได้รอ DOMContentLoaded
+         โมดูลอื่น (asc-tree, asc-ridge, asc-kb, asc-advisor) โหลดท้ายไฟล์ได้เพราะถูกเรียกทีหลัง -->
+    <script src="asc-eit.js"></script>
+
     <script>
 	
 	// 🌟 INDUSTRIAL SOLAR ENTERPRISE CONSTANTS (วสท. & IEC 61439-2)
@@ -1609,9 +1613,12 @@ const INDUSTRIAL_SOLAR_CONFIG = {
             }
         });
         // วสท. Constants สำหรับคำนวณ String
-        const T_MIN_COLD = 10; // อุณหภูมิต่ำสุดออกแบบ (กทม.เคยต่ำสุด ~9.9°C; ภาคเหนือ/อีสานควรลดลงอีกตามสถิติพื้นที่)
-        const T_MAX_HOT = 70;  // อุณหภูมิแผงสูงสุดในหน้าร้อน (องศา C)
-        const T_STC = 25;
+        // 🌟 อ่านจาก asc-eit.js เพื่อให้หน้าออกแบบกับตัวตรวจแบบใช้ค่าเดียวกันเสมอ
+        //    เดิมสองไฟล์ตั้งค่าแยกกัน (ที่นี่ 10°C ตัวตรวจ 15°C) ตัวตรวจจึงหย่อนกว่าตัวสร้าง
+        //    เขียนแบบมีค่าสำรองไว้ เผื่อไฟล์นั้นหาย หน้าจะได้ทำงานต่อได้ ไม่ขาว
+        const T_MIN_COLD = (window.AscEIT && AscEIT.T_MIN_COLD) || 10; // อุณหภูมิต่ำสุดออกแบบ (กทม.เคยต่ำสุด ~9.9°C; ภาคเหนือ/อีสานควรลดลงอีกตามสถิติพื้นที่)
+        const T_MAX_HOT  = (window.AscEIT && AscEIT.T_MAX_HOT)  || 70; // อุณหภูมิแผงสูงสุดในหน้าร้อน (องศา C)
+        const T_STC      = (window.AscEIT && AscEIT.T_STC)      || 25;
 
         function recalculateLabels() {
             labelItems.clearLayers();
@@ -7581,6 +7588,15 @@ function ascFileStamp(projectName, kind) {
             addRow("AC Box", "เครื่องตัดไฟรั่ว (RCD)", `Type B, ป้องกันกระแสรั่ว &le; 30mA`, 1, "ตัว", "#10b981");
             addRow("AC Box", "AC Surge Protection (SPD)", `Type 2, 275Vac/400Vac`, 1, "ตัว", "#10b981");
             addRow("AC Box", "มิเตอร์กันย้อน (Smart Meter)", `เข้ากันได้กับแบรนด์ ${state.inv1Mfg}`, 1, "ชุด", "#10b981");
+
+            // 🌟 ป้ายตาม วสท. 022013-25 บทที่ 6 (ข้อ 6.3-6.5) เป็นข้อบังคับ ไม่ใช่ของแถม
+            //    เดิมไม่มีในตาราง จึงกลายเป็นต้นทุนที่โผล่หน้างานแทนที่จะอยู่ในใบเสนอราคา
+            let signageQty = 3                                  // ป้ายแจ้งว่าอาคารมีระบบ PV ที่จุดเข้าถึงหลัก
+                           + (state.inv1Qty + state.inv2Qty)    // ป้ายที่อินเวอร์เตอร์ทุกตัว
+                           + numStrings                         // ป้ายที่สวิตช์ตัดตอนฝั่ง DC ทุกชุด
+                           + 1                                  // ป้ายที่เบรกเกอร์ฝั่ง AC
+                           + (state.batQty > 0 ? 1 : 0);        // ป้ายเตือนระบบกักเก็บพลังงาน
+            addRow("ป้ายและเอกสาร", "ป้ายเตือนและป้ายระบุวงจร", `ตาม วสท. 022013-25 ข้อ 6.3-6.5 · ป้ายอาคาร ป้ายอุปกรณ์ตัดวงจร${state.batQty > 0 ? ' ป้ายเตือน BESS' : ''}`, signageQty, "ป้าย", "#7c3aed");
 			
 			// --- เริ่ม: โค้ดที่เพิ่มใหม่ (คำนวณจำนวน MC4) ---
             let mc4Qty = Math.ceil(numStrings * 2 * 1.15); // จำนวนสตริง x 2 คู่ เผื่อสายต่อขยาย 15%
@@ -7722,7 +7738,12 @@ function ascFileStamp(projectName, kind) {
                 },
                 protection: {
                     dc_breaker_amp: dcBreakerAmp,
-                    ac_breaker_amp: acBreakerAmp
+                    ac_breaker_amp: acBreakerAmp,
+                    // 🌟 ชนิด SPD และจำนวนป้าย ตรงกับที่ addRow ใส่ในตารางจริง
+                    //    เดิมตารางมีของ แต่ข้อมูลไม่ไหลไป DB2 ตัวตรวจแบบจึงตรวจไม่ได้
+                    dc_spd_class: 'II',
+                    ac_spd_class: 'II',
+                    signage_sets: signageQty
                 },
                 mounting_structure: {
                     rail_qty: railQty,
