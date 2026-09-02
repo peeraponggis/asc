@@ -7422,9 +7422,40 @@ function ascFileStamp(projectName, kind) {
 
             // 🛑 คำนวณ AC (มาตรฐาน V-Drop 3% ตาม วสท.)
             let totalAcKw = (state.inv1Qty * state.inv1AcKw) + (state.inv2Qty * state.inv2AcKw);
-            let maxAcCurrent = acPhase === 3 ? (totalAcKw * 1000) / (400 * 1.732) : (totalAcKw * 1000) / 230;
-            let acVolts = acPhase === 3 ? 400 : 230;
+
+            /* 🌟 [แก้บั๊ก] กระแสขาออกฝั่ง AC ต้องอ่านจากดาต้าชีตก่อน
+               สูตรเดิม กำลังพิกัด ÷ (400 × √3) พลาดสามทางพร้อมกัน
+
+                 1. อินเวอร์เตอร์จ่ายกระแสได้เกินกระแสที่พิกัดกำลัง
+                    ในคลังดาต้าชีต 87 จาก 91 รุ่น มี Max_AC_Output_Current_A สูงกว่าที่สูตรให้
+                 2. รุ่นแรงดันต่ำ เช่น SigenStor TPLV จ่ายที่ 200 V ไม่ใช่ 400 V
+                    กระแสจริงจึงสูงกว่าที่สูตรคิดเกือบเท่าตัว
+                 3. รุ่นแรงดันสูง เช่น SUN2000-330KTL-H1 จ่ายที่ 800 V
+                    กระแสจริงต่ำกว่าที่สูตรคิดเกือบครึ่ง สูตรเดิมจึงสั่งสายและเบรกเกอร์ใหญ่เกินจำเป็น
+
+               เบรกเกอร์กับสายต้องรับกระแสสูงสุดที่เครื่องจ่ายได้จริง ไม่ใช่กระแสที่พิกัดกำลัง
+               ถ้าดาต้าชีตไม่มีค่านี้ จึงค่อยตกกลับไปใช้สูตรเดิม เพื่อให้ไฟล์เก่ายังทำงานได้ */
+            const acCurrentOf = (raw, qty, kw) => {
+                const sheet = parseFloat(raw && raw.Max_AC_Output_Current_A);
+                if (isFinite(sheet) && sheet > 0) return { a: sheet * qty, fromSheet: true };
+                const denom = acPhase === 3 ? (400 * 1.732) : 230;
+                return { a: (kw * qty * 1000) / denom, fromSheet: false };
+            };
+            const ac1 = acCurrentOf(state.rawEquipData.inv1, state.inv1Qty, state.inv1AcKw);
+            const ac2 = state.inv2Qty > 0
+                      ? acCurrentOf(state.rawEquipData.inv2, state.inv2Qty, state.inv2AcKw)
+                      : { a: 0, fromSheet: true };
+            let maxAcCurrent = ac1.a + ac2.a;
+            const acCurrentFromSheet = ac1.fromSheet && ac2.fromSheet;
+
+            /* แรงดันฝั่ง AC ใช้ค่าจากดาต้าชีตด้วย เพราะรุ่นแรงดันต่ำและแรงดันสูงมีอยู่จริงในคลัง
+               ถ้าตรึงไว้ที่ 400 V แรงดันตกเป็นเปอร์เซ็นต์จะผิดตามไปด้วย
+               รับเฉพาะค่าที่สมเหตุสมผล เพื่อไม่ให้ดาต้าชีตที่กรอกพลาดมาทำให้การคิดสายเพี้ยน */
+            const sheetAcV = parseFloat(state.rawEquipData.inv1 && state.rawEquipData.inv1.Nominal_AC_Voltage_V);
+            const defaultAcV = acPhase === 3 ? 400 : 230;
+            let acVolts = (isFinite(sheetAcV) && sheetAcV >= 100 && sheetAcV <= 1000) ? sheetAcV : defaultAcV;
             let acFactor = acPhase === 3 ? 1.732 : 2;
+            const acVoltsFromSheet = acVolts !== defaultAcV;
             
 
             let acBreakerAmp = Math.ceil((maxAcCurrent * 1.25) / 5) * 5;
@@ -7583,8 +7614,9 @@ function ascFileStamp(projectName, kind) {
             addRow("DC Box", "DC Breaker / Fuse", `พิกัด ${dcBreakerAmp}A / 1000Vdc`, numStrings, "ชุด", "#f59e0b");
             addRow("DC Box", "DC Surge Protection (SPD)", `Type 2, &ge; ${Math.ceil(maxVocArray/100)*100}Vdc, Imax &ge; 20kA`, state.inv1Qty + state.inv2Qty, "ตัว", "#f59e0b");
 
-            let acVoltsText = acPhase === 3 ? "400V (3-Phase)" : "230V (1-Phase)";
-            addRow("AC Box", "AC Breaker (MCB/MCCB)", `พิกัด ${acBreakerAmp}A / ${acVoltsText}`, 1, "ตัว", "#10b981");
+            let acVoltsText = `${fmtNum(acVolts)}V (${acPhase === 3 ? '3-Phase' : '1-Phase'})` +
+                              (acVoltsFromSheet ? ' ตามดาต้าชีต' : '');
+            addRow("AC Box", "AC Breaker (MCB/MCCB)", `พิกัด ${acBreakerAmp}A / ${acVoltsText}<br><span style="font-size: 0.85em; color: #475569;">คิดจากกระแสขาออกสูงสุด ${fmtNum(maxAcCurrent)} A ${acCurrentFromSheet ? '(จากดาต้าชีต)' : '(ประมาณจากกำลังพิกัด เพราะดาต้าชีตไม่ระบุ)'} × 1.25</span>`, 1, "ตัว", "#10b981");
             addRow("AC Box", "เครื่องตัดไฟรั่ว (RCD)", `Type B, ป้องกันกระแสรั่ว &le; 30mA`, 1, "ตัว", "#10b981");
             addRow("AC Box", "AC Surge Protection (SPD)", `Type 2, 275Vac/400Vac`, 1, "ตัว", "#10b981");
             addRow("AC Box", "มิเตอร์กันย้อน (Smart Meter)", `เข้ากันได้กับแบรนด์ ${state.inv1Mfg}`, 1, "ชุด", "#10b981");

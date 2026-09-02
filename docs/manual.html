@@ -925,6 +925,49 @@ Is_Bifacial = False</div>
                         </p></div>
                     </li>
                 </ol>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 mt-6">
+                    <h4 class="font-bold text-amber-900 text-sm mb-2">
+                        <i class="fa-solid fa-triangle-exclamation mr-1.5"></i>
+                        เบรกเกอร์และสายฝั่ง AC เปลี่ยนวิธีคิดแล้ว ราคาจะขยับ
+                    </h4>
+                    <p class="text-sm text-amber-900 leading-relaxed mb-3">
+                        เดิมโปรแกรมคิดกระแสฝั่ง AC จาก <b>กำลังพิกัด ÷ (400 V × √3)</b> ซึ่งพลาดสามทางพร้อมกัน
+                    </p>
+                    <ul class="text-sm text-amber-900 space-y-2 mb-3">
+                        <li class="flex gap-3"><span class="shrink-0">1.</span><span>
+                            อินเวอร์เตอร์จ่ายกระแสได้<b>เกิน</b>กระแสที่พิกัดกำลัง
+                            ในคลังดาต้าชีต 87 จาก 91 รุ่นมีกระแสขาออกสูงสุดสูงกว่าที่สูตรเดิมให้
+                        </span></li>
+                        <li class="flex gap-3"><span class="shrink-0">2.</span><span>
+                            รุ่นแรงดันต่ำ เช่น SigenStor TPLV จ่ายที่ <b>230 V สามเฟส</b> ไม่ใช่ 400 V
+                            กระแสจริงจึงสูงกว่าที่สูตรเดิมคิดเกือบเท่าตัว
+                        </span></li>
+                        <li class="flex gap-3"><span class="shrink-0">3.</span><span>
+                            รุ่นแรงดันสูง เช่น SUN2000-330KTL-H1 จ่ายที่ <b>800 V</b>
+                            กระแสจริงต่ำกว่าที่สูตรเดิมคิดเกือบครึ่ง สูตรเดิมจึงสั่งของใหญ่เกินจำเป็น
+                        </span></li>
+                    </ul>
+                    <p class="text-sm text-amber-900 leading-relaxed mb-3">
+                        ตอนนี้อ่าน <b>กระแสขาออกสูงสุด</b> และ <b>แรงดันพิกัด</b> จากดาต้าชีตโดยตรง
+                        ถ้าดาต้าชีตไม่ระบุจึงค่อยตกกลับไปใช้สูตรเดิม และแถวเบรกเกอร์ในตารางจะบอกไว้ว่า
+                        ตัวเลขมาจากทางไหน
+                    </p>
+                    <div class="bg-white border border-amber-200 rounded-lg p-4">
+                        <p class="text-sm text-slate-700 leading-relaxed mb-2">
+                            <b>ตัวอย่าง SigenStor EC 12.0 TPLV</b> (12 kW · 230 V สามเฟส)
+                        </p>
+                        <p class="text-sm text-slate-700 font-mono leading-relaxed">
+                            เดิม&nbsp; 12,000 ÷ (400 × 1.732) = 17.3 A → เบรกเกอร์ <b>25 A</b> · สาย 6 ตร.มม.<br>
+                            ใหม่&nbsp; ดาต้าชีตระบุ 34.7 A &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ เบรกเกอร์ <b>45 A</b> · สาย 16 ตร.มม.
+                        </p>
+                    </div>
+                    <p class="text-sm text-amber-900 leading-relaxed mt-3">
+                        เทียบกับคลังทั้งหมด <b>70 จาก 91 รุ่น</b> เคยได้เบรกเกอร์เล็กเกินไป
+                        และ <b>48 รุ่น</b> เคยได้สายเล็กเกินไป มีรุ่นเดียวที่เคยได้ของใหญ่เกินจำเป็น
+                        <b>โครงการเก่าที่ออกใบเสนอราคาไปแล้ว ควรกด Generate BOM ใหม่เพื่อดูว่าขนาดเปลี่ยนไหม</b>
+                    </p>
+                </div>
             </section>
 
             <section class="mb-12">
