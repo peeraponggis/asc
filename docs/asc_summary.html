@@ -190,6 +190,8 @@ footer{margin-top:26px;font-size:12.5px;color:var(--mute);border-top:1px solid v
         <button id="lang-th" class="on" onclick="setLang('th')">ไทย</button>
         <button id="lang-en" onclick="setLang('en')">English</button>
       </div>
+      <button id="btn-refresh" class="btn-ghost" onclick="refreshData()" data-i18n="refresh"></button>
+      <button id="btn-import" class="btn-ghost" onclick="document.getElementById('file-db3').click()" data-i18n="importBtn"></button>
       <button id="btn-print" class="btn-ghost" onclick="window.print()" data-i18n="print"></button>
       <button id="btn-video" class="btn-ghost" onclick="exportVideo()" data-i18n="video"></button>
       <div class="voice in-head" id="voice-box">
@@ -198,10 +200,16 @@ footer{margin-top:26px;font-size:12.5px;color:var(--mute);border-top:1px solid v
         <span class="vs" id="voice-status" data-i18n="voiceNote"></span>
       </div>
     </div>
+    <!-- ผลของการกดรีเฟรช ต้องเห็นว่ากดติดแล้ว ไม่ใช่กดแล้วเงียบ -->
+    <div id="refresh-note" class="no-print" style="display:none; width:100%; text-align:right; font-size:12px;
+         color:#9FD0F5; margin-top:6px;"></div>
   </div>
 </header>
 
 <!-- ยังไม่มีข้อมูล DB3 : บอกทางไปต่อให้ชัด แทนที่จะปล่อยหน้าว่าง -->
+<!-- ช่องเลือกไฟล์ วางไว้นอกกล่อง "ยังไม่มีข้อมูล" เพราะกล่องนั้นถูกซ่อนเมื่อมีข้อมูลแล้ว
+     ปุ่มนำเข้าข้อมูลบนแถบเครื่องมือต้องเรียกได้ตลอดเวลา ไม่ใช่เฉพาะตอนหน้าว่าง -->
+  <input type="file" id="file-db3" accept=".txt,.json" style="display:none" onchange="importFile(this.files[0]); this.value='';">
 <div id="empty" class="empty" style="display:none">
   <svg viewBox="0 0 40 40" width="56" height="56"><rect x="4" y="10" width="32" height="20" rx="2" fill="#1E5A8A"/><path d="M4 17h32M4 24h32M14 10v20M25 10v20" stroke="#8FC6EE" stroke-width="1.3"/><path d="M14 30l-4 6M26 30l4 6" stroke="#3B4C5E" stroke-width="2"/></svg>
   <h2 data-i18n="emptyTitle"></h2>
@@ -210,7 +218,6 @@ footer{margin-top:26px;font-size:12.5px;color:var(--mute);border-top:1px solid v
     <button class="btn pri" onclick="document.getElementById('file-db3').click()" data-i18n="emptyImport"></button>
     <button id="btn-goto-report" class="btn sec" style="display:none" onclick="gotoReport()" data-i18n="emptyGoto"></button>
   </div>
-  <input type="file" id="file-db3" accept=".txt,.json" style="display:none" onchange="importFile(this.files[0]); this.value='';">
   <p class="tiny" data-i18n="emptyDrop"></p>
 </div>
 
@@ -314,6 +321,9 @@ const I18N = {
  th:{eyebrow:'บทสรุประบบโซลาร์เซลล์ · Executive Summary',
      subtitle:'สรุปอุปกรณ์ กำลังการผลิต การไหลของพลังงาน และความคุ้มค่าจากผลจำลองรายชั่วโมง (DB3)',
      tariff:'ค่าไฟ', print:'พิมพ์ / PDF', video:'Export Video', videoBusy:'กำลังสร้างวิดีโอ… ',
+     refresh:'⟳ รีเฟรชข้อมูล', importBtn:'📂 นำเข้าข้อมูล',
+     refreshOk:'ขอข้อมูลล่าสุดจากโปรแกรมหลักแล้ว',
+     refreshSolo:'หน้านี้เปิดแบบเดี่ยว จึงไม่มีโปรแกรมหลักให้ขอข้อมูล — ใช้ปุ่มนำเข้าข้อมูลเพื่อเปิดไฟล์ DB3 แทน',
      videoNo:'เบราว์เซอร์นี้ไม่รองรับการอัดวิดีโอ (MediaRecorder)',
      vmTitle:'ส่งออกวิดีโอ',
      vmBody:'แบบมีเสียงบรรยาย โปรแกรมจะบันทึกหน้าจอพร้อมเสียงพูดสรุประบบให้อัตโนมัติ — เมื่อหน้าต่างแชร์หน้าจอเปิดขึ้น ให้เลือก "ทั้งหน้าจอ (Entire screen)" และเปิดสวิตช์ "แชร์เสียงระบบ (Also share system audio)" แล้วกด Share จากนั้นปล่อยให้โปรแกรมทำงานจนเสียงบรรยายจบ ไฟล์จะดาวน์โหลดเอง',
@@ -355,6 +365,9 @@ const I18N = {
  en:{eyebrow:'Solar System Executive Summary',
      subtitle:'Equipment, generation, energy flow and investment value from the hourly simulation (DB3)',
      tariff:'Tariff', print:'Print / PDF', video:'Export Video', videoBusy:'Rendering video… ',
+     refresh:'⟳ Refresh', importBtn:'📂 Import',
+     refreshOk:'Requested the latest data from the main app',
+     refreshSolo:'This page is open on its own, so there is no main app to ask — use Import to open a DB3 file instead',
      videoNo:'Video recording (MediaRecorder) is not supported in this browser',
      vmTitle:'Export video',
      vmBody:'With narration, the program records the screen together with the spoken summary automatically — when the share dialog opens, choose "Entire screen" and switch on "Also share system audio", then press Share. Let it run until the narration ends; the file downloads itself.',
@@ -419,6 +432,31 @@ window.addEventListener('message', ev => {
 });
 
 function gotoReport(){ try { window.parent.postMessage({type:'SWITCH_TAB', tab:'report'}, '*'); } catch(e) {} }
+
+/* ดึงข้อมูลล่าสุดจากโปรแกรมหลักอีกรอบ
+
+   หน้านี้รับข้อมูลตอนเปิดครั้งเดียว ถ้าไปแก้แบบหรือรันจำลองใหม่ในแท็บอื่น
+   แล้วกลับมาที่แท็บนี้ ตัวเลขจะยังเป็นชุดเก่าโดยไม่มีอะไรบอก
+   master_shell รับข้อความ REQUEST_SESSION แล้ว broadcast กลับมาให้อยู่แล้ว
+   จึงใช้ช่องทางเดิม ไม่ต้องเพิ่มโปรโตคอลใหม่
+
+   เปิดแบบเดี่ยวจะไม่มีใครตอบ ต้องบอกตรง ๆ แล้วชี้ไปที่ปุ่มนำเข้าข้อมูลแทน
+   ไม่ใช่ปล่อยให้กดแล้วเงียบจนคิดว่าโปรแกรมค้าง */
+function refreshData(){
+    const el = document.getElementById('refresh-note');
+    const say = msg => {
+        if (!el) { alert(msg); return; }
+        el.textContent = msg;
+        el.style.display = '';
+        clearTimeout(refreshData._t);
+        refreshData._t = setTimeout(() => { el.style.display = 'none'; }, 6000);
+    };
+    if (!inShell) { say(T().refreshSolo); return; }
+    try {
+        window.parent.postMessage({ type: 'REQUEST_SESSION' }, '*');
+        say(T().refreshOk);
+    } catch(e) { say(T().refreshSolo); }
+}
 
 function importFile(file){
     if (!file) return;

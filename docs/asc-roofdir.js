@@ -26,6 +26,7 @@
     let dirLayer = null;
 
     const roofLayers = () => editableItems.getLayers().filter(l => l.drawMode === 'roof');
+    const zoneLayers = () => editableItems.getLayers().filter(l => l.drawMode === 'pvzone');
 
     /* ทิศที่ใช้จริงของหลังคาผืนหนึ่ง — ค่าที่ผู้ใช้กำหนดเองมาก่อนค่าที่ระบบเดาให้ */
     function aziOf(layer) {
@@ -33,6 +34,37 @@
         let a = pc.customAzimuth;
         if (a === null || a === undefined || !isFinite(a)) a = pc.autoAzimuth;
         return isFinite(a) ? ((a % 360) + 360) % 360 : null;
+    }
+
+    /* วัตถุที่ควรมีลูกศรกำกับ
+
+       เดิมวาดที่จุดกึ่งกลางหลังคาเสมอ ซึ่งอ่านผิดได้ง่ายเมื่อหลังคาผืนใหญ่มีกรอบ
+       พื้นที่วางแผงเล็ก ๆ อยู่มุมเดียว ลูกศรจะไปโผล่กลางที่ว่างที่ไม่มีแผงสักแผ่น
+       ตอนนี้กรอบพื้นที่วางแผงตั้งทิศของตัวเองได้ด้วย ลูกศรจึงต้องอยู่ที่กรอบ
+       เพราะกรอบคือสิ่งที่บอกว่าแผงหันทางไหนจริง
+
+       หลังคาที่ยังไม่มีกรอบทับ ยังวาดลูกศรที่หลังคาเหมือนเดิม เพื่อให้เห็นทิศ
+       ตั้งแต่ก่อนวาดกรอบ และไฟล์งานเก่าที่ไม่มีกรอบเลยจึงได้ผลเท่าเดิมทุกประการ */
+    function arrowTargets() {
+        const zones = zoneLayers();
+        const roofs = roofLayers();
+        if (!zones.length) {
+            return roofs.map((l, i) => ({ layer: l, azi: aziOf(l), label: String(i + 1) }));
+        }
+        const out = zones.map((z, i) => ({
+            layer: z,
+            azi: (typeof ascZoneAzimuth === 'function') ? ascZoneAzimuth(z) : aziOf(z),
+            label: 'โซน ' + (i + 1)
+        }));
+        roofs.forEach((r, i) => {
+            let covered = false;
+            try {
+                const rg = r.toGeoJSON();
+                covered = zones.some(z => turf.booleanIntersects(z.toGeoJSON(), rg));
+            } catch (e) { covered = false; }
+            if (!covered) out.push({ layer: r, azi: aziOf(r), label: String(i + 1) });
+        });
+        return out;
     }
 
     function centroidLL(layer) {
@@ -49,9 +81,10 @@
         dirLayer.clearLayers();
         if (!document.getElementById('chkRoofDir') || !document.getElementById('chkRoofDir').checked) return;
 
-        roofLayers().forEach((layer, i) => {
-            const azi = aziOf(layer);
-            if (azi === null) return;
+        arrowTargets().forEach(t => {
+            const layer = t.layer;
+            const azi = t.azi;
+            if (azi === null || !isFinite(azi)) return;
             const c = centroidLL(layer);
 
             /* ความยาวลูกศรคิดจากขนาดหลังคา จะได้พอดีตัวทั้งอาคารเล็กและใหญ่ */
@@ -75,7 +108,7 @@
                     className: '',
                     html: '<div style="background:#1d4ed8;color:#fff;font-size:11px;font-weight:700;' +
                           'padding:1px 6px;border-radius:9px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.4)">' +
-                          (i + 1) + ' · ' + Math.round(azi) + '°</div>',
+                          t.label + ' · ' + Math.round(azi) + '°</div>',
                     iconSize: null, iconAnchor: [14, 8]
                 })
             }).addTo(dirLayer);

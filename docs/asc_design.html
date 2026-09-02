@@ -411,6 +411,9 @@
             <div><i class="fa-solid fa-solar-panel" style="color: #2563eb;"></i> PV: <span id="status-panels" style="color: #ea580c;">0</span></div>
             <div><i class="fa-solid fa-bolt" style="color: #16a34a;"></i> Capacity: <span id="status-kwp" style="color: #ea580c;">0.00 kWp</span></div>
             <div><i class="fa-solid fa-scale-balanced" style="color: #8b5cf6;"></i> DC/AC Ratio: <span id="status-ratio" style="color: #ea580c;">-</span></div>
+            <!-- แสดงเฉพาะเมื่อโครงการมีอุปกรณ์นั้นจริง ไม่งั้นแถบจะยาวเกินจำเป็นในงานทั่วไป -->
+            <div id="status-bat-box" style="display: none;"><i class="fa-solid fa-battery-full" style="color: #0891b2;"></i> Battery: <span id="status-bat" style="color: #ea580c;">0 kWh</span></div>
+            <div id="status-opt-box" style="display: none;"><i class="fa-solid fa-microchip" style="color: #db2777;"></i> Optimizer: <span id="status-opt" style="color: #ea580c;">0</span></div>
         </div>
 
 		<!-- ปุ่ม Undo / Redo บนแผนที่ -->
@@ -869,7 +872,7 @@
                     <div style="font-size:0.82em; margin:-6px 0 10px;">
                         <label style="display:flex; align-items:center; gap:6px; color:#1d4ed8; font-weight:600; cursor:pointer;">
                             <input type="checkbox" id="chkRoofDir" checked style="width:auto; margin:0;">
-                            แสดงลูกศรทิศที่หลังคาลาดลง (หางลูกศร = ด้านสัน)
+                            แสดงลูกศรทิศที่แผงหันไป (หางลูกศร = ด้านสัน) — วาดที่พื้นที่วางแผง ถ้ายังไม่มีกรอบจึงวาดที่หลังคา
                         </label>
                         <div id="roofDirBox" style="display:none; margin-top:2px;"></div>
                     </div>
@@ -3159,6 +3162,19 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     '<div style="font-weight:400; font-size:0.92em; margin-top:2px;">พื้นที่ ' + area.toFixed(1) + ' ตร.ม.' +
                     (isFinite(azi) ? ' · ลาดลงทางทิศ ' + Math.round(((azi % 360) + 360) % 360) + '°' : '') +
                     ' · ค่าที่กรอกด้านล่างจะลงเฉพาะผืนนี้</div>';
+            } else if (activeRoofLayer && activeRoofLayer.drawMode === 'pvzone') {
+                /* กรอบพื้นที่วางแผงมีทิศของตัวเองได้แล้ว ต้องบอกให้ชัดว่าค่าที่กรอกจะลงกรอบนี้
+                   ไม่ใช่ลงหลังคา ไม่งั้นผู้ใช้จะแก้ผิดที่แล้วงงว่าทำไมแผงผืนอื่นไม่ขยับ */
+                const zAzi = ascZoneAzimuth(activeRoofLayer);
+                const own = activeRoofLayer.zoneConfig &&
+                            activeRoofLayer.zoneConfig.customAzimuth !== null &&
+                            activeRoofLayer.zoneConfig.customAzimuth !== undefined;
+                const zArea = (function () { try { return turf.area(activeRoofLayer.toGeoJSON()); } catch (e) { return 0; } })();
+                el.style.background = '#eff6ff'; el.style.border = '1px solid #93c5fd'; el.style.color = '#1e40af';
+                el.innerHTML = '✏️ กำลังแก้ไข <b>' + ascAreaName(activeRoofLayer) + '</b>' +
+                    '<div style="font-weight:400; font-size:0.92em; margin-top:2px;">พื้นที่ ' + zArea.toFixed(1) + ' ตร.ม.' +
+                    (zAzi !== null ? ' · แผงหันทิศ ' + Math.round(zAzi) + '°' + (own ? ' (ตั้งเอง)' : ' (สืบทอดจากหลังคา)') : '') +
+                    ' · ค่าที่กรอกด้านล่างจะลงเฉพาะกรอบนี้</div>';
             } else if (activeRoofLayer) {
                 el.style.background = '#f8fafc'; el.style.border = '1px solid #cbd5e1'; el.style.color = '#475569';
                 el.innerHTML = 'เลือกวัตถุที่ไม่ใช่หลังคาอยู่ (' + (activeRoofLayer.drawMode || '-') + ') — ค่าหลังคาด้านล่างจะใช้กับทุกผืน';
@@ -4343,6 +4359,23 @@ processPolygonsAndPanels = function() {
             if(document.getElementById('status-panels')) document.getElementById('status-panels').innerText = fmtInt(count);
             if(document.getElementById('status-kwp')) document.getElementById('status-kwp').innerText = fmtNum(totalKwp) + " kWp";
 
+            /* แบตเตอรี่และออปติไมเซอร์ ขึ้นเฉพาะเมื่อมีจริง
+               ความจุรวมคือความจุต่อชุด × จำนวนชุด ซึ่งเป็นตัวเลขที่ใช้คุยกับลูกค้า
+               ไม่ใช่ความจุต่อชุดที่แสดงอยู่ในช่องเลือกอุปกรณ์ */
+            const batTotal = (parseFloat(state.batCap) || 0) * (parseInt(state.batQty) || 0);
+            const batBox = document.getElementById('status-bat-box');
+            if (batBox) {
+                batBox.style.display = batTotal > 0 ? '' : 'none';
+                if (batTotal > 0) document.getElementById('status-bat').innerText =
+                    fmtNum(batTotal) + ' kWh' + (state.batQty > 1 ? ' (' + fmtInt(state.batQty) + ' ชุด)' : '');
+            }
+            const optN = parseInt(state.optQty) || 0;
+            const optBox = document.getElementById('status-opt-box');
+            if (optBox) {
+                optBox.style.display = optN > 0 ? '' : 'none';
+                if (optN > 0) document.getElementById('status-opt').innerText = fmtInt(optN) + ' ตัว';
+            }
+
             // 🌟 INDUSTRIAL SWITCH LOGIC ENGINE
             const bldgType = document.querySelector('input[name="buildingType"]:checked')?.value || "1000";
             const panelInputUi = document.getElementById('advancedIndustrialInputPanel');
@@ -5057,6 +5090,7 @@ processPolygonsAndPanels = function() {
             
             const keepoutPolys = []; const roofLayers = []; const pvZonePolys = [];
             const roofsWithoutZone = [];   // หลังคาที่ยังไม่มีกรอบพื้นที่วางแผงทับ จึงยังไม่มีแผง
+            const mixedAziRoofs = [];      // หลังคาที่มีกรอบหลายกรอบตั้งทิศไม่ตรงกัน ต้องเตือน
 
             editableItems.eachLayer(layer => {
                 if(!layer.toGeoJSON) return;
@@ -5211,8 +5245,26 @@ processPolygonsAndPanels = function() {
                 layer.panelConfig.ridgeHeight_m = ridgeNow;
                 layer.panelConfig.eaveHeightB_m = eaveBNow;
 
+                /* ทิศที่จะบันทึกลงระเบียนหลังคา ต้องเป็นทิศที่แผงหันจริง
+                   เพราะ asc_report คิดพลังงานรายผืนจากช่องนี้ ถ้ากรอบพื้นที่วางแผง
+                   ตั้งทิศเอง แล้วระเบียนยังเก็บทิศของรูปหลังคา ตัวเลขพลังงานจะคิดผิด
+                   กรณีที่กรอบหลายกรอบบนผืนเดียวกันตั้งทิศต่างกัน ตัดสินแทนไม่ได้
+                   จึงคงทิศของหลังคาไว้แล้วเตือนให้เห็น ไม่ใช่เลือกอันใดอันหนึ่งเงียบ ๆ */
+                const zonesOnRoof = pvZonePolys.filter(z => {
+                    try { return turf.booleanIntersects(z, geojson); } catch (e) { return false; }
+                });
+                const zoneAzis = [];
+                zonesOnRoof.forEach(z => {
+                    const l = ascAreaLayer(z.properties._areaUid);
+                    const a = l ? ascZoneAzimuth(l) : null;
+                    if (a !== null && zoneAzis.indexOf(Math.round(a)) < 0) zoneAzis.push(Math.round(a));
+                });
+                let recordAzimuth = finalAzimuth;
+                if (zoneAzis.length === 1) recordAzimuth = zoneAzis[0];
+                else if (zoneAzis.length > 1) mixedAziRoofs.push((index + 1) + ' (' + zoneAzis.join('°, ') + '°)');
+
                 state.roofPolygonsData.push({
-                    id: index + 1, area: areaSqM, slope: currentSlope, azimuth: Math.round(finalAzimuth), 
+                    id: index + 1, area: areaSqM, slope: currentSlope, azimuth: Math.round(recordAzimuth), 
                     mountType: config.mountType || document.getElementById('mountDisplayText').innerText,
                     runM: roofRunM,                 // 🌟 ระยะไหลหลังคา (ม.)
                     spanM: roofSpanM,               // 🌟 ความกว้างตามแนวสัน (ม.)
@@ -5259,8 +5311,14 @@ processPolygonsAndPanels = function() {
                         const cfg = Object.assign({}, config, zc || {});
                         // แผงในกรอบนี้เป็นของกรอบนี้ ไม่ใช่ของหลังคา จำนวนและการล็อกจึงแยกกันได้
                         cfg.areaUid = z.properties._areaUid;
+                        /* ทิศของกรอบมาก่อนทิศของหลังคา แผงคือของที่อยู่ในกรอบ
+                           กรอบที่ไม่ได้ตั้งทิศเองจะได้ทิศของหลังคาเหมือนเดิมทุกประการ */
+                        const zAzi = (zc && zc.customAzimuth !== null && zc.customAzimuth !== undefined
+                                      && isFinite(zc.customAzimuth))
+                                   ? ((Number(zc.customAzimuth) % 360) + 360) % 360
+                                   : finalAzimuth;
                         state.allPossiblePanelsGeoJSON = state.allPossiblePanelsGeoJSON.concat(
-                            generatePanelGrid(geojson, center, finalAzimuth, state.pvWid/1000, state.pvLen/1000, keepoutPolys, cfg, [z]));
+                            generatePanelGrid(geojson, center, zAzi, state.pvWid/1000, state.pvLen/1000, keepoutPolys, cfg, [z]));
                     });
                 } else if (pvZonePolys.length) {
                     // มีกรอบในโครงการแล้ว แต่ผืนนี้ยังไม่มีกรอบทับ จึงยังไม่วางแผง
@@ -5270,6 +5328,7 @@ processPolygonsAndPanels = function() {
                 }
             });
             state.roofsWithoutZone = roofsWithoutZone;
+            state.mixedAziRoofs = mixedAziRoofs;
             
             // 🌟 รูปหลังคา/ทิศเปลี่ยน → ระยะไหลเปลี่ยน → คำนวณความสูงสันหลังคาใหม่โดยคงความชันไว้
             if (typeof ascRefreshRoofGeom === 'function') ascRefreshRoofGeom();
@@ -5769,13 +5828,24 @@ function generatePanelGrid(roofGeojson, centerPoint, azimuth, pWidthM, pLengthM,
             });
             /* บอกให้ชัดว่าผืนไหนยังไม่มีแผงเพราะยังไม่ได้วาดกรอบพื้นที่วางแผงทับ
                ไม่งั้นผู้ใช้จะเห็นแค่หลังคาว่างเปล่าแล้วไม่รู้ว่าต้องทำอะไรต่อ */
+            /* กรอบหลายกรอบบนหลังคาผืนเดียวกันตั้งทิศต่างกัน ระเบียนหลังคาเก็บทิศได้ค่าเดียว
+               รายงานจึงคิดพลังงานด้วยทิศของหลังคา ไม่ใช่ทิศจริงของกรอบที่ต่างออกไป
+               ต้องบอกให้เห็น ไม่ใช่ปล่อยให้ตัวเลขเพี้ยนเงียบ ๆ */
+            const mixed = state.mixedAziRoofs || [];
+            const mixedWarn = mixed.length
+                ? `<div style="margin-top:6px; font-size:0.92em; color:#9f1239; background:#fff1f2; border:1px solid #fda4af; border-radius:4px; padding:5px 8px;">
+                     ⚠ หลังคา ${mixed.join(' · ')} มีพื้นที่วางแผงตั้งทิศไม่ตรงกัน
+                     แผงบนแผนที่หันตามทิศของแต่ละกรอบถูกต้องแล้ว แต่รายงานคิดพลังงานรายหลังคาได้ทิศเดียว
+                     จึงจะใช้ทิศของหลังคา — ถ้าต้องการตัวเลขพลังงานที่ตรงทุกกรอบ ให้แยกเป็นคนละหลังคา</div>`
+                : '';
+
             const noZone = state.roofsWithoutZone || [];
             const warn = noZone.length
                 ? `<div style="margin-top:6px; font-size:0.92em; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:4px; padding:5px 8px;">
                      ⚠ หลังคา ${noZone.join(', ')} ยังไม่มีกรอบ <b>🔵 พื้นที่วางแผง</b> ทับอยู่ จึงยังไม่วางแผงให้
                      — วาดกรอบทับผืนนั้นก่อน แผงจะขึ้นเฉพาะในกรอบตามกฎที่ตั้งไว้</div>`
                 : '';
-            polyListDiv.innerHTML = html + `</ul>` + warn;
+            polyListDiv.innerHTML = html + `</ul>` + warn + mixedWarn;
             polyListDiv.style.display = 'block';
             // ลูกศรทิศลาด และการตรวจจั่ว/รางน้ำ ต้องอัปเดตทุกครั้งที่รูปหรือทิศเปลี่ยน
             if (window.AscRoofDir) AscRoofDir.refresh();
@@ -6385,8 +6455,26 @@ function updateFinalDcLength() {
                 rowWalkwayM: (parseFloat(document.getElementById('rowWalkwayGapCm').value) || 0) / 100,
                 colWalkwayM: (parseFloat(document.getElementById('colWalkwayGapCm').value) || 0) / 100,
                 innerEdgeGapM: (parseFloat(document.getElementById('innerEdgeGapCm').value) || 0) / 100,
-                keepoutGapM: (parseFloat(document.getElementById('keepoutGapCm').value) || 0) / 100
+                keepoutGapM: (parseFloat(document.getElementById('keepoutGapCm').value) || 0) / 100,
+                /* ทิศของพื้นที่วางแผง แผงคือของที่อยู่ในกรอบนี้ ทิศจึงควรเป็นค่าของกรอบ
+                   ค่าว่าง = สืบทอดจากหลังคาที่กรอบวางทับอยู่ ซึ่งเป็นกรณีปกติของหลังคาลาด
+                   ตั้งเองมีประโยชน์กับหลังคาแบนและงานวางบนพื้น ที่แต่ละบล็อกหันคนละทาง */
+                customAzimuth: document.getElementById('sysAzimuth').value === ""
+                    ? null : parseFloat(document.getElementById('sysAzimuth').value)
             };
+        }
+
+        /* ทิศที่ใช้จริงกับแผงในกรอบพื้นที่วางแผงหนึ่งกรอบ
+           ตั้งเองมาก่อน ถ้าไม่ตั้งจึงสืบทอดจากหลังคาที่กรอบวางทับอยู่
+           คืน null เมื่อหาหลังคาที่รองรับไม่เจอและกรอบก็ไม่ได้ตั้งค่าเอง */
+        function ascZoneAzimuth(zoneLayer) {
+            const zc = zoneLayer && zoneLayer.zoneConfig;
+            let a = zc && zc.customAzimuth;
+            if (a !== null && a !== undefined && isFinite(a)) return ((Number(a) % 360) + 360) % 360;
+            const inh = ascZoneInherited(zoneLayer) || {};
+            a = inh.customAzimuth;
+            if (a === null || a === undefined || !isFinite(a)) a = inh.autoAzimuth;
+            return isFinite(a) ? ((Number(a) % 360) + 360) % 360 : null;
         }
 
         /* ค่าการวางแผงที่กรอบสืบทอดมาจากหลังคาที่มันวางทับอยู่
@@ -6416,6 +6504,11 @@ function updateFinalDcLength() {
             document.getElementById('colWalkwayGapCm').value = Math.round((c.colWalkwayM || 0) * 100);
             document.getElementById('innerEdgeGapCm').value = Math.round((c.innerEdgeGapM || 0) * 100);
             document.getElementById('keepoutGapCm').value = Math.round((c.keepoutGapM || 0) * 100);
+            /* ทิศที่ใช้อยู่จริงของกรอบนี้ ค่าที่ตั้งเองมาก่อนค่าที่สืบทอดมา
+               ต้องเขียนลงช่องด้วย ไม่งั้นจะเห็นค่าค้างของวัตถุที่เลือกไว้ก่อนหน้า */
+            let azi = c.customAzimuth;
+            if (azi === null || azi === undefined || !isFinite(azi)) azi = c.autoAzimuth;
+            document.getElementById('sysAzimuth').value = isFinite(azi) ? Math.round(azi) : "";
         }
 
         function syncActiveConfig() {
@@ -6431,7 +6524,22 @@ function updateFinalDcLength() {
                เดิมโค้ดส่วนนี้อ้าง panelConfig ตรงๆ ซึ่งพื้นที่วางแผงไม่มี จึงพังทันที
                ที่ผู้ใช้คลิกเลือกกรอบแล้วไปแก้ค่าในหัวข้อ 3 */
             if (activeRoofLayer && activeRoofLayer.drawMode === 'pvzone') {
-                activeRoofLayer.zoneConfig = ascReadLayoutFields();
+                const zc = ascReadLayoutFields();
+                /* ช่องทิศแสดงค่าที่สืบทอดมาจากหลังคาอยู่ ถ้าเก็บค่านั้นกลับลงไปดื้อ ๆ
+                   กรอบจะกลายเป็น "ตั้งเอง" ทันทีที่ผู้ใช้ไปแก้ช่องอื่น เช่นจำนวนแผงต่อกลุ่ม
+                   แล้วการแก้ทิศที่หลังคาจะไม่ส่งผลถึงกรอบนี้อีก โดยไม่มีอะไรบอก
+                   จึงต้องเทียบกับค่าที่สืบทอดมา เท่ากันเมื่อไรให้กลับไปเป็นสืบทอด */
+                const inherited = (function () {
+                    const inh = ascZoneInherited(activeRoofLayer) || {};
+                    let a = inh.customAzimuth;
+                    if (a === null || a === undefined || !isFinite(a)) a = inh.autoAzimuth;
+                    return isFinite(a) ? Math.round(((Number(a) % 360) + 360) % 360) : null;
+                })();
+                if (zc.customAzimuth !== null && inherited !== null &&
+                    Math.round(((zc.customAzimuth % 360) + 360) % 360) === inherited) {
+                    zc.customAzimuth = null;
+                }
+                activeRoofLayer.zoneConfig = zc;
                 processPolygonsAndPanels();
                 saveMapState();
                 return;
