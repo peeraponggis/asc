@@ -7410,6 +7410,10 @@ function renderCADLayout() {
         let cx = (finalMinX + finalMaxX) / 2;
         let cy = (finalMinY + finalMaxY) / 2;
 
+        /* หัวเรื่องเหนือภาพ เพื่อให้รู้ตั้งแต่บนหน้าจอว่าภาพไหนคือหลังคาผืนไหน
+           และผืนนั้นมีแผงกี่แผง ไม่ต้องไล่อ่านกรอบข้อมูลใต้ภาพทีละใบ */
+        const roofCaption = `${RT('หลังคาผืนที่', 'Roof')} ${index + 1} ${RT('จาก', 'of')} ${polygons.length}` + ` · ${modsRaw.length} ${RT('แผง', 'modules')}` + (roof.azimuth !== undefined ? ` · ${RT('ทิศ', 'azimuth')} ${roof.azimuth}°` : '') + (roof.area ? ` · ${Number(roof.area).toFixed(1)} ${RT('ตร.ม.', 'sq.m')}` : '');
+
         let polygonHtml = '';
         let dimensionsHtml = '';
         if (svgPts.length > 0) {
@@ -7537,9 +7541,12 @@ function renderCADLayout() {
                     <!-- Left Block: รายละเอียดโปรเจกต์ -->
                     <div style="flex: 1.5; border-right: 1px solid #000; padding: 4px 8px;">
                         <b style="font-size: 10px;">PHOTOVOLTAICS MODULE</b><br>
+                        <!-- ระบุผืนให้ชัด ตัวเลขด้านล่างเป็นยอดรวมทั้งระบบ ไม่ใช่ของผืนนี้
+                             เดิมทุกภาพเขียนยอดรวมเหมือนกันหมด ผืนที่ไม่มีแผงเลยก็ขึ้นจำนวนเต็ม -->
+                        <b style="color:#b45309;">${RT('หลังคาผืนที่', 'ROOF')} ${index + 1} / ${polygons.length} &nbsp;·&nbsp; ${RT('แผงบนผืนนี้', 'MODULES ON THIS ROOF')} : ${modsRaw.length}</b><br>
                         <b>TYPE OF MODULE :</b> ${pvModel}<br>
                         <b>MODEL : MONO ${pvPower} W</b><br>
-                        TOTAL PV NUMBER OF SYM : ${totalModules} MODULES<br>
+                        TOTAL PV NUMBER OF SYM : ${totalModules} MODULES <span style="color:#64748b;">(${RT('ทั้งระบบ', 'whole system')})</span><br>
                         TOTAL INVERTER NUMBER OF SYSTEM : ${invQty} UNITS<br>
                         INVERTER 1 : ${invModel} , POWER OF PV : ${totalPower} kWp.dc<br>
                         <b style="color: #2563eb;">${mps} PV/STRING = ${totalStrings} STRING, ${totalModules} MODULES</b><br>
@@ -7609,6 +7616,7 @@ function renderCADLayout() {
         // 6. แทรกโค้ดแสดงผลบน Dashboard
         dashWrapper.innerHTML += `
             <div class="w-full mb-6">
+                <div style="font-weight:700; font-size:0.9em; color:#b45309; margin-bottom:4px;">${roofCaption}</div>
                 <div style="height: 500px; padding: 10px; background: #f1f5f9; border-radius: 8px; border: 1px solid #cbd5e1;">
                     ${titleBlockHtml}
                 </div>
