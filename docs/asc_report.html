@@ -406,20 +406,6 @@
         </div>
     </div>
 
-    <!-- 🌟 [เพิ่มใหม่] Modal สำหรับแสดงคำอธิบายโดยละเอียด -->
-    <div id="modal-detailed" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center no-print">
-        <div class="bg-white rounded-xl shadow-2xl w-11/12 max-w-3xl max-h-[90vh] flex flex-col border-t-4 border-blue-500">
-            <div class="p-6 border-b flex justify-between items-center bg-blue-50 rounded-t-xl">
-                <h2 class="text-xl font-bold text-blue-800" id="modal-detailed-title">คำอธิบายโดยละเอียด</h2>
-                <button onclick="closeModal('modal-detailed')" class="text-gray-500 hover:text-red-500 font-bold text-xl">&times;</button>
-            </div>
-            <div class="p-6 overflow-y-auto flex-1 text-[14px] text-gray-700 leading-relaxed text-justify space-y-3" id="modal-detailed-content">
-            </div>
-            <div class="p-4 border-t text-right bg-gray-50 rounded-b-xl">
-                <button onclick="closeModal('modal-detailed')" class="bg-gray-600 hover:bg-gray-800 text-white px-6 py-2 rounded font-bold transition-colors">ปิดหน้าต่าง</button>
-            </div>
-        </div>
-    </div>
 
     <div class="no-print w-64 bg-white shadow-lg z-10 flex flex-col">
         <div class="p-6 border-b">
@@ -1518,15 +1504,6 @@
         <!-- 🌟 โซน PDF: รองรับ CAD Layout (จะสร้างหน้าใหม่กี่หน้าก็ได้ตามจำนวนหลังคา) -->
         <div id="prt-dynamic-cad-wrapper" class="w-full"></div>
         
-        <!-- 🌟 [เพิ่มใหม่] หน้าภาคผนวกรวมคำอธิบายโดยละเอียด (จะแสดงอัตโนมัติถ้ามีการติ๊ก Checkbox) -->
-        <div class="pdf-page force-block" style="page-break-before: always; display: none;" id="prt-sec-appendix">
-            <div class="w-full h-full p-4 bg-white">
-                <h2 class="text-[18px] font-bold text-blue-800 border-b-2 border-blue-500 pb-2 mb-4 text-center" data-en="Appendix: Detailed Explanations (Thai)">ภาคผนวก: คำอธิบายกราฟและตารางโดยละเอียด (Detailed Explanations)</h2>
-                <div id="prt-appendix-content" class="text-[11px] text-gray-700 space-y-5 columns-1 md:columns-2 gap-6">
-                    <!-- ข้อความจาก Checkbox จะถูกนำมารวมที่นี่อัตโนมัติ -->
-                </div>
-            </div>
-        </div>
 
     </div>
 <script>
@@ -3660,36 +3637,33 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
             try { renderCADLayout(); } catch(e) { console.error("CAD Layout Failed", e); } // 🌟 เพิ่มบรรทัดนี้เพื่อวาด CAD
 			
             // 🌟 1. Helper Function รูปแบบใหม่ (ดักจับสถานะ Checkbox จากทั้ง DOM และ DB3 Cache ป้องกันบั๊กโหลดไฟล์)
+            /* กล่องคำอธิบายใต้กราฟและตาราง
+
+               เดิมคำอธิบายละเอียดถูกซ่อนไว้ ต้องติ๊กช่องถึงจะเด้งเป็นหน้าต่างและไปโผล่
+               ที่ภาคผนวกท้าย PDF ผู้อ่านส่วนใหญ่จึงไม่เคยเห็น ทั้งที่เป็นเนื้อหาที่
+               อธิบายกราฟได้ดีที่สุด ตอนนี้ยกขึ้นมาแสดงตรงนี้เลยแทนคำอธิบายสั้น
+
+               กราฟหรือตารางไหนไม่มีคำอธิบายละเอียด ให้ใช้คำอธิบายสั้นแบบเดิมต่อไป
+
+               ภาษาอังกฤษ — คำอธิบายละเอียดทั้ง 13 ชุดเขียนไว้เป็นภาษาไทยล้วน
+               ไม่มีคู่ภาษาอังกฤษ ถ้าเอามาแสดงตอนผู้ใช้เลือก English เอกสารที่ส่งให้
+               ลูกค้าต่างชาติจะมีย่อหน้าไทยแทรกใต้กราฟทุกอัน จึงถือว่า "ไม่มี" แล้ว
+               ตกกลับไปใช้คำอธิบายสั้นภาษาอังกฤษตามกติกาข้างบน */
             const getDescHtml = (id, title, data, benefit, glossary, detailedText) => {
-                detailedText = ascRenderMath(detailedText);
-                let chkId = `chk-detail-${id}`;
-                let isChecked = false;
-                let existingChk = document.getElementById(chkId);
-                if (existingChk) { isChecked = existingChk.checked; } 
-                else if (window.db3_ui_inputs_cache && window.db3_ui_inputs_cache[chkId] !== undefined) { isChecked = window.db3_ui_inputs_cache[chkId]; }
-                
-                let checkedStr = isChecked ? 'checked' : '';
+                const hasDetail = RPT_LANG === 'th' && detailedText && String(detailedText).trim() !== '';
+                const explain = hasDetail
+                    ? `<div class="text-[11px] space-y-2 text-justify mt-1">${ascRenderMath(detailedText)}</div>`
+                    : benefit;
 
                 return `
                 <div class="text-blue-800 mb-2 border-b border-blue-200 pb-1"><i class="fa-solid fa-microchip"></i> <b>Pee Analysis: ${title}</b></div>
                 <div class="text-[11px] text-gray-700 space-y-1.5 leading-relaxed">
                     <b>📊 ${RT('แสดงข้อมูล', 'What it shows')}:</b> ${data}<br>
-                    <b>${RT('คำอธิบาย', 'Why it matters')}:</b> ${benefit}<br>
-                    <b>📖 ${RT('อธิบายศัพท์ (Glossary)', 'Glossary')}:</b>
+                    <b>${RT('คำอธิบาย', 'Why it matters')}:</b> ${explain}
+                    <div class="mt-2"><b>📖 ${RT('อธิบายศัพท์ (Glossary)', 'Glossary')}:</b></div>
                     <ul class="list-disc pl-4 mt-1 bg-gray-50 border border-gray-200 p-2 rounded text-[10px] text-gray-600 mb-2">
                         ${glossary}
                     </ul>
-                    <div class="mt-2 no-print">
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="${chkId}" class="form-checkbox text-blue-600 h-3 w-3 rounded" onchange="toggleDetailedExplanation('${id}', '${title}')" ${checkedStr}>
-                            <span class="ml-1.5 font-bold text-blue-700 hover:text-blue-900 transition-colors">${RT('อธิบายโดยละเอียด', 'Detailed explanation (Thai)')}</span>
-                        </label>
-                    </div>
-                    <div id="detail-text-${id}" class="hidden">
-                        <div class="text-[12px] space-y-3 text-justify">
-                            ${detailedText}
-                        </div>
-                    </div>
                 </div>`;
             };
 
@@ -7123,8 +7097,6 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                     }
                 }
             });
-            // 🌟 [เพิ่มใหม่] อัปเดตหน้าภาคผนวกใน PDF ทันทีที่มีการเปิด/ปิดเช็คบ็อกซ์ (รวมถึงตอนโหลด DB3)
-            if(typeof updatePDFAppendix === 'function') updatePDFAppendix();
         
             updatePageEstimate();
         }
@@ -7675,53 +7647,6 @@ function renderCADLayout() {
                 return false; 
             }
         };
-		// 🌟 [เพิ่มใหม่] ฟังก์ชันควบคุม Pop-up คำอธิบายโดยละเอียด
-        function toggleDetailedExplanation(id, title) {
-            let chk = document.getElementById(`chk-detail-${id}`);
-            if(chk && chk.checked) {
-                let content = document.getElementById(`detail-text-${id}`).innerHTML;
-                document.getElementById('modal-detailed-title').innerText = title;
-                document.getElementById('modal-detailed-content').innerHTML = content;
-                document.getElementById('modal-detailed').classList.remove('hidden');
-            }
-            // อัปเดตหน้า PDF ทันทีที่มีการเปลี่ยนแปลง
-            updatePDFAppendix();
-        }
-
-        // 🌟 [เพิ่มใหม่] ฟังก์ชันกวาดรวมข้อความ Detail ส่งเข้าหน้า PDF
-        function updatePDFAppendix() {
-            let appendixContent = document.getElementById('prt-appendix-content');
-            let appendixPage = document.getElementById('prt-sec-appendix');
-            if(!appendixContent || !appendixPage) return;
-
-            let html = '';
-            let count = 0;
-            const ids = ['env', 'waterfall', 'balances', 'aging', 'daily', 'monthly', 'scatter', 'hist', 'bell', 'bankability', 'cashflow', 'finance', 'bom', 'wiring', 'sld', 'iv-eit', 'iv-irr'];
-            
-            ids.forEach(id => {
-                let chk = document.getElementById(`chk-detail-${id}`);
-                // ถ้ากล่องนั้นถูกติ๊กไว้ ให้ดึงข้อความมาต่อเป็นคอลัมน์ใน PDF
-                if (chk && chk.checked) {
-                    let titleEl = document.querySelector(`#desc-${id === 'finance' ? 'tbl-finance' : id} b`);
-                    let title = titleEl ? titleEl.innerText.replace('Pee Analysis: ', '') : `คำอธิบายเพิ่มเติม`;
-                    let text = document.getElementById(`detail-text-${id}`).innerHTML;
-                    
-                    html += `
-                    <div class="mb-4 inline-block w-full" style="page-break-inside: avoid; background-color: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                        <h4 class="font-bold text-blue-800 text-[13px] border-b border-gray-300 pb-1 mb-2">${title}</h4>
-                        <div class="text-[11px] leading-relaxed text-gray-700 text-justify space-y-1">${text}</div>
-                    </div>`;
-                    count++;
-                }
-            });
-
-            if (count > 0) {
-                appendixContent.innerHTML = html;
-                appendixPage.style.setProperty('display', 'flex', 'important');
-            } else {
-                appendixPage.style.setProperty('display', 'none', 'important');
-            }
-        }
 		// 🌟 ฟังก์ชันเลือกกลับไปใช้ค่าเริ่มต้น (5 รายการหลัก)
         /* ══════════════════════════════════════════════════════════════════
            ชุดสำเร็จรูปตามคนอ่าน
