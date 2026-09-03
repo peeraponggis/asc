@@ -7357,7 +7357,19 @@ function renderCADLayout() {
             return { x: cx, y: cy, w: mw, h: mh, angle: angle };
         });
 
-        // 🌟 แก้ไขปัญหา 1: หากมีทั้งหลังคาและแผง ให้คำนวณระยะจัดกลุ่มแผงเข้าจุดศูนย์กลางหลังคา (Auto-Centering) เพื่อขอบ (Edge) ด้านในเท่ากัน
+        /* 🌟 [แก้บั๊ก] เดิมตรงนี้ดันแผงทั้งชุดเข้า "จุดกึ่งกลางกรอบสี่เหลี่ยมของหลังคา"
+           ด้วยเหตุผลว่าจะได้ขอบด้านในเท่ากัน ผลคือผังในรายงานและใน PDF ไม่ตรงกับที่
+           ออกแบบไว้ทุกงาน แผงไปกองอยู่กลางหลังคาแทนที่จะอยู่ตรงตำแหน่งที่วางจริง
+           หลังคารูปตัวแอลยิ่งเห็นชัด เพราะจุดกึ่งกลางกรอบสี่เหลี่ยมตกอยู่นอกตัวอาคาร
+
+           พิกัดแผงกับขอบหลังคาอยู่ในกรอบเดียวกันอยู่แล้วตั้งแต่ต้นทาง
+               ขอบหลังคา  x = x_m − minX_m ,  y = maxY_m − y_m
+               ตัวแผง     x = currentX_m − refMinX_m ,  y = refMaxY_m − currentY_m − ความยาวแผง
+           โดย refMinX_m และ refMaxY_m มาจากกรอบของ "หลังคาเต็มใบ" ชุดเดียวกับที่ใช้ทำขอบหลังคา
+           (asc_design.html ~5195 และ ~5434) จึงวาดตรง ๆ ได้เลย ไม่ต้องขยับอะไร
+
+           การขยับนี้น่าจะเป็นวิธีกลบอาการของบั๊กเก่าที่ทั้งสองฝั่งเคยใช้คนละกรอบพิกัด
+           ซึ่งแก้ที่ต้นทางไปแล้ว ตอนนี้จึงเหลือแต่โทษ */
         let rMinX = Infinity, rMinY = Infinity, rMaxX = -Infinity, rMaxY = -Infinity;
         if (svgPts.length > 0) {
             svgPts.forEach(p => {
@@ -7374,21 +7386,6 @@ function renderCADLayout() {
             });
         }
 
-        // ขยับแผงทั้งหมด (Shift) ให้เข้าตรงกลางหลังคา
-        if (svgPts.length > 0 && svgMods.length > 0 && rMinX !== Infinity && mMinX !== Infinity) {
-            let rCx = (rMinX + rMaxX) / 2;
-            let rCy = (rMinY + rMaxY) / 2;
-            let mCx = (mMinX + mMaxX) / 2;
-            let mCy = (mMinY + mMaxY) / 2;
-            
-            let shiftX = rCx - mCx;
-            let shiftY = rCy - mCy;
-            
-            svgMods.forEach(m => {
-                m.x += shiftX;
-                m.y += shiftY;
-            });
-        }
 
         // 🌟 แก้ไขปัญหา 2: ล็อค ViewBox เฉพาะแค่ตัวหลังคา (Roof Boundary) แล้วเผื่อ Padding ให้น้อยที่สุด ภาพจะได้ใหญ่เต็มกระดาษ!
         let finalMinX = rMinX !== Infinity ? rMinX : mMinX;
