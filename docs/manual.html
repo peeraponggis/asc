@@ -73,6 +73,8 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 2 · ออกแบบระบบ</div>
                 <a href="#m2-prep"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้นเตรียม · ดาต้าชีตอุปกรณ์</a>
                 <a href="#m2-step1"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 1 · ข้อมูลและอุปกรณ์</a>
+                <a href="#m2-devbank" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">คลังสเปกอุปกรณ์ · เลือกยี่ห้อ &gt; รุ่น</a>
+                <a href="#m2-splitter" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ปรับความกว้างแผงกรอกข้อมูล</a>
                 <a href="#m2-accouple" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ระบบออนกริดเดิม (AC Coupling)</a>
                 <a href="#m2-step2"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 2 · วางผังบนแผนที่</a>
                 <a href="#m2-overlay" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ตรึงภาพโดรนด้วย GCP</a>
@@ -627,6 +629,54 @@ Is_Bifacial = False</div>
                 </ol>
 
                 <div class="bg-white border border-teal-200 rounded-xl p-5 mb-5">
+                <h3 id="m2-devbank" class="text-lg font-bold text-slate-800 mb-3">คลังสเปกอุปกรณ์ · เลือกยี่ห้อ &gt; รุ่น</h3>
+                <p class="text-slate-600 leading-relaxed mb-4">
+                    เดิมทุกโครงการต้องเปิดหาไฟล์ดาต้าชีต <span class="kbd">.txt</span> ในเครื่องมาอัปโหลดใหม่ทีละชิ้น
+                    รวมหกครั้งต่องาน ตอนนี้ในหัวข้อ <b>กำหนดสเปกอุปกรณ์</b> มีช่องเลือก
+                    <b>ยี่ห้อ</b> แล้วตามด้วย <b>รุ่น</b> ให้เลือกจากคลังกลางได้เลย
+                </p>
+                <ul class="list-disc pl-6 space-y-2 text-slate-600 mb-4">
+                    <li>รายการรุ่นบอกสเปกย่อกำกับไว้ด้วย เช่น <span class="kbd">650 W · 53.9 V Voc · 24.1 %</span>
+                        จะได้เลือกถูกรุ่นโดยไม่ต้องเปิดดาต้าชีตดู</li>
+                    <li>รุ่นที่ขึ้น <b class="text-amber-700">⚠</b> แปลว่าดาต้าชีตยังไม่มีค่าในฟิลด์ที่จำเป็น
+                        เลือกได้ แต่ต้องไปกรอกค่านั้นเองก่อนคำนวณ ระบบจะเตือนซ้ำตอนเลือก</li>
+                    <li>ช่อง <span class="kbd">upload</span> ด้านล่างยังใช้ได้เหมือนเดิม
+                        ไว้สำหรับอุปกรณ์ที่ยังไม่มีในคลัง</li>
+                </ul>
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6">
+                    <h4 class="font-bold text-slate-800 text-sm mb-2">แถบสถานะใต้หัวข้อบอกอะไร</h4>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-2">
+                        คลังอยู่บนคลาวด์ แต่โปรแกรมเก็บสำเนาไว้ในเครื่องด้วย จึงเลือกอุปกรณ์ได้แม้เน็ตหลุดที่หน้างาน
+                        แถบนี้บอกเสมอว่ากำลังใช้ข้อมูลจากไหน
+                    </p>
+                    <ul class="list-disc pl-6 space-y-1 text-slate-600 text-sm">
+                        <li><b>ข้อมูลล่าสุดจากคลาวด์</b> — ตรงกับที่ผู้ดูแลระบบตั้งไว้</li>
+                        <li><b>ใช้ข้อมูลที่เก็บไว้ในเครื่อง</b> — ต่อคลาวด์ไม่ได้ กำลังใช้สำเนาที่ซิงก์ไว้ครั้งล่าสุด
+                            (บอกวันเวลากำกับ) ถ้าเพิ่งมีรุ่นใหม่เข้าคลังจะยังไม่เห็น</li>
+                        <li><b>ยังใช้คลังไม่ได้</b> — ให้อัปโหลดไฟล์เองไปก่อน</li>
+                    </ul>
+                </div>
+                <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-8">
+                    <h4 class="font-bold text-purple-900 text-sm mb-2">สำหรับผู้ดูแลระบบ · เพิ่มอุปกรณ์เข้าคลัง</h4>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        ไปที่หน้าหลัก <b>Settings</b> จะเห็นการ์ด <b>คลังสเปกอุปกรณ์</b> (เห็นเฉพาะผู้ดูแลระบบ)
+                        เลือกไฟล์ <span class="kbd">.txt</span> พร้อมกันหลายไฟล์ได้ ระบบจะอ่านและตรวจให้ก่อน
+                        แสดงว่าไฟล์ไหนผ่าน ไฟล์ไหนคีย์ซ้ำ ไฟล์ไหนฟิลด์บังคับไม่ครบ และไฟล์ไหนจะเขียนทับรุ่นเดิม
+                        <b>ยังไม่บันทึกจนกว่าจะกดยืนยัน</b>
+                    </p>
+                </div>
+
+                <h3 id="m2-splitter" class="text-lg font-bold text-slate-800 mb-3">ปรับความกว้างแผงกรอกข้อมูล</h3>
+                <p class="text-slate-600 leading-relaxed mb-4">
+                    เส้นคั่นระหว่างแผนที่กับแผงกรอกข้อมูลด้านขวา <b>ลากได้</b> ชี้เมาส์แล้วตัวชี้จะเปลี่ยนเป็นลูกศรซ้ายขวา
+                </p>
+                <ul class="list-disc pl-6 space-y-2 text-slate-600 mb-8">
+                    <li><b>ลาก</b> เพื่อปรับความกว้าง กว้างได้ตั้งแต่ 300 พิกเซล ถึง 70% ของหน้าจอ</li>
+                    <li><b>ดับเบิลคลิก</b> ที่เส้นเพื่อคืนค่าเริ่มต้น</li>
+                    <li>คลิกที่เส้นแล้วกด <span class="kbd">←</span> <span class="kbd">→</span> ปรับทีละ 16 พิกเซล</li>
+                    <li>ความกว้างที่ตั้งไว้ถูกจำไว้ เปิดครั้งหน้าได้ขนาดเดิม</li>
+                </ul>
+
                     <h4 id="m2-accouple" class="font-bold text-teal-800 text-sm mb-2">⚡ ระบบออนกริดเดิม (AC Coupling)</h4>
                     <p class="text-sm text-slate-600 leading-relaxed mb-3">
                         ใช้เมื่อไซต์มีระบบโซลาร์อยู่ก่อนแล้ว และจะเติมไฮบริดเข้าไปทางฝั่ง AC

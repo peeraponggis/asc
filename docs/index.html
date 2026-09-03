@@ -17,6 +17,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
     <script src="supabase-config.js"></script>
     <script src="asc-cloud.js"></script>
+    <!-- คลังสเปกอุปกรณ์ ใช้ในการ์ดผู้ดูแลระบบที่หน้า Settings
+         asc-datasheet-parse.js เป็นตัวแยกไฟล์ตัวเดียวกับที่หน้าออกแบบใช้
+         จึงมั่นใจได้ว่าไฟล์ที่นำเข้าคลังจะให้ค่าเหมือนกับตอนอัปโหลดตรง ๆ -->
+    <script src="asc-datasheet-parse.js"></script>
+    <script src="asc-devices.js"></script>
 
     <script>
         tailwind.config = {
@@ -750,6 +755,92 @@
                                     </tr>
                                 </thead>
                                 <tbody id="al-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ═══ คลังสเปกอุปกรณ์ (เห็นเฉพาะผู้ดูแลระบบในโหมดคลาวด์) ═══ -->
+                    <div id="devbank-card" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="px-6 py-5 border-b border-slate-100">
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold text-slate-800">คลังสเปกอุปกรณ์</h3>
+                                <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded">ADMIN</span>
+                            </div>
+                            <p class="text-xs text-slate-500 leading-relaxed">
+                                หน้าออกแบบเลือกอุปกรณ์จากคลังนี้เป็น <b>ยี่ห้อ &gt; รุ่น</b> แทนการอัปโหลดไฟล์ทุกครั้ง<br>
+                                ไฟล์ที่นำเข้าถูกอ่านด้วยตัวแยกไฟล์ตัวเดียวกับหน้าออกแบบ ค่าที่ได้จึงตรงกันทุกฟิลด์
+                            </p>
+                        </div>
+
+                        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                            <label class="block text-xs font-semibold text-slate-600 mb-2">
+                                เลือกไฟล์ดาต้าชีต .txt (เลือกพร้อมกันหลายไฟล์ได้)
+                            </label>
+                            <input type="file" id="dev-files" accept=".txt" multiple
+                                   class="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">
+                                ระบบจะอ่านและตรวจให้ก่อน แล้วแสดงผลให้ตรวจสอบ ยังไม่บันทึกจนกว่าจะกดยืนยัน
+                            </p>
+                            <div id="dev-msg" class="text-xs mt-2"></div>
+                        </div>
+
+                        <!-- ผลการอ่านไฟล์ ยังไม่บันทึกจนกว่าจะกดยืนยัน -->
+                        <div id="dev-preview" class="hidden border-b border-slate-100">
+                            <div class="px-6 py-3 bg-amber-50 border-b border-amber-100 flex flex-wrap gap-3 items-center">
+                                <span id="dev-preview-sum" class="text-xs text-amber-800 font-semibold"></span>
+                                <div class="flex-1"></div>
+                                <button onclick="devBankCancel()" class="px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 transition">
+                                    ยกเลิก
+                                </button>
+                                <button id="dev-confirm" onclick="devBankConfirm()" class="px-4 py-2 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow transition">
+                                    <i class="fa-solid fa-cloud-arrow-up mr-1"></i> <span id="dev-confirm-label">บันทึกเข้าคลัง</span>
+                                </button>
+                            </div>
+                            <div class="max-h-80 overflow-y-auto">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-slate-50 sticky top-0">
+                                        <tr class="text-left text-xs text-slate-500">
+                                            <th class="px-6 py-2 font-semibold">ไฟล์</th>
+                                            <th class="px-3 py-2 font-semibold">หมวด</th>
+                                            <th class="px-3 py-2 font-semibold">ยี่ห้อ / รุ่น</th>
+                                            <th class="px-3 py-2 font-semibold">ผลตรวจ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dev-preview-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="px-6 py-3 border-b border-slate-100 flex flex-wrap gap-3 items-center">
+                            <input type="text" id="dev-search" placeholder="ค้นหายี่ห้อหรือรุ่น..." oninput="renderDevBank()"
+                                   class="flex-1 min-w-[160px] border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <select id="dev-filter-cat" onchange="renderDevBank()"
+                                    class="border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">ทุกหมวด</option>
+                                <option value="PV">แผงโซลาร์เซลล์</option>
+                                <option value="INV">อินเวอร์เตอร์</option>
+                                <option value="ESS">แบตเตอรี่</option>
+                                <option value="OPT">ออปติไมเซอร์</option>
+                                <option value="EV">เครื่องชาร์จรถไฟฟ้า</option>
+                            </select>
+                            <button onclick="loadDevBank(true)" class="px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 transition" title="ดึงรายการใหม่จากคลาวด์">
+                                <i class="fa-solid fa-rotate"></i>
+                            </button>
+                            <span id="dev-count" class="text-xs text-slate-500"></span>
+                        </div>
+
+                        <div class="max-h-96 overflow-y-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-slate-50 sticky top-0">
+                                    <tr class="text-left text-xs text-slate-500">
+                                        <th class="px-6 py-2 font-semibold">หมวด</th>
+                                        <th class="px-3 py-2 font-semibold">ยี่ห้อ</th>
+                                        <th class="px-3 py-2 font-semibold">รุ่น</th>
+                                        <th class="px-3 py-2 font-semibold hidden sm:table-cell">สรุป</th>
+                                        <th class="px-3 py-2"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dev-tbody"></tbody>
                             </table>
                         </div>
                     </div>
@@ -2144,7 +2235,13 @@ function renderSettings() {
         const acc = document.getElementById('account-actions');
         if (acc) acc.classList.remove('hidden');
         loadCompanyInfo();
-        if (SESSION.isAdmin) loadAllowlist();
+        if (SESSION.isAdmin) { loadAllowlist(); loadDevBank(false); }
+        // ผูกช่องเลือกไฟล์ครั้งเดียว renderSettings ถูกเรียกซ้ำได้หลายรอบ
+        const devIn = document.getElementById('dev-files');
+        if (devIn && !devIn.dataset.bound) {
+            devIn.dataset.bound = '1';
+            devIn.addEventListener('change', e => devBankStage(e.target.files));
+        }
         renderMigrateCard();
     } else {
         renderUserTable();
@@ -2388,6 +2485,194 @@ async function allowlistRemove(email) {
         await loadAllowlist();
     } catch (e) {
         allowMsg(e.message, false);
+    }
+}
+
+/* ─── คลังสเปกอุปกรณ์ (เฉพาะผู้ดูแลระบบ) ────────────────────────────────
+
+   ตัวแยกไฟล์ใช้ AscDatasheet ตัวเดียวกับหน้าออกแบบ ไม่เขียนใหม่ที่นี่
+   เพราะถ้าสองที่อ่านไฟล์ไม่เหมือนกัน ค่าที่เข้าคลังจะต่างจากค่าที่วิศวกร
+   เคยได้ตอนอัปโหลดเอง แล้วตัวเลขในเอกสารที่ส่งลูกค้าจะเพี้ยนโดยไม่มีใครรู้
+
+   นำเข้าเป็นสองจังหวะเสมอ อ่านและตรวจให้ดูก่อน แล้วค่อยกดยืนยัน
+   เพราะการเขียนทับรุ่นที่มีอยู่แล้วย้อนกลับไม่ได้ */
+
+let DEVBANK  = [];    // รายการในคลังที่โหลดมาแสดง
+let DEVSTAGE = [];    // ไฟล์ที่อ่านแล้วรอยืนยัน
+
+function devMsg(text, ok) {
+    const el = document.getElementById('dev-msg');
+    if (!el) return;
+    el.className = 'text-xs mt-2 ' + (ok ? 'text-emerald-600 font-semibold' : 'text-red-600 font-semibold');
+    el.innerText = text || '';
+}
+
+async function loadDevBank(force) {
+    const card = document.getElementById('devbank-card');
+    if (!card) return;
+    card.classList.remove('hidden');
+    const body = document.getElementById('dev-tbody');
+    body.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-sm text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังโหลด...</td></tr>';
+    try {
+        DEVBANK = await AscCloud.listDevices();
+        /* ล้างแคชฝั่งผู้ใช้ด้วย ไม่งั้นหน้าออกแบบจะยังเห็นรายการเก่าจนกว่าตราประทับจะเปลี่ยน */
+        if (force && window.AscDevices) { try { await AscDevices.refresh(); } catch (e) {} }
+        renderDevBank();
+    } catch (e) {
+        body.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-sm text-red-600">โหลดคลังไม่สำเร็จ : ' + esc(e.message) + '</td></tr>';
+    }
+}
+
+function renderDevBank() {
+    const term = (document.getElementById('dev-search').value || '').trim().toLowerCase();
+    const cat  = document.getElementById('dev-filter-cat').value;
+    const list = DEVBANK.filter(r =>
+        (!cat || r.category === cat) &&
+        (!term || (r.brand + ' ' + r.model).toLowerCase().includes(term)));
+
+    const byCat = {};
+    DEVBANK.forEach(r => { byCat[r.category] = (byCat[r.category] || 0) + 1; });
+    document.getElementById('dev-count').innerText =
+        'ในคลัง ' + DEVBANK.length + ' รายการ (' +
+        Object.keys(byCat).sort().map(c => c + ' ' + byCat[c]).join(' · ') + ')' +
+        (list.length !== DEVBANK.length ? ' · แสดง ' + list.length : '');
+
+    const body = document.getElementById('dev-tbody');
+    if (!list.length) {
+        body.innerHTML = '<tr><td colspan="5" class="px-6 py-6 text-sm text-slate-400 text-center">' +
+            (DEVBANK.length ? 'ไม่พบรายการที่ค้นหา' : 'ยังไม่มีอุปกรณ์ในคลัง นำเข้าไฟล์ดาต้าชีตด้านบนได้เลย') + '</td></tr>';
+        return;
+    }
+
+    body.innerHTML = list.map(r => {
+        const miss = (window.AscDatasheet ? AscDatasheet.missingRequired(r.category, r.spec) : []);
+        const sub  = r.subtype ? ' <span class="text-[10px] text-slate-400">' + esc(r.subtype) + '</span>' : '';
+        const warn = miss.length
+            ? '<div class="text-[10px] text-amber-700 mt-0.5">⚠ ขาด ' + esc(miss.join(', ')) + '</div>' : '';
+        return '<tr class="border-t border-slate-100 hover:bg-slate-50">' +
+            '<td class="px-6 py-2 text-xs text-slate-500">' + esc(r.category) + '</td>' +
+            '<td class="px-3 py-2 font-medium text-slate-700">' + esc(r.brand) + '</td>' +
+            '<td class="px-3 py-2 text-slate-700">' + esc(r.model) + sub + warn + '</td>' +
+            '<td class="px-3 py-2 text-xs text-slate-400 hidden sm:table-cell">' + esc(r.source_file || '') + '</td>' +
+            '<td class="px-3 py-2 text-right">' +
+                '<button onclick="devBankDelete(\'' + r.id + '\')" class="text-red-500 hover:text-red-700 px-2" title="ลบออกจากคลัง">' +
+                '<i class="fa-solid fa-trash"></i></button></td>' +
+        '</tr>';
+    }).join('');
+}
+
+/* จังหวะที่หนึ่ง อ่านไฟล์ทั้งหมดแล้วแสดงผลให้ตรวจ ยังไม่แตะเซิร์ฟเวอร์ */
+async function devBankStage(files) {
+    DEVSTAGE = [];
+    const list = Array.prototype.slice.call(files || []);
+    if (!list.length) return;
+    if (!window.AscDatasheet) { devMsg('โหลด asc-datasheet-parse.js ไม่สำเร็จ จึงอ่านไฟล์ไม่ได้', false); return; }
+
+    devMsg('กำลังอ่าน ' + list.length + ' ไฟล์...', true);
+
+    const seen = new Map();
+    for (const f of list) {
+        let row, err = '';
+        try {
+            const text = await f.text();
+            row = AscDatasheet.toDeviceRow(text, f.name);
+        } catch (e) { err = 'อ่านไฟล์ไม่สำเร็จ : ' + e.message; }
+
+        if (!err && (!row.category))            err = 'ไม่รู้ว่าเป็นอุปกรณ์หมวดไหน';
+        else if (!err && (!row.brand || !row.model)) err = 'ไม่มียี่ห้อหรือรุ่นในไฟล์';
+
+        /* สองไฟล์ที่อ้างรุ่นเดียวกันจะทับกันเองเงียบ ๆ ตอน upsert ต้องให้คนตัดสินใจ */
+        const key = row ? [row.category, row.brand, row.model, row.subtype].join('|') : '';
+        if (!err && seen.has(key)) err = 'คีย์ซ้ำกับไฟล์ ' + seen.get(key);
+        if (!err) seen.set(key, f.name);
+
+        const miss = (!err && row) ? AscDatasheet.missingRequired(row.category, row.spec) : [];
+        DEVSTAGE.push({ file: f.name, row: row, err: err, miss: miss,
+                        exists: !err && DEVBANK.some(d => [d.category, d.brand, d.model, d.subtype].join('|') === key) });
+    }
+
+    renderDevStage();
+    devMsg('', true);
+}
+
+function renderDevStage() {
+    const wrap = document.getElementById('dev-preview');
+    const body = document.getElementById('dev-preview-body');
+    const ok   = DEVSTAGE.filter(x => !x.err);
+    const bad  = DEVSTAGE.length - ok.length;
+    const over = ok.filter(x => x.exists).length;
+    const warn = ok.filter(x => x.miss.length).length;
+
+    document.getElementById('dev-preview-sum').innerText =
+        'อ่านได้ ' + ok.length + ' รายการ' +
+        (over ? ' · ทับของเดิม ' + over : '') +
+        (warn ? ' · ฟิลด์บังคับไม่ครบ ' + warn : '') +
+        (bad  ? ' · ข้าม ' + bad : '');
+
+    document.getElementById('dev-confirm-label').innerText = 'บันทึกเข้าคลัง ' + ok.length + ' รายการ';
+    document.getElementById('dev-confirm').disabled = !ok.length;
+    document.getElementById('dev-confirm').classList.toggle('opacity-40', !ok.length);
+
+    body.innerHTML = DEVSTAGE.map(x => {
+        let status;
+        if (x.err)              status = '<span class="text-red-600 font-semibold">✗ ' + esc(x.err) + '</span>';
+        else if (x.miss.length) status = '<span class="text-amber-700">⚠ ขาด ' + esc(x.miss.join(', ')) + '</span>';
+        else                    status = '<span class="text-emerald-600">✓ ครบถ้วน</span>';
+        if (!x.err && x.exists) status += '<div class="text-[10px] text-slate-500 mt-0.5">ทับรุ่นที่มีอยู่แล้ว</div>';
+        const r = x.row || {};
+        return '<tr class="border-t border-slate-100">' +
+            '<td class="px-6 py-2 text-xs text-slate-500">' + esc(x.file) + '</td>' +
+            '<td class="px-3 py-2 text-xs">' + esc(r.category || '-') + (r.subtype ? ' / ' + esc(r.subtype) : '') + '</td>' +
+            '<td class="px-3 py-2 text-slate-700">' + esc((r.brand || '-') + ' ' + (r.model || '')) + '</td>' +
+            '<td class="px-3 py-2 text-xs">' + status + '</td>' +
+        '</tr>';
+    }).join('');
+
+    wrap.classList.remove('hidden');
+}
+
+function devBankCancel() {
+    DEVSTAGE = [];
+    document.getElementById('dev-preview').classList.add('hidden');
+    document.getElementById('dev-files').value = '';
+    devMsg('', true);
+}
+
+/* จังหวะที่สอง เขียนขึ้นคลาวด์จริง */
+async function devBankConfirm() {
+    const rows = DEVSTAGE.filter(x => !x.err).map(x => x.row);
+    if (!rows.length) return;
+
+    const over = DEVSTAGE.filter(x => !x.err && x.exists).length;
+    const msg = 'บันทึก ' + rows.length + ' รายการเข้าคลังหรือไม่?' +
+        (over ? '\n\n⚠ ในจำนวนนี้ ' + over + ' รายการจะเขียนทับรุ่นที่มีอยู่แล้ว ย้อนกลับไม่ได้' : '');
+    if (!confirm(msg)) return;
+
+    const btn = document.getElementById('dev-confirm');
+    btn.disabled = true;
+    devMsg('กำลังบันทึก...', true);
+    try {
+        const n = await AscCloud.upsertDevices(rows);
+        devBankCancel();
+        devMsg('บันทึกเข้าคลังแล้ว ' + n + ' รายการ', true);
+        await loadDevBank(true);
+    } catch (e) {
+        devMsg(e.message, false);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function devBankDelete(id) {
+    const r = DEVBANK.find(x => x.id === id);
+    if (!r) return;
+    if (!confirm('ลบ ' + r.brand + ' ' + r.model + ' ออกจากคลังหรือไม่?\n\nโครงการที่เคยเลือกรุ่นนี้ไปแล้วไม่กระทบ เพราะสเปกถูกคัดลอกลงไฟล์ DB2 ตั้งแต่ตอนเลือก')) return;
+    try {
+        await AscCloud.deleteDevice(id);
+        devMsg('ลบ ' + r.brand + ' ' + r.model + ' แล้ว', true);
+        await loadDevBank(true);
+    } catch (e) {
+        devMsg(e.message, false);
     }
 }
 
