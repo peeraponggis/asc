@@ -119,6 +119,39 @@
                 : { k: kFormula, method: 'สมการ (4.1)' };
         },
 
+        /* ── พิกัดฟิวส์และเบรกเกอร์ฝั่งไฟตรงที่มีขายจริง ──────────────────
+           รวมทั้งฟิวส์ gPV ตาม IEC 60269-6 และเบรกเกอร์ DC ที่หาซื้อได้ทั่วไป
+           เดิมหน้าออกแบบปัดขึ้นทีละ 5 A ซึ่งได้เลขอย่าง 45 A ที่ไม่มีของขาย */
+        FUSE_SERIES_DC: [6, 8, 10, 12, 15, 16, 20, 25, 30, 32, 35, 40, 50, 63],
+
+        /* ── เลือกพิกัดอุปกรณ์ป้องกันสตริง · วสท. ข้อ 3.4.3.1 (1) ─────────
+               สมการ (3.2)  I_STRING_MAX = 1.25 × I_SC_MOD
+               สมการ (3.1)  I_STRING_MAX < I_n ≤ I_MOD_MAX_OCPR
+
+           สังเกตว่าขอบล่างเป็น "มากกว่า" ไม่ใช่ "ไม่น้อยกว่า" พิกัดที่เท่ากับ
+           1.25 × Isc พอดีจึงใช้ไม่ได้ ต้องขยับขึ้นอีกขั้น
+
+           คืน { amp, min, ocpr, inWindow }
+             amp      พิกัดที่เลือกได้
+             inWindow อยู่ในกรอบของมาตรฐานหรือไม่ ถ้า false แปลว่าไม่มีพิกัดไหน
+                      ที่ทั้งมากกว่าขอบล่างและไม่เกินพิกัดฟิวส์สูงสุดของแผง
+                      ซึ่งเป็นเรื่องที่ต้องเตือน ไม่ใช่เลือกค่าให้เงียบ ๆ */
+        stringFuseRating(isc, ocpr) {
+            const i = Number(isc);
+            if (!isFinite(i) || i <= 0) return null;
+            const min = EIT.STRING_MAX_FACTOR * i;
+            const cap = Number(ocpr);
+            const hasCap = isFinite(cap) && cap > 0;
+            const S = EIT.FUSE_SERIES_DC;
+            const fit = S.filter(a => a > min && (!hasCap || a <= cap));
+            if (fit.length) return { amp: fit[0], min: min, ocpr: hasCap ? cap : null, inWindow: true };
+            const over = S.filter(a => a > min);
+            return {
+                amp: over.length ? over[0] : S[S.length - 1],
+                min: min, ocpr: hasCap ? cap : null, inWindow: false
+            };
+        },
+
         /* ── พิกัดกระแสของสายทองแดง · วสท. 022001-22 ตารางที่ 5-20 ───────
            ฉนวน PVC 70 °C เดินในท่อร้อยสายในอากาศ กลุ่ม 1 สามตัวนำแกนเดียว
            อุณหภูมิโดยรอบ 40 °C  [ขนาด ตร.มม., พิกัดกระแส A]

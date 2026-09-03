@@ -7524,9 +7524,33 @@ function ascFileStamp(projectName, kind) {
                 wiringLossInput.style.color = actualVDropPct > 1.5 ? "#dc2626" : "#16a34a";
             }
             
-            // 🌟 เพิ่มตัวแปรคำนวณขนาดเบรกเกอร์ DC/Fuse ตรงนี้ (ป้องกันบั๊กเงียบ) 🌟
-            let dcBreakerAmp = Math.ceil(stringImp * 1.5 / 5) * 5; 
-            if (dcBreakerAmp < 15) dcBreakerAmp = 15; // ขั้นต่ำ 15A
+            /* 🌟 [แก้ให้ตรงมาตรฐาน] พิกัดอุปกรณ์ป้องกันสตริง · วสท. 022013-25 ข้อ 3.4.3.1
+
+               สูตรเดิม  ceil(Imp × 1.5 / 5) × 5  ขั้นต่ำ 15 A  ไม่ได้มาจากเล่มไหน
+               ใช้ Imp ซึ่งเป็นกระแสทำงาน ทั้งที่มาตรฐานกำหนดจาก Isc ซึ่งเป็นกระแสลัดวงจร
+               และปัดขึ้นทีละ 5 A ซึ่งได้เลขอย่าง 45 A ที่ไม่มีของขาย
+
+               สูตรใหม่ตามสมการ (3.1) และ (3.2)
+                   I_STRING_MAX = 1.25 × Isc      แล้วเลือกพิกัดที่มีขายซึ่ง
+                   I_STRING_MAX < I_n ≤ Max_Series_Fuse_Rating_A ของแผง
+
+               ผลกับคลังดาต้าชีต 28 จาก 35 รุ่นได้พิกัดเล็กลง ไม่มีรุ่นไหนใหญ่ขึ้น
+               ฟิวส์ที่เล็กลงคือฟิวส์ที่ป้องกันสายได้เร็วขึ้น และเหลือเผื่อถึงพิกัดของแผง
+               มากขึ้นจาก 0-5 A เป็น 5-10 A
+
+               ถ้าไม่มี asc-eit.js หรือยังไม่ได้เลือกแผง ตกกลับไปสูตรเดิมทั้งดุ้น
+               ไฟล์งานที่เปิดโดยไม่มีโมดูลนั้นจึงได้ผลเท่าเดิมทุกประการ */
+            const pvIscNow  = parseFloat(state.pvIsc) || 0;
+            const pvOcprNow = parseFloat(state.rawEquipData.pv && state.rawEquipData.pv.Max_Series_Fuse_Rating_A) || 0;
+            const fusePick  = (window.AscEIT && AscEIT.stringFuseRating && pvIscNow > 0)
+                            ? AscEIT.stringFuseRating(pvIscNow, pvOcprNow) : null;
+            let dcBreakerAmp;
+            if (fusePick) {
+                dcBreakerAmp = fusePick.amp;
+            } else {
+                dcBreakerAmp = Math.ceil(stringImp * 1.5 / 5) * 5;
+                if (dcBreakerAmp < 15) dcBreakerAmp = 15; // ขั้นต่ำ 15A
+            }
 
             // 🛑 คำนวณ AC (มาตรฐาน V-Drop 3% ตาม วสท.)
             let totalAcKw = (state.inv1Qty * state.inv1AcKw) + (state.inv2Qty * state.inv2AcKw);
@@ -7719,7 +7743,14 @@ function ascFileStamp(projectName, kind) {
 			}
 
             addRow("DC Box", "DC Disconnect Switch", `พิกัด &ge; ${Math.ceil(maxVocArray/100)*100}Vdc (Non-Polarity)`, numStrings, "ตัว", "#f59e0b");
-            addRow("DC Box", "DC Breaker / Fuse", `พิกัด ${dcBreakerAmp}A / 1000Vdc`, numStrings, "ชุด", "#f59e0b");
+            addRow("DC Box", "DC Breaker / Fuse", `พิกัด ${dcBreakerAmp}A / 1000Vdc` + (fusePick
+                ? `<br><span style="font-size: 0.85em; color: ${fusePick.inWindow ? '#475569' : '#dc2626'};">`
+                  + `วสท. 3.4.3.1: 1.25 × Isc ${fmtNum(pvIscNow)} A = ${fmtNum(fusePick.min)} A`
+                  + (fusePick.ocpr ? ` &lt; ${dcBreakerAmp} A &le; พิกัดฟิวส์สูงสุดของแผง ${fmtNum(fusePick.ocpr, 0)} A` : ` &lt; ${dcBreakerAmp} A (ดาต้าชีตไม่ระบุพิกัดฟิวส์สูงสุดของแผง)`)
+                  + (fusePick.inWindow ? '' : ' ⚠ ไม่มีพิกัดที่อยู่ในกรอบของมาตรฐาน ต้องลดจำนวนสตริงขนานหรือเปลี่ยนรุ่นแผง')
+                  + `</span>`
+                : `<br><span style="font-size: 0.85em; color: #475569;">ประมาณจากกระแสทำงาน เพราะยังไม่มีค่า Isc ของแผง</span>`),
+                numStrings, "ชุด", "#f59e0b");
             addRow("DC Box", "DC Surge Protection (SPD)", `Type 2, &ge; ${Math.ceil(maxVocArray/100)*100}Vdc, Imax &ge; 20kA`, state.inv1Qty + state.inv2Qty, "ตัว", "#f59e0b");
 
             let acVoltsText = `${fmtNum(acVolts)}V (${acPhase === 3 ? '3-Phase' : '1-Phase'})` +
