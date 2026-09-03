@@ -557,6 +557,74 @@
         },
 
 
+        /* ── คลังสเปกอุปกรณ์ (devices) ──────────────────────────────────
+           อ่านได้ทุกคนที่ล็อกอิน เขียนได้เฉพาะผู้ดูแลระบบ (บังคับที่ RLS)
+           ฝั่งเรียกใช้คือ asc-devices.js ซึ่งจะแคชผลลงเครื่องอีกชั้น
+           เพื่อให้หน้าออกแบบยังเลือกอุปกรณ์ได้ตอนเน็ตหลุด */
+
+        /* ตราประทับของคลัง ใช้ถามสั้น ๆ ว่าแคชในเครื่องเก่าหรือยัง
+           ถูกกว่าการดึงทั้งคลังมานับเองมาก จึงเรียกได้ทุกครั้งที่เปิดหน้า */
+        async devicesStamp() {
+            need();
+            const { data, error } = await sb.rpc('devices_stamp');
+            if (error) throw fail(error);
+            return { n: (data && data.n) || 0, updatedAt: (data && data.updated_at) || null };
+        },
+
+        /* ดึงทั้งคลัง แบ่งหน้าเพราะ Supabase จำกัดผลลัพธ์ต่อคำขอไว้ 1,000 แถว
+           คลังตอนนี้ 155 รายการก็จริง แต่ถ้าโตเกินพันแล้วไม่แบ่งหน้า
+           รายการที่เกินจะหายไปเงียบ ๆ โดยไม่มี error ให้เห็น */
+        async listDevices() {
+            need();
+            const PAGE = 1000;
+            let out = [], from = 0;
+            for (;;) {
+                const { data, error } = await sb.from('devices')
+                    .select('id, category, brand, model, subtype, spec, source_file, updated_at')
+                    .order('category').order('brand').order('model')
+                    .range(from, from + PAGE - 1);
+                if (error) throw fail(error);
+                const rows = data || [];
+                out = out.concat(rows);
+                if (rows.length < PAGE) break;
+                from += PAGE;
+            }
+            return out;
+        },
+
+        /* เพิ่มหรือทับรายการ ชนกันที่ (category, brand, model, subtype)
+           นำเข้าไฟล์เดิมซ้ำจึงเป็นการอัปเดต ไม่ใช่สร้างรุ่นซ้ำ */
+        async upsertDevices(rows) {
+            need();
+            const list = (rows || []).filter(Boolean);
+            if (!list.length) return 0;
+            const uid = _profile && _profile.id;
+            const payload = list.map(r => ({
+                category   : String(r.category || '').toUpperCase(),
+                brand      : String(r.brand || '').trim(),
+                model      : String(r.model || '').trim(),
+                subtype    : String(r.subtype || '').trim(),
+                spec       : r.spec || {},
+                source_file: String(r.sourceFile || r.source_file || '').trim(),
+                updated_at : new Date().toISOString(),
+                updated_by : uid || null
+            }));
+            const { data, error } = await sb.from('devices')
+                .upsert(payload, { onConflict: 'category,brand,model,subtype' })
+                .select('id');
+            if (error) throw fail(error);
+            return (data || []).length;
+        },
+
+        async deleteDevice(id) {
+            need();
+            const { data, error } = await sb.from('devices').delete().eq('id', id).select('id');
+            if (error) throw fail(error);
+            if (!data || !data.length) throw new Error('ลบไม่สำเร็จ เฉพาะผู้ดูแลระบบเท่านั้นที่แก้คลังอุปกรณ์ได้');
+            return true;
+        },
+
+
         /* ── โครงการ ─────────────────────────────────────────────────── */
 
         /* รายการโครงการ ไม่ดึง data มาด้วยเพราะหน้าแรกใช้แค่ชื่อกับวันที่

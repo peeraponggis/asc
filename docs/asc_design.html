@@ -68,6 +68,45 @@
         #map { width: 100%; height: 100%; cursor: crosshair; }
 
         #sidebar { width: 380px; /* 🌟 เฟส 13: 380px + ฟอนต์ 12px แบบ Huawei */ flex-shrink: 0; background: #f8fafc; box-shadow: -4px 0 24px rgba(15, 23, 42, 0.08); z-index: 2; display: flex; flex-direction: column; height: 100%; border-left: 1px solid var(--border); }
+
+        /* ── ตัวเลือกจากคลังสเปกอุปกรณ์ ยี่ห้อ > รุ่น ──────────────────────
+           ยี่ห้อกินพื้นที่น้อยกว่ารุ่น เพราะชื่อรุ่นยาวกว่ามากและต้องอ่านให้ออก */
+        .dev-pick { display: flex; gap: 5px; margin-bottom: 5px; }
+        .dev-pick select { min-width: 0; font-size: 0.95em; }
+        .dev-pick .dev-brand { flex: 0 0 38%; }
+        .dev-pick .dev-model { flex: 1 1 auto; }
+        .dev-pick select:disabled { background: #f1f5f9; color: #94a3b8; }
+        /* รุ่นที่ดาต้าชีตยังกรอกฟิลด์บังคับไม่ครบ ต้องเห็นตั้งแต่ก่อนเลือก */
+        .dev-pick .dev-model option[data-incomplete="1"] { color: #b45309; }
+
+        /* อัปโหลดไฟล์เองกลายเป็นทางสำรอง จึงลดน้ำหนักลงแต่ไม่ซ่อน
+           ยังต้องใช้จริงกับอุปกรณ์ที่ยังไม่มีในคลัง */
+        .file-upload-row.dev-fallback { opacity: 0.62; font-size: 0.9em; }
+        .file-upload-row.dev-fallback:hover,
+        .file-upload-row.dev-fallback:focus-within { opacity: 1; }
+
+        /* แถบบอกสถานะคลัง อยู่ใต้หัวข้อกำหนดสเปกอุปกรณ์ */
+        #devBankStatus { font-size: 0.78em; line-height: 1.5; margin: -2px 0 8px; color: #64748b; }
+        #devBankStatus.warn { color: #b45309; }
+        #devBankStatus.err  { color: #b91c1c; }
+
+        /* ── ตัวลากปรับความกว้าง ─────────────────────────────────────────
+           พื้นที่จับกว้าง 8 px เพื่อให้เล็งโดนง่าย แต่วาดเส้นให้ดูบางกว่านั้น
+           z-index สูงกว่า #sidebar (2) เพราะเงาของแถบข้างทับพื้นที่จับอยู่ */
+        #splitter {
+            flex: 0 0 8px; width: 8px; height: 100%; z-index: 3; position: relative;
+            cursor: col-resize; background: transparent; touch-action: none;
+            transition: background 0.15s ease;
+        }
+        #splitter > span {
+            position: absolute; top: 0; bottom: 0; left: 3px; width: 2px;
+            background: var(--border); transition: background 0.15s ease;
+        }
+        #splitter:hover > span, #splitter.dragging > span { background: #2563eb; }
+        #splitter:focus-visible { outline: 2px solid #2563eb; outline-offset: -2px; }
+        /* ขณะลาก ห้ามให้เคอร์เซอร์เปลี่ยนตามสิ่งที่อยู่ใต้เมาส์ และห้ามลากเลือกข้อความ */
+        body.splitting { cursor: col-resize; user-select: none; -webkit-user-select: none; }
+        body.splitting iframe, body.splitting #map { pointer-events: none; }
         .sidebar-scroll-area { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 8px 10px; font-size: 12.5px; /* 🌟 เฟส 13: ฐาน 12.5px คงที่ */ }
         .sidebar-scroll-area::-webkit-scrollbar { width: 8px; }
         .sidebar-scroll-area::-webkit-scrollbar-track { background: transparent; }
@@ -426,6 +465,11 @@
         </div>
     </div>
 
+    <!-- ตัวลากปรับความกว้างระหว่างแผนที่กับแผงกรอกข้อมูล
+         ต้องอยู่ระหว่าง #map-wrapper กับ #sidebar เพราะ body เป็น flex แนวนอน -->
+    <div id="splitter" role="separator" aria-orientation="vertical" tabindex="0"
+         title="ลากเพื่อปรับความกว้าง · ดับเบิลคลิกเพื่อคืนค่าเริ่มต้น"><span></span></div>
+
     <div id="sidebar">
         <div class="sidebar-scroll-area" id="mainScrollable">
             <!-- 🌟 เริ่ม: ส่วนที่แก้ไขใหม่ กล่อง Header พร้อมปุ่ม Exit 🌟 -->
@@ -536,6 +580,9 @@
 
                     <!-- ── ส่วนย่อยที่ 1.2: กำหนดสเปกอุปกรณ์ (เดิมคือขั้นตอนที่ 2) ── -->
                     <div class="sub-step-header"><i class="fa-solid fa-microchip"></i> กำหนดสเปกอุปกรณ์ (PV / INV / Battery / MDB)</div>
+                    <!-- บอกว่าคลังที่กำลังเลือกอยู่มาจากคลาวด์หรือแคชในเครื่อง
+                         ถ้าไม่บอก ผู้ใช้จะไม่รู้ว่ากำลังดูรายการที่เก่ากว่าของจริง -->
+                    <div id="devBankStatus">กำลังโหลดคลังสเปกอุปกรณ์…</div>
 
                     <div class="form-group smart-db smart-db-pv">
                         <label><span style="background: rgba(37, 99, 235, 0.15); padding: 2px 6px; border-radius: 4px; color: #2563eb; font-weight: bold; border-left: 3px solid #2563eb;">1. แผงโซลาร์เซลล์ (PV Module)</span></label>
@@ -543,7 +590,12 @@
                             <select id="pvSelect" style="flex: 1; background: #f1f5f9; pointer-events: none; color: #0284c7; font-weight: bold;" disabled><option value="">-- อัปโหลดไฟล์ (TXT) --</option></select>
                             <button id="btnClearPv" class="btn-search" style="background: #ef4444; padding: 4px 8px;" title="ยกเลิกการใช้แผง"><i class="fa-solid fa-trash"></i></button>
                         </div>
-                        <div class="file-upload-row">upload PV: <input type="file" id="pvFile" accept=".txt"></div>
+                        <!-- เลือกจากคลังสเปกอุปกรณ์ ยี่ห้อ > รุ่น -->
+                        <div class="dev-pick" data-dev="pv" data-cat="PV">
+                            <select class="dev-brand" aria-label="ยี่ห้อแผง"><option value="">-- ยี่ห้อ --</option></select>
+                            <select class="dev-model" aria-label="รุ่นแผง" disabled><option value="">-- รุ่น --</option></select>
+                        </div>
+                        <div class="file-upload-row dev-fallback">upload PV: <input type="file" id="pvFile" accept=".txt"></div>
                     </div>
 
                     <!-- ย้าย Inverter และ ESS/OPT/EVC มาต่อจาก PV Module -->
@@ -554,14 +606,24 @@
                             <select id="invSelect1" style="flex: 1; background: #f1f5f9; pointer-events: none; color: #0284c7; font-weight: bold;" disabled><option value="">-- อัปโหลดไฟล์ (TXT) --</option></select>
                             <button id="btnClearInv1" class="btn-search" style="background: #ef4444; padding: 4px 8px;" title="ยกเลิกการใช้ INV 1"><i class="fa-solid fa-trash"></i></button>
                         </div>
-                        <div class="file-upload-row">upload  INV 1: <input type="file" id="invFile1" accept=".txt"></div>
+                        <!-- เลือกจากคลังสเปกอุปกรณ์ ยี่ห้อ > รุ่น -->
+                        <div class="dev-pick" data-dev="inv1" data-cat="INV">
+                            <select class="dev-brand" aria-label="ยี่ห้ออินเวอร์เตอร์"><option value="">-- ยี่ห้อ --</option></select>
+                            <select class="dev-model" aria-label="รุ่นอินเวอร์เตอร์" disabled><option value="">-- รุ่น --</option></select>
+                        </div>
+                        <div class="file-upload-row dev-fallback">upload  INV 1: <input type="file" id="invFile1" accept=".txt"></div>
                         
                         <label style="margin-top: 10px;">2.2 อินเวอร์เตอร์เสริม (INV 2) - ตัวเลือก</label>
                         <div style="display: flex; gap: 5px; margin-bottom: 5px;">
                             <select id="invSelect2" style="flex: 1; background: #f1f5f9; pointer-events: none; color: #0284c7; font-weight: bold;" disabled><option value="">-- ไม่ใช้ / รออัปโหลด (TXT) --</option></select>
                             <button id="btnClearInv2" class="btn-search" style="background: #ef4444; padding: 4px 8px;" title="ยกเลิกการใช้ INV 2"><i class="fa-solid fa-trash"></i></button>
                         </div>
-                        <div class="file-upload-row">upload INV 2: <input type="file" id="invFile2" accept=".txt"></div>
+                        <!-- เลือกจากคลังสเปกอุปกรณ์ ยี่ห้อ > รุ่น -->
+                        <div class="dev-pick" data-dev="inv2" data-cat="INV">
+                            <select class="dev-brand" aria-label="ยี่ห้ออินเวอร์เตอร์"><option value="">-- ยี่ห้อ --</option></select>
+                            <select class="dev-model" aria-label="รุ่นอินเวอร์เตอร์" disabled><option value="">-- รุ่น --</option></select>
+                        </div>
+                        <div class="file-upload-row dev-fallback">upload INV 2: <input type="file" id="invFile2" accept=".txt"></div>
                     </div>
 
                     <div class="section-header">3. เลือกระบบเสริม (ESS / OPT / EVC)</div>
@@ -570,21 +632,36 @@
                             <select id="batSelect" style="flex: 1; background: #f1f5f9; pointer-events: none; color: #0284c7; font-weight: bold;" disabled><option value="">-- ไม่ใช้ / รออัปโหลด (TXT) --</option></select>
                             <button id="btnClearBat" class="btn-search" style="background: #ef4444; padding: 4px 8px;" title="ยกเลิกการใช้ BAT"><i class="fa-solid fa-trash"></i></button>
                         </div>
-                        <div class="file-upload-row">upload BAT: <input type="file" id="batFile" accept=".txt"></div>
+                        <!-- เลือกจากคลังสเปกอุปกรณ์ ยี่ห้อ > รุ่น -->
+                        <div class="dev-pick" data-dev="bat" data-cat="ESS">
+                            <select class="dev-brand" aria-label="ยี่ห้อแบตเตอรี่"><option value="">-- ยี่ห้อ --</option></select>
+                            <select class="dev-model" aria-label="รุ่นแบตเตอรี่" disabled><option value="">-- รุ่น --</option></select>
+                        </div>
+                        <div class="file-upload-row dev-fallback">upload BAT: <input type="file" id="batFile" accept=".txt"></div>
                     </div>
                     <div class="form-group smart-db smart-db-opt">
                         <div style="display: flex; gap: 5px; margin-bottom: 5px;">
                             <select id="optSelect" style="flex: 1; background: #f1f5f9; pointer-events: none; color: #0284c7; font-weight: bold;" disabled><option value="">-- ไม่ใช้ / รออัปโหลด (TXT) --</option></select>
                             <button id="btnClearOpt" class="btn-search" style="background: #ef4444; padding: 4px 8px;" title="ยกเลิกการใช้ OPT"><i class="fa-solid fa-trash"></i></button>
                         </div>
-                        <div class="file-upload-row">upload OPT: <input type="file" id="optFile" accept=".txt"></div>
+                        <!-- เลือกจากคลังสเปกอุปกรณ์ ยี่ห้อ > รุ่น -->
+                        <div class="dev-pick" data-dev="opt" data-cat="OPT">
+                            <select class="dev-brand" aria-label="ยี่ห้อออปติไมเซอร์"><option value="">-- ยี่ห้อ --</option></select>
+                            <select class="dev-model" aria-label="รุ่นออปติไมเซอร์" disabled><option value="">-- รุ่น --</option></select>
+                        </div>
+                        <div class="file-upload-row dev-fallback">upload OPT: <input type="file" id="optFile" accept=".txt"></div>
                     </div>
                     <div class="form-group smart-db smart-db-ev">
                         <div style="display: flex; gap: 5px; margin-bottom: 5px;">
                             <select id="evSelect" style="flex: 1; background: #f1f5f9; pointer-events: none; color: #0284c7; font-weight: bold;" disabled><option value="">-- ไม่ใช้ / รออัปโหลด (TXT) --</option></select>
                             <button id="btnClearEv" class="btn-search" style="background: #ef4444; padding: 4px 8px;" title="ยกเลิกการใช้ EVC"><i class="fa-solid fa-trash"></i></button>
                         </div>
-                        <div class="file-upload-row">upload EVC: <input type="file" id="evFile" accept=".txt"></div>
+                        <!-- เลือกจากคลังสเปกอุปกรณ์ ยี่ห้อ > รุ่น -->
+                        <div class="dev-pick" data-dev="ev" data-cat="EV">
+                            <select class="dev-brand" aria-label="ยี่ห้อเครื่องชาร์จ"><option value="">-- ยี่ห้อ --</option></select>
+                            <select class="dev-model" aria-label="รุ่นเครื่องชาร์จ" disabled><option value="">-- รุ่น --</option></select>
+                        </div>
+                        <div class="file-upload-row dev-fallback">upload EVC: <input type="file" id="evFile" accept=".txt"></div>
                     </div>
 
                     <!-- ══ ระบบออนกริดเดิม (AC Coupling) ══
@@ -1414,6 +1491,20 @@
          เพราะก้อนนั้นอ่านค่าคงที่ตั้งแต่ตอนแจงไฟล์ ไม่ได้รอ DOMContentLoaded
          โมดูลอื่น (asc-tree, asc-ridge, asc-kb, asc-advisor) โหลดท้ายไฟล์ได้เพราะถูกเรียกทีหลัง -->
     <script src="asc-eit.js"></script>
+
+    <!-- คลังสเปกอุปกรณ์ — ต้องโหลดก่อนสคริปต์ก้อนใหญ่ด้วยเหตุผลเดียวกับ asc-eit.js
+         เพราะตัวเลือก ยี่ห้อ > รุ่น ผูกเหตุการณ์ตั้งแต่ตอนแจงไฟล์ ไม่ได้รอ DOMContentLoaded
+
+         หน้านี้เปิดเดี่ยว ๆ ได้ ไม่ได้อยู่ใต้ master_shell เสมอไป และ iframe
+         ก็ไม่ได้ใช้ window เดียวกับ shell จึงต้องมีชุดคลาวด์ของตัวเอง
+         ถ้าโหลดไม่ได้หรือยังไม่ได้ตั้งค่า AscCloud.enabled จะเป็น false
+         แล้ว AscDevices จะตกไปใช้แคชใน IndexedDB ซึ่งเป็นของ origin เดียวกัน
+         จึงใช้คลังที่หน้าอื่นซิงก์ไว้แล้วได้ และยังอัปโหลดไฟล์เองได้เหมือนเดิม -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="asc-cloud.js"></script>
+    <script src="asc-datasheet-parse.js"></script>
+    <script src="asc-devices.js"></script>
 
     <script>
 	
@@ -3756,171 +3847,171 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
         });
 
         // --- UPLOAD PARSERS ---
-        function parseAndApplyEquipmentFile(e, type, labelId, selectId) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = ev => {
-                const text = ev.target.result;
-                const lines = text.split(/\r?\n/);
-                const rawData = {};
-                
-                /* ตัดคอมเมนต์ที่ขึ้นต้นด้วย ; ออกจากบรรทัดค่า
+        /* ══════════════════════════════════════════════════════════════════
+           การนำเข้าสเปกอุปกรณ์ — แยกเป็นสามชั้น
 
-                   ดาต้าชีตโครงสร้าง 3.0 เขียนแท็กต่อท้ายบรรทัดค่า เช่น
-                       Length_mm = 2382 ; [NOT FOUND IN DATASHEET]
-                   ถ้าไม่ตัดออก val จะเป็น "2382 ; [NOT FOUND...]" ซึ่ง isNaN เป็นจริง
-                   ค่าจึงถูกเก็บเป็นข้อความ แล้ว state.pvLen / 1000 กลายเป็น NaN
-                   ผังแผงทั้งใบเพี้ยนโดยไม่มีคำเตือนอะไรเลย
-                   (รูปแบบ 3.1 ย้ายแท็กขึ้นไปเป็นบรรทัดของตัวเองแล้ว แต่ไฟล์เก่ายังมีอยู่)
+           เดิมการอ่านไฟล์กับการนำค่าไปใช้อยู่ใน reader.onload ก้อนเดียวกัน
+           จึงเรียกใช้ได้ทางเดียวคือผู้ใช้เลือกไฟล์จากเครื่องเอง
+           พอมีคลังสเปกอุปกรณ์บนคลาวด์เข้ามา ต้องแยกออกจากกัน เพื่อให้ทั้ง
+           "เลือกจากคลัง" และ "อัปโหลดไฟล์เอง" เดินผ่านตัวแยกข้อความและ
+           ตัวตรวจฟิลด์บังคับ ตัวเดียวกัน
 
-                   ค่าที่อยู่ในเครื่องหมายคำพูดต้องไม่ถูกตัด เพราะข้อความจริงอาจมี ; อยู่ */
-                const stripComment = (raw) => {
-                    const s = String(raw).trim();
-                    if (s.charAt(0) === '"') {
-                        const end = s.indexOf('"', 1);
-                        return end === -1 ? s : s.slice(0, end + 1);
-                    }
-                    /* ตัดที่เครื่องหมายคอมเมนต์ตัวแรกที่เจอ รับทั้ง ; และ #
-                       เทมเพลตรุ่นเก่า (Inverter_Structure.txt) เขียนคำอธิบายต่อท้ายด้วย #
-                           Rated_AC_Output_Power_kW = 50.0        # กำลังไฟฟ้าขาออกพิกัด
-                       ถ้าไม่ตัด ค่าจะกลายเป็นข้อความ แล้ว state.inv1AcKw > 0 เป็นเท็จ
-                       ผลคือเช็กลิสต์ก่อนบันทึกขึ้นว่ายังไม่ได้เลือกอุปกรณ์ ทั้งที่เลือกไปแล้ว */
-                    const cut = [s.indexOf(';'), s.indexOf('#')].filter(i => i >= 0);
-                    if (!cut.length) return s;
-                    return s.slice(0, Math.min.apply(null, cut)).trim();
-                };
+           ถ้าปล่อยให้สองทางมีตัวแยกไฟล์คนละชุด วันหนึ่งจะให้ผลไม่ตรงกัน
+           แล้วไล่หาสาเหตุไม่เจอ เพราะไฟล์ต้นทางหน้าตาเหมือนกันทุกอย่าง
+           ══════════════════════════════════════════════════════════════════ */
 
-                lines.forEach(line => {
-                    const t = line.trim();
-                    // บรรทัดคอมเมนต์เต็มบรรทัด ข้ามทิ้ง แม้จะมีเครื่องหมายเท่ากับปนอยู่ก็ตาม
-                    if (t === "" || t.startsWith("#") || t.startsWith(";") || !t.includes("=")) return;
-                    const parts = t.split("=");
-                    const key = parts[0].trim();
-                    let val = stripComment(parts.slice(1).join("=")).replace(/^"|"$/g, '').trim();
+        /* ชั้นที่ 1 · ข้อความดาต้าชีต → อ็อบเจกต์ ไม่ยุ่งกับ DOM และ state เลย */
+        /* ชั้นที่ 1 · ข้อความดาต้าชีต → อ็อบเจกต์
 
-                    if (val === "") val = "-";
-                    if (val !== "-" && !isNaN(val)) rawData[key] = parseFloat(val);
-                    else rawData[key] = val;
-                });
+           กติกาการอ่านย้ายไปอยู่ที่ docs/asc-datasheet-parse.js เพราะข้อความชุดเดียวกัน
+           ถูกอ่านจากสามที่ คือหน้านี้ · ตัวนำเข้าของผู้ดูแลระบบในหน้า Settings ·
+           และสคริปต์ supabase/import-devices.mjs ที่รันบน Node
+           ถ้าต่างคนต่างเขียนตัวแยกไฟล์ วันหนึ่งจะให้ผลไม่ตรงกันแล้วไล่บั๊กไม่เจอ */
+        function parseEquipmentText(text) {
+            if (!window.AscDatasheet || typeof AscDatasheet.parse !== 'function') {
+                /* ดังกว่าเงียบ ถ้าโหลดไม่ได้ต้องรู้ทันที ไม่ใช่ได้อ็อบเจกต์ว่างแล้ว
+                   ออกแบบต่อไปด้วยค่าเริ่มต้นทั้งใบโดยไม่มีใครสังเกต */
+                throw new Error('โหลด asc-datasheet-parse.js ไม่สำเร็จ จึงอ่านไฟล์ดาต้าชีตไม่ได้');
+            }
+            return AscDatasheet.parse(text);
+        }
 
-                state.rawEquipData[type] = rawData;
+        /* ชั้นที่ 2 · อ็อบเจกต์ → state และหน้าจอ
+           opts.source  'file' = ผู้ใช้เลือกไฟล์เอง · 'db' = หยิบจากคลังสเปกอุปกรณ์
+           คืนค่า report เผื่อผู้เรียกอยากเอาไปแสดงเอง (ตัวนำเข้าฝั่งผู้ดูแลระบบใช้) */
+        function applyEquipmentData(rawData, type, labelId, selectId, opts) {
+            const o = opts || {};
+            const source = o.source === 'db' ? 'db' : 'file';
+            rawData = rawData || {};
 
-                /* รายงานผลการอ่านไฟล์ เก็บระหว่างทางแล้วแสดงทีเดียวตอนท้าย
-                   alias  = ฟิลด์ที่อ่านได้แต่มาจากชื่อคีย์สำรอง ไม่ใช่ชื่อหลักของเทมเพลต
-                   missing = ฟิลด์บังคับที่หาไม่เจอหรือเป็นศูนย์ ต้องเตือนให้เห็นก่อนออกแบบต่อ */
-                const report = { alias: [], missing: [], used: [] };
+            state.rawEquipData[type] = rawData;
 
-                /* อ่านค่าตัวเลขจากคีย์ตัวแรกที่เจอในลิสต์
-                   ดาต้าชีตแต่ละแหล่งเรียกฟิลด์เดียวกันคนละชื่อ ตัวแรกคือชื่อที่เทมเพลตปัจจุบันใช้ */
-                const pickNum = (names, fallback, label) => {
-                    for (let i = 0; i < names.length; i++) {
-                        const v = rawData[names[i]];
-                        if (v === undefined || v === null || v === '' || v === '-') continue;
-                        const n = parseFloat(v);
-                        if (!isFinite(n)) continue;
-                        if (i > 0) report.alias.push(`${label} อ่านจากคีย์ ${names[i]} (เทมเพลตปัจจุบันใช้ ${names[0]})`);
-                        report.used.push(`${label} = ${n}`);
-                        return n;
-                    }
-                    report.missing.push(`${label} — ไม่พบคีย์ ${names[0]} ใช้ค่าเริ่มต้น ${fallback}`);
-                    return fallback;
-                };
+            /* รายงานผลการอ่านไฟล์ เก็บระหว่างทางแล้วแสดงทีเดียวตอนท้าย
+               alias  = ฟิลด์ที่อ่านได้แต่มาจากชื่อคีย์สำรอง ไม่ใช่ชื่อหลักของเทมเพลต
+               missing = ฟิลด์บังคับที่หาไม่เจอหรือเป็นศูนย์ ต้องเตือนให้เห็นก่อนออกแบบต่อ */
+            const report = { alias: [], missing: [], used: [] };
 
-                /* ฟิลด์บังคับที่ขาดไม่ได้ ถ้าหายหรือเป็นศูนย์ การออกแบบจะเพี้ยนแบบเงียบ ๆ */
-                const REQUIRED = {
-                    pv:  [['Pmax_Wp','กำลังไฟสูงสุด (Wp)'], ['Voc_V','แรงดันเปิดวงจร Voc'],
-                          ['Vmp_V','แรงดันทำงาน Vmp'], ['Isc_A','กระแสลัดวงจร Isc'],
-                          ['Imp_A','กระแสทำงาน Imp'], ['Length_mm','ความยาวแผง'], ['Width_mm','ความกว้างแผง']],
-                    inv: [['Max_DC_Input_Voltage_V','แรงดัน DC สูงสุด'], ['MPPT_Voltage_Min_V','แรงดัน MPPT ต่ำสุด'],
-                          ['Number_of_MPPTs','จำนวน MPPT'], ['Inputs_per_MPPT','จำนวนขาเข้าต่อ MPPT'],
-                          ['Rated_AC_Output_Power_kW','กำลังไฟ AC ที่พิกัด']]
-                };
-                (REQUIRED[type === 'inv1' || type === 'inv2' ? 'inv' : type] || []).forEach(([k, label]) => {
-                    const n = parseFloat(rawData[k]);
-                    if (!isFinite(n) || n === 0) report.missing.push(`${label} — คีย์ ${k} ไม่มีค่าหรือเป็นศูนย์`);
-                });
-
-                const mfg = rawData["Manufacturer"] || "Custom";
-                const mod = rawData["Model_Name"] || "Model";
-
-                if (type === 'pv') {
-                    state.pvMfg = mfg; state.pvModel = mod;
-                    state.pvLen = rawData["Length_mm"] || 0;
-                    state.pvWid = rawData["Width_mm"] || 0;
-                    state.pvVoc = rawData["Voc_V"] || 0;
-                    state.pvVmp = rawData["Vmp_V"] || 0;
-                    state.pvPmax = rawData["Pmax_Wp"] || 0;
-                    state.pvIsc = rawData["Isc_A"] || 0; // ดึงค่ากระแสลัดวงจรชิ้นงานจริง
-                    state.pvImp = rawData["Imp_A"] || 0; // ดึงค่ากระแสทำงานสูงสุดชิ้นงานจริง
-                    /* สัมประสิทธิ์อุณหภูมิ — เทมเพลตโครงสร้าง 3.x ใช้ชื่อ Tk_*_Pct_Per_C
-                       ของเดิมอ่านแต่ชื่อ Temperature_Coefficient_* จึงตกไปใช้ค่าเริ่มต้นทุกครั้ง
-                       ตรวจคลังดาต้าชีตแล้ว แผง 35 จาก 35 ไฟล์ใช้ชื่อ Tk_* ไม่มีไฟล์ไหนใช้ชื่อเดิมเลย
-                       ค่าที่คลาดเคลื่อนตรงนี้ไปโผล่ที่พลังงานรายปีและ NPV โดยไม่มีคำเตือนอะไร */
-                    state.pvTempPmax = pickNum(['Tk_Pmax_Pct_Per_C', 'Temperature_Coefficient_Pmax_per_C',
-                                                'Temp_Coeff_Pmax_per_C', 'Temp_Coeff_Pmax'],
-                                               -0.35, 'สัมประสิทธิ์อุณหภูมิ Pmax');
-                    state.pvTempVoc  = pickNum(['Tk_Voc_Pct_Per_C', 'Temperature_Coefficient_Voc_per_C',
-                                                'Temp_Coeff_Voc_per_C', 'Temp_Coeff_Voc'],
-                                               -0.27, 'สัมประสิทธิ์อุณหภูมิ Voc');
-                    /* หยอดลงช่องพารามิเตอร์อุณหภูมิทันที ไม่รอให้ผู้ใช้เดินไปถึงขั้นที่ 3
-                       generateDB1() อ่านค่าจากช่องนี้ ไม่ได้อ่านจาก state ถ้ายังไม่หยอด
-                       DB2 ที่บันทึกก่อนถึงขั้นที่ 3 จะพาค่าเริ่มต้นติดไปแทนค่าจากดาต้าชีต */
-                    const tcP = document.getElementById('tempCoeffPmax');
-                    const tcV = document.getElementById('tempCoeffVoc');
-                    if (tcP) tcP.value = state.pvTempPmax;
-                    if (tcV) tcV.value = state.pvTempVoc;
-                    document.getElementById(labelId).innerText = `${mfg} ${mod} (${state.pvPmax}W)`;
-                    processPolygonsAndPanels();
-                } else if (type === 'inv1' || type === 'inv2') {
-                    const maxDc = rawData["Max_DC_Input_Voltage_V"] || 0;
-                    const minMppt = rawData["MPPT_Voltage_Min_V"] || 0;
-                    const mppts = rawData["Number_of_MPPTs"] || 1;
-                    const inps = rawData["Inputs_per_MPPT"] || 1;
-                    const acKw = rawData["Rated_AC_Output_Power_kW"] || 0;
-                    
-                    if(type === 'inv1') {
-                        state.inv1Mfg = mfg; state.inv1Model = mod; state.inv1MaxDC = maxDc; state.inv1MinMPPT = minMppt; state.inv1Mppts = mppts; state.inv1Inp = inps; state.inv1AcKw = acKw;
-                        document.getElementById(labelId).innerText = `${mfg} ${mod} (${acKw}kW)`;
-                    } else {
-                        state.inv2Mfg = mfg; state.inv2Model = mod; state.inv2MaxDC = maxDc; state.inv2MinMPPT = minMppt; state.inv2Mppts = mppts; state.inv2Inp = inps; state.inv2AcKw = acKw; state.inv2Qty = 1;
-                        document.getElementById('invQty2').value = 1;
-                        document.getElementById(labelId).innerText = `${mfg} ${mod} (${acKw}kW)`;
-                    }
-                    calculateStringSizing();
-                } else if (type === 'bat') {
-                    state.batMfg = mfg; state.batModel = mod;
-                    /* ความจุแบตเตอรี่ — ไฟล์ระดับโมดูลบางแบรนด์กรอกแต่ Usable หรือ Module
-                       เดิมอ่านแค่สองชื่อ ถ้าไม่เจอจะได้ 0 แล้วผ่านไปเงียบ ๆ */
-                    state.batCap = pickNum(['Nominal_Capacity_kWh', 'Usable_Capacity_kWh',
-                                            'Module_Capacity_kWh', 'Capacity_kWh'],
-                                           0, 'ความจุแบตเตอรี่ (kWh)');
-                    state.batQty = 1; document.getElementById('batQty').value = 1;
-                    document.getElementById(labelId).innerText = `${mfg} ${mod} (${state.batCap}kWh)`;
-                    calculateStringSizing();
-                } else if (type === 'opt') {
-                    state.optMfg = mfg; state.optModel = mod;
-                    document.getElementById(labelId).innerText = `${mfg} ${mod}`;
-                    updateOptQty();
-                } else if (type === 'ev') {
-                    state.evMfg = mfg; state.evModel = mod;
-                    state.evQty = 1; document.getElementById('evQty').value = 1;
-                    document.getElementById(labelId).innerText = `${mfg} ${mod}`;
-                    updateSystemStatus();
+            /* อ่านค่าตัวเลขจากคีย์ตัวแรกที่เจอในลิสต์
+               ดาต้าชีตแต่ละแหล่งเรียกฟิลด์เดียวกันคนละชื่อ ตัวแรกคือชื่อที่เทมเพลตปัจจุบันใช้ */
+            const pickNum = (names, fallback, label) => {
+                for (let i = 0; i < names.length; i++) {
+                    const v = rawData[names[i]];
+                    if (v === undefined || v === null || v === '' || v === '-') continue;
+                    const n = parseFloat(v);
+                    if (!isFinite(n)) continue;
+                    if (i > 0) report.alias.push(`${label} อ่านจากคีย์ ${names[i]} (เทมเพลตปัจจุบันใช้ ${names[0]})`);
+                    report.used.push(`${label} = ${n}`);
+                    return n;
                 }
+                report.missing.push(`${label} — ไม่พบคีย์ ${names[0]} ใช้ค่าเริ่มต้น ${fallback}`);
+                return fallback;
+            };
 
-                if(selectId) {
-                    const sel = document.getElementById(selectId);
-                    if(sel && sel.options.length > 0) {
-                        sel.options[0].text = `📁 ${mfg} ${mod}`;
-                    }
+            /* ฟิลด์บังคับที่ขาดไม่ได้ ถ้าหายหรือเป็นศูนย์ การออกแบบจะเพี้ยนแบบเงียบ ๆ */
+            const REQUIRED = {
+                pv:  [['Pmax_Wp','กำลังไฟสูงสุด (Wp)'], ['Voc_V','แรงดันเปิดวงจร Voc'],
+                      ['Vmp_V','แรงดันทำงาน Vmp'], ['Isc_A','กระแสลัดวงจร Isc'],
+                      ['Imp_A','กระแสทำงาน Imp'], ['Length_mm','ความยาวแผง'], ['Width_mm','ความกว้างแผง']],
+                inv: [['Max_DC_Input_Voltage_V','แรงดัน DC สูงสุด'], ['MPPT_Voltage_Min_V','แรงดัน MPPT ต่ำสุด'],
+                      ['Number_of_MPPTs','จำนวน MPPT'], ['Inputs_per_MPPT','จำนวนขาเข้าต่อ MPPT'],
+                      ['Rated_AC_Output_Power_kW','กำลังไฟ AC ที่พิกัด']]
+            };
+            (REQUIRED[type === 'inv1' || type === 'inv2' ? 'inv' : type] || []).forEach(([k, label]) => {
+                const n = parseFloat(rawData[k]);
+                if (!isFinite(n) || n === 0) report.missing.push(`${label} — คีย์ ${k} ไม่มีค่าหรือเป็นศูนย์`);
+            });
+
+            const mfg = rawData["Manufacturer"] || "Custom";
+            const mod = rawData["Model_Name"] || "Model";
+            const setLabel = (txt) => { const el = labelId && document.getElementById(labelId); if (el) el.innerText = txt; };
+
+            if (type === 'pv') {
+                state.pvMfg = mfg; state.pvModel = mod;
+                state.pvLen = rawData["Length_mm"] || 0;
+                state.pvWid = rawData["Width_mm"] || 0;
+                state.pvVoc = rawData["Voc_V"] || 0;
+                state.pvVmp = rawData["Vmp_V"] || 0;
+                state.pvPmax = rawData["Pmax_Wp"] || 0;
+                state.pvIsc = rawData["Isc_A"] || 0; // ดึงค่ากระแสลัดวงจรชิ้นงานจริง
+                state.pvImp = rawData["Imp_A"] || 0; // ดึงค่ากระแสทำงานสูงสุดชิ้นงานจริง
+                /* สัมประสิทธิ์อุณหภูมิ — เทมเพลตโครงสร้าง 3.x ใช้ชื่อ Tk_*_Pct_Per_C
+                   ของเดิมอ่านแต่ชื่อ Temperature_Coefficient_* จึงตกไปใช้ค่าเริ่มต้นทุกครั้ง
+                   ตรวจคลังดาต้าชีตแล้ว แผง 35 จาก 35 ไฟล์ใช้ชื่อ Tk_* ไม่มีไฟล์ไหนใช้ชื่อเดิมเลย
+                   ค่าที่คลาดเคลื่อนตรงนี้ไปโผล่ที่พลังงานรายปีและ NPV โดยไม่มีคำเตือนอะไร */
+                state.pvTempPmax = pickNum(['Tk_Pmax_Pct_Per_C', 'Temperature_Coefficient_Pmax_per_C',
+                                            'Temp_Coeff_Pmax_per_C', 'Temp_Coeff_Pmax'],
+                                           -0.35, 'สัมประสิทธิ์อุณหภูมิ Pmax');
+                state.pvTempVoc  = pickNum(['Tk_Voc_Pct_Per_C', 'Temperature_Coefficient_Voc_per_C',
+                                            'Temp_Coeff_Voc_per_C', 'Temp_Coeff_Voc'],
+                                           -0.27, 'สัมประสิทธิ์อุณหภูมิ Voc');
+                /* หยอดลงช่องพารามิเตอร์อุณหภูมิทันที ไม่รอให้ผู้ใช้เดินไปถึงขั้นที่ 3
+                   generateDB1() อ่านค่าจากช่องนี้ ไม่ได้อ่านจาก state ถ้ายังไม่หยอด
+                   DB2 ที่บันทึกก่อนถึงขั้นที่ 3 จะพาค่าเริ่มต้นติดไปแทนค่าจากดาต้าชีต */
+                const tcP = document.getElementById('tempCoeffPmax');
+                const tcV = document.getElementById('tempCoeffVoc');
+                if (tcP) tcP.value = state.pvTempPmax;
+                if (tcV) tcV.value = state.pvTempVoc;
+                setLabel(`${mfg} ${mod} (${state.pvPmax}W)`);
+                processPolygonsAndPanels();
+            } else if (type === 'inv1' || type === 'inv2') {
+                const maxDc = rawData["Max_DC_Input_Voltage_V"] || 0;
+                const minMppt = rawData["MPPT_Voltage_Min_V"] || 0;
+                const mppts = rawData["Number_of_MPPTs"] || 1;
+                const inps = rawData["Inputs_per_MPPT"] || 1;
+                const acKw = rawData["Rated_AC_Output_Power_kW"] || 0;
+
+                if(type === 'inv1') {
+                    state.inv1Mfg = mfg; state.inv1Model = mod; state.inv1MaxDC = maxDc; state.inv1MinMPPT = minMppt; state.inv1Mppts = mppts; state.inv1Inp = inps; state.inv1AcKw = acKw;
+                    setLabel(`${mfg} ${mod} (${acKw}kW)`);
+                } else {
+                    state.inv2Mfg = mfg; state.inv2Model = mod; state.inv2MaxDC = maxDc; state.inv2MinMPPT = minMppt; state.inv2Mppts = mppts; state.inv2Inp = inps; state.inv2AcKw = acKw; state.inv2Qty = 1;
+                    document.getElementById('invQty2').value = 1;
+                    setLabel(`${mfg} ${mod} (${acKw}kW)`);
                 }
+                calculateStringSizing();
+            } else if (type === 'bat') {
+                state.batMfg = mfg; state.batModel = mod;
+                /* ความจุแบตเตอรี่ — ไฟล์ระดับโมดูลบางแบรนด์กรอกแต่ Usable หรือ Module
+                   เดิมอ่านแค่สองชื่อ ถ้าไม่เจอจะได้ 0 แล้วผ่านไปเงียบ ๆ */
+                state.batCap = pickNum(['Nominal_Capacity_kWh', 'Usable_Capacity_kWh',
+                                        'Module_Capacity_kWh', 'Capacity_kWh'],
+                                       0, 'ความจุแบตเตอรี่ (kWh)');
+                state.batQty = 1; document.getElementById('batQty').value = 1;
+                setLabel(`${mfg} ${mod} (${state.batCap}kWh)`);
+                calculateStringSizing();
+            } else if (type === 'opt') {
+                state.optMfg = mfg; state.optModel = mod;
+                setLabel(`${mfg} ${mod}`);
+                updateOptQty();
+            } else if (type === 'ev') {
+                state.evMfg = mfg; state.evModel = mod;
+                state.evQty = 1; document.getElementById('evQty').value = 1;
+                setLabel(`${mfg} ${mod}`);
+                updateSystemStatus();
+            }
 
-                /* สรุปผลการอ่านไฟล์ เอาคำเตือนขึ้นก่อนเสมอ
-                   ของเดิมเทคีย์ทั้งหมดออกมาเป็นร้อยบรรทัด ปัญหาจริงเลยจมหายไปในกอง
-                   ค่าดิบทั้งไฟล์ยังเก็บครบใน state.rawEquipData และไหลต่อไป DB2 เหมือนเดิม */
-                (function () {
-                    const head = `นำเข้าไฟล์สำเร็จ (${type.toUpperCase()})\n${mfg} ${mod}\n`;
+            /* ป้ายบนช่องเลือก บอกด้วยว่าค่ามาจากไหน จะได้ไล่ย้อนได้ว่าใครใส่มา
+               📚 = หยิบจากคลังสเปกอุปกรณ์   📁 = ผู้ใช้อัปโหลดไฟล์เอง */
+            if(selectId) {
+                const sel = document.getElementById(selectId);
+                if(sel && sel.options.length > 0) {
+                    sel.options[0].text = `${source === 'db' ? '📚' : '📁'} ${mfg} ${mod}`;
+                }
+            }
+
+            /* สรุปผลการอ่านไฟล์ เอาคำเตือนขึ้นก่อนเสมอ
+               ของเดิมเทคีย์ทั้งหมดออกมาเป็นร้อยบรรทัด ปัญหาจริงเลยจมหายไปในกอง
+               ค่าดิบทั้งไฟล์ยังเก็บครบใน state.rawEquipData และไหลต่อไป DB2 เหมือนเดิม
+
+               หยิบจากคลังแล้วไม่มีอะไรต้องเตือน ใช้ป้ายลอยพอ ไม่ต้องให้กดปิด
+               เพราะการเลือกอุปกรณ์จากคลังเป็นงานที่ทำซ้ำบ่อย ถ้าเด้ง alert ทุกครั้ง
+               ผู้ใช้จะเริ่มกดปิดโดยไม่อ่าน แล้ววันที่มีคำเตือนจริงก็จะถูกกดผ่านไปด้วย */
+            if (!o.quiet) {
+                const clean = !report.missing.length && !report.alias.length;
+                if (source === 'db' && clean && typeof ascFlashNotice === 'function') {
+                    ascFlashNotice(`เลือกจากคลังแล้ว · ${mfg} ${mod} · ฟิลด์บังคับครบถ้วน`, 2600);
+                } else {
+                    const head = `${source === 'db' ? 'เลือกจากคลังสำเร็จ' : 'นำเข้าไฟล์สำเร็จ'} (${type.toUpperCase()})\n${mfg} ${mod}\n`;
                     let msg = head + '─'.repeat(34) + '\n';
                     if (report.missing.length) {
                         msg += `\n⚠️ ต้องตรวจสอบ ${report.missing.length} รายการ\n`;
@@ -3934,18 +4025,30 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                         msg += '\nค่าที่โปรแกรมนำไปคำนวณ\n';
                         report.used.forEach(m => { msg += '  • ' + m + '\n'; });
                     }
-                    if (!report.missing.length && !report.alias.length) {
+                    if (clean) {
                         msg += '\n✅ ฟิลด์บังคับครบถ้วน ตรงกับชื่อคีย์ของเทมเพลตทุกตัว\n';
                     }
                     msg += `\nอ่านได้ทั้งหมด ${Object.keys(rawData).length} ฟิลด์ เก็บครบทุกตัวลงไฟล์ DB2`;
                     alert(msg);
-                })();
+                }
+            }
 
+            updatePreviews();
+            /* รีเฟรชเช็กลิสต์ทันทีที่โหลดอุปกรณ์เสร็จ ไม่ต้องรอให้ผู้ใช้ไปแตะอย่างอื่น
+               ไม่งั้นสถานะที่เห็นในขั้นบันทึกอาจเป็นของรอบก่อนหน้า */
+            if (typeof updateSaveChecklist === 'function') updateSaveChecklist();
+
+            return report;
+        }
+
+        /* ชั้นที่ 3 · ผู้ใช้เลือกไฟล์จากเครื่องเอง — ทางสำรองเมื่ออุปกรณ์ยังไม่มีในคลัง */
+        function parseAndApplyEquipmentFile(e, type, labelId, selectId) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                applyEquipmentData(parseEquipmentText(ev.target.result), type, labelId, selectId, { source: 'file' });
                 e.target.value = '';
-                updatePreviews();
-                /* รีเฟรชเช็กลิสต์ทันทีที่โหลดอุปกรณ์เสร็จ ไม่ต้องรอให้ผู้ใช้ไปแตะอย่างอื่น
-                   ไม่งั้นสถานะที่เห็นในขั้นบันทึกอาจเป็นของรอบก่อนหน้า */
-                if (typeof updateSaveChecklist === 'function') updateSaveChecklist();
             };
             reader.readAsText(file);
         }
@@ -3956,6 +4059,223 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
         document.getElementById('batFile').addEventListener('change', e => parseAndApplyEquipmentFile(e, 'bat', 'outBatName', 'batSelect'));
         document.getElementById('optFile').addEventListener('change', e => parseAndApplyEquipmentFile(e, 'opt', 'outOptName', 'optSelect'));
         document.getElementById('evFile').addEventListener('change', e => parseAndApplyEquipmentFile(e, 'ev', 'outEvName', 'evSelect'));
+
+        /* ══════════════════════════════════════════════════════════════════
+           เลือกอุปกรณ์จากคลัง ยี่ห้อ > รุ่น
+
+           เลือกรุ่นแล้วส่ง spec เข้า applyEquipmentData() ตัวเดียวกับที่
+           การอัปโหลดไฟล์ใช้ ผลลัพธ์จึงเหมือนกันทุกฟิลด์ รวมถึงคำเตือน
+           ฟิลด์บังคับที่หาย ซึ่งสำคัญมากกับอินเวอร์เตอร์ Sigenergy ตระกูล TP
+           ที่ดาต้าชีตระบุจำนวน MPPT ไม่ได้
+
+           ตัวเลือกยังคงอยู่แม้คลังว่าง เพื่อให้ผู้ใช้เห็นว่ามีคลังอยู่จริง
+           แต่ยังโหลดไม่ได้ ไม่ใช่หายไปเฉย ๆ จนนึกว่าไม่มีฟีเจอร์นี้
+           ══════════════════════════════════════════════════════════════════ */
+        (function () {
+            const picks = Array.prototype.slice.call(document.querySelectorAll('.dev-pick'));
+            if (!picks.length) return;
+
+            /* ป้ายชื่อผลลัพธ์กับช่องแสดงสถานะของอุปกรณ์แต่ละชิ้น
+               ต้องตรงกับที่ตัวรับไฟล์อัปโหลดใช้ ไม่งั้นชื่อจะไปโผล่ผิดช่อง */
+            const TARGET = {
+                pv  : { label: 'outPvName',   select: 'pvSelect'    },
+                inv1: { label: 'outInv1Name', select: 'invSelect1'  },
+                inv2: { label: 'outInv2Name', select: 'invSelect2'  },
+                bat : { label: 'outBatName',  select: 'batSelect'   },
+                opt : { label: 'outOptName',  select: 'optSelect'   },
+                ev  : { label: 'outEvName',   select: 'evSelect'    }
+            };
+
+            const statusEl = document.getElementById('devBankStatus');
+
+            function showStatus(st) {
+                if (!statusEl) return;
+                statusEl.className = '';
+                if (st.source === 'cloud') {
+                    statusEl.textContent = `คลังสเปกอุปกรณ์ ${st.n} รายการ · ข้อมูลล่าสุดจากคลาวด์`;
+                } else if (st.source === 'cache') {
+                    /* ของเก่าใช้ได้ แต่ต้องบอกให้รู้ว่าเก่า ไม่ใช่ปล่อยให้เข้าใจว่าล่าสุด */
+                    const when = st.syncedAt ? new Date(st.syncedAt).toLocaleString('th-TH') : 'ไม่ทราบเวลา';
+                    statusEl.textContent = `คลังสเปกอุปกรณ์ ${st.n} รายการ · ใช้ข้อมูลที่เก็บไว้ในเครื่อง (ซิงก์ล่าสุด ${when})`;
+                    statusEl.className = st.error ? 'warn' : '';
+                } else {
+                    /* ยังไม่ได้ล็อกอินเป็นสถานะปกติ ไม่ใช่ความผิดพลาด เช่นตอนเปิดหน้านี้เดี่ยว ๆ
+                       ใช้สีเหลืองพอ ถ้าขึ้นแดงทุกครั้งผู้ใช้จะเลิกอ่านแถบนี้ไปเลย */
+                    const notLoggedIn = /เข้าสู่ระบบ/.test(st.error || '');
+                    statusEl.className = notLoggedIn ? 'warn' : 'err';
+                    statusEl.textContent = (notLoggedIn ? 'ยังไม่ได้เข้าสู่ระบบ จึงยังไม่เห็นคลังสเปกอุปกรณ์'
+                                                        : 'ยังใช้คลังสเปกอุปกรณ์ไม่ได้ : ' + (st.error || 'ไม่ทราบสาเหตุ')) +
+                        ' — ใช้วิธีอัปโหลดไฟล์ .txt ไปก่อนได้';
+                }
+            }
+
+            function fillBrands(pick) {
+                const cat = pick.dataset.cat;
+                const bsel = pick.querySelector('.dev-brand');
+                const msel = pick.querySelector('.dev-model');
+                const brands = window.AscDevices ? AscDevices.brands(cat) : [];
+
+                bsel.innerHTML = '<option value="">-- ยี่ห้อ --</option>';
+                brands.forEach(b => {
+                    const o = document.createElement('option');
+                    o.value = b.brand;
+                    o.textContent = `${b.brand} (${b.n})`;
+                    bsel.appendChild(o);
+                });
+                bsel.disabled = !brands.length;
+                msel.disabled = true;
+                msel.innerHTML = '<option value="">-- รุ่น --</option>';
+            }
+
+            function fillModels(pick) {
+                const cat = pick.dataset.cat;
+                const bsel = pick.querySelector('.dev-brand');
+                const msel = pick.querySelector('.dev-model');
+                msel.innerHTML = '<option value="">-- รุ่น --</option>';
+                if (!bsel.value) { msel.disabled = true; return; }
+
+                AscDevices.models(cat, bsel.value).forEach(d => {
+                    const o = document.createElement('option');
+                    o.value = d.id;
+                    /* ติดธงรุ่นที่ฟิลด์บังคับยังไม่ครบ ให้เห็นก่อนเลือก ไม่ใช่หลังเลือก */
+                    const flag = d.missing && d.missing.length ? '⚠ ' : '';
+                    o.textContent = flag + d.label + (d.summary ? '  ·  ' + d.summary : '');
+                    if (flag) o.dataset.incomplete = '1';
+                    msel.appendChild(o);
+                });
+                msel.disabled = false;
+            }
+
+            function choose(pick) {
+                const typ = pick.dataset.dev;
+                const msel = pick.querySelector('.dev-model');
+                const id = msel.value;
+                if (!id) return;
+                const spec = AscDevices.spec(id);
+                if (!spec) { alert('ไม่พบสเปกของรุ่นนี้ในคลัง ลองรีเฟรชหน้าใหม่'); return; }
+                const t = TARGET[typ];
+                /* ส่งสำเนา ไม่ส่งอ็อบเจกต์ในแคชโดยตรง
+                   เพราะปลายทางเก็บลง state.rawEquipData แล้วไหลต่อไป DB2
+                   ถ้าใครเผลอแก้ค่า จะไปแก้แคชของคลังทั้งก้อนตามไปด้วย */
+                applyEquipmentData(JSON.parse(JSON.stringify(spec)), typ, t.label, t.select, { source: 'db' });
+            }
+
+            picks.forEach(pick => {
+                pick.querySelector('.dev-brand').addEventListener('change', () => fillModels(pick));
+                pick.querySelector('.dev-model').addEventListener('change', () => choose(pick));
+            });
+
+            /* ปิดตัวเลือกไว้ก่อนจนกว่าคลังจะพร้อม กันคนกดตอนยังไม่มีข้อมูล */
+            picks.forEach(p => { p.querySelector('.dev-brand').disabled = true; });
+
+            if (!window.AscDevices) {
+                showStatus({ source: 'none', n: 0, error: 'ไม่ได้โหลด asc-devices.js' });
+                return;
+            }
+            AscDevices.ready().then(st => {
+                picks.forEach(fillBrands);
+                showStatus(st);
+            }).catch(e => {
+                showStatus({ source: 'none', n: 0, error: (e && e.message) || String(e) });
+            });
+
+            /* ให้ที่อื่นสั่งโหลดคลังใหม่ได้ เช่นหลังผู้ดูแลระบบเพิ่มของเข้าคลัง */
+            window.ascReloadDeviceBank = function () {
+                return AscDevices.refresh().then(st => { picks.forEach(fillBrands); showStatus(st); return st; });
+            };
+        })();
+
+        /* ══════════════════════════════════════════════════════════════════
+           ลากปรับความกว้างระหว่างแผนที่กับแผงกรอกข้อมูล
+
+           Leaflet คำนวณขนาดกระเบื้องแผนที่ไว้ตอนสร้าง ถ้าเปลี่ยนความกว้าง
+           ของกล่องแล้วไม่บอกมัน แผนที่จะเหลือขอบเทาและพิกัดที่คลิกจะเพี้ยน
+           จึงต้องเรียก map.invalidateSize() ทุกครั้งที่ขนาดเปลี่ยน
+
+           ระหว่างลากเรียกแบบไม่ทำอนิเมชัน (ถี่ได้ ไม่หนัก) พอปล่อยเมาส์
+           ค่อยเรียกอีกครั้งให้ Leaflet จัดกระเบื้องรอบสุดท้าย
+           ══════════════════════════════════════════════════════════════════ */
+        (function () {
+            const splitter = document.getElementById('splitter');
+            const sidebar  = document.getElementById('sidebar');
+            if (!splitter || !sidebar) return;
+
+            const KEY = 'asc_design_sidebar_w';
+            const DEFAULT_W = 380;
+            const MIN_W = 300;                       // แคบกว่านี้ฟอร์มจะเริ่มบีบจนอ่านไม่ออก
+            const MAX_RATIO = 0.7;                   // ห้ามกินพื้นที่แผนที่จนเหลือนิดเดียว
+
+            const maxW = () => Math.max(MIN_W, Math.round(window.innerWidth * MAX_RATIO));
+            const clamp = w => Math.min(Math.max(Math.round(w), MIN_W), maxW());
+
+            /* บอก Leaflet ว่ากล่องเปลี่ยนขนาดแล้ว เงียบ ๆ ไม่ต้องมีอนิเมชัน */
+            const refreshMap = () => {
+                try { if (typeof map !== 'undefined' && map) map.invalidateSize({ animate: false }); }
+                catch (e) { /* แผนที่ยังไม่พร้อม ไม่ใช่เรื่องคอขาดบาดตาย */ }
+            };
+
+            const applyWidth = (w, save) => {
+                const v = clamp(w);
+                sidebar.style.width = v + 'px';
+                splitter.setAttribute('aria-valuenow', String(v));
+                if (save) { try { localStorage.setItem(KEY, String(v)); } catch (e) {} }
+                return v;
+            };
+
+            /* ความกว้างที่ผู้ใช้ตั้งไว้ครั้งก่อน ถ้าอ่านไม่ได้ก็ใช้ค่าเริ่มต้น */
+            let saved = NaN;
+            try { saved = parseInt(localStorage.getItem(KEY), 10); } catch (e) {}
+            if (isFinite(saved) && saved > 0) applyWidth(saved, false);
+
+            let dragging = false;
+
+            const onMove = (clientX) => {
+                if (!dragging) return;
+                /* แถบข้างอยู่ทางขวา ความกว้างจึงวัดจากขอบขวาของหน้าต่างเข้ามา */
+                applyWidth(window.innerWidth - clientX - 4, false);
+                refreshMap();
+            };
+
+            const stop = () => {
+                if (!dragging) return;
+                dragging = false;
+                splitter.classList.remove('dragging');
+                document.body.classList.remove('splitting');
+                applyWidth(parseInt(sidebar.style.width, 10) || DEFAULT_W, true);
+                refreshMap();
+            };
+
+            splitter.addEventListener('pointerdown', e => {
+                dragging = true;
+                splitter.classList.add('dragging');
+                document.body.classList.add('splitting');
+                /* จับตัวชี้ไว้กับตัวลาก เมาส์วิ่งออกนอกหน้าต่างแล้วยังลากต่อได้ */
+                try { splitter.setPointerCapture(e.pointerId); } catch (err) {}
+                e.preventDefault();
+            });
+            splitter.addEventListener('pointermove', e => onMove(e.clientX));
+            splitter.addEventListener('pointerup', stop);
+            splitter.addEventListener('pointercancel', stop);
+            window.addEventListener('blur', stop);
+
+            /* ดับเบิลคลิกคืนค่าเริ่มต้น เผื่อลากเพลินจนหาทางกลับไม่เจอ */
+            splitter.addEventListener('dblclick', () => { applyWidth(DEFAULT_W, true); refreshMap(); });
+
+            /* ลูกศรซ้าย/ขวาปรับทีละ 16 px เผื่อคนที่ใช้คีย์บอร์ดเป็นหลัก */
+            splitter.addEventListener('keydown', e => {
+                if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+                const cur = parseInt(sidebar.style.width, 10) || sidebar.offsetWidth;
+                applyWidth(cur + (e.key === 'ArrowLeft' ? 16 : -16), true);
+                refreshMap();
+                e.preventDefault();
+            });
+
+            /* ย่อหน้าต่างลงจนเพดาน 70% ต่ำกว่าความกว้างปัจจุบัน ต้องหดตาม */
+            window.addEventListener('resize', () => {
+                const cur = parseInt(sidebar.style.width, 10) || sidebar.offsetWidth;
+                if (cur > maxW()) { applyWidth(cur, true); refreshMap(); }
+            });
+        })();
 
         /* ══════════════════════════════════════════════════════════════════
            ระบบออนกริดเดิม (AC Coupling)
