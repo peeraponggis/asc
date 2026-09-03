@@ -1796,7 +1796,27 @@
         Chart.defaults.plugins.datalabels = { display: false };
         Chart.register(window['chartjs-plugin-annotation']);
         Chart.register(window.ChartDataLabels);
-        google.charts.load('current', {'packages':['sankey']});
+        /* Google Charts โหลดแบบอะซิงโครนัส ต้องรอให้เสร็จก่อนวาดแผนผังการสูญเสีย
+
+           เดิมเรียก renderCustomLossDiagram() ทันทีที่ประมวลผลเสร็จโดยไม่รอ
+           ถ้าผลจำลองเสร็จก่อนไลบรารีโหลดจบ จะได้ error
+               google.visualization.arrayToDataTable is not a function
+           แล้ว Loss Diagram จะว่างเปล่า ซึ่งบนเน็ตช้าเกิดขึ้นได้จริง
+
+           เก็บ promise ไว้ให้ตัววาดรอได้ ตัวโหลดรุ่นใหม่คืน promise มาให้อยู่แล้ว
+           ถ้าเป็นรุ่นเก่าที่ไม่คืน ให้ห่อ setOnLoadCallback แทน
+           และถ้าโหลดไลบรารีไม่ได้เลย (เน็ตหลุด หรือตัวบล็อกโฆษณา) ให้เป็น null
+           แล้วส่วนอื่นของรายงานต้องทำงานต่อได้ตามปกติ */
+        const ascChartsReady = (function () {
+            try {
+                const p = google.charts.load('current', { 'packages': ['sankey'] });
+                if (p && typeof p.then === 'function') return p;
+                return new Promise(res => google.charts.setOnLoadCallback(res));
+            } catch (e) {
+                console.warn('โหลด Google Charts ไม่สำเร็จ แผนผังการสูญเสียจะไม่ถูกวาด', e);
+                return null;
+            }
+        })();
         
         const AppState = { monthlyBalances: [], daily8760: [], financials: [], results: {}, charts: {}, bomData: null, equipData: null, hourlyMeteo: [],
                            /* ระบบออนกริดเดิมสำหรับงาน AC coupling — ปิดไว้จนกว่าไฟล์ DB2 จะบอกว่าเปิด
@@ -4136,7 +4156,31 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
             
         } // <-- ปีกกาปิดอันนี้คือจุดสิ้นสุดฟังก์ชัน renderDashboard
 
+        /* ชุดข้อมูลที่รอวาดอยู่ ตอน Google Charts ยังโหลดไม่เสร็จ
+           เก็บไว้ตัวเดียวเพราะถ้าถูกเรียกซ้ำระหว่างรอ เราต้องการชุดล่าสุดชุดเดียว
+           ไม่ใช่วาดซ้อนกันหลายรอบตามจำนวนครั้งที่เรียก */
+        let ascLossPending = null;
+
         function renderCustomLossDiagram(r) {
+            /* ยังโหลดไลบรารีไม่เสร็จ เก็บข้อมูลไว้แล้วค่อยวาดเมื่อพร้อม
+               ไม่ throw ออกไป เพราะจุดที่เรียกจับ error แล้วเขียน console อย่างเดียว
+               ผลคือแผนผังหายไปเงียบ ๆ โดยไม่มีใครสังเกต */
+            if (!(window.google && google.visualization && google.visualization.Sankey)) {
+                const firstWait = ascLossPending === null;
+                ascLossPending = r;
+                if (firstWait && ascChartsReady) {
+                    ascChartsReady.then(() => {
+                        const pending = ascLossPending;
+                        ascLossPending = null;
+                        try { renderCustomLossDiagram(pending); }
+                        catch (e) { console.error('Sankey Failed (หลังรอไลบรารีโหลดเสร็จ)', e); }
+                    });
+                } else if (!ascChartsReady) {
+                    console.warn('ไม่มี Google Charts จึงข้ามการวาดแผนผังการสูญเสีย');
+                }
+                return;
+            }
+
             function formatNodeLabel(name, val, unit, pct) { return `${name} | ${formatNum(val, 2)} ${unit} (${formatNum(pct, 2)}%)`; }
             let vSoil = r.loss_Env || 5; let vTemp = r.loss_Temp || 6; let vLID = getVal('inp-loss-lid') || 1; let vWire = (r.loss_Wiring || 4.5) - vLID; let vInv = r.invLoss || 1.5; 
             
