@@ -7102,7 +7102,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
         }
         // --- ฟังก์ชันวาด Wiring Diagram ---
         function generateWiringSVG(dcBreaker, acBreaker) {
-            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 650" width="100%" height="auto" style="background-color: #f8fafc; font-family: 'Kanit', sans-serif;">
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 650" width="100%" style="height: auto; background-color: #f8fafc; font-family: 'Kanit', sans-serif;">
                 <defs><g id="mcb-pole"><rect x="0" y="0" width="30" height="80" fill="#ffffff" stroke="#475569" stroke-width="2"/><circle cx="15" cy="15" r="4" fill="#94a3b8"/><circle cx="15" cy="65" r="4" fill="#94a3b8"/><rect x="8" y="30" width="14" height="20" fill="#334155" rx="2"/></g><g id="spd-pole"><rect x="0" y="0" width="30" height="80" fill="#ffffff" stroke="#ef4444" stroke-width="2"/><rect x="4" y="25" width="22" height="30" fill="#fecaca"/><circle cx="15" cy="10" r="3" fill="#000"/><circle cx="15" cy="70" r="3" fill="#000"/></g></defs>
                 <rect x="50" y="50" width="900" height="550" fill="#f1f5f9" stroke="#64748b" stroke-width="6" rx="10"/>
                 <rect x="60" y="60" width="880" height="530" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" rx="6"/>
@@ -7204,7 +7204,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 `;
             }
 
-            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" width="100%" height="auto" style="background-color: #ffffff; font-family: 'Segoe UI', Tahoma, Arial, sans-serif;">
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" width="100%" style="height: auto; background-color: #ffffff; font-family: 'Segoe UI', Tahoma, Arial, sans-serif;">
                 <defs><g id="sym-tr"><circle cx="0" cy="-12" r="18" fill="none" stroke="#000" stroke-width="2"/><circle cx="0" cy="12" r="18" fill="none" stroke="#000" stroke-width="2"/></g><g id="sym-mccb"><rect x="-10" y="-15" width="20" height="30" fill="#fff" stroke="#000" stroke-width="1.5"/><path d="M -5 5 C 0 -15, 0 -15, 5 -5" fill="none" stroke="#000" stroke-width="1.5"/><line x1="0" y1="-15" x2="0" y2="-25" stroke="#000" stroke-width="2"/><line x1="0" y1="15" x2="0" y2="25" stroke="#000" stroke-width="2"/></g><g id="sym-dof"><circle cx="0" cy="-10" r="3" fill="#fff" stroke="#000" stroke-width="1.5"/><path d="M 0 -7 L 8 7" stroke="#000" stroke-width="1.5"/><circle cx="0" cy="10" r="3" fill="#fff" stroke="#000" stroke-width="1.5"/></g><g id="sym-panel"><rect x="-15" y="-20" width="30" height="40" fill="#fff" stroke="#000" stroke-width="1.5"/><line x1="-15" y1="-10" x2="15" y2="-10" stroke="#000" stroke-width="0.5"/><line x1="-15" y1="0" x2="15" y2="0" stroke="#000" stroke-width="0.5"/><line x1="-15" y1="10" x2="15" y2="10" stroke="#000" stroke-width="0.5"/></g></defs>
                 <rect x="20" y="20" width="1560" height="1160" fill="none" stroke="#000" stroke-width="2"/>
                 <text x="800" y="1150" font-size="28" font-weight="bold" text-anchor="middle" letter-spacing="2">SINGLE LINE DIAGRAM</text>
