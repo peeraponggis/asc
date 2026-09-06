@@ -89,6 +89,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <a href="#m3d-height" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ความสูงและทิศหลังคา</a>
                 <a href="#m3d-sun"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ดวงอาทิตย์และเงา</a>
                 <a href="#m3d-export" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ส่งออกภาพ</a>
+                <a href="#m3d-glb"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ส่งออกโมเดล .glb</a>
 
                 <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 4 · วางผังอุปกรณ์</div>
                 <a href="#m4-cal"     class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 1 · ปรับเทียบผนัง</a>
@@ -1261,6 +1262,25 @@ Is_Bifacial = False</div>
                     <li><span class="btn-ref">ส่งออกมุมนี้</span> ได้ภาพเดียว · <span class="btn-ref">ชุด 4 มุม</span> ได้ครบสี่ด้านรวดเดียว</li>
                     <li>ติ๊ก <b class="text-slate-800">พื้นหลังโปร่งใส</b> เมื่อจะเอาไปแปะใน Word หรือ PowerPoint</li>
                     <li>ภาพดาวเทียมปูพื้นต้องปรับขนาดและมุมหมุนด้วยตาเอง เพราะภาพใน DB3 เป็นภาพจับหน้าจอที่ไม่มีขอบเขตพิกัดติดมาด้วย</li>
+                </ul>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m3d-glb" class="text-lg font-bold text-slate-800 mb-3">ส่งออกโมเดลสามมิติ (.glb)</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    ปุ่ม <span class="btn-ref">ส่งออกไฟล์ .glb</span> ให้ตัวแบบจำลองทั้งก้อน ไม่ใช่ภาพนิ่ง
+                    เอาไปเปิดต่อใน Blender, SketchUp, Windows 3D Viewer หรือลากแนบใน PowerPoint
+                    แล้วหมุนดูระหว่างนำเสนอได้เลย
+                </p>
+                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed mb-5">
+                    <li><b class="text-slate-800">หน่วยเป็นเมตรตามขนาดจริง</b> วัดระยะในโปรแกรมปลายทางได้ตรง
+                        และฐานอาคารอยู่ที่ระดับ 0 พอดี</li>
+                    <li>ติ๊ก <b class="text-slate-800">รวมพื้นและภาพดาวเทียม</b> เมื่ออยากได้บริบทรอบอาคารไปด้วย
+                        ถ้าไม่ติ๊กจะได้เฉพาะอาคารกับแผง ซึ่งเอาไปวางในฉากอื่นง่ายกว่า</li>
+                    <li><b class="text-slate-800">ป้ายชื่อหลังคาและเส้นขอบไม่ติดไปด้วย</b>
+                        เพราะรูปแบบไฟล์ .glb ไม่มีของเทียบเท่า ถ้าต้องการป้ายให้ใช้การส่งออกเป็นภาพแทน</li>
+                    <li>ไฟล์เล็กกว่าที่คิด เพราะแผงทุกใบใช้รูปทรงชิ้นเดียวกัน
+                        งาน 312 kWp ที่มีแผง 480 ใบได้ไฟล์ราว 0.2 MB</li>
                 </ul>
             </section>
 
