@@ -33,6 +33,8 @@ const ONLY_AT = process.argv.indexOf('--only');
 const ONLY    = ONLY_AT === -1 ? null : (process.argv[ONLY_AT + 1] || '').trim().toLowerCase() || null;
 /* --check : ถามเซิร์ฟเวอร์ว่าใครถูกเชิญไปแล้วบ้าง ไม่ส่งอีเมลออกไปสักฉบับ */
 const CHECK  = process.argv.includes('--check');
+/* --send : ยืนยันว่าจะส่งอีเมลจริง ไม่ใส่ = ไม่ส่ง (ดูเหตุผลที่ด่านกันส่งข้างล่าง) */
+const SEND   = process.argv.includes('--send');
 const DELAY  = 2500;   // เว้นระยะระหว่างฉบับ กัน rate limit ของผู้ให้บริการอีเมล
 
 /* ── หาค่าเชื่อมต่อ ───────────────────────────────────────────────────────
@@ -63,7 +65,12 @@ const FILE_ENV = readEnvFile();
 /* ดึง URL จาก supabase-config.js โดยไม่ต้องพึ่ง regex */
 function urlFromConfig() {
     try {
-        const cfg  = readFileSync(join(HERE, '..', 'supabase-config.js'), 'utf8');
+        /* ไฟล์เว็บย้ายไปอยู่ใน docs/ ทั้งหมดแล้ว มองที่นั่นก่อน
+           แล้วค่อยถอยไปหาที่รากเผื่อโครงสร้างเก่า */
+        const cfgPath = [join(HERE, '..', 'docs', 'supabase-config.js'),
+                         join(HERE, '..', 'supabase-config.js')].find(p => existsSync(p));
+        if (!cfgPath) return null;
+        const cfg  = readFileSync(cfgPath, 'utf8');
         const at   = cfg.lastIndexOf('SUPABASE_URL');
         if (at === -1) return null;
         const tail = cfg.slice(at);
@@ -95,7 +102,14 @@ if (KEY.length < 40) {
 }
 
 /* ── อ่านรายชื่อจาก user.js ─────────────────────────────────────────────── */
-const src = readFileSync(join(HERE, '..', 'user.js'), 'utf8');
+/* user.js ย้ายไปอยู่ใน docs/ แล้วเช่นกัน */
+const userJsPath = [join(HERE, '..', 'docs', 'user.js'),
+                    join(HERE, '..', 'user.js')].find(p => existsSync(p));
+if (!userJsPath) {
+    console.error('✗ หาไฟล์ user.js ไม่เจอ ทั้งใน docs/ และที่ราก');
+    process.exit(1);
+}
+const src = readFileSync(userJsPath, 'utf8');
 
 const usersBlock = src.match(/const\s+users\s*=\s*\{([\s\S]*?)\n\};/);
 if (!usersBlock) { console.error('✗ อ่านรายชื่อจาก user.js ไม่สำเร็จ'); process.exit(1); }
@@ -157,6 +171,37 @@ targets.forEach((t, i) =>
     console.log('   ' + String(i + 1).padStart(2) + '. ' + t.email.padEnd(38) + t.display + (t.isAdmin ? '   [ผู้ดูแลระบบ]' : '')));
 console.log('');
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ด่านกันส่งอีเมลโดยไม่ตั้งใจ
+
+   ทีมตัดสินใจเมื่อ 20 ส.ค. 2569 ว่า **ยกเลิกการส่งคำเชิญเป็นชุด** แล้วเปลี่ยน
+   เป็นให้ผู้ใช้ร้องขอและสมัครเอง (ดู STATUS.md หัวข้อ การตัดสินใจสำคัญ)
+   ตอนนี้มีผู้สมัครเองแล้วหลายสิบบัญชี
+
+   สคริปต์นี้เทียบรายชื่อกับ user.js เท่านั้น จึงมองไม่เห็นคนที่สมัครเอง
+   แล้วรายงานว่า "ยังไม่ถูกเชิญ" ทั้งที่หลายคนใช้งานอยู่แล้ว
+   ถ้าใครรันตามคำแนะนำนั้น จะยิงอีเมลหาคนที่ไม่ได้ขอเป็นสิบ ๆ ฉบับ
+
+   เดิมสคริปต์พังเพราะหาไฟล์ไม่เจอ ซึ่งกันเรื่องนี้ไว้โดยบังเอิญ
+   พอแก้ให้หาไฟล์เจอแล้ว ต้องมีด่านจริงมาแทน
+   ══════════════════════════════════════════════════════════════════════════ */
+if (!DRYRUN && !CHECK && !SEND) {
+    console.log('');
+    console.log('  ⚠  สคริปต์นี้ส่งอีเมลจริงหาคนภายนอก จึงไม่ยอมส่งถ้าไม่สั่งชัดเจน');
+    console.log('');
+    console.log('  ทีมยกเลิกการส่งคำเชิญเป็นชุดไปแล้วตั้งแต่ 20 ส.ค. 2569');
+    console.log('  เปลี่ยนเป็นให้ผู้ใช้ร้องขอแล้วสมัครเอง และตอนนี้มีคนสมัครเองแล้วหลายสิบบัญชี');
+    console.log('  รายชื่อใน user.js เป็นของเก่า ไม่ได้สะท้อนว่าใครใช้งานอยู่จริง');
+    console.log('');
+    console.log('  ก่อนตัดสินใจส่ง ให้ดูสภาพจริงก่อนเสมอ');
+    console.log('      node supabase/invite-users.mjs --check');
+    console.log('');
+    console.log('  ถ้ายืนยันว่าจะส่งจริง ต้องใส่ --send');
+    console.log('      node supabase/invite-users.mjs --send');
+    console.log('');
+    process.exit(1);
+}
+
 if (DRYRUN) {
     console.log('โหมดทดลอง อ่านรายชื่อจาก user.js เท่านั้น ยังไม่ได้ถามเซิร์ฟเวอร์และไม่ได้ส่งอะไรออกไป');
     console.log('อยากรู้ว่าใครถูกเชิญไปแล้วบ้าง ให้ใช้  --check  แทน');
@@ -208,7 +253,14 @@ if (CHECK) {
     console.log('   เชิญแล้ว รอตั้งรหัสผ่าน : ' + invited);
     console.log('   ใช้งานแล้ว              : ' + active);
     console.log('');
-    if (none === targets.length)  console.log('   → ยังไม่ได้ส่งคำเชิญเลยสักฉบับ พร้อมรัน  node supabase/invite-users.mjs  ได้');
+    /* ข้อความเดิมชวนให้รันส่งทันที ซึ่งขัดกับการตัดสินใจของทีม
+       ตัวเลข 'ยังไม่ถูกเชิญ' นับจาก user.js เท่านั้น จึงไม่รวมคนที่สมัครเอง
+       ต้องบอกให้ชัดว่าเลขนี้หมายถึงอะไร ไม่ใช่ชวนให้กดส่ง */
+    if (none === targets.length) {
+        console.log('   → ไม่มีใครใน user.js ถูกเชิญผ่านสคริปต์นี้เลย');
+        console.log('     แต่ไม่ได้แปลว่าไม่มีใครใช้งาน ดูรายชื่อ "บัญชีที่ไม่อยู่ในรายชื่อ" ข้างบน');
+        console.log('     ซึ่งคือคนที่สมัครเอง ตามวิธีที่ทีมใช้จริงตั้งแต่ 20 ส.ค. 2569');
+    }
     else if (none === 0)          console.log('   → ส่งครบทุกคนแล้ว ไม่ต้องรันซ้ำ');
     else                          console.log('   → ส่งไปแล้วบางส่วน รันซ้ำได้ คนที่มีบัญชีแล้วจะถูกข้ามเอง');
     process.exit(0);

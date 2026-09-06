@@ -430,8 +430,10 @@ function parseDB2(j) {
   }
   S.origin = { lon0, lat0 };
 
-  const eaveDB = num(s3.buildingHeight_m, 10);
-  const gcDB   = num((s3.bifacial_params || {}).groundClearance_m, eaveDB);
+  /* ความสูงชายคาค่ากลางของไซต์ ใช้เป็นค่าสำรองเท่านั้น
+     ความสูงจริงอ่านรายหลังคาข้างล่าง เพราะหน้าออกแบบเก็บแยกทีละผืน */
+  const eaveSite = num(s3.buildingHeight_m, 10);
+  const gcDB     = num((s3.bifacial_params || {}).groundClearance_m, eaveSite);
 
   S.roofs = polys.map((p, i) => {
     const lb = (p.localBoundary || []).map(q => ({ x: num(q.x, 0), y: num(q.y, 0) }));
@@ -449,6 +451,18 @@ function parseDB2(j) {
 
     let feat = roofFs.find(f => (f.properties.panelConfig || {}).roofId === p.id) || roofFs[i] || null;
     const pc = feat ? (feat.properties.panelConfig || {}) : {};
+
+    /* ความสูงชายคาของหลังคาผืนนี้
+
+       ของเดิมอ่านค่ากลางของไซต์ค่าเดียวมาใช้กับทุกผืน ทั้งที่หน้าออกแบบ
+       เก็บและส่งออกเป็นรายผืนมาตั้งนานแล้ว (asc_design ส่ง eaveHeight_m ·
+       eaveHeightB_m · ridgeHeight_m ทั้งสามค่าในแต่ละ roofPolygon)
+       ผลคือไซต์ที่มีอาคารสูงไม่เท่ากันจะขึ้นเท่ากันหมดในภาพสามมิติ
+       และเมื่อสันหลังคาอ่านรายผืนถูกแต่ชายคาไม่ถูก มุมลาดที่เห็นก็เพี้ยนตาม
+
+       สังเกตว่าสันหลังคากับชายคาปลายที่สองอ่านรายผืนถูกอยู่แล้ว
+       ขาดแค่ชายคาปลายแรกตัวเดียว จึงเป็นความไม่สอดคล้องกันในไฟล์เดียว */
+    const eaveDB = num(p.eaveHeight_m, num(pc.eaveHeight_m, eaveSite));
 
     const slopeDB = num(p.slope, num(s3.globalSlope, 15));
     let aziRaw = pc.customAzimuth;
@@ -886,10 +900,18 @@ function buildRoof(r, fallbackOffset, edgeIndex, roofIdx) {
     grp.add(rm);
   }
 
-  /* เส้นขอบหลังคาช่วยให้อ่านรูปทรงง่ายขึ้น */
-  const ep = r.lb.map(q => toW(q.x, q.y, roofZ(q.x, q.y)));
-  ep.push(ep[0].clone());
-  grp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ep), MAT.edge));
+  /* เส้นขอบหลังคาช่วยให้อ่านรูปทรงง่ายขึ้น
+
+     ต้องเช็คว่ามีจุดพอจะลากเส้นก่อน ไฟล์ DB2 รุ่นก่อนกลางปีไม่มี localBoundary
+     ทำให้ ep เป็นอาเรย์ว่าง แล้ว ep[0].clone() โยน TypeError ออกมา
+     ซึ่งหยุดการวาดทั้งฉากตั้งแต่หลังคาผืนแรก ผลคือผู้ใช้โหลดไฟล์เข้าไปแล้ว
+     แถบข้างมีข้อมูลครบ แต่ช่องภาพยังขึ้นว่า "วางไฟล์ DB2 ที่นี่" เหมือนไม่ได้โหลด
+     ผิวหลังคาข้างบนกันไว้ด้วย if (tris.length) อยู่แล้ว ตรงนี้ขาดไปที่เดียว */
+  if (r.lb.length >= 2) {
+    const ep = r.lb.map(q => toW(q.x, q.y, roofZ(q.x, q.y)));
+    ep.push(ep[0].clone());
+    grp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ep), MAT.edge));
+  }
 
   /* แผงโซลาร์ทุกใบ ใช้ InstancedMesh เพื่อให้เป็น draw call เดียว */
   if (r.layout.length) {
@@ -1227,6 +1249,15 @@ function syncForm(flashEl) {
   if (flashEl) flash($(flashEl));
 
   const msgs = [];
+  /* ไฟล์ DB2 รุ่นก่อนกลางปีไม่มีขอบเขตหลังคาและตำแหน่งแผงติดมาด้วย
+     วาดรูปทรงไม่ได้ ต้องบอกให้รู้ว่าเพราะอะไรและแก้อย่างไร
+     ไม่ใช่ปล่อยให้เห็นฉากว่างแล้วเดาเอาเองว่าโปรแกรมเสีย */
+  if (!r.lb.length)
+    msgs.push('<b>ไฟล์นี้ไม่มีขอบเขตหลังคา (localBoundary)</b> จึงวาดรูปทรงไม่ได้ ' +
+              'เป็นไฟล์ DB2 รุ่นเก่า ให้เปิดโครงการในหน้าออกแบบแล้วส่งออก DB2 ใหม่');
+  else if (!r.layout.length)
+    msgs.push('<b>ไฟล์นี้ไม่มีตำแหน่งแผง (customLayout)</b> จึงขึ้นหลังคาเปล่า ' +
+              'ให้กดประมวลผลในหน้าออกแบบแล้วส่งออก DB2 ใหม่');
   if (r.db.heightIsDefault)
     msgs.push('<b>ความสูง 10 ม. เป็นค่าตั้งต้นของ asc_design</b> อาจไม่ได้กรอกจริง ควรตรวจสอบ');
   if (r.ridge < r.eave - 0.01)
