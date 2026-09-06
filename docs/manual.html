@@ -78,6 +78,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <a href="#m2-splitter" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ปรับความกว้างแผงกรอกข้อมูล</a>
                 <a href="#m2-accouple" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ระบบออนกริดเดิม (AC Coupling)</a>
                 <a href="#m2-step2"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 2 · วางผังบนแผนที่</a>
+                <a href="#m2-basemap" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ภาพดาวเทียม · ความละเอียดและคีย์</a>
                 <a href="#m2-overlay" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ตรึงภาพโดรนด้วย GCP</a>
                 <a href="#m2-zone"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">พื้นที่วางแผงและล็อกแผง</a>
                 <a href="#m2-step3"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 3 · งานวิศวกรรม</a>
@@ -770,6 +771,59 @@ Is_Bifacial = False</div>
 
             <!-- ═══════════ ตรึงภาพโดรน ═══════════ -->
             <section class="mb-12">
+                <h3 id="m2-basemap" class="text-lg font-bold text-slate-800 mb-3">ภาพดาวเทียม · ความละเอียดและคีย์</h3>
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                    <h4 class="font-bold text-amber-900 text-sm mb-2">ภาพดาวเทียมเปลี่ยนไปจากเดิม</h4>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        เดิมโปรแกรมดึงภาพจากปลายทางภายในของ Google ซึ่งไม่ใช่ช่องทางที่เปิดให้ใช้
+                        ถ้า Google ปิดช่องทางนั้นเมื่อไร <b>แผนที่จะดับทั้งระบบทันทีโดยไม่มีสัญญาณเตือน</b>
+                        และงานวาดหลังคาจะทำต่อไม่ได้เลย จึงเปลี่ยนมาใช้ <b>Esri World Imagery</b>
+                        ซึ่งเรียกได้อย่างถูกต้องและไม่ต้องสมัครอะไร
+                    </p>
+                </div>
+                <p class="text-slate-600 leading-relaxed mb-4">
+                    สิ่งที่ต่างไปคือ <b>ความลึกของภาพจริง</b> — Esri มีภาพถ่ายจริงถึงระดับซูม 19
+                    ส่วนของเดิมได้ถึง 20 คือลึกน้อยลงหนึ่งระดับ ซึ่งเป็นระดับที่ใช้วางแผงบนหลังคา
+                </p>
+                <ul class="list-disc pl-6 space-y-2 text-slate-600 mb-6">
+                    <li><b>ซูมต่อได้ถึง 23 เหมือนเดิม</b> เกินระดับ 19 ไปจะเป็นการขยายภาพ ไม่ใช่ภาพจริงที่ละเอียดขึ้น</li>
+                    <li><b>ต้องการภาพคมกว่านั้น ใช้เครื่องมือตรึงภาพโดรน</b> (หัวข้อถัดไป)
+                        ซึ่งให้ความละเอียดสูงกว่าภาพดาวเทียมของทุกเจ้าอยู่แล้ว</li>
+                    <li>หรือ<b>ใส่คีย์ของตัวเอง</b>เพื่อใช้ภาพจากผู้ให้บริการที่ลึกกว่า (ดูข้างล่าง)</li>
+                </ul>
+
+                <h4 class="font-bold text-slate-800 text-sm mb-2">ใส่คีย์เพื่อใช้ภาพความละเอียดสูงกว่า</h4>
+                <p class="text-slate-600 leading-relaxed mb-3">
+                    กล่อง <b>ภาพดาวเทียมละเอียดสูง</b> อยู่มุมขวาบนของแผนที่ เลือกผู้ให้บริการ วางคีย์ แล้วกด
+                    <span class="kbd">ใช้คีย์นี้</span> ชั้นใหม่จะไปโผล่ในรายการเลือกแผนที่
+                </p>
+                <div class="overflow-x-auto mb-4">
+                    <table class="w-full text-sm border border-slate-200">
+                        <thead class="bg-slate-50">
+                            <tr class="text-left">
+                                <th class="px-3 py-2 font-semibold">ผู้ให้บริการ</th>
+                                <th class="px-3 py-2 font-semibold">ภาพจริงถึงซูม</th>
+                                <th class="px-3 py-2 font-semibold">ต้องเตรียมอะไร</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-t border-slate-100"><td class="px-3 py-2">Esri World Imagery</td><td class="px-3 py-2">19</td><td class="px-3 py-2">ไม่ต้องทำอะไร ใช้ได้ทันที</td></tr>
+                            <tr class="border-t border-slate-100"><td class="px-3 py-2">Google</td><td class="px-3 py-2"><b>21</b></td><td class="px-3 py-2">เปิด Map Tiles API ใน Google Cloud และมีบัญชีเรียกเก็บเงินของคุณเอง</td></tr>
+                            <tr class="border-t border-slate-100"><td class="px-3 py-2">Mapbox</td><td class="px-3 py-2">20</td><td class="px-3 py-2">สมัคร Mapbox มีโควตาฟรีต่อเดือนระดับหนึ่ง</td></tr>
+                            <tr class="border-t border-slate-100"><td class="px-3 py-2">MapTiler</td><td class="px-3 py-2">20</td><td class="px-3 py-2">สมัคร MapTiler มีโควตาฟรีต่อเดือนระดับหนึ่ง</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-8">
+                    <h4 class="font-bold text-emerald-900 text-sm mb-2">คีย์ของคุณอยู่ที่ไหน</h4>
+                    <ul class="list-disc pl-6 space-y-1 text-slate-600 text-sm">
+                        <li>เก็บใน<b>เบราว์เซอร์ของเครื่องนี้เครื่องเดียว</b> เปลี่ยนเครื่องต้องใส่ใหม่</li>
+                        <li><b>ไม่ติดไปกับไฟล์โครงการ</b> DB2 · DB3 · PDF · ใบเสนอราคา</li>
+                        <li><b>ไม่ขึ้นคลาวด์</b> คนอื่นในทีมมองไม่เห็นคีย์ของคุณ</li>
+                        <li>ค่าใช้จ่ายเรียกเก็บจากบัญชีของคุณเอง ลบคีย์ได้ที่ปุ่ม <span class="kbd">ลบคีย์</span> ในกล่องเดียวกัน</li>
+                    </ul>
+                </div>
+
                 <h3 id="m2-overlay" class="text-lg font-bold text-slate-800 mb-3">ตรึงภาพโดรนหรือออร์โธโฟโต้ด้วย GCP</h3>
                 <p class="text-slate-600 leading-relaxed mb-5">
                     ใช้เมื่อภาพดาวเทียมเก่าหรือมัวจนวาดหลังคาไม่แม่น
