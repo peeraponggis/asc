@@ -83,6 +83,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <a href="#m2-zone"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">พื้นที่วางแผงและล็อกแผง</a>
                 <a href="#m2-step3"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 3 · งานวิศวกรรม</a>
                 <a href="#m2-step4"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 4 · บันทึกฐานข้อมูล</a>
+                <a href="#m2-copilot" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ผู้ช่วย ASC Copilot</a>
 
                 <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 3 · แบบจำลอง 3 มิติ</div>
                 <a href="#m3d-load"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">นำเข้าข้อมูล</a>
@@ -1172,6 +1173,55 @@ Is_Bifacial = False</div>
                         <b><i class="fa-solid fa-circle-check mr-1"></i> เช็กก่อนกดบันทึก</b> —
                         จำนวนแผงตรงกับที่คุยกับลูกค้าไหม DC/AC Ratio อยู่ในกรอบ 1.2–1.4 หรือยัง
                         และ BOM ถูกคำนวณแล้วหรือยัง ถ้าครบสามข้อนี้กดได้เลย
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m2-copilot" class="text-lg font-bold text-slate-800 mb-3">ผู้ช่วย ASC Copilot</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    ปุ่มวงกลมมุมขวาล่างของหน้าออกแบบ กดแล้วถามเป็นภาษาไทยได้เลย
+                    ผู้ช่วยจะรวมคำตอบจาก <b class="text-slate-800">ผลตรวจแบบ 36 ข้อของโครงการที่กำลังวาดอยู่</b>
+                    กับ <b class="text-slate-800">ฐานความรู้ 28 บท</b> มาให้ในที่เดียว
+                    แทนที่จะต้องไปเปิดหาเองทีละที่
+                </p>
+
+                <div class="rounded-lg border border-teal-200 bg-teal-50 p-4 mb-5">
+                    <h4 class="font-bold text-teal-800 text-sm mb-2">ไม่ได้ใช้ AI และไม่มีข้อมูลออกนอกเครื่อง</h4>
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        ผู้ช่วยตัวนี้ไม่ได้เรียกโมเดลภาษาเลย มันจับคู่คำถามกับหัวข้อด้วยตารางคำที่เขียนไว้
+                        แล้วยกผลตรวจกับบทความมาแสดง <b>ทุกตัวเลขที่เห็นยกมาจากผลตรวจตรง ๆ ไม่มีการคำนวณใหม่
+                        และไม่มีการแต่งตัวเลขขึ้นเอง</b> ทั้งหมดทำงานในเครื่อง เปิดแท็บ Network ดูได้
+                        ตอนถามจะไม่มีคำขอออกไปข้างนอกสักรายการ
+                    </p>
+                </div>
+
+                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed mb-5">
+                    <li><b class="text-slate-800">คำตอบเจาะจงโครงการที่เปิดอยู่</b> ถาม "DC/AC สูงไปไหม"
+                        จะได้ค่าจริงของงานนี้พร้อมวิธีแก้ ไม่ใช่บทความกลาง ๆ</li>
+                    <li><b class="text-slate-800">ถ้าไม่มั่นใจจะถามกลับ ไม่เดา</b> คำถามที่เข้าได้หลายหัวข้อ
+                        เช่นพิมพ์แค่ "MPPT" จะขึ้นตัวเลือกให้กด เพราะตอบผิดแย่กว่าไม่ตอบ</li>
+                    <li><b class="text-slate-800">ข้อที่ตรวจไม่ได้จะบอกตรง ๆ</b> เช่นถาม PR ตอนอยู่หน้าออกแบบ
+                        ซึ่งยังไม่มีผลจำลอง ผู้ช่วยจะบอกว่ายังตรวจไม่ได้แล้วให้หลักการทั่วไปแทน
+                        <b>ไม่ยกตัวเลขมาให้มั่ว ๆ</b></li>
+                    <li>ปุ่ม <span class="btn-ref">สถิติ</span> บอกว่าถามไปกี่คำถาม ตอบได้กี่เปอร์เซ็นต์
+                        และมีคำถามไหนที่ตอบไม่ได้บ้าง กดส่งออกเป็นไฟล์ .json ได้</li>
+                    <li>ประวัติการคุยอยู่ในหน้านั้นเท่านั้น ปิดหน้าแล้วหาย ไม่เข้าไฟล์โครงการ ไม่ขึ้นคลาวด์
+                        และไม่ติดไปกับเอกสารที่สั่งพิมพ์</li>
+                </ul>
+
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    <b class="text-slate-800">ตัวช่วยนี้ไม่ได้แทนแผงตรวจแบบ</b> แผงตรวจแบบยังเป็นตัวตัดสิน
+                    ก่อนส่งออกงานเหมือนเดิม ผู้ช่วยเป็นแค่ทางลัดในการหาคำอธิบายของแต่ละข้อ
+                </p>
+
+                <div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                    <h4 class="font-bold text-amber-800 text-sm mb-2">ตอบได้ราว 8 ใน 10 คำถาม</h4>
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        วัดด้วยชุดคำถามที่ไม่ได้เขียนคำพ้องรองรับไว้ล่วงหน้า ได้ 20 จาก 25 ข้อ
+                        และไม่มีข้อไหนตอบผิด ที่เหลือจะขึ้นว่ายังตอบไม่ได้แล้วบันทึกคำถามนั้นไว้
+                        ถ้าคำถามที่ตอบไม่ได้สะสมเยอะ ให้ส่งไฟล์บันทึกจากปุ่มสถิติมา
+                        จะได้เอาไปเติมคำพ้องให้ตรงกับที่ถามกันจริง
                     </p>
                 </div>
             </section>
