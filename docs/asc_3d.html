@@ -430,8 +430,10 @@ function parseDB2(j) {
   }
   S.origin = { lon0, lat0 };
 
-  const eaveDB = num(s3.buildingHeight_m, 10);
-  const gcDB   = num((s3.bifacial_params || {}).groundClearance_m, eaveDB);
+  /* ความสูงชายคาค่ากลางของไซต์ ใช้เป็นค่าสำรองเท่านั้น
+     ความสูงจริงอ่านรายหลังคาข้างล่าง เพราะหน้าออกแบบเก็บแยกทีละผืน */
+  const eaveSite = num(s3.buildingHeight_m, 10);
+  const gcDB     = num((s3.bifacial_params || {}).groundClearance_m, eaveSite);
 
   S.roofs = polys.map((p, i) => {
     const lb = (p.localBoundary || []).map(q => ({ x: num(q.x, 0), y: num(q.y, 0) }));
@@ -449,6 +451,18 @@ function parseDB2(j) {
 
     let feat = roofFs.find(f => (f.properties.panelConfig || {}).roofId === p.id) || roofFs[i] || null;
     const pc = feat ? (feat.properties.panelConfig || {}) : {};
+
+    /* ความสูงชายคาของหลังคาผืนนี้
+
+       ของเดิมอ่านค่ากลางของไซต์ค่าเดียวมาใช้กับทุกผืน ทั้งที่หน้าออกแบบ
+       เก็บและส่งออกเป็นรายผืนมาตั้งนานแล้ว (asc_design ส่ง eaveHeight_m ·
+       eaveHeightB_m · ridgeHeight_m ทั้งสามค่าในแต่ละ roofPolygon)
+       ผลคือไซต์ที่มีอาคารสูงไม่เท่ากันจะขึ้นเท่ากันหมดในภาพสามมิติ
+       และเมื่อสันหลังคาอ่านรายผืนถูกแต่ชายคาไม่ถูก มุมลาดที่เห็นก็เพี้ยนตาม
+
+       สังเกตว่าสันหลังคากับชายคาปลายที่สองอ่านรายผืนถูกอยู่แล้ว
+       ขาดแค่ชายคาปลายแรกตัวเดียว จึงเป็นความไม่สอดคล้องกันในไฟล์เดียว */
+    const eaveDB = num(p.eaveHeight_m, num(pc.eaveHeight_m, eaveSite));
 
     const slopeDB = num(p.slope, num(s3.globalSlope, 15));
     let aziRaw = pc.customAzimuth;
