@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540"
+     role="img" aria-label="ขั้นที่ 4 รายการวัสดุ ผังไฟฟ้า และผลตรวจแบบ">
+  <title>ขั้นที่ 4 รายการวัสดุ ผังไฟฟ้า และผลตรวจแบบ</title>
+  <style>
+    text { font-family: 'Sarabun','Segoe UI',system-ui,sans-serif; }
+    .h  { font-size: 21px; font-weight: 700; fill: #0f172a; }
+    .s  { font-size: 14px; fill: #64748b; }
+    .l  { font-size: 13px; fill: #334155; }
+    .ll { font-size: 11.5px; fill: #64748b; }
+    .n  { font-size: 13px; font-weight: 700; fill: #fff; }
+    .card { fill: #fff; stroke: #e2e8f0; }
+    .pulse { animation: p 2.4s ease-in-out infinite; transform-origin: center; }
+    @keyframes p { 0%,100% { opacity: 1 } 50% { opacity: .38 } }
+    @media (prefers-reduced-motion: reduce) { .pulse { animation: none } }
+  </style>
+  <rect width="960" height="540" rx="14" fill="#f8fafc"/>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#94a3b8"/></marker></defs>
+  <circle cx="46" cy="46" r="19" fill="#7c3aed"/>
+  <text x="46" y="51" class="n" text-anchor="middle">4</text>
+  <text x="76" y="42" class="h" text-anchor="start">งานวิศวกรรมและตรวจแบบ</text>
+  <text x="76" y="64" class="s" text-anchor="start">ได้รายการวัสดุ ผังไฟฟ้า และผลตรวจตามมาตรฐาน</text>
+  <rect x="40" y="96" width="430" height="200" rx="10" fill="#fff" stroke="#e2e8f0"/>
+  <text x="62" y="124" class="l" text-anchor="start" font-weight="700">รายการวัสดุ (BOM)</text>
+  <line x1="62" y1="146" x2="448" y2="146" stroke="#f1f5f9"/>
+  <text x="62" y="166" class="l" text-anchor="start">แผง Sunpro SPDG650</text>
+  <text x="448" y="166" class="l" text-anchor="end">480 แผง</text>
+  <line x1="62" y1="175" x2="448" y2="175" stroke="#f1f5f9"/>
+  <text x="62" y="195" class="l" text-anchor="start">อินเวอร์เตอร์ SUN2000-300KTL</text>
+  <text x="448" y="195" class="l" text-anchor="end">2 ตัว</text>
+  <line x1="62" y1="204" x2="448" y2="204" stroke="#f1f5f9"/>
+  <text x="62" y="224" class="l" text-anchor="start">เบรกเกอร์ AC</text>
+  <text x="448" y="224" class="l" text-anchor="end">400 AT</text>
+  <line x1="62" y1="233" x2="448" y2="233" stroke="#f1f5f9"/>
+  <text x="62" y="253" class="l" text-anchor="start">SPD ฝั่ง DC และ AC</text>
+  <text x="448" y="253" class="l" text-anchor="end">Type II</text>
+  <line x1="62" y1="262" x2="448" y2="262" stroke="#f1f5f9"/>
+  <text x="62" y="282" class="l" text-anchor="start">ป้ายตาม วสท. บทที่ 6</text>
+  <text x="448" y="282" class="l" text-anchor="end">3 ชุด</text>
+  <rect x="486" y="96" width="434" height="200" rx="10" fill="#fff" stroke="#e2e8f0"/>
+  <text x="508" y="124" class="l" text-anchor="start" font-weight="700">ตรวจแบบ 36 ข้อ</text>
+  <text x="508" y="146" class="ll" text-anchor="start">อ้างข้อของ วสท. 022013-25 ได้ทุกข้อ</text>
+  <rect x="508" y="162" width="390" height="34" rx="6" fill="#fef2f2" stroke="#fef2f2"/>
+  <rect x="508" y="162" width="3" height="34" fill="#991b1b"/>
+  <text x="524" y="185" class="l" fill="#991b1b" font-weight="700">!</text>
+  <text x="542" y="185" class="l" text-anchor="start">DC/AC 1.56 สูงเกิน อินเวอร์เตอร์จะตัดยอดกำลัง</text>
+  <rect x="508" y="204" width="390" height="34" rx="6" fill="#fffbeb" stroke="#fffbeb"/>
+  <rect x="508" y="204" width="3" height="34" fill="#92400e"/>
+  <text x="524" y="227" class="l" fill="#92400e" font-weight="700">!</text>
+  <text x="542" y="227" class="l" text-anchor="start">แรงดันสตริงที่อากาศเย็นเข้าใกล้พิกัด</text>
+  <rect x="508" y="246" width="390" height="34" rx="6" fill="#f0fdf4" stroke="#f0fdf4"/>
+  <rect x="508" y="246" width="3" height="34" fill="#166534"/>
+  <text x="524" y="269" class="l" fill="#166534" font-weight="700">/</text>
+  <text x="542" y="269" class="l" text-anchor="start">ขนาดฟิวส์สตริงอยู่ในช่วงที่มาตรฐานกำหนด</text>
+  <rect x="40" y="316" width="430" height="92" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="62" y="344" class="l" text-anchor="start" font-weight="700">ผังไฟฟ้า (SLD)</text>
+  <path d="M70 380 h58 v-14 h48 v14 h58 v-14 h48 v14 h58" stroke="#475569" stroke-width="2" fill="none"/>
+  <rect x="286" y="360" width="46" height="34" rx="4" fill="#dbeafe" stroke="#2563eb"/>
+  <text x="309" y="382" class="ll" text-anchor="middle" fill="#1e40af">INV</text>
+  <text x="360" y="382" class="ll" text-anchor="start">สร้างให้อัตโนมัติ</text>
+  <rect x="486" y="316" width="434" height="92" rx="10" fill="#f0fdfa" stroke="#99f6e4"/>
+  <text x="508" y="344" class="l" text-anchor="start" font-weight="700" fill="#0f766e">ผู้ช่วย ASC Copilot</text>
+  <text x="508" y="370" class="l" text-anchor="start">ปุ่มมุมขวาล่าง ถามเป็นภาษาไทยได้ว่าข้อที่ไม่ผ่านแปลว่าอะไร</text>
+  <text x="508" y="392" class="ll" text-anchor="start">และควรแก้อย่างไร ทำงานในเครื่อง ไม่ได้ใช้ AI</text>
+  <rect x="40" y="428" width="880" height="76" rx="10" fill="#fffbeb" stroke="#fde68a"/>
+  <text x="64" y="458" class="l" text-anchor="start" font-weight="700" fill="#92400e">ต้องกด Generate BOM ใหม่ทุกครั้งที่แก้แบบ</text>
+  <text x="64" y="484" class="l" text-anchor="start">ไม่งั้นรายการวัสดุกับราคาในใบเสนอราคาจะยังเป็นของแบบเดิม</text>
+</svg>

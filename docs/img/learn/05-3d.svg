@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540"
+     role="img" aria-label="ขั้นที่ 5 แบบจำลองสามมิติและการวางผังอุปกรณ์">
+  <title>ขั้นที่ 5 แบบจำลองสามมิติและการวางผังอุปกรณ์</title>
+  <style>
+    text { font-family: 'Sarabun','Segoe UI',system-ui,sans-serif; }
+    .h  { font-size: 21px; font-weight: 700; fill: #0f172a; }
+    .s  { font-size: 14px; fill: #64748b; }
+    .l  { font-size: 13px; fill: #334155; }
+    .ll { font-size: 11.5px; fill: #64748b; }
+    .n  { font-size: 13px; font-weight: 700; fill: #fff; }
+    .card { fill: #fff; stroke: #e2e8f0; }
+    .pulse { animation: p 2.4s ease-in-out infinite; transform-origin: center; }
+    @keyframes p { 0%,100% { opacity: 1 } 50% { opacity: .38 } }
+    @media (prefers-reduced-motion: reduce) { .pulse { animation: none } }
+  </style>
+  <rect width="960" height="540" rx="14" fill="#f8fafc"/>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#94a3b8"/></marker></defs>
+  <circle cx="46" cy="46" r="19" fill="#4f46e5"/>
+  <text x="46" y="51" class="n" text-anchor="middle">5</text>
+  <text x="76" y="42" class="h" text-anchor="start">แบบจำลองสามมิติและผังอุปกรณ์</text>
+  <text x="76" y="64" class="s" text-anchor="start">เห็นเงาตกจริงตามเวลา และวางอุปกรณ์บนภาพหน้างาน</text>
+  <rect x="40" y="96" width="470" height="292" rx="10" fill="#1e293b" stroke="#334155"/>
+  <circle cx="430" cy="150" r="22" fill="#fbbf24" class="pulse"/>
+  <text x="430" y="190" class="ll" text-anchor="middle" fill="#cbd5e1">ดวงอาทิตย์ตามวันเวลาจริง</text>
+  <path d="M120 320 L252 354 L446 326 L298 406 z" fill="#0f172a" opacity=".38"/>
+  <path d="M120 232 L252 266 L252 354 L120 320 z" fill="#cbd5e1" stroke="#94a3b8"/>
+  <path d="M252 266 L400 224 L400 312 L252 354 z" fill="#94a3b8" stroke="#64748b"/>
+  <path d="M120 232 L268 190 L400 224 L252 266 z" fill="#e2e8f0" stroke="#94a3b8"/>
+  <path d="M143.6 232.5 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M166.1 226.1 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M188.6 219.7 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M211.0 213.3 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M233.5 206.9 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M256.0 200.5 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M171.9 239.8 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M194.4 233.4 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M216.9 227.0 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M239.4 220.6 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M261.9 214.2 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M284.4 207.8 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M200.3 247.1 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M222.8 240.7 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M245.3 234.3 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M267.8 227.9 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M290.3 221.5 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M312.8 215.2 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M228.7 254.4 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M251.2 248.0 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M273.7 241.6 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M296.2 235.2 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M318.7 228.9 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <path d="M341.2 222.5 l18.5 -5.2 l23.1 5.9 l-18.5 5.2 z" fill="#1e3a8a" stroke="#3b82f6" stroke-width=".6"/>
+  <text x="64" y="372" class="ll" text-anchor="start" fill="#94a3b8">ลากเมาส์หมุนดูรอบอาคาร · เลื่อนแถบเวลาเพื่อดูเงาตอนเช้าและบ่าย</text>
+  <rect x="526" y="96" width="394" height="138" rx="10" fill="#fff" stroke="#e2e8f0"/>
+  <text x="548" y="124" class="l" text-anchor="start" font-weight="700">ส่งออกได้สองแบบ</text>
+  <rect x="548" y="140" width="160" height="26" rx="13" fill="#eff6ff" stroke="#bfdbfe"/>
+  <text x="628" y="157" class="ll" fill="#1e40af" text-anchor="middle">ภาพนิ่ง PNG</text>
+  <rect x="720" y="140" width="178" height="26" rx="13" fill="#f0fdfa" stroke="#99f6e4"/>
+  <text x="809" y="157" class="ll" fill="#0f766e" text-anchor="middle">โมเดล .glb</text>
+  <text x="548" y="196" class="ll" text-anchor="start">ไฟล์ .glb แนบใน PowerPoint แล้วหมุนดูตอนนำเสนอได้</text>
+  <text x="548" y="216" class="ll" text-anchor="start">หน่วยเป็นเมตรตามขนาดจริง</text>
+  <rect x="526" y="250" width="394" height="138" rx="10" fill="#fff" stroke="#e2e8f0"/>
+  <text x="548" y="278" class="l" text-anchor="start" font-weight="700">เมนู 4 · วางผังอุปกรณ์</text>
+  <text x="548" y="302" class="l" text-anchor="start">ถ่ายภาพผนังห้องไฟฟ้าหน้างาน ปรับเทียบขนาดผนัง</text>
+  <text x="548" y="324" class="l" text-anchor="start">แล้ววางอินเวอร์เตอร์และตู้ไฟตามขนาดจริง</text>
+  <rect x="548" y="336" width="350" height="36" rx="6" fill="#fffbeb" stroke="#fde68a"/>
+  <text x="562" y="359" class="ll" text-anchor="start" fill="#92400e">ขั้นปรับเทียบผนังสำคัญที่สุด ข้ามไปขนาดจะเพี้ยนหมด</text>
+  <rect x="40" y="408" width="880" height="96" rx="10" fill="#fffbeb" stroke="#fde68a"/>
+  <text x="64" y="438" class="l" text-anchor="start" font-weight="700" fill="#92400e">ไฟล์ DB2 รุ่นเก่าจะขึ้นแต่กล่องอาคาร ไม่มีแผง</text>
+  <text x="64" y="464" class="l" text-anchor="start">เพราะยังไม่มีขอบเขตหลังคาและตำแหน่งแผงอยู่ในไฟล์ ให้เปิดโครงการในหน้าออกแบบ</text>
+  <text x="64" y="486" class="l" text-anchor="start">แล้วส่งออก DB2 ใหม่ หน้าสามมิติจะบอกเองว่าไฟล์ขาดอะไร</text>
+</svg>

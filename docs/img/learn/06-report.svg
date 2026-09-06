@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540"
+     role="img" aria-label="ขั้นที่ 6 รายงานผลจำลองและเอกสารส่งลูกค้า">
+  <title>ขั้นที่ 6 รายงานผลจำลองและเอกสารส่งลูกค้า</title>
+  <style>
+    text { font-family: 'Sarabun','Segoe UI',system-ui,sans-serif; }
+    .h  { font-size: 21px; font-weight: 700; fill: #0f172a; }
+    .s  { font-size: 14px; fill: #64748b; }
+    .l  { font-size: 13px; fill: #334155; }
+    .ll { font-size: 11.5px; fill: #64748b; }
+    .n  { font-size: 13px; font-weight: 700; fill: #fff; }
+    .card { fill: #fff; stroke: #e2e8f0; }
+    .pulse { animation: p 2.4s ease-in-out infinite; transform-origin: center; }
+    @keyframes p { 0%,100% { opacity: 1 } 50% { opacity: .38 } }
+    @media (prefers-reduced-motion: reduce) { .pulse { animation: none } }
+  </style>
+  <rect width="960" height="540" rx="14" fill="#f8fafc"/>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#94a3b8"/></marker></defs>
+  <circle cx="46" cy="46" r="19" fill="#0f766e"/>
+  <text x="46" y="51" class="n" text-anchor="middle">6</text>
+  <text x="76" y="42" class="h" text-anchor="start">รายงานและเอกสารส่งลูกค้า</text>
+  <text x="76" y="64" class="s" text-anchor="start">จำลองผลผลิตรายชั่วโมงทั้งปี แล้วออกเอกสารชุดเต็ม</text>
+  <rect x="40" y="96" width="470" height="210" rx="10" fill="#fff" stroke="#e2e8f0"/>
+  <text x="62" y="124" class="l" text-anchor="start" font-weight="700">ผลจำลองรายชั่วโมง 8,760 ชั่วโมง</text>
+  <path d="M74 261.2 L107 253.1 L140 231.5 L173 201.8 L206 172.1 L239 153.2 L272 142.4 L305 147.8 L338 164 L371 193.7 L404 226.1 L437 250.4 L470 263.9" stroke="#0f766e" stroke-width="2.5" fill="none"/>
+  <path d="M74 261.2 L107 253.1 L140 231.5 L173 201.8 L206 172.1 L239 153.2 L272 142.4 L305 147.8 L338 164 L371 193.7 L404 226.1 L437 250.4 L470 263.9 L470 272 L74 272 z" fill="#0f766e" opacity=".12"/>
+  <line x1="74" y1="272" x2="478" y2="272" stroke="#cbd5e1"/>
+  <text x="74" y="292" class="ll" text-anchor="start">06:00</text>
+  <text x="478" y="292" class="ll" text-anchor="end">18:00</text>
+  <rect x="526" y="96" width="394" height="210" rx="10" fill="#fff" stroke="#e2e8f0"/>
+  <text x="548" y="124" class="l" text-anchor="start" font-weight="700">เอกสารที่ได้</text>
+  <rect x="548" y="144" width="350" height="34" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="564" y="160" class="l" text-anchor="start">รายงานวิศวกรรม PDF</text>
+  <text x="564" y="174" class="ll" text-anchor="start">ไทยหรืออังกฤษ เลือกก่อนส่งออก</text>
+  <rect x="548" y="184" width="350" height="34" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="564" y="200" class="l" text-anchor="start">เอกสารข้อเสนอลูกค้า</text>
+  <text x="564" y="214" class="ll" text-anchor="start">Word หรือ PDF</text>
+  <rect x="548" y="224" width="350" height="34" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="564" y="240" class="l" text-anchor="start">ใบเสนอราคา</text>
+  <text x="564" y="254" class="ll" text-anchor="start">อิงรายการวัสดุจริง</text>
+  <rect x="548" y="264" width="350" height="34" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="564" y="280" class="l" text-anchor="start">ใบสั่งงานช่าง</text>
+  <text x="564" y="294" class="ll" text-anchor="start">บรีฟก่อนออกหน้างาน</text>
+  <rect x="40" y="326" width="430" height="82" rx="10" fill="#f0fdf4" stroke="#bbf7d0"/>
+  <text x="64" y="356" class="l" text-anchor="start" font-weight="700" fill="#166534">ตัวเลขการเงิน</text>
+  <text x="64" y="382" class="l" text-anchor="start">คืนทุน · IRR · NPV · P50 P75 P90</text>
+  <rect x="490" y="326" width="430" height="82" rx="10" fill="#eff6ff" stroke="#bfdbfe"/>
+  <text x="514" y="356" class="l" text-anchor="start" font-weight="700" fill="#1e40af">คำอธิบายใต้ทุกกราฟ</text>
+  <text x="514" y="382" class="l" text-anchor="start">อธิบายว่ากราฟนั้นบอกอะไร และควรดูตรงไหน</text>
+  <rect x="40" y="428" width="880" height="76" rx="10" fill="#f0fdfa" stroke="#99f6e4"/>
+  <text x="64" y="458" class="l" text-anchor="start" font-weight="700" fill="#0f766e">ครบวงจรแล้ว</text>
+  <text x="64" y="484" class="l" text-anchor="start">จากบิลค่าไฟใบเดียว ได้แบบ ผลจำลอง รายการวัสดุ ราคา และเอกสารส่งลูกค้าครบชุด</text>
+</svg>

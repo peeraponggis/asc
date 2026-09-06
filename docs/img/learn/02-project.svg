@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540"
+     role="img" aria-label="ขั้นที่ 2 กรอกข้อมูลโครงการและเลือกอุปกรณ์จากคลัง">
+  <title>ขั้นที่ 2 กรอกข้อมูลโครงการและเลือกอุปกรณ์จากคลัง</title>
+  <style>
+    text { font-family: 'Sarabun','Segoe UI',system-ui,sans-serif; }
+    .h  { font-size: 21px; font-weight: 700; fill: #0f172a; }
+    .s  { font-size: 14px; fill: #64748b; }
+    .l  { font-size: 13px; fill: #334155; }
+    .ll { font-size: 11.5px; fill: #64748b; }
+    .n  { font-size: 13px; font-weight: 700; fill: #fff; }
+    .card { fill: #fff; stroke: #e2e8f0; }
+    .pulse { animation: p 2.4s ease-in-out infinite; transform-origin: center; }
+    @keyframes p { 0%,100% { opacity: 1 } 50% { opacity: .38 } }
+    @media (prefers-reduced-motion: reduce) { .pulse { animation: none } }
+  </style>
+  <rect width="960" height="540" rx="14" fill="#f8fafc"/>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#94a3b8"/></marker></defs>
+  <circle cx="46" cy="46" r="19" fill="#0891b2"/>
+  <text x="46" y="51" class="n" text-anchor="middle">2</text>
+  <text x="76" y="42" class="h" text-anchor="start">ข้อมูลโครงการและเลือกอุปกรณ์</text>
+  <text x="76" y="64" class="s" text-anchor="start">ปักหมุดที่ตั้ง แล้วเลือกอุปกรณ์จากคลัง</text>
+  <rect x="40" y="96" width="420" height="190" rx="10" fill="#fff" stroke="#e2e8f0"/>
+  <text x="62" y="124" class="l" text-anchor="start" font-weight="700">ขั้นที่ 1 · ข้อมูลโครงการ</text>
+  <text x="62" y="162" class="ll" text-anchor="start">ชื่อโครงการ</text>
+  <rect x="62" y="168" width="376" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="72" y="186" class="l" text-anchor="start">โครงการตัวอย่าง</text>
+  <text x="62" y="202" class="ll" text-anchor="start">พิกัด</text>
+  <rect x="62" y="208" width="376" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="72" y="226" class="l" text-anchor="start">13.6631, 100.8965</text>
+  <text x="62" y="242" class="ll" text-anchor="start">ประเภทการขออนุญาต</text>
+  <rect x="62" y="248" width="376" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="72" y="266" class="l" text-anchor="start">ขนานไฟ</text>
+  <rect x="474" y="96" width="446" height="190" rx="10" fill="#fff" stroke="#e2e8f0"/>
+  <text x="496" y="124" class="l" text-anchor="start" font-weight="700">ขั้นที่ 2 · สเปกอุปกรณ์</text>
+  <text x="496" y="150" class="ll" text-anchor="start">เลือกยี่ห้อ แล้วเลือกรุ่น จากคลัง 155 รายการ</text>
+  <rect x="496" y="168" width="52" height="24" rx="13" fill="#0f766e" stroke="#0f766e"/>
+  <text x="522" y="184" class="ll" fill="#fff" text-anchor="middle">PV</text>
+  <rect x="558" y="168" width="150" height="24" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="568" y="185" class="ll" text-anchor="start">Sunpro</text>
+  <text x="697" y="185" class="ll" text-anchor="end">▾</text>
+  <rect x="718" y="168" width="184" height="24" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="728" y="185" class="ll" text-anchor="start">SPDG650</text>
+  <text x="891" y="185" class="ll" text-anchor="end">▾</text>
+  <rect x="496" y="220" width="52" height="24" rx="13" fill="#0f766e" stroke="#0f766e"/>
+  <text x="522" y="236" class="ll" fill="#fff" text-anchor="middle">INV</text>
+  <rect x="558" y="220" width="150" height="24" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="568" y="237" class="ll" text-anchor="start">Huawei</text>
+  <text x="697" y="237" class="ll" text-anchor="end">▾</text>
+  <rect x="718" y="220" width="184" height="24" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="728" y="237" class="ll" text-anchor="start">SUN2000-300KTL</text>
+  <text x="891" y="237" class="ll" text-anchor="end">▾</text>
+  <rect x="40" y="312" width="880" height="82" rx="10" fill="#fffbeb" stroke="#fde68a"/>
+  <text x="64" y="342" class="l" text-anchor="start" font-weight="700" fill="#92400e">ไม่มีรุ่นที่ต้องการในคลัง</text>
+  <text x="64" y="368" class="l" text-anchor="start">อัปโหลดไฟล์ดาต้าชีตเองได้ในช่องสำรองใต้ตัวเลือก · ผู้ดูแลระบบเพิ่มเข้าคลังกลางได้ที่หน้า Settings</text>
+  <rect x="40" y="414" width="880" height="90" rx="10" fill="#f0fdfa" stroke="#99f6e4"/>
+  <text x="64" y="444" class="l" text-anchor="start" font-weight="700" fill="#0f766e">ทำไมต้องเลือกอุปกรณ์ก่อนวาดหลังคา</text>
+  <text x="64" y="470" class="l" text-anchor="start">โปรแกรมใช้ขนาดแผงจริงในการวางกริด และใช้สเปกอินเวอร์เตอร์ในการคิดจำนวนแผงต่อสตริง</text>
+  <text x="64" y="492" class="ll" text-anchor="start">ถ้าเปลี่ยนรุ่นทีหลัง ผังแผงกับสตริงจะถูกคิดใหม่ทั้งหมด</text>
+</svg>
