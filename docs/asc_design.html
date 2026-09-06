@@ -1493,6 +1493,9 @@
          โมดูลอื่น (asc-tree, asc-ridge, asc-kb, asc-advisor) โหลดท้ายไฟล์ได้เพราะถูกเรียกทีหลัง -->
     <script src="asc-eit.js"></script>
 
+    <!-- แผนที่ฐาน — ต้องโหลดก่อนสคริปต์ก้อนใหญ่ เพราะก้อนนั้นสร้างแผนที่ทันทีตอนแจงไฟล์ -->
+    <script src="asc-basemap.js"></script>
+
     <!-- คลังสเปกอุปกรณ์ — ต้องโหลดก่อนสคริปต์ก้อนใหญ่ด้วยเหตุผลเดียวกับ asc-eit.js
          เพราะตัวเลือก ยี่ห้อ > รุ่น ผูกเหตุการณ์ตั้งแต่ตอนแจงไฟล์ ไม่ได้รอ DOMContentLoaded
 
@@ -1855,8 +1858,11 @@ const INDUSTRIAL_SOLAR_CONFIG = {
                 if(mainBreakerEl) mainBreakerEl.value = state.targetMdbAmps;
                 updatePreviews();
             });
+            /* ล้างค่าช่องเลือกทั้งหมด ยกเว้นช่องที่ค่าเริ่มต้นมีความหมายในตัวเอง
+               bmProv คือช่องเลือกผู้ให้บริการแผนที่ ไม่ใช่ข้อมูลของโครงการ
+               ถ้าโดนล้างด้วยจะได้ selectedIndex = -1 แล้วกล่องใส่คีย์แสดงผลว่างเปล่า */
             document.querySelectorAll('select').forEach(el => {
-                if(el.id !== 'optRatio' && el.id !== 'meteoSource') el.value = '';
+                if(el.id !== 'optRatio' && el.id !== 'meteoSource' && el.id !== 'bmProv') el.value = '';
             });
             document.getElementById('finalPanelCount').value = 0;
             document.getElementById('invEffCurve').value = '{ "10%": 95.0, "50%": 98.2, "100%": 99.0 }';
@@ -2021,33 +2027,21 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
         const STRING_COLORS = ['#2563eb', '#16a34a', '#dc2626', '#9333ea', '#ea580c', '#0d9488', '#be123c', '#4338ca'];
 
         // --- ส่วนที่ 1: ประกาศตัวแปรเก็บแผนที่ดาวเทียมค่ายต่างๆ ---
-        const esriLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { 
-            maxNativeZoom: 19, 
-            maxZoom: 23,
-			zoomSnap: 0.25, 
-			zoomDelta: 0.25,
-            crossOrigin: true, 
-            attribution: 'Tiles &copy; Esri'
-        });
+        /* ── แผนที่ฐาน ────────────────────────────────────────────────────
+           เดิมดึงไทล์จากปลายทางภายในของ Google (โดเมน mt1 ที่ไม่ใช่ API สาธารณะ)
+           และตั้งเป็นค่าเริ่มต้นด้วย ผู้ใช้ทุกคนจึงยิงไปที่นั่นทุกครั้งที่เปิดโปรแกรม
+           ถ้า Google ปิดปลายทางนั้นเมื่อไร แผนที่ดับทั้งระบบโดยไม่มีสัญญาณเตือน
 
-        // เพิ่ม Google Maps Satellite (ภาพจริงความละเอียดสูงกว่า)
-        const googleSatLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { 
-            maxNativeZoom: 20, // ขยายภาพจริงได้ลึกถึงระดับ 20
-            maxZoom: 23,       // หลังจาก 20 ไปถึง 23 จะเป็น Digital Zoom
-			zoomSnap: 0.25, 
-			zoomDelta: 0.25,
-            crossOrigin: true, 
-            attribution: '&copy; Google Maps'
-        });
-
-        // เพิ่ม Google Maps Hybrid (ภาพดาวเทียม + เส้นถนนและชื่อสถานที่)
-        const googleHybridLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { 
-            maxNativeZoom: 20, 
+           ย้ายมาใช้ Esri เป็นค่าเริ่มต้น (เรียกได้อย่างถูกต้อง ไม่ต้องมีคีย์)
+           ส่วนใครต้องการภาพจริงลึกกว่านี้ ใส่คีย์ของตัวเองได้ที่กล่องบนแผนที่
+           รายละเอียดผู้ให้บริการอยู่ใน asc-basemap.js */
+        const esriLayer = L.tileLayer(AscBasemap.get('esri-imagery').url, {
+            maxNativeZoom: AscBasemap.get('esri-imagery').maxNativeZoom,
             maxZoom: 23,
-			zoomSnap: 0.25, 
-			zoomDelta: 0.25,
-            crossOrigin: true, 
-            attribution: '&copy; Google Maps'
+            zoomSnap: 0.25,
+            zoomDelta: 0.25,
+            crossOrigin: true,
+            attribution: AscBasemap.get('esri-imagery').attribution
         });
 
         // --- ส่วนที่ 2: เริ่มต้นแผนที่ โดยตั้งให้ Google Satellite เป็นค่าเริ่มต้น ---
@@ -2060,18 +2054,128 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                วัดแล้วในโปรเจกต์จริงมีวัตถุที่ได้รับผลจากสวิตช์นี้เพียงชิ้นเดียว (ขอบหลังคา)
                เพราะแผงระบุ L.svg() ไว้เองอยู่แล้ว และเส้นเดินสายระบุ L.canvas() ไว้เอง — จึงไม่กระทบความลื่น */
             preferCanvas: false,
-            layers: [googleSatLayer] // บังคับให้โหลด Google Sat ทันทีเมื่อเปิดโปรแกรม
+            layers: [esriLayer] // Esri ใช้ได้ทันทีโดยไม่ต้องมีคีย์ จึงเป็นค่าเริ่มต้น
        }).setView([13.7563, 100.5018], 6);;
 
         // --- ส่วนที่ 3: สร้าง UI Control สำหรับกดเลือกสลับแผนที่ (อยู่มุมซ้ายล่าง) ---
-        const baseMaps = {
-            "Google Satellite (Max: 20)": googleSatLayer,
-            "Google Hybrid (มีชื่อถนน)": googleHybridLayer,
-            "Esri World Imagery (Max: 19)": esriLayer
-        };
+        /* รายชื่อชั้นแผนที่ เริ่มจาก Esri อย่างเดียว
+           ผู้ให้บริการที่ต้องใช้คีย์จะถูกเติมเข้ามาเมื่อผู้ใช้ใส่คีย์แล้ว (ดู ascBasemapUI) */
+        const baseMaps = {};
+        baseMaps[AscBasemap.get('esri-imagery').name] = esriLayer;
         
         // เพิ่มกล่องควบคุมลงบนแผนที่
-        L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map); // 🌟 เฟส 9: ย้ายไปขวาบนใต้เข็มทิศ
+        const ascLayerControl = L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map); // 🌟 เฟส 9: ย้ายไปขวาบนใต้เข็มทิศ
+
+        /* ══════════════════════════════════════════════════════════════════
+           ภาพดาวเทียมความละเอียดสูงด้วยคีย์ของผู้ใช้เอง
+
+           Esri ให้ภาพจริงถึงระดับซูม 19 ซึ่งน้อยกว่าของเดิมหนึ่งระดับ
+           ใครต้องการลึกกว่านั้นใส่คีย์ของตัวเองได้ที่นี่ (Google ได้ถึง 21)
+
+           คีย์อยู่ใน localStorage ของเครื่องนี้เครื่องเดียว
+           ไม่ลงไฟล์โครงการ ไม่ลงคลาวด์ ไม่ติดไปกับ PDF
+           ══════════════════════════════════════════════════════════════════ */
+        (function ascBasemapUI() {
+            if (!window.AscBasemap) return;                 // โหลดไฟล์ไม่ได้ ก็ยังใช้ Esri ได้ตามปกติ
+            const withKey = AscBasemap.providers().filter(p => p.keyLabel);
+            let googleLayer = null;
+
+            /* เพิ่มชั้นของผู้ให้บริการที่มีคีย์แล้วเข้าไปในรายการ */
+            async function addProvider(prov, switchTo) {
+                try {
+                    const layer = await AscBasemap.makeLayer(prov);
+                    if (!layer) return false;
+                    if (prov.session === 'google') googleLayer = layer;
+                    ascLayerControl.addBaseLayer(layer, prov.name);
+                    if (switchTo) map.addLayer(layer);
+                    return true;
+                } catch (e) {
+                    /* คีย์ผิดหรือยังไม่ได้เปิด API — บอกให้รู้ แล้วอยู่กับ Esri ต่อ
+                       ห้ามปล่อยให้ได้แผนที่ว่างโดยไม่มีคำอธิบาย */
+                    ascFlashNotice('ใช้คีย์แผนที่ไม่ได้ : ' + (e.message || e) + ' — ใช้ Esri ต่อไปก่อน', 6000);
+                    return false;
+                }
+            }
+
+            /* ผู้ให้บริการที่เคยใส่คีย์ไว้แล้ว ให้พร้อมใช้ตั้งแต่เปิดหน้า */
+            withKey.filter(p => AscBasemap.hasKey(p.id)).forEach(p => addProvider(p, false));
+
+            /* กล่องใส่คีย์ วางไว้ใต้กล่องเลือกชั้น */
+            const box = L.control({ position: 'topright' });
+            box.onAdd = function () {
+                const d = L.DomUtil.create('div', 'leaflet-bar');
+                d.style.cssText = 'background:rgba(255,255,255,.95); padding:6px 8px; border-radius:8px; font-size:11px; max-width:230px; line-height:1.5;';
+                d.innerHTML =
+                    '<div style="font-weight:700; color:#334155; margin-bottom:4px;">ภาพดาวเทียมละเอียดสูง</div>' +
+                    '<select id="bmProv" style="width:100%; font-size:11px; padding:2px; margin-bottom:4px;">' +
+                        withKey.map(p => '<option value="' + p.id + '">' + p.name + '</option>').join('') +
+                    '</select>' +
+                    '<input id="bmKey" type="password" autocomplete="off" placeholder="วางคีย์ของคุณที่นี่" ' +
+                        'style="width:100%; font-size:11px; padding:2px; margin-bottom:4px;">' +
+                    '<div style="display:flex; gap:4px;">' +
+                        '<button id="bmSave" style="flex:1; font-size:11px; padding:3px; cursor:pointer;">ใช้คีย์นี้</button>' +
+                        '<button id="bmClear" style="flex:1; font-size:11px; padding:3px; cursor:pointer;">ลบคีย์</button>' +
+                    '</div>' +
+                    '<div id="bmNote" style="color:#64748b; font-size:10px; margin-top:4px;"></div>';
+                L.DomEvent.disableClickPropagation(d);
+                L.DomEvent.disableScrollPropagation(d);
+                return d;
+            };
+            box.addTo(map);
+
+            const $ = id => document.getElementById(id);
+
+            /* ตั้งค่าที่เลือกไว้ให้ชัดเจน ไม่พึ่งพฤติกรรมเริ่มต้นของเบราว์เซอร์
+               วัดแล้วบางกรณีได้ selectedIndex = -1 ซึ่งทำให้ค่าที่อ่านได้เป็นสตริงว่าง
+               แล้ว get('') คืน null พอผู้ใช้กดใช้คีย์โดยไม่แตะช่องเลือกก่อนจะพังทันที */
+            $('bmProv').value = withKey[0].id;
+
+            /* หาผู้ให้บริการจากค่าที่เลือก ถ้าอ่านไม่ได้ให้ตกไปที่ตัวแรกเสมอ
+               ยอมทำงานกับตัวแรกดีกว่าโยน error ใส่หน้าผู้ใช้ */
+            const currentProv = () => AscBasemap.get($('bmProv').value) || withKey[0];
+
+            const refresh = () => {
+                const p = currentProv();
+                $('bmKey').value = AscBasemap.getKey(p.id);
+                $('bmNote').innerHTML = p.note + ' &middot; ภาพจริงถึงซูม ' + p.maxNativeZoom +
+                    '<br>คีย์เก็บในเครื่องนี้เท่านั้น ไม่ไปกับไฟล์โครงการหรือ PDF';
+            };
+            $('bmProv').addEventListener('change', refresh);
+            refresh();
+
+            $('bmSave').addEventListener('click', async () => {
+                const p = currentProv();
+                const k = ($('bmKey').value || '').trim();
+                if (!k) { ascFlashNotice('ยังไม่ได้ใส่คีย์', 2500); return; }
+                AscBasemap.setKey(p.id, k);
+                if (await addProvider(p, true)) ascFlashNotice('ใช้ ' + p.name + ' แล้ว', 2500);
+            });
+
+            $('bmClear').addEventListener('click', () => {
+                const p = currentProv();
+                AscBasemap.setKey(p.id, '');
+                $('bmKey').value = '';
+                map.addLayer(esriLayer);                    // กลับไปชั้นที่ใช้ได้เสมอ
+                ascFlashNotice('ลบคีย์ ' + p.name + ' แล้ว กลับไปใช้ Esri', 3000);
+            });
+
+            /* เครดิตของ Google ต้องเปลี่ยนตามมุมมอง เป็นข้อบังคับของนโยบาย Map Tiles API
+               ไม่ใช่ของแถม จึงต้องอัปเดตทุกครั้งที่เลื่อนหรือซูม */
+            let attrTimer = null;
+            map.on('moveend zoomend', () => {
+                if (!googleLayer || !map.hasLayer(googleLayer) || !googleLayer._ascGoogleSession) return;
+                clearTimeout(attrTimer);
+                attrTimer = setTimeout(async () => {       // หน่วงไว้ ไม่ยิงทุกเฟรมระหว่างลาก
+                    const b = map.getBounds();
+                    const txt = await AscBasemap.googleAttribution(googleLayer._ascGoogleSession, Math.round(map.getZoom()), {
+                        north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest()
+                    });
+                    map.attributionControl.removeAttribution(googleLayer.options.attribution);
+                    googleLayer.options.attribution = txt;
+                    map.attributionControl.addAttribution(txt);
+                }, 600);
+            });
+        })();
 
         L.control.scale({position: 'bottomright', imperial: false}).addTo(map);
 
