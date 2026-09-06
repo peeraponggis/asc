@@ -262,6 +262,16 @@ setTimeout(function () {
       </div>
     </div>
 
+    <!-- ═══ ส่งออกโมเดลสามมิติ ═══ -->
+    <div class="sec">
+      <h2>▸ ส่งออกโมเดลสามมิติ</h2>
+      <label class="chk"><input type="checkbox" id="cGlbGround">รวมพื้นและภาพดาวเทียมไปด้วย</label>
+      <button class="btn" id="btnGlb" style="width:100%;margin-top:8px">⬇ ส่งออกไฟล์ .glb</button>
+      <div class="note" id="glbNote">ไฟล์ .glb เปิดได้ใน Blender · SketchUp · Windows 3D Viewer
+        และแนบใน PowerPoint ได้โดยตรง หน่วยเป็นเมตรตามขนาดจริง<br>
+        ป้ายชื่อหลังคาและเส้นขอบไม่ติดไปด้วย เพราะรูปแบบไฟล์ไม่มีของเทียบเท่า</div>
+    </div>
+
     <div class="sec" style="border-bottom:none">
       <button class="btn file" style="width:100%">📁 เปลี่ยนไฟล์ข้อมูล<input type="file" id="fileSwap" accept=".txt,.json" multiple></button>
     </div>
@@ -318,6 +328,7 @@ setTimeout(function () {
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 
 /* ============================================================================
    ASC 3D — แบบจำลองไซต์ติดตั้งโซลาร์จากไฟล์ DB2 / DB3
@@ -1045,6 +1056,7 @@ function buildScene() {
   ground.rotation.x = -Math.PI / 2;
   ground.position.set(ctr.x, -0.01, ctr.z);
   ground.receiveShadow = true;
+  ground.name = 'ground';
   gGrid.add(ground);
   const grid = new THREE.GridHelper(gs * 2, Math.max(gs / 5, 8), 0x3a4552, 0x232b35);
   grid.position.set(ctr.x, 0, ctr.z);
@@ -1218,6 +1230,98 @@ function showShot(url) {
   $('#modal').style.display = 'flex';
 }
 
+/* ══ ส่งออกโมเดลสามมิติเป็น .glb ═════════════════════════
+   แผงโซลาร์ในฉากเป็น InstancedMesh ก้อนเดียว เพื่อให้วาดจอได้เร็ว
+   GLTFExporter เขียนของแบบนี้ออกเป็นส่วนขยาย EXT_mesh_gpu_instancing
+   ซึ่งโปรแกรมดูโมเดลส่วนใหญ่ยังอ่านไม่ได้ ผลคือจะเห็นแผงใบเดียวที่จุดกำเนิด
+   แทนที่จะเห็นทั้งพันใบ จึงต้องคลี่อินสแตนซ์เป็นก้อนจริงก่อนส่งออกเสมอ
+   ไฟล์ไม่โตขึ้นมากเพราะทุกก้อนอ้างเรขาคณิตชิ้นเดียวกัน */
+function bakeForExport(src) {
+  if (!src.visible) return null;
+  if (src.isSprite)  return null;          /* ป้ายชื่อ glTF ไม่มีของเทียบเท่า */
+  /* เส้นขอบหลังคาเป็นเส้นช่วยมองบนจอ ไม่ใช่รูปทรงของงาน
+     glTF ไม่มีวัสดุสำหรับเส้น ตัวส่งออกจึงเตือนทุกครั้งและโปรแกรมดูโมเดล
+     แต่ละตัวก็แสดงไม่เหมือนกัน ตัดออกดีกว่า รูปทรงหลังคาบอกขอบอยู่แล้ว */
+  if (src.isLine || src.isPoints) return null;
+
+  let out;
+  if (src.isInstancedMesh) {
+    out = new THREE.Group();
+    out.name = src.name || 'panels';
+    const m = new THREE.Matrix4();
+    for (let i = 0; i < src.count; i++) {
+      src.getMatrixAt(i, m);
+      const one = new THREE.Mesh(src.geometry, src.material);
+      one.applyMatrix4(m);
+      one.name = 'panel_' + (i + 1);
+      out.add(one);
+    }
+  } else if (src.isMesh) {
+    out = src.clone(false);                /* ไม่เอาลูกมาด้วย เดี๋ยวไล่เอง */
+  } else {
+    out = new THREE.Group();
+    out.name = src.name || '';
+  }
+  /* กลุ่มที่สร้างใหม่ยังไม่มีตำแหน่งของต้นฉบับ ต้องคัดลอกมาเอง
+     ไม่งั้นแผงทั้งผืนจะไปกองอยู่ที่จุดกำเนิด */
+  if (!src.isMesh || src.isInstancedMesh) {
+    out.position.copy(src.position);
+    out.quaternion.copy(src.quaternion);
+    out.scale.copy(src.scale);
+  }
+  src.children.forEach(c => { const k = bakeForExport(c); if (k) out.add(k); });
+  return out;
+}
+
+function exportGLB() {
+  const btn = $('#btnGlb'), note = $('#glbNote'), label = btn.textContent;
+  const root = new THREE.Group();
+  root.name = safeName();
+
+  const site = gSite ? bakeForExport(gSite) : null;
+  if (site) root.add(site);
+
+  if ($('#cGlbGround').checked) {
+    /* เอาเฉพาะแผ่นพื้นกับภาพดาวเทียม ไม่เอาเส้นตาราง
+       เพราะเส้นตารางเป็นเครื่องมือช่วยมอง ไม่ใช่ส่วนหนึ่งของงาน */
+    if (gGrid) {
+      const g = gGrid.getObjectByName('ground');
+      if (g) { const k = bakeForExport(g); if (k) root.add(k); }
+    }
+    if (gSat) { const k = bakeForExport(gSat); if (k) root.add(k); }
+  }
+
+  let meshes = 0;
+  root.traverse(o => { if (o.isMesh) meshes++; });
+  if (!meshes) {
+    note.innerHTML = '<b>ยังไม่มีอะไรให้ส่งออก</b> ให้โหลดไฟล์ DB2 ที่มีขอบเขตหลังคาก่อน';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'กำลังสร้างไฟล์ …';
+
+  new GLTFExporter().parse(
+    root,
+    buf => {
+      const name = 'ASC3D_' + safeName() + '_' + fileStamp() + '.glb';
+      const url  = URL.createObjectURL(new Blob([buf], { type: 'model/gltf-binary' }));
+      dl(url, name);
+      /* ปล่อย URL คืนหลังเบราว์เซอร์เริ่มดาวน์โหลดแล้ว ไม่งั้นหน่วยความจำค้าง */
+      setTimeout(() => URL.revokeObjectURL(url), 20000);
+      note.innerHTML = 'สร้างไฟล์แล้ว · ' + meshes.toLocaleString() + ' ชิ้นส่วน · '
+                     + (buf.byteLength / 1048576).toFixed(2) + ' MB<br>' + name;
+      btn.disabled = false; btn.textContent = label;
+    },
+    err => {
+      console.error(err);
+      note.innerHTML = '<b>สร้างไฟล์ไม่สำเร็จ</b> ' + (err && err.message ? err.message : '');
+      btn.disabled = false; btn.textContent = label;
+    },
+    { binary: true, onlyVisible: true, maxTextureSize: 2048 }
+  );
+}
+
 function dl(url, name) {
   const a = document.createElement('a');
   a.href = url; a.download = name;
@@ -1365,6 +1469,8 @@ function bindForm() {
   $('#btnShot').onclick = () => {
     showShot(shot(parseInt($('#expScale').value, 10), $('#cAlpha').checked));
   };
+
+  $('#btnGlb').onclick = exportGLB;
 
   $('#btnShot4').onclick = () => {
     const sc = parseInt($('#expScale').value, 10), al = $('#cAlpha').checked;
