@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "lang": "en",
+  "ui": {
+    "tabLearn": "Get started in 6 steps",
+    "tabManual": "Full manual (Thai)",
+    "heading": "Get started in 6 steps",
+    "sub": "Follow the real workflow, from the electricity bill to the client documents",
+    "prev": "Back",
+    "next": "Next",
+    "done": "Finish",
+    "progress": "Step {n} of {t}",
+    "readMore": "Read the full section (Thai)",
+    "dontShow": "Do not open this automatically again",
+    "restart": "Start again from step 1",
+    "finishTitle": "All 6 steps done",
+    "finishBody": "For the details of each step, open the full manual from the tab above. The manual itself is in Thai."
+  },
+  "steps": [
+    {
+      "id": "bill",
+      "title": "Analyse the electricity bill",
+      "caption": "Find out how much power the client uses, and when. The design can only be sized correctly once you know the real load.",
+      "bullets": [
+        "Enter 12 months of bills, or import an AMR file from the utility",
+        "AMR gives hourly data, so it is far more accurate than bills",
+        "Export the DB0 file before moving on"
+      ],
+      "note": "You may skip this step if there is no bill yet, but the payback figures will then be based on assumptions.",
+      "media": ["img/learn/01-bill.svg"],
+      "tab": "pea",
+      "tryLabel": "Open menu 1 · Bill analysis",
+      "doc": "#m1-intro"
+    },
+    {
+      "id": "project",
+      "title": "Project details and equipment",
+      "caption": "Pin the real site location, then pick the modules and inverter from the equipment library.",
+      "bullets": [
+        "Search for the site or type the coordinates and the map will move there",
+        "Pick a brand, then a model, from the library of 155 items",
+        "Anything not in the library can be uploaded as a datasheet file"
+      ],
+      "note": "Choose the equipment before drawing the roof. The layout uses the real module dimensions, so changing the model later recalculates the whole panel grid and every string.",
+      "media": ["img/learn/02-project.svg"],
+      "tab": "asc",
+      "tryLabel": "Open menu 2 · Design",
+      "doc": "#m2-step1"
+    },
+    {
+      "id": "layout",
+      "title": "Draw the roof and place panels",
+      "caption": "Trace the roof edges on satellite imagery, then the program lays out the panels and splits the strings for you.",
+      "bullets": [
+        "Draw one roof plane at a time; azimuth and slope are derived for you",
+        "Mark obstructions and walkways and the panels keep clear of them",
+        "Installed capacity and panel count update live in the bottom bar"
+      ],
+      "note": "If the satellite imagery is not sharp enough, add your own map key for deeper zoom, or use the drone-image tool with ground control points, which beats every satellite provider.",
+      "media": ["img/learn/03-layout.svg"],
+      "tab": "asc",
+      "tryLabel": "Open menu 2 · Design",
+      "doc": "#m2-step2"
+    },
+    {
+      "id": "engineering",
+      "title": "Engineering and design check",
+      "caption": "Produces the bill of materials, the single line diagram, and 36 checks that each cite a clause of the Thai EIT standard.",
+      "bullets": [
+        "Press Generate BOM to build the material list and the SLD",
+        "Run the design check to see which items fail the standard",
+        "Export DB2 to carry the design into the other menus"
+      ],
+      "note": "Press Generate BOM again after every design change, otherwise the material list and the quoted price still describe the old design.",
+      "media": ["img/learn/04-engineering.svg"],
+      "tab": "asc",
+      "tryLabel": "Open menu 2 · Design",
+      "doc": "#m2-step3"
+    },
+    {
+      "id": "model",
+      "title": "3D model and equipment layout",
+      "caption": "See the shadows as they actually fall through the day, and place equipment on a real photo of the wall at true scale.",
+      "bullets": [
+        "Drag the time slider to see morning and afternoon shading",
+        "Export a still image, or a .glb model you can drop into PowerPoint and rotate",
+        "Menu 4 places inverters and boards on a real site photo"
+      ],
+      "note": "Older DB2 files show only the building box with no panels, because the roof outline is not in the file. Open the project in the design page and export DB2 again.",
+      "media": ["img/learn/05-3d.svg"],
+      "tab": "model3d",
+      "tryLabel": "Open menu 3 · 3D model",
+      "doc": "#m3d-load"
+    },
+    {
+      "id": "report",
+      "title": "Report and client documents",
+      "caption": "Simulates a full year hour by hour, then produces the complete document set for the client.",
+      "bullets": [
+        "Import DB2 and run the simulation to get all 8,760 hours",
+        "Gives payback, IRR, NPV and the P50 P75 P90 confidence range",
+        "Produces the engineering report, proposal, quotation and installer brief"
+      ],
+      "note": "Choose Thai or English before exporting the PDF. Every number is identical in both languages.",
+      "media": ["img/learn/06-report.svg"],
+      "tab": "report",
+      "tryLabel": "Open menu 5 · Report",
+      "doc": "#m3-run"
+    }
+  ]
+}
