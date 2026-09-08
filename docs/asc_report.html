@@ -7147,7 +7147,18 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
         }
         // --- ฟังก์ชันวาด Wiring Diagram ---
         function generateWiringSVG(dcBreaker, acBreaker) {
-            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 650" width="100%" style="height: auto; background-color: #f8fafc; font-family: 'Kanit', sans-serif;">
+            /* ระบบออนกริดเดิมทำให้ผังสูงขึ้น เพราะต้องวาดนอกกรอบตู้
+               ระบบเดิมไม่ได้ต่อเข้าตู้ใบนี้ แต่ไปเจอกันที่ตู้ MDB */
+            const accEx  = (window.AscACC && AppState.existing) ? AscACC.read(AppState.existing) : null;
+            const accNew = (function () {
+                const inv = (AppState.equipData && AppState.equipData.inv1) || {};
+                const qty = (AppState.equipData && AppState.equipData.counts && AppState.equipData.counts.inv1Qty) || 1;
+                const kw  = parseFloat(inv.Rated_AC_Output_Power_kW) || 0;
+                return kw * qty;
+            })();
+            const accFrag = accEx ? AscACC.wiringFragment(AppState.existing, { newAcKw: accNew, t: RT }) : '';
+            const accVB   = accEx ? AscACC.wiringViewBox(AppState.existing) : '0 0 1000 650';
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${accVB}" width="100%" style="height: auto; background-color: #f8fafc; font-family: 'Kanit', sans-serif;">
                 <defs><g id="mcb-pole"><rect x="0" y="0" width="30" height="80" fill="#ffffff" stroke="#475569" stroke-width="2"/><circle cx="15" cy="15" r="4" fill="#94a3b8"/><circle cx="15" cy="65" r="4" fill="#94a3b8"/><rect x="8" y="30" width="14" height="20" fill="#334155" rx="2"/></g><g id="spd-pole"><rect x="0" y="0" width="30" height="80" fill="#ffffff" stroke="#ef4444" stroke-width="2"/><rect x="4" y="25" width="22" height="30" fill="#fecaca"/><circle cx="15" cy="10" r="3" fill="#000"/><circle cx="15" cy="70" r="3" fill="#000"/></g></defs>
                 <rect x="50" y="50" width="900" height="550" fill="#f1f5f9" stroke="#64748b" stroke-width="6" rx="10"/>
                 <rect x="60" y="60" width="880" height="530" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" rx="6"/>
@@ -7179,6 +7190,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 <rect x="100" y="530" width="800" height="15" fill="#eab308" stroke="#16a34a" stroke-width="2"/>
                 <text x="500" y="542" font-size="12" font-weight="bold" text-anchor="middle" fill="#000">MAIN GROUND BUSBAR (GND)</text>
                 <line x1="345" y1="300" x2="345" y2="530" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,2"/><line x1="375" y1="300" x2="375" y2="530" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,2"/><line x1="825" y1="300" x2="825" y2="530" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,2"/><line x1="855" y1="300" x2="855" y2="530" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,2"/><line x1="885" y1="300" x2="885" y2="530" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,2"/>
+                ${accFrag}
             </svg>`;
         }
 
@@ -7327,6 +7339,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 <!-- Title Block -->
                 <text x="1570" y="1140" font-size="14" font-weight="bold" text-anchor="end">PROJECT: ${shortName}</text>
                 <text x="1570" y="1160" font-size="12" text-anchor="end">DATE: ${dateStr}</text>
+                ${(window.AscACC && AppState.existing) ? AscACC.sldFragment(AppState.existing, { t: RT }) : ''}
             </svg>`;
         }
 	        // 🌟 2.5 ฟังก์ชันใหม่: Engine สร้างแบบจำลอง CAD Layout อัตโนมัติ (True North, Auto-Flip Dimension & Title Block)
@@ -7755,6 +7768,7 @@ function renderCADLayout() {
 <script src="asc-proposal.js"></script>
 <script src="asc-proposal-docx.js"></script>
 <script src="asc-eit.js"></script>
+<script src="asc-accoupling.js"></script>
 <script src="asc-kb.js"></script>
 <script src="asc-advisor.js"></script>
 <script>

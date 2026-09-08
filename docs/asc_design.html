@@ -8793,8 +8793,14 @@ function ascFileStamp(projectName, kind) {
                 const acBreaker = state.engineering_and_bom.protection.ac_breaker_amp || 50;
                 const pName = document.getElementById('projectTextInput').value.trim() || 'Project';
                 
+                /* ระบบเดิมวาดนอกกรอบตู้ ผังจึงสูงขึ้นเมื่อมีระบบเดิม
+                   รูปวาดกับถ้อยคำอยู่ใน asc-accoupling.js ที่เดียวกับหน้ารายงาน */
+                const accEx  = (window.AscACC && state.existing) ? AscACC.read(state.existing) : null;
+                const accNew = (parseFloat(state.inv1AcKw) || 0) * (parseInt(state.inv1Qty, 10) || 1);
+                const accFrag = accEx ? AscACC.wiringFragment(state.existing, { newAcKw: accNew }) : '';
+                const accVB   = accEx ? AscACC.wiringViewBox(state.existing) : '0 0 1000 650';
                 let svgContent = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 650" width="100%" height="100%" style="background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, monospace;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="${accVB}" width="100%" height="100%" style="background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, monospace;">
                     <defs>
                         <!-- สัญลักษณ์ Breaker ย่อย -->
                         <g id="mcb-pole">
@@ -8886,6 +8892,7 @@ function ascFileStamp(projectName, kind) {
                     <line x1="825" y1="300" x2="825" y2="530" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,2"/>
                     <line x1="855" y1="300" x2="855" y2="530" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,2"/>
                     <line x1="885" y1="300" x2="885" y2="530" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,2"/>
+                    ${accFrag}
                 </svg>`;
 
                 // เปิดหน้าต่าง Modal แสดงวงจรตู้คอนโทรล
@@ -8949,9 +8956,18 @@ function ascFileStamp(projectName, kind) {
 
                 const dateStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
+                /* ระบบออนกริดเดิมวางในแถบที่ต่อขยายลงมาด้านล่าง ไม่ทับของเดิม
+                   ผังใบนี้แน่นทั้งใบ การหาที่ว่างแทรกกลางจึงเสี่ยงทับของเดิมโดยไม่รู้ตัว
+                   ต่อกรอบลงมาแทน ปลอดภัยกว่าและอ่านง่ายกว่า
+                   จุดต่อคือปลายขวาของบัสบาร์ MDB ที่ (650, 580) เดินอ้อมขวาลงมา */
+                const accEx  = (window.AscACC && state.existing) ? AscACC.read(state.existing) : null;
+                const accSld = accEx ? AscACC.sldBlock(state.existing, {
+                                   x: 60, y: 830, w: 1000,
+                                   tap: [[650, 580], [1080, 580], [1080, 907], [1060, 907]] }) : '';
+                const accSldVB = accEx ? '0 0 1122 1010' : '0 0 1122 793';
                 // เริ่มโครง SVG พิมพ์เขียว SLD
                 let svgContent = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1122 793" width="100%" height="100%" style="background-color: #ffffff; font-family: 'Segoe UI', Tahoma, monospace; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="${accSldVB}" width="100%" height="100%" style="background-color: #ffffff; font-family: 'Segoe UI', Tahoma, monospace; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
                     <defs>
                         <g id="sym-transformer">
                             <circle cx="-10" cy="0" r="15" fill="none" stroke="#000000" stroke-width="2"/>
@@ -9152,6 +9168,7 @@ function ascFileStamp(projectName, kind) {
                         <text x="15" y="150" font-size="9.5" fill="#64748b">(ย่านแรงดันขั้นต่ำของเครื่อง MPPT: ${state.inv1MinMPPT} V)</text>
                         <text x="365" y="150" font-size="9.5" font-weight="bold" text-anchor="end" fill="#16a34a">PASS (OPTIMAL)</text>
                     </g>
+                    ${accSld}
                 </svg>`;
 
                 document.getElementById('sld-svg-container').innerHTML = svgContent;
@@ -9670,6 +9687,7 @@ function applyEdgeChanges() {
 <script src="asc-ridge.js"></script>
 <script src="asc-tree.js"></script>
 <script src="asc-roofdir.js"></script>
+<script src="asc-accoupling.js"></script>
 <script src="asc-kb.js"></script>
 <script src="asc-advisor.js"></script>
 <script src="asc-copilot.js"></script>
