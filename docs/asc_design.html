@@ -671,8 +671,11 @@
                          และการคิดสตริงของระบบใหม่ แต่ต้องเข้าไปอยู่ในสมดุลพลังงานรายชั่วโมง
                          เพราะไฟที่ระบบเดิมผลิตเกินโหลดคือไฟที่แบตเตอรี่ใหม่จะเก็บไว้แทนการไหลย้อน -->
                     <div class="form-group smart-db" id="exCard" style="margin-top: 15px; border-left-color: #0d9488; background: rgba(13,148,136,0.05);">
-                        <label style="color: #0f766e; font-weight: bold; display:flex; align-items:center; gap:7px; cursor:pointer;">
-                            <input type="checkbox" id="exEnabled" style="width:15px; height:15px;">
+                        <!-- หัวข้อนี้ถูกมองข้ามบ่อย ทั้งที่ถ้าไซต์มีระบบเดิมอยู่แล้วแต่ไม่ติ๊ก
+                             ตัวเลขคืนทุนจะสวยเกินจริง เพราะไปนับไฟที่ระบบเดิมผลิตอยู่แล้ว
+                             เป็นผลงานของการลงทุนใหม่ จึงทำให้เด่นกว่าหัวข้ออื่นโดยตั้งใจ -->
+                        <label style="color: #dc2626; font-weight: 800; font-size: 14px; display:flex; align-items:center; gap:8px; cursor:pointer; letter-spacing:.01em;">
+                            <input type="checkbox" id="exEnabled" style="width:17px; height:17px;">
                             ระบบออนกริดเดิม (AC Coupling)
                         </label>
                         <div id="exFields" style="display:none; margin-top:8px;">
@@ -1861,6 +1864,10 @@ const INDUSTRIAL_SOLAR_CONFIG = {
             /* ล้างค่าช่องเลือกทั้งหมด ยกเว้นช่องที่ค่าเริ่มต้นมีความหมายในตัวเอง
                bmProv คือช่องเลือกผู้ให้บริการแผนที่ ไม่ใช่ข้อมูลของโครงการ
                ถ้าโดนล้างด้วยจะได้ selectedIndex = -1 แล้วกล่องใส่คีย์แสดงผลว่างเปล่า */
+            /* ช่องเลือกอุปกรณ์ต้องกลับเป็นสีฟ้าด้วย ไม่งั้นจะแดงค้าง
+               ทั้งที่ล้างข้อมูลไปแล้ว */
+            ['pvSelect','invSelect1','invSelect2','batSelect','optSelect','evSelect']
+                .forEach(id => ascSetEquipSelectFilled(document.getElementById(id), false));
             document.querySelectorAll('select').forEach(el => {
                 if(el.id !== 'optRatio' && el.id !== 'meteoSource' && el.id !== 'bmProv') el.value = '';
             });
@@ -2035,14 +2042,18 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
            ย้ายมาใช้ Esri เป็นค่าเริ่มต้น (เรียกได้อย่างถูกต้อง ไม่ต้องมีคีย์)
            ส่วนใครต้องการภาพจริงลึกกว่านี้ ใส่คีย์ของตัวเองได้ที่กล่องบนแผนที่
            รายละเอียดผู้ให้บริการอยู่ใน asc-basemap.js */
-        const esriLayer = L.tileLayer(AscBasemap.get('esri-imagery').url, {
-            maxNativeZoom: AscBasemap.get('esri-imagery').maxNativeZoom,
-            maxZoom: 23,
-            zoomSnap: 0.25,
-            zoomDelta: 0.25,
-            crossOrigin: true,
-            attribution: AscBasemap.get('esri-imagery').attribution
-        });
+        /* สร้างชั้นแผนที่จากตารางผู้ให้บริการ ไม่เขียนค่าตายตัวซ้ำที่นี่
+           ตารางอยู่ใน asc-basemap.js ที่เดียว แก้ที่นั่นแล้วมีผลทั้งระบบ */
+        const ascMakePlainLayer = id => {
+            const p = AscBasemap.get(id);
+            const o = { maxNativeZoom: p.maxNativeZoom, maxZoom: 23, zoomSnap: 0.25,
+                        zoomDelta: 0.25, crossOrigin: true, attribution: p.attribution };
+            if (p.subdomains) o.subdomains = p.subdomains;
+            return L.tileLayer(p.url, o);
+        };
+
+        const esriLayer   = ascMakePlainLayer('esri-imagery');
+        const googleLayerFree = ascMakePlainLayer(AscBasemap.DEFAULT_ID);
 
         // --- ส่วนที่ 2: เริ่มต้นแผนที่ โดยตั้งให้ Google Satellite เป็นค่าเริ่มต้น ---
         const map = L.map('map', { 
@@ -2054,14 +2065,18 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                วัดแล้วในโปรเจกต์จริงมีวัตถุที่ได้รับผลจากสวิตช์นี้เพียงชิ้นเดียว (ขอบหลังคา)
                เพราะแผงระบุ L.svg() ไว้เองอยู่แล้ว และเส้นเดินสายระบุ L.canvas() ไว้เอง — จึงไม่กระทบความลื่น */
             preferCanvas: false,
-            layers: [esriLayer] // Esri ใช้ได้ทันทีโดยไม่ต้องมีคีย์ จึงเป็นค่าเริ่มต้น
+            /* ค่าเริ่มต้นเป็น Google ตามที่ผู้ใช้สั่ง เพราะให้ภาพลึกกว่าหนึ่งระดับซูม
+               ถ้าปลายทางถูกตัดเมื่อไร ตัวเฝ้าด้านล่างจะสลับไป Esri ให้เอง */
+            layers: [googleLayerFree]
        }).setView([13.7563, 100.5018], 6);;
 
         // --- ส่วนที่ 3: สร้าง UI Control สำหรับกดเลือกสลับแผนที่ (อยู่มุมซ้ายล่าง) ---
         /* รายชื่อชั้นแผนที่ เริ่มจาก Esri อย่างเดียว
            ผู้ให้บริการที่ต้องใช้คีย์จะถูกเติมเข้ามาเมื่อผู้ใช้ใส่คีย์แล้ว (ดู ascBasemapUI) */
         const baseMaps = {};
-        baseMaps[AscBasemap.get('esri-imagery').name] = esriLayer;
+        baseMaps[AscBasemap.get(AscBasemap.DEFAULT_ID).name] = googleLayerFree;
+        baseMaps[AscBasemap.get('google-hybrid-free').name]  = ascMakePlainLayer('google-hybrid-free');
+        baseMaps[AscBasemap.get('esri-imagery').name]        = esriLayer;
         
         // เพิ่มกล่องควบคุมลงบนแผนที่
         const ascLayerControl = L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map); // 🌟 เฟส 9: ย้ายไปขวาบนใต้เข็มทิศ
@@ -2124,6 +2139,67 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
             box.addTo(map);
 
             const $ = id => document.getElementById(id);
+
+            /* ══ กล่องใส่คีย์ซ่อนไว้ก่อน ═══════════════════════════════════
+               ตราบใดที่ Google ยังเรียกได้ ผู้ใช้ไม่ต้องรู้จักเรื่องคีย์เลย
+               กล่องนี้จะโผล่ก็ต่อเมื่อปลายทางถูกตัดจริง ตามที่ผู้ใช้กำหนดไว้
+               หรือเมื่อกดลิงก์เล็ก ๆ เปิดเองสำหรับคนที่อยากได้ซูม 21 */
+            const keyBox = box.getContainer();
+            const setKeyBoxOpen = open => { keyBox.style.display = open ? '' : 'none'; };
+            setKeyBoxOpen(false);
+
+            /* ══ เฝ้าดูว่าปลายทางที่ไม่เป็นทางการยังใช้ได้ไหม ═══════════
+               ปลายทาง mt0-mt3 ไม่ใช่ API สาธารณะ ไม่มีอะไรรับประกันว่าพรุ่งนี้
+               ยังเรียกได้ ถ้าถูกบล็อกแล้วปล่อยไว้เฉย ๆ ผู้ใช้จะเห็นแผนที่ว่าง
+               แล้วไม่รู้ว่าเกิดอะไรขึ้น วาดหลังคาต่อไม่ได้ทั้งวัน
+
+               เกณฑ์ตัดสิน นับ **ไทล์ที่พลาดติดกันโดยไม่มีไทล์ไหนสำเร็จคั่นเลย**
+               ไม่ใช่นับยอดรวมทั้งชีวิต เพราะสองอย่างนี้ต่างกันมาก
+
+               เคยเขียนเป็น "ห้ามมีไทล์สำเร็จเลยสักใบ" ซึ่งผิด เพราะถ้า Google ตัดสิทธิ์
+               ระหว่างที่เปิดโปรแกรมค้างไว้ ตอนนั้นโหลดสำเร็จไปแล้วหลายสิบใบ
+               เงื่อนไขนั้นจะไม่มีวันเป็นจริง แผนที่จะค้างว่างไปทั้งวันโดยไม่สลับให้
+
+               ส่วนไทล์หลุดขอบแผนที่ที่คืน 404 เป็นเรื่องปกติ แต่จะมีไทล์สำเร็จคั่นเสมอ
+               ตัวนับจึงถูกล้างทิ้งก่อนถึงเกณฑ์ */
+            let badRun = 0, switched = false;
+
+            googleLayerFree.on('tileload',  () => { badRun = 0; });
+            googleLayerFree.on('tileerror', () => {
+                if (switched) return;
+                if (++badRun < 12) return;
+                switched = true;
+                ascGoogleCutOff();
+            });
+
+            function ascGoogleCutOff() {
+                if (map.hasLayer(googleLayerFree)) map.removeLayer(googleLayerFree);
+                map.addLayer(esriLayer);
+                setKeyBoxOpen(true);
+                $('bmNote').innerHTML =
+                    '<b style="color:#b91c1c;">ภาพจาก Google เรียกไม่ได้แล้ว</b><br>' +
+                    'สลับไปใช้ Esri ให้อัตโนมัติ (ภาพจริงถึงซูม 19)<br>' +
+                    'อยากได้ลึกกว่านี้ ใส่คีย์ของคุณเองด้านบน';
+                ascFlashNotice('ภาพดาวเทียมจาก Google เรียกไม่ได้ สลับไปใช้ Esri ให้แล้ว ' +
+                               'ใส่คีย์ของคุณเองได้ที่กล่องมุมขวาบนถ้าต้องการภาพลึกกว่านี้', 9000);
+            }
+
+            /* ปุ่มเล็ก ๆ ให้เปิดกล่องคีย์เองได้ สำหรับคนที่อยากได้ซูม 21 ตั้งแต่แรก
+               วางไว้ใต้กล่องเลือกชั้นแผนที่ เพื่อไม่ให้ไปเกะกะตอนที่ยังไม่ต้องใช้ */
+            const opener = L.control({ position: 'topright' });
+            opener.onAdd = function () {
+                const d = L.DomUtil.create('div', '');
+                d.innerHTML = '<button id="bmOpen" title="ใส่คีย์เพื่อดูภาพละเอียดกว่านี้" ' +
+                    'style="background:rgba(255,255,255,.92); border:1px solid #cbd5e1; border-radius:6px;' +
+                    ' font-size:10.5px; padding:2px 7px; cursor:pointer; color:#475569;">ภาพละเอียดสูง</button>';
+                L.DomEvent.disableClickPropagation(d);
+                return d;
+            };
+            opener.addTo(map);
+            document.getElementById('bmOpen').addEventListener('click', () => {
+                const open = keyBox.style.display === 'none';
+                setKeyBoxOpen(open);
+            });
 
             /* ตั้งค่าที่เลือกไว้ให้ชัดเจน ไม่พึ่งพฤติกรรมเริ่มต้นของเบราว์เซอร์
                วัดแล้วบางกรณีได้ selectedIndex = -1 ซึ่งทำให้ค่าที่อ่านได้เป็นสตริงว่าง
@@ -2965,7 +3041,15 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     '<span style="width:50px; color:#64748b; flex-shrink:0;">' + label + '</span>' +
                     '<input type="range" data-a="' + key + '" min="' + min + '" max="' + max + '" step="' + step +
                       '" value="' + val + '" style="flex:1;"' + (key === 'op' ? '' : dis) + '>' +
-                    '<span data-o="' + key + '" style="width:40px; text-align:right; color:#475569; font-family:ui-monospace,monospace;">' + val + unit + '</span>' +
+                    /* หมุนกับย่อ/ขยายต้องพิมพ์ตัวเลขตรง ๆ ได้ เพราะงานตรึงภาพมักรู้ค่าที่
+                       ต้องการอยู่แล้ว เช่นหมุน 37.5° การไล่ลากแถบให้ตรงเลขนั้นทำได้ยาก
+                       ส่วนโปร่งแสงเป็นค่าที่ปรับด้วยตาล้วน จึงคงเป็นตัวเลขอ่านอย่างเดียว */
+                    (key === 'op'
+                      ? '<span data-o="' + key + '" style="width:40px; text-align:right; color:#475569; font-family:ui-monospace,monospace;">' + val + unit + '</span>'
+                      : '<input type="number" data-n="' + key + '" min="' + min + '" max="' + max + '" step="' + step +
+                        '" value="' + val + '" style="width:52px; padding:1px 3px; text-align:right; font-size:1em;' +
+                        ' font-family:ui-monospace,monospace;"' + dis + '>' +
+                        '<span style="width:12px; color:#94a3b8;">' + unit + '</span>') +
                   '</div>';
 
                 box.innerHTML =
@@ -3049,18 +3133,47 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     box.querySelector('[data-o="op"]').textContent = im.opacity;
                     droneLayer.redraw();
                 });
-                q('rot').addEventListener('input', e => {
-                    if (im.locked) return;
-                    im.rotateTo(parseFloat(e.target.value) || 0);
-                    box.querySelector('[data-o="rot"]').textContent = im.rotDeg + '°';
-                    droneLayer.redraw();
-                });
-                q('sc').addEventListener('input', e => {
-                    if (im.locked) return;
-                    im.scaleTo(parseFloat(e.target.value) || 100);
-                    box.querySelector('[data-o="sc"]').textContent = im.scalePct + '%';
-                    droneLayer.redraw();
-                });
+                /* แถบเลื่อนกับช่องตัวเลขคุมค่าเดียวกัน ขยับอันไหนอีกอันต้องตามทันที
+                   อ่านค่ากลับจาก im เสมอ ไม่ใช่จากช่องที่พิมพ์ เพราะ rotateTo/scaleTo
+                   ปัดค่าและบีบให้อยู่ในช่วงที่ใช้ได้ ช่องจึงต้องแสดงค่าที่ใช้จริง */
+                const nEl = k => box.querySelector('[data-n="' + k + '"]');
+                const syncRot = () => { q('rot').value = im.rotDeg;   nEl('rot').value = im.rotDeg; };
+                const syncSc  = () => { q('sc').value  = im.scalePct; nEl('sc').value  = im.scalePct; };
+
+                /* บีบค่าให้อยู่ในพิสัยเดียวกับแถบเลื่อนเสมอ
+                   แถบเลื่อนกันค่าเกินให้อยู่แล้วโดยธรรมชาติ แต่ช่องพิมพ์ไม่กัน
+                   พิมพ์ 9999 % เข้าไปได้จริงถ้าไม่ดัก แล้วภาพจะระเบิดจนหาไม่เจอ
+                   และ scaleTo เก็บค่าที่ส่งเข้าไปดิบ ๆ ไม่ได้บีบให้เอง
+
+                   ภาพที่ล็อกไว้ไม่รับค่าใหม่ แต่ต้องดีดช่องกรอกกลับเป็นค่าจริงด้วย
+                   ไม่งั้นช่องจะค้างเลขที่ไม่มีผลอะไร ซึ่งอ่านแล้วเข้าใจผิด */
+                const clampTo = (el, v, dflt) => {
+                    let n = parseFloat(v);
+                    if (!isFinite(n)) n = dflt;
+                    const lo = parseFloat(el.min), hi = parseFloat(el.max);
+                    if (isFinite(lo)) n = Math.max(lo, n);
+                    if (isFinite(hi)) n = Math.min(hi, n);
+                    return n;
+                };
+                const applyRot = v => {
+                    if (im.locked) { syncRot(); return; }
+                    im.rotateTo(clampTo(q('rot'), v, 0));   syncRot(); droneLayer.redraw();
+                };
+                const applySc  = v => {
+                    if (im.locked) { syncSc(); return; }
+                    im.scaleTo(clampTo(q('sc'), v, 100));   syncSc();  droneLayer.redraw();
+                };
+
+                q('rot').addEventListener('input', e => applyRot(e.target.value));
+                q('sc').addEventListener('input',  e => applySc(e.target.value));
+
+                /* ใช้ change ไม่ใช่ input กับช่องพิมพ์ ไม่งั้นพิมพ์ "12" ระหว่างจะพิมพ์ "125"
+                   ภาพจะกระโดดไปที่ 12 ก่อนหนึ่งจังหวะ · Enter ให้มีผลทันทีโดยไม่ต้องคลิกออก */
+                nEl('rot').addEventListener('change', e => applyRot(e.target.value));
+                nEl('sc').addEventListener('change',  e => applySc(e.target.value));
+                [nEl('rot'), nEl('sc')].forEach(el => el.addEventListener('keydown', ev => {
+                    if (ev.key === 'Enter') { ev.preventDefault(); el.blur(); }
+                }));
                 q('mode').addEventListener('change', e => {
                     im.mode = e.target.value;
                     if (im.mode === 'rubber' && im.gcps.length < 4) {
@@ -3662,6 +3775,10 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                             const sel = document.getElementById(selectId);
                             if (sel && sel.options.length > 0 && mfg && mfg !== "-") {
                                 sel.options[0].text = `📁 [โหลดจากไฟล์] ${mfg} ${model}`;
+                                /* เส้นทางกู้คืนจากไฟล์ตั้งป้ายเอง ไม่ได้ผ่าน applyEquipmentData
+                                   ถ้าไม่ทาสีตรงนี้ด้วย เปิดโครงการเดิมมาจะเห็นช่องเป็นสีฟ้า
+                                   ทั้งที่มีสเปกครบแล้ว ซึ่งอ่านผิดความหมาย */
+                                ascSetEquipSelectFilled(sel, true);
                             }
                         };
                         // PV
@@ -4026,6 +4143,14 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
         /* ชั้นที่ 2 · อ็อบเจกต์ → state และหน้าจอ
            opts.source  'file' = ผู้ใช้เลือกไฟล์เอง · 'db' = หยิบจากคลังสเปกอุปกรณ์
            คืนค่า report เผื่อผู้เรียกอยากเอาไปแสดงเอง (ตัวนำเข้าฝั่งผู้ดูแลระบบใช้) */
+        /* สีของช่องเลือกอุปกรณ์ · ฟ้า = ยังว่าง · แดง = มีสเปกแล้ว
+           แยกออกมาเป็นฟังก์ชันเพื่อให้ทั้งตอนใส่ข้อมูลและตอนล้างใช้ตัวเดียวกัน
+           ไม่งั้นสองที่จะค่อย ๆ เพี้ยนออกจากกัน */
+        function ascSetEquipSelectFilled(sel, filled) {
+            if (!sel) return;
+            sel.style.color = filled ? '#dc2626' : '#0284c7';
+        }
+
         function applyEquipmentData(rawData, type, labelId, selectId, opts) {
             const o = opts || {};
             const source = o.source === 'db' ? 'db' : 'file';
@@ -4143,6 +4268,11 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 const sel = document.getElementById(selectId);
                 if(sel && sel.options.length > 0) {
                     sel.options[0].text = `${source === 'db' ? '📚' : '📁'} ${mfg} ${mod}`;
+                    /* ช่องที่ยังว่างเป็นสีฟ้าเหมือนเดิม พอมีสเปกจริงแล้วเปลี่ยนเป็นแดง
+                       เพื่อให้กวาดตาลงมาแล้วรู้ทันทีว่าช่องไหนกรอกแล้ว ช่องไหนยัง
+                       ต้องตั้งที่ตัว select ไม่ใช่ที่ option เพราะเบราว์เซอร์ส่วนใหญ่
+                       ไม่ยอมให้ option ที่ปิดใช้งานอยู่มีสีของตัวเอง */
+                    ascSetEquipSelectFilled(sel, true);
                 }
             }
 
@@ -7896,6 +8026,85 @@ function ascFileStamp(projectName, kind) {
             setChk('chk-db1', !!sessionStorage.getItem('db1'));
             setChk('chk-db2', !!sessionStorage.getItem('db2'));
         }
+        /* ═══ ผลที่คำนวณไว้หมดอายุเมื่อแบบเปลี่ยน ═══════════════════════
+           เดิมกด Generate BOM แล้วขึ้น "เรียบร้อย" ค้างไว้ตลอด ผู้ใช้ย้อนกลับไป
+           เปลี่ยนรุ่นแผง เปลี่ยนมุมเอียง หรือแก้ระยะห่าง แล้วสถานะยังเขียวอยู่
+           ทั้งที่รายการวัสดุกับไฟล์ที่บันทึกไว้เป็นของแบบเดิม
+           ผลคือส่งใบเสนอราคาที่คิดจากแบบเก่าออกไปได้โดยไม่มีอะไรเตือน
+
+           จึงล้างของที่หมดอายุจริง ไม่ใช่แค่เปลี่ยนข้อความบนหน้าจอ
+           · state.engineering_and_bom  รายการวัสดุและผังไฟฟ้า
+           · sessionStorage db1 / db2   ไฟล์ที่บันทึกไว้
+           ปุ่มที่ต้องใช้ผล BOM (SLD/Wiring) จึงกลับไปล็อกตามเดิมด้วย ซึ่งถูกแล้ว */
+        let ascStaleNoteTimer = 0;
+        function ascInvalidateComputed(reason) {
+            const had = !!state.engineering_and_bom
+                     || !!sessionStorage.getItem('db1')
+                     || !!sessionStorage.getItem('db2');
+            if (!had) return;                       /* ยังไม่เคยคำนวณ ก็ไม่มีอะไรให้ล้าง */
+
+            state.engineering_and_bom = null;
+            try { sessionStorage.removeItem('db1'); sessionStorage.removeItem('db2'); } catch (e) {}
+
+            updateSaveChecklist();
+            ascShowStaleNote(reason);
+        }
+
+        /* บอกเหตุผลด้วย ไม่งั้นผู้ใช้จะงงว่าทำไมเครื่องหมายถูกหายไปเอง */
+        function ascShowStaleNote(reason) {
+            let el = document.getElementById('ascStaleNote');
+            if (!el) {
+                const host = document.getElementById('chk-bom');
+                const box  = host ? host.closest('.save-check-row') : null;
+                if (!box || !box.parentElement) return;
+                el = document.createElement('div');
+                el.id = 'ascStaleNote';
+                el.style.cssText = 'font-size:11px; line-height:1.45; color:#92400e; background:#fffbeb;' +
+                    'border:1px solid #fde68a; border-radius:6px; padding:6px 8px; margin-top:6px;';
+                box.parentElement.appendChild(el);
+            }
+            el.innerHTML = '<b>แบบเปลี่ยนแล้ว</b> ' + (reason || '') +
+                ' — ผลที่คำนวณไว้ถูกล้าง ต้องกด <b>Generate BOM</b> แล้วบันทึก DB2 ใหม่';
+            el.style.display = 'block';
+            clearTimeout(ascStaleNoteTimer);
+            ascStaleNoteTimer = setTimeout(() => { el.style.display = 'none'; }, 12000);
+        }
+
+        /* หาข้อความกำกับของช่องที่ถูกแก้ เพื่อบอกผู้ใช้ว่าอะไรทำให้ผลหมดอายุ
+           โครงของแต่ละแถวในหน้านี้ไม่เหมือนกัน บางช่องมี label ครอบ บางช่องมี
+           span อยู่ข้างหน้า จึงต้องไล่หาหลายทางแล้วเอาอันแรกที่ได้ความ */
+        function ascFieldLabel(t) {
+            const clean = v => String(v || '').replace(/\s+/g, ' ').trim();
+            const row = t.closest('.setting-row, .form-group, label');
+            let txt = clean(t.previousElementSibling && t.previousElementSibling.textContent);
+            if (!txt && row) {
+                txt = clean(row.querySelector('.sr-label, label') && row.querySelector('.sr-label, label').textContent)
+                   || clean(row.textContent);
+            }
+            txt = txt.replace(/[:：]\s*$/, '');
+            return txt ? '(' + txt.slice(0, 40) + ')' : '';
+        }
+
+        /* ดักที่แถบด้านซ้ายทีเดียว แทนการไล่ผูกทีละช่อง เพราะช่องกรอกในหน้านี้
+           มีเป็นร้อยและบางส่วนถูกสร้างขึ้นทีหลัง การไล่ผูกจะตกหล่นแน่นอน
+
+           data-no-invalidate ใช้ยกเว้นตัวที่ไม่ได้เปลี่ยนแบบจริง เช่นแถบเลื่อน
+           ความโปร่งแสงของภาพโดรน หรือช่องเลือกผู้ให้บริการแผนที่ */
+        (function ascWatchDesignChanges() {
+            const bar = document.getElementById('sidebar');
+            if (!bar) return;
+            const SKIP_IDS = ['bmProv', 'bmKey', 'droneListContainer'];
+            bar.addEventListener('change', ev => {
+                const t = ev.target;
+                if (!t || !t.matches('input, select, textarea')) return;
+                if (t.closest('[data-no-invalidate]')) return;
+                if (t.id && SKIP_IDS.indexOf(t.id) >= 0) return;
+                if (t.closest('#droneListContainer')) return;   /* งานตรึงภาพ ไม่ใช่ค่าออกแบบ */
+                if (t.closest('#bomAccordion')) return;         /* ช่องในตาราง BOM แก้หลังคำนวณได้ */
+                ascInvalidateComputed(ascFieldLabel(t));
+            }, true);
+        })();
+
         // อัปเดต checklist ทุกครั้งที่ระบบคำนวณสถานะใหม่ (chain ต่อจาก BOM wrapper)
         const originalUpdateSystemStatusForChecklist = updateSystemStatus;
         updateSystemStatus = function() {
