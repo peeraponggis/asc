@@ -24,9 +24,15 @@ setTimeout(function () {
 }}
 </script>
 <style>
+  /* ชุดสีเดียวกับหน้า System Design (asc_design.html :root) เพื่อให้สองเมนู
+     ที่ใช้ต่อกันไม่สลับโทนมืด/สว่างกลางทาง ค่าที่ยกมาตรง ๆ คือ
+     bg #f1f5f9 · surface #ffffff · border #e2e8f0 · ink 0f172a/334155/64748b
+     ส่วน accent เดิมเป็นเหลืองบนพื้นมืด อ่านไม่ออกบนพื้นขาว จึงเปลี่ยนเป็น
+     ส้มเข้มที่ผ่านคอนทราสต์บนพื้นสว่าง และยังเป็นสีตระกูลเดียวกับของเดิม */
   :root{
-    --bg:#0F1319; --panel:#171C24; --panel2:#1F2630; --line:#2E3743;
-    --text:#E8ECF2; --dim:#8E99A8; --accent:#F5B301; --ok:#3FBF7F; --warn:#FF9F45; --danger:#FF6B5E;
+    --bg:#f1f5f9; --panel:#ffffff; --panel2:#f8fafc; --line:#e2e8f0;
+    --text:#0f172a; --dim:#64748b; --accent:#ea580c; --ok:#16a34a; --warn:#d97706; --danger:#dc2626;
+    --stage:#e8edf3;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;overflow:hidden}
@@ -81,7 +87,7 @@ setTimeout(function () {
   .btn:hover{border-color:var(--accent);color:var(--accent)}
   .btn:active{transform:scale(.97)}
   .btn.primary{background:var(--accent);color:#15181D;border-color:var(--accent);font-weight:600}
-  .btn.primary:hover{color:#15181D;filter:brightness(1.08)}
+  .btn.primary:hover{color:#ffffff;filter:brightness(1.08)}
   .btn.mini{padding:5px 8px;font-size:11px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px}
@@ -106,11 +112,12 @@ setTimeout(function () {
   .chk input{accent-color:var(--accent);width:14px;height:14px}
 
   /* ---------- พื้นที่แสดงผล ---------- */
-  #stage{flex:1;position:relative;background:#0B0E13}
+  #stage{flex:1;position:relative;background:var(--stage)}
   #cv{display:block;width:100%;height:100%}
   #kpi{
-    position:absolute;top:14px;right:14px;background:#141A22E6;border:1px solid var(--line);
+    position:absolute;top:14px;right:14px;background:#ffffffE6;border:1px solid var(--line);
     border-radius:10px;padding:11px 14px;min-width:186px;backdrop-filter:blur(8px);pointer-events:none;
+    box-shadow:0 4px 12px rgba(15,23,42,.10);
   }
   #kpi .k{display:flex;justify-content:space-between;gap:14px;font-size:11px;margin-bottom:5px}
   #kpi .k:last-child{margin-bottom:0}
@@ -118,7 +125,7 @@ setTimeout(function () {
   #kpi .k span{color:var(--dim)}
   #hint{
     position:absolute;bottom:14px;left:14px;font-size:11px;color:var(--dim);
-    background:#141A22CC;border-radius:8px;padding:6px 11px;pointer-events:none;
+    background:#ffffffE6;border:1px solid var(--line);border-radius:8px;padding:6px 11px;pointer-events:none;
   }
   #busy{
     position:absolute;inset:0;display:none;align-items:center;justify-content:center;
@@ -128,7 +135,7 @@ setTimeout(function () {
   /* ---------- หน้าจอวางไฟล์ ---------- */
   #drop{
     position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
-    justify-content:center;gap:16px;background:#0B0E13;z-index:10;text-align:center;padding:24px;
+    justify-content:center;gap:16px;background:var(--stage);z-index:10;text-align:center;padding:24px;
   }
   #drop.over{background:#12181F;box-shadow:inset 0 0 0 3px var(--accent)}
   #drop h2{margin:0;font-size:19px;font-weight:600}
@@ -140,7 +147,7 @@ setTimeout(function () {
 
   /* ---------- กล่องผลลัพธ์การส่งออก ---------- */
   #modal{
-    position:fixed;inset:0;background:#000000E0;z-index:50;display:none;
+    position:fixed;inset:0;background:#0f172aA6;z-index:50;display:none;
     flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px;
   }
   #modal img{max-width:88vw;max-height:72vh;border-radius:8px;box-shadow:0 8px 40px #000}
@@ -206,6 +213,14 @@ setTimeout(function () {
       <div class="slrow">
         <span>เวลา</span><input type="range" id="sHour" min="5" max="19" step="0.25" value="12"><span id="vHour">12:00</span>
       </div>
+      <div class="grid2" style="margin:6px 0 8px">
+        <button class="btn" id="btnSunPlay">▶ เล่นเงาทั้งวัน</button>
+        <select id="sunSpeed" style="width:100%">
+          <option value="1">ช้า</option>
+          <option value="2" selected>ปกติ</option>
+          <option value="4">เร็ว</option>
+        </select>
+      </div>
       <label class="chk"><input type="checkbox" id="cShadow" checked>แสดงเงาตกกระทบ</label>
       <div class="note" id="sunNote"></div>
     </div>
@@ -229,7 +244,7 @@ setTimeout(function () {
         <button class="btn mini" data-cam="ridge" title="มองตามแนวสันหลังคา เห็นความชันและความสูงสันเป็นภาพด้านข้าง">═ ขนานสัน</button>
       </div>
       <button class="btn mini" data-cam="isoface" style="width:100%;margin-top:6px" title="มุมเฉียงที่หมุนตามอาคาร ไม่ใช่ตามเข็มทิศ">◪ เฉียงตามอาคาร</button>
-      <div id="camAlignNote" style="font-size:11px;color:#8b95a3;margin-top:6px;line-height:1.45"></div>
+      <div id="camAlignNote" style="font-size:11px;color:var(--dim);margin-top:6px;line-height:1.45"></div>
       <label class="chk" style="margin-top:10px"><input type="checkbox" id="cGrid" checked>เส้นตารางพื้น</label>
       <label class="chk"><input type="checkbox" id="cLabel" checked>ป้ายกำกับระนาบหลังคา</label>
       <label class="chk"><input type="checkbox" id="cLabelMdb">ป้ายกำกับ MDB / Inverter</label>
@@ -293,7 +308,7 @@ setTimeout(function () {
   <div id="busy">กำลังประมวลผล…</div>
 
   <div id="drop">
-    <div id="bootFail" hidden style="max-width:520px;text-align:left;background:#2A1A1A;border:1px solid #FF6B5E55;border-radius:10px;padding:14px 16px;margin-bottom:6px">
+    <div id="bootFail" hidden style="max-width:520px;text-align:left;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 16px;margin-bottom:6px">
       <div style="color:var(--danger);font-weight:600;margin-bottom:6px">⚠️ โหลดไลบรารี 3 มิติไม่สำเร็จ</div>
       <div style="color:var(--dim);font-size:12px;line-height:1.7">
         หน้านี้ใช้ ES Module จึงต้องเปิดผ่าน <b>http://</b> ไม่ใช่ดับเบิลคลิกไฟล์ (<b>file://</b>)
@@ -640,7 +655,7 @@ const MAT = {
   trunk: new THREE.MeshStandardMaterial({ color:0x6b4f36, roughness:.95 }),
   leaf:  new THREE.MeshStandardMaterial({ color:0x2f7d3a, roughness:.9, transparent:true, opacity:.9 }),
   mdb:   new THREE.MeshStandardMaterial({ color:0x3b82f6, roughness:.55, metalness:.35 }),
-  gnd:   new THREE.MeshStandardMaterial({ color:0x171d25, roughness:1 })
+  gnd:   new THREE.MeshStandardMaterial({ color:0xdfe5ec, roughness:1 })
 };
 
 /* พื้นผิวแผงพร้อมเส้นแบ่งเซลล์ ทำให้ภาพเรนเดอร์ดูสมจริงขึ้น */
@@ -674,8 +689,10 @@ function initThree() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0b0e13);
-  scene.fog = new THREE.Fog(0x0b0e13, 180, 620);
+  /* พื้นหลังฉากต้องเข้ากับพื้นเวที ไม่งั้นจะเห็นขอบสี่เหลี่ยมคนละสี
+     หมอกใช้สีเดียวกับพื้นหลังเสมอ ของที่ไกลออกไปจึงจางหายกลืนขอบฟ้า */
+  scene.background = new THREE.Color(0xe8edf3);
+  scene.fog = new THREE.Fog(0xe8edf3, 180, 620);
 
   camera = new THREE.PerspectiveCamera(42, 1, 0.5, 3000);
   camera.position.set(60, 48, 60);
@@ -686,7 +703,7 @@ function initThree() {
   controls.maxPolarAngle = Math.PI / 2 - 0.02;
   controls.addEventListener('change', () => { needRender = true; });
 
-  scene.add(new THREE.HemisphereLight(0xdfe9f5, 0x2b3038, 1.15));
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xcbd5e1, 1.05));
   const amb = new THREE.AmbientLight(0xffffff, .28); scene.add(amb);
 
   sunLight = new THREE.DirectionalLight(0xfff2d8, 2.1);
@@ -742,11 +759,13 @@ function textSprite(txt, color) {
   const w = Math.ceil(g.measureText(txt).width) + 28;
   c.width = w; c.height = 52;
   const g2 = c.getContext('2d');
-  g2.fillStyle = 'rgba(12,16,22,.82)';
+  /* ป้ายเดิมเป็นพื้นดำตัวหนังสือขาว ซึ่งจมหายไปกับฉากสว่าง
+     เปลี่ยนเป็นพื้นขาวขอบสีเน้น ตัวหนังสือเข้ม อ่านออกทั้งบนพื้นและบนหลังคา */
+  g2.fillStyle = 'rgba(255,255,255,.94)';
   g2.fillRect(0, 0, w, 52);
-  g2.strokeStyle = color || '#f5b301'; g2.lineWidth = 3; g2.strokeRect(1.5, 1.5, w - 3, 49);
+  g2.strokeStyle = color || '#ea580c'; g2.lineWidth = 3; g2.strokeRect(1.5, 1.5, w - 3, 49);
   g2.font = '600 34px Kanit, sans-serif';
-  g2.fillStyle = '#fff'; g2.textBaseline = 'middle';
+  g2.fillStyle = '#0f172a'; g2.textBaseline = 'middle';
   g2.fillText(txt, 14, 27);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
@@ -1058,7 +1077,7 @@ function buildScene() {
   ground.receiveShadow = true;
   ground.name = 'ground';
   gGrid.add(ground);
-  const grid = new THREE.GridHelper(gs * 2, Math.max(gs / 5, 8), 0x3a4552, 0x232b35);
+  const grid = new THREE.GridHelper(gs * 2, Math.max(gs / 5, 8), 0x94a3b8, 0xc7d2dd);
   grid.position.set(ctr.x, 0, ctr.z);
   grid.visible = $('#cGrid').checked;
   grid.name = 'grid';
@@ -1444,6 +1463,62 @@ function bindForm() {
 
   ['#sMonth', '#sHour'].forEach(id => $(id).addEventListener('input', updateSun));
   $('#cShadow').onchange = updateSun;
+
+  /* ---------- เล่นเงาทั้งวันอัตโนมัติ ----------
+     เดินเวลาจาก 06:00 ถึง 18:00 ของเดือนที่เลือกไว้ แล้ววนกลับมาเริ่มใหม่
+     เดือนไม่ถูกแตะเลย เปลี่ยนเดือนระหว่างเล่นได้ ทิศเงาจะเปลี่ยนตามทันที
+
+     ก้าวเวลาคิดจากเวลาจริงที่ผ่านไป (dt) ไม่ใช่ก้าวคงที่ต่อรอบ
+     ความเร็วจึงเท่ากันทุกเครื่อง ไม่ว่าเครื่องเร็วหรือช้า
+
+     ใช้ตัวจับเวลา ไม่ใช่ requestAnimationFrame เพราะ rAF ถูกหยุดสนิทเมื่อ
+     แท็บไม่ได้แสดงผล ถ้าผู้ใช้กดเล่นตอนที่หน้ายังไม่ถูกแสดง ปุ่มจะค้าง
+     เป็น "หยุด" โดยเวลาไม่เดินเลย และไม่มีอะไรบอกว่าทำไม
+     ฉากนี้วาดจอตาม needRender อยู่แล้ว จึงไม่ต้องพึ่งจังหวะเฟรมของเบราว์เซอร์ */
+  const SUN_FROM = 6, SUN_TO = 18;
+  let sunPlaying = false, sunTimer = 0, sunLast = 0;
+
+  function sunPlayStep() {
+    if (!sunPlaying) return;
+    const now = performance.now();
+    const dt  = sunLast ? Math.min((now - sunLast) / 1000, 0.5) : 0;
+    sunLast = now;
+    const speed = parseFloat($('#sunSpeed').value) || 2;   /* ชั่วโมงจำลองต่อวินาทีจริง */
+    const el = $('#sHour');
+    let h = parseFloat(el.value) + dt * speed;
+    if (h >= SUN_TO) h = SUN_FROM;                         /* ถึงเย็นแล้ววนกลับไปเช้า */
+    el.value = h.toFixed(2);
+    updateSun();
+  }
+
+  function sunPlayStop() {
+    sunPlaying = false;
+    if (sunTimer) clearInterval(sunTimer);
+    sunTimer = 0; sunLast = 0;
+    $('#btnSunPlay').textContent = '▶ เล่นเงาทั้งวัน';
+    $('#btnSunPlay').classList.remove('primary');
+  }
+
+  function sunPlayStart() {
+    /* เริ่มที่ 06:00 เสมอเมื่อเวลาอยู่นอกช่วงกลางวัน จะได้เห็นครบทั้งวัน */
+    const el = $('#sHour');
+    const h = parseFloat(el.value);
+    if (!(h >= SUN_FROM && h < SUN_TO)) { el.value = SUN_FROM; updateSun(); }
+    sunPlaying = true; sunLast = 0;
+    $('#btnSunPlay').textContent = '⏸ หยุด';
+    $('#btnSunPlay').classList.add('primary');
+    sunTimer = setInterval(sunPlayStep, 50);
+  }
+
+  $('#btnSunPlay').onclick = () => { sunPlaying ? sunPlayStop() : sunPlayStart(); };
+
+  /* ลากแถบเวลาเองระหว่างเล่นอยู่ = ตั้งใจคุมเอง ให้หยุดเล่นทันที
+     ไม่งั้นตัวเล่นจะแย่งค่ากลับไปทุกเฟรม จนลากไม่ได้ */
+  $('#sHour').addEventListener('pointerdown', () => { if (sunPlaying) sunPlayStop(); });
+
+  /* สลับแท็บไปแล้วเบราว์เซอร์หยุดส่งเฟรม กลับมาต้องไม่กระโดด
+     และไม่ปล่อยให้วนอยู่เบื้องหลังเปล่า ๆ กินแบตเตอรี่ */
+  document.addEventListener('visibilitychange', () => { if (document.hidden && sunPlaying) sunPlayStop(); });
 
   $('#cGrid').onchange = e => {
     if (gGrid) { const g = gGrid.getObjectByName('grid'); if (g) g.visible = e.target.checked; }
