@@ -140,6 +140,86 @@ eq('ไม่มีข้อมูลแรงดันทั้งสองฝ�
 eq('ดึงชื่อ Battery Option', BM.batteryOption(US5000), 'PYLON_LV');
 eq('ไม่มี Battery Option ก็ต้องคืนค่าว่าง', BM.batteryOption(SBR128), '');
 
+/* ── 3b. จำนวนโมดูลในตู้ ─────────────────────────────────────────────
+
+   แบตแรงดันสูงเป็นตู้อนุกรม แรงดันจึงขึ้นกับจำนวนโมดูล
+   ตู้เต็มอาจล้นช่วงของอินเวอร์เตอร์ แต่ถอดโมดูลออกบางลูกก็ใช้ได้
+   ตัวเลขนี้ต้องถูก เพราะความจุที่ลูกค้าได้จริงลดลงตามจำนวนที่เหลือ */
+
+const SBR256 = {
+    Manufacturer: 'Sungrow', Model_Name: 'SBR256', Battery_Voltage_Class: 'HV',
+    Nominal_Voltage_V: 512, Operating_Voltage_Min_V: 432, Operating_Voltage_Max_V: 584,
+    Number_of_Modules_Recorded: 8, Min_Modules_Per_Stack: 2, Max_Modules_Per_Stack: 8,
+    Compatible_Inverter_Models: 'Sungrow SH5T, SH6T, SH8T, SH10T, SH12T, SH15T, SH20T, SH25T'
+};
+const SH5RS = {
+    Manufacturer: 'Sungrow', Model_Name: 'SH5.0RS-20', Inverter_Type: 'Hybrid',
+    Battery_Coupling_Class: 'HV',
+    Battery_Voltage_Range_Min_V: 80, Battery_Voltage_Range_Max_V: 460,
+    Compatible_Battery_Models: ''
+};
+
+/* SBR256 คือ 8 โมดูล 432-584 V จึงเป็นโมดูลละ 54-73 V
+   SH5.0RS-20 รับ 80-460 V  ต่ำสุด ceil(80/54)=2  สูงสุด floor(460/73)=6 */
+const mSBR = BM.moduleFit(SH5RS, SBR256);
+eq('SBR256 + SH5.0RS-20 จำนวนโมดูลต่ำสุด', mSBR.min, 2);
+eq('SBR256 + SH5.0RS-20 จำนวนโมดูลสูงสุด', mSBR.max, 6);
+eq('ตู้ 8 โมดูลจึงอยู่นอกช่วง',            mSBR.ok,  false);
+eq('แต่ยังมีจำนวนที่ใช้ได้อยู่',            mSBR.none, false);
+
+/* คู่เดียวกันนี้เอกสารระบุไว้จริง แต่แรงดันตู้เต็มล้นช่วง
+   ต้องลดระดับจาก doc ลงเป็น partial ไม่ใช่ตอบว่าผ่าน
+   เอกสารบอกแค่ว่าตระกูลนี้ใช้ด้วยกันได้ ไม่ได้บอกว่าใช้ได้ทุกขนาดตู้ */
+const rSBR = BM.match(SH5RS, SBR256);
+eq('เอกสารระบุไว้แต่แรงดันล้น ต้องไม่ตอบว่าตรงตามเอกสาร', rSBR.level, 'partial');
+eq('และต้องบอกจำนวนโมดูลที่ใช้ได้ไว้ในเหตุผล',
+   rSBR.why.indexOf('2-6 โมดูล') > -1, true);
+
+/* SH10T รับถึง 700 V ตู้ 8 โมดูลจึงอยู่ในช่วงพอดี ต้องยังเป็น doc */
+const mSH10 = BM.moduleFit(SH10T, SBR256);
+eq('SBR256 + SH10T รับได้ถึง 8 โมดูล', mSH10.max, 8);
+eq('SBR256 + SH10T อยู่ในช่วง',        mSH10.ok, true);
+eq('SBR256 + SH10T ยังตรงตามเอกสาร',   BM.match(SH10T, SBR256).level, 'doc');
+
+/* ตู้ที่ไม่ได้บอกจำนวนโมดูล คิดไม่ได้ ต้องคืน null ไม่ใช่เดา */
+eq('ไม่มีจำนวนโมดูลในดาต้าชีต ต้องคืน null', BM.moduleFit(SH10T, SBR128), null);
+
+/* ── 3c. กำลังชาร์จและคายประจุ ───────────────────────────────────────
+
+   พิกัดไฟสำรองบนดาต้าชีตเป็นของอินเวอร์เตอร์ ไม่ใช่ของทั้งระบบ
+   ถ้าแบตจ่ายไม่ถึง ไฟสำรองจริงคือเลขของแบต และนั่นคือเลขที่ไปอยู่ในข้อเสนอ */
+
+const MG10RL = {
+    Manufacturer: 'Sungrow', Model_Name: 'SH10RL', Inverter_Type: 'Hybrid',
+    Battery_Coupling_Class: 'LV',
+    Battery_Voltage_Range_Min_V: 40, Battery_Voltage_Range_Max_V: 60,
+    Max_Charge_Power_kW: 10, Max_Discharge_Power_kW: 10, Backup_Rated_Power_kW: 10
+};
+const MGL060 = {
+    Manufacturer: 'Sungrow', Model_Name: 'MGL060', Battery_Voltage_Class: 'LV',
+    Nominal_Voltage_V: 51.2, Max_Continuous_Charge_Current_A: 60,
+    Max_Continuous_Discharge_Current_A: 60
+};
+
+const p1 = BM.powerFit(MG10RL, MGL060, { batQty: 1 });
+eq('แบตหนึ่งก้อนจ่ายได้ 3.07 kW', BM.fmtKw(p1.batDis), '3.07');
+eq('กำลังนี้คำนวณจากกระแส จึงต้องติดธง derived', p1.derived, true);
+eq('ไฟสำรองจริงคือ 3.07 kW ไม่ใช่ 10 kW', BM.fmtKw(p1.disLimit), '3.07');
+eq('ต้องเตือนว่าจ่ายไม่ถึงพิกัดไฟสำรอง', p1.backupShort, true);
+
+const p4 = BM.powerFit(MG10RL, MGL060, { batQty: 4 });
+eq('สี่ก้อนรวมได้ 12.29 kW',        BM.fmtKw(p4.batDis), '12.29');
+eq('แต่อินเวอร์เตอร์รับได้แค่ 10 kW', BM.fmtKw(p4.disLimit), '10');
+eq('ครบพิกัดไฟสำรองแล้ว ไม่ต้องเตือน', p4.backupShort, false);
+eq('และไม่ใช่แบตที่เป็นตัวจำกัดอีกต่อไป', p4.disLimitedByBattery, false);
+
+/* ไม่มีข้อมูลกำลังฝั่งใดฝั่งหนึ่ง ต้องคืน null ไม่ใช่เดา */
+eq('อินเวอร์เตอร์ไม่มีพิกัดกำลัง ต้องคืน null', BM.powerFit(SH5RS, MGL060), null);
+eq('แบตไม่มีข้อมูลกำลัง ต้องคืน null',        BM.powerFit(MG10RL, SBR128), null);
+
+eq('ปัดทศนิยมสองตำแหน่ง', BM.fmtKw(3.0719999), '3.07');
+eq('เลขกลมไม่ต้องมีทศนิยม', BM.fmtKw(10), '10');
+
 /* ── 4. กวาดคลังจริง (ถ้าชี้ที่อยู่มาให้) ────────────────────────────── */
 
 const bankArg = process.argv.indexOf('--bank');
@@ -160,6 +240,7 @@ if (BANK && existsSync(BANK)) {
     const bats = load('ESS');
     const tally = { doc: 0, volt: 0, partial: 0, no: 0, unknown: 0 };
     const contradictions = [];
+    const modOut = [];
 
     invs.forEach(i => bats.forEach(b => {
         const r = BM.match(i, b);
@@ -170,6 +251,11 @@ if (BANK && existsSync(BANK)) {
         if (r.level === 'doc' && ic && bc && ic !== bc) {
             contradictions.push(i.Model_Name + ' + ' + b.Model_Name);
         }
+        /* และต้องไม่มีคู่ไหนตอบว่าตรงตามเอกสารทั้งที่จำนวนโมดูลอยู่นอกช่วง
+           เพราะแรงดันจริงจะล้นช่วงของอินเวอร์เตอร์ */
+        if (r.level === 'doc' && r.modules && !r.modules.ok) {
+            modOut.push(i.Model_Name + ' + ' + b.Model_Name);
+        }
     }));
 
     console.log('\nกวาดคลังจริง  อินเวอร์เตอร์ไฮบริด ' + invs.length + ' รุ่น × แบตเตอรี่ ' + bats.length + ' รุ่น');
@@ -177,6 +263,9 @@ if (BANK && existsSync(BANK)) {
 
     eq('ไม่มีคู่ไหนตรงตามเอกสารทั้งที่ชนิดแรงดันคนละอย่าง', contradictions.length, 0);
     if (contradictions.length) contradictions.slice(0, 10).forEach(c => console.log('    ! ' + c));
+
+    eq('ไม่มีคู่ไหนตรงตามเอกสารทั้งที่จำนวนโมดูลอยู่นอกช่วง', modOut.length, 0);
+    if (modOut.length) modOut.slice(0, 10).forEach(c => console.log('    ! ' + c));
     if (!tally.doc) { fail++; bad.push('กวาดคลังแล้วไม่เจอคู่ที่ตรงตามเอกสารเลยสักคู่ ตัวจับคู่น่าจะพัง'); }
 } else if (BANK) {
     console.log('\nไม่พบโฟลเดอร์คลังที่ระบุ ข้ามการกวาดคลังจริง : ' + BANK);

@@ -827,6 +827,9 @@
                             <button onclick="loadDevBank(true)" class="px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 transition" title="ดึงรายการใหม่จากคลาวด์">
                                 <i class="fa-solid fa-rotate"></i>
                             </button>
+                            <button id="dev-backup" onclick="devBankBackup()" class="px-3 py-2 rounded-lg text-xs font-semibold text-white bg-slate-700 hover:bg-slate-800 shadow-sm transition" title="ดาวน์โหลดคลังทั้งหมดเก็บไว้ในเครื่อง">
+                                <i class="fa-solid fa-download mr-1"></i> สำรองคลังลงเครื่อง
+                            </button>
                             <span id="dev-count" class="text-xs text-slate-500"></span>
                         </div>
 
@@ -2661,6 +2664,206 @@ async function devBankConfirm() {
         devMsg(e.message, false);
     } finally {
         btn.disabled = false;
+    }
+}
+
+/* ─── สำรองคลังลงเครื่อง ───────────────────────────────────────────────
+
+   ทำไมต้องมี  คลังอยู่บน Supabase ที่เดียว ถ้าโดนลบผิดหรือบัญชีมีปัญหา
+   ดาต้าชีต 242 รายการที่ไล่อ่านทีละหน้ามาหายหมดในครั้งเดียว
+   ปุ่มนี้ดึงทั้งคลังลงเป็นไฟล์เดียวเก็บไว้ในเครื่อง
+
+   ในไฟล์มีสองชุดที่ต่างกันโดยตั้งใจ
+     devices.json  สำเนาตรงจากคลาวด์ ครบทุกฟิลด์ ใช้กู้คืนได้เป๊ะ
+     ไฟล์ .txt     ประกอบขึ้นใหม่จากค่าที่เก็บไว้ นำเข้าซ้ำผ่านช่องด้านบนได้
+                   แต่ **คอมเมนต์อธิบายกับแท็ก [NOT FOUND] หายไป**
+                   เพราะคลาวด์เก็บเฉพาะค่า ไม่ได้เก็บข้อความรอบ ๆ
+                   ต้นฉบับที่ครบจริงยังต้องเก็บไว้ในคลังบนไดรฟ์เหมือนเดิม
+
+   เขียน zip เองแบบไม่บีบอัด ประมาณห้าสิบบรรทัด แทนการโหลดไลบรารีจาก CDN
+   เพราะหน้านี้เป็นหน้าแรกที่ผู้ใช้ทุกคนเปิด ไม่ควรแบกสคริปต์ของงานผู้ดูแล */
+
+const ZIP_CRC = (() => {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+        let c = n;
+        for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        t[n] = c >>> 0;
+    }
+    return t;
+})();
+
+function zipCrc32(bytes) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) c = ZIP_CRC[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+/* ประกอบไฟล์ zip แบบ store (ไม่บีบอัด) จากรายการ {name, text}
+   ข้อความล้วนไม่กี่ร้อย KB จึงไม่ต้องบีบอัดให้ยุ่งยาก */
+function zipBuild(files) {
+    const enc = new TextEncoder();
+    const now = new Date();
+    /* เวลาในรูปแบบ MS-DOS วินาทีเก็บได้ทีละสองวินาที จึงหาร 2 */
+    const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+    const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+
+    const parts = [], central = [];
+    let offset = 0;
+
+    files.forEach(f => {
+        const name = enc.encode(f.name);
+        const data = enc.encode(f.text);
+        const crc  = zipCrc32(data);
+
+        const lh = new DataView(new ArrayBuffer(30));
+        lh.setUint32(0, 0x04034B50, true);
+        lh.setUint16(4, 20, true);
+        lh.setUint16(6, 0x0800, true);      // ธงบอกว่าชื่อไฟล์เป็น UTF-8
+        lh.setUint16(8, 0, true);           // ไม่บีบอัด
+        lh.setUint16(10, dosTime, true);
+        lh.setUint16(12, dosDate, true);
+        lh.setUint32(14, crc, true);
+        lh.setUint32(18, data.length, true);
+        lh.setUint32(22, data.length, true);
+        lh.setUint16(26, name.length, true);
+        lh.setUint16(28, 0, true);
+        parts.push(new Uint8Array(lh.buffer), name, data);
+
+        const ch = new DataView(new ArrayBuffer(46));
+        ch.setUint32(0, 0x02014B50, true);
+        ch.setUint16(4, 20, true);
+        ch.setUint16(6, 20, true);
+        ch.setUint16(8, 0x0800, true);
+        ch.setUint16(10, 0, true);
+        ch.setUint16(12, dosTime, true);
+        ch.setUint16(14, dosDate, true);
+        ch.setUint32(16, crc, true);
+        ch.setUint32(20, data.length, true);
+        ch.setUint32(24, data.length, true);
+        ch.setUint16(28, name.length, true);
+        ch.setUint32(42, offset, true);
+        central.push(new Uint8Array(ch.buffer), name);
+
+        offset += 30 + name.length + data.length;
+    });
+
+    let cdSize = 0;
+    central.forEach(b => { cdSize += b.length; });
+
+    const eo = new DataView(new ArrayBuffer(22));
+    eo.setUint32(0, 0x06054B50, true);
+    eo.setUint16(8, files.length, true);
+    eo.setUint16(10, files.length, true);
+    eo.setUint32(12, cdSize, true);
+    eo.setUint32(16, offset, true);
+
+    return new Blob(parts.concat(central, [new Uint8Array(eo.buffer)]),
+                    { type: 'application/zip' });
+}
+
+/* ค่าที่เก็บไว้ → ข้อความดาต้าชีต อ่านกลับด้วยตัวแยกไฟล์ตัวเดิมได้
+   ตัวเลขเขียนเปล่า ๆ ข้อความใส่เครื่องหมายคำพูด ตามรูปแบบของไฟล์จริง */
+const DEV_HEAD = { PV: 'PV_MODULE_STRUCTURE', INV: 'INVERTER_STRUCTURE',
+                   ESS: 'BATTERY_ESS_STRUCTURE', OPT: 'OPTIMIZER_STRUCTURE',
+                   EV: 'EV_CHARGE_STRUCTURE' };
+
+function devSpecToText(r) {
+    const L = [];
+    L.push('[' + (DEV_HEAD[r.category] || 'UNKNOWN_STRUCTURE') + ']');
+    L.push('; ไฟล์นี้ประกอบขึ้นใหม่จากคลังบนคลาวด์ เมื่อ ' + new Date().toLocaleString('th-TH'));
+    L.push('; คลังเก็บเฉพาะค่า คอมเมนต์อธิบายและแท็ก [NOT FOUND IN DATASHEET] ของต้นฉบับจึงไม่อยู่ในไฟล์นี้');
+    if (r.source_file) L.push('; ชื่อไฟล์ต้นฉบับ ' + r.source_file);
+    L.push('');
+    const spec = r.spec || {};
+    Object.keys(spec).forEach(k => {
+        const v = spec[k];
+        L.push(k + ' = ' + (typeof v === 'number' ? String(v) : '"' + String(v) + '"'));
+    });
+    L.push('');
+    return L.join('\n');
+}
+
+const devSafeName = s0 => String(s0 || '').replace(/[^0-9A-Za-z\u0E00-\u0E7F._-]+/g, '_')
+                                         .replace(/^_+|_+$/g, '') || 'unnamed';
+
+async function devBankBackup() {
+    const btn = document.getElementById('dev-backup');
+    if (!DEVBANK.length) { devMsg('คลังยังว่าง ไม่มีอะไรให้สำรอง', false); return; }
+
+    const old = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> กำลังรวมไฟล์...'; }
+
+    try {
+        const stamp = new Date().toISOString().slice(0, 10);
+        const files = [];
+        const used = {};
+        const byCat = {};
+
+        DEVBANK.forEach(r => {
+            byCat[r.category] = (byCat[r.category] || 0) + 1;
+            /* ใช้ชื่อไฟล์ต้นฉบับถ้ามี จะได้วางทับคลังบนไดรฟ์แล้วเทียบกันได้ตรง ๆ
+               ไม่มีก็ประกอบตามแบบเดียวกับคลัง เช่น INV_HYB_Sungrow_SH10RL */
+            const raw = String(r.source_file || '').replace(/\.txt$/i, '');
+            const PFX = { ESS: 'BAT' };
+            const made = [PFX[r.category] || r.category || 'OTHER', r.subtype, r.brand, r.model]
+                            .filter(Boolean).join('_');
+            let base = devSafeName(raw || made);
+            const path0 = (r.category || 'OTHER') + '/' + base + '.txt';
+            let path = path0, n = 2;
+            while (used[path]) { path = (r.category || 'OTHER') + '/' + base + '_' + (n++) + '.txt'; }
+            used[path] = true;
+            files.push({ name: path, text: devSpecToText(r) });
+        });
+
+        files.push({ name: 'devices.json', text: JSON.stringify(DEVBANK, null, 2) });
+
+        const tally = Object.keys(byCat).sort().map(c => '  ' + c + '  ' + byCat[c] + ' รายการ').join('\n');
+        files.push({ name: 'อ่านก่อน.txt', text: [
+            'สำรองคลังสเปกอุปกรณ์ ASC',
+            'วันที่สำรอง ' + new Date().toLocaleString('th-TH'),
+            'รวม ' + DEVBANK.length + ' รายการ',
+            '',
+            tally,
+            '',
+            'ในไฟล์นี้มีสองชุด',
+            '',
+            '1. devices.json',
+            '   สำเนาตรงจากคลังบนคลาวด์ ครบทุกฟิลด์รวมทั้งรหัสและเวลาที่แก้ล่าสุด',
+            '   ใช้กู้คืนได้เป๊ะที่สุด แต่ต้องให้คนที่ดูแลระบบเขียนกลับเข้าฐานข้อมูลให้',
+            '',
+            '2. โฟลเดอร์ PV INV ESS OPT EV',
+            '   ไฟล์ .txt ที่ประกอบขึ้นใหม่จากค่าที่เก็บไว้',
+            '   ลากเข้าช่อง "เลือกไฟล์ดาต้าชีต" ในหน้าคลังได้ทันที ค่าที่ได้จะตรงกับของเดิมทุกฟิลด์',
+            '',
+            'ข้อจำกัดที่ต้องรู้',
+            '   คลังบนคลาวด์เก็บเฉพาะค่า ไม่ได้เก็บคอมเมนต์อธิบายแต่ละฟิลด์',
+            '   และไม่ได้เก็บแท็ก [NOT FOUND IN DATASHEET] กับ [UNCERTAIN] ที่อยู่ในต้นฉบับ',
+            '   ไฟล์ .txt ในนี้จึงมีแต่ค่า ไม่มีบันทึกว่าค่าไหนอ่านมาจากเอกสารจริง',
+            '   ค่าไหนเป็นค่าเริ่มต้นเพราะหาไม่เจอ',
+            '',
+            '   ต้นฉบับที่ครบถ้วนยังคงต้องเก็บไว้ที่คลังดาต้าชีตบนไดรฟ์เหมือนเดิม',
+            '   ไฟล์สำรองชุดนี้ใช้กู้ระบบให้กลับมาทำงานได้ ไม่ได้ใช้แทนต้นฉบับ',
+            ''
+        ].join('\n') });
+
+        const blob = zipBuild(files);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ASC_คลังอุปกรณ์_' + stamp + '.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+        const mb = (blob.size / 1048576).toFixed(2);
+        devMsg('ดาวน์โหลดไฟล์สำรองแล้ว ' + DEVBANK.length + ' รายการ (' + mb + ' MB) ' +
+               'เก็บไว้นอกเครื่องนี้อีกที่หนึ่งด้วย สำรองไว้ในเครื่องเดียวไม่นับว่าสำรอง', true);
+    } catch (e) {
+        devMsg('สร้างไฟล์สำรองไม่สำเร็จ : ' + e.message, false);
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = old; }
     }
 }
 

@@ -4417,6 +4417,10 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
 
             /* อินเวอร์เตอร์ที่ใช้เป็นตัวอ้างอิงในการจับคู่แบตเตอรี่
                ใช้ inv1 เป็นหลัก ถ้ายังไม่ได้เลือกค่อยลอง inv2 */
+            /* ผลนับกลุ่มล่าสุดของรายการแบตเตอรี่ เก็บไว้เพื่อวาดโน้ตซ้ำได้
+               โดยไม่ต้องคิดกลุ่มทั้งคลังใหม่ทุกครั้งที่เลือกรุ่น */
+            let lastBatCounts = null;
+
             function refInverter() {
                 const r = (typeof state !== 'undefined' && state.rawEquipData) || {};
                 const has = o => (o && (o.Model_Name || o.model)) ? o : null;
@@ -4432,20 +4436,62 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
             /* บอกให้เห็นว่ากำลังจับคู่กับอินเวอร์เตอร์ตัวไหน และเจออะไรบ้าง
                ไม่ซ่อนตัวเลือกไหนเลย เพราะเอกสารของผู้ผลิตไม่เคยครบ
                ถ้าซ่อนจะไปบล็อกคู่ที่ใช้ได้จริงแต่เอกสารไม่ได้เขียนไว้ */
+            /* บรรทัดที่สอง กำลังชาร์จและคายประจุที่ระบบทำได้จริง
+
+               พิกัดไฟสำรองบนดาต้าชีตอินเวอร์เตอร์เป็นของอินเวอร์เตอร์ ไม่ใช่ของระบบ
+               ถ้าแบตจ่ายได้น้อยกว่านั้น BMS จะจำกัดให้เอง เลขที่ใช้ได้จริงคือเลขที่ต่ำกว่า
+               ต้องเห็นตั้งแต่ตอนเลือกของ ไม่ใช่ไปรู้ตอนลูกค้าเซ็นข้อเสนอไปแล้ว */
+            function batPowerLine() {
+                if (!window.AscBatMatch || !AscBatMatch.powerFit) return null;
+                const r0 = (typeof state !== 'undefined' && state.rawEquipData) || {};
+                const bat = r0.bat, inv = refInverter();
+                if (!bat || !(bat.Model_Name || bat.model) || !inv) return null;
+
+                const r = AscBatMatch.powerFit(inv, bat, { batQty: bat.qty, invQty: inv.qty });
+                if (!r) return null;
+
+                const kw = AscBatMatch.fmtKw;
+                let txt = 'กำลังที่ทำได้จริง — คายประจุ ' + kw(r.disLimit) + ' kW · ชาร์จ ' + kw(r.chgLimit) + ' kW';
+                if (r.batQty > 1) txt += ' (แบต ' + r.batQty + ' ชุด)';
+                if (r.backupShort) {
+                    txt += ' · พิกัดไฟสำรองของอินเวอร์เตอร์คือ ' + kw(r.backup) +
+                           ' kW แต่แบตชุดนี้จ่ายได้ ' + kw(r.batDis) + ' kW เท่านั้น';
+                }
+                if (r.derived) txt += ' · กำลังของแบตคำนวณจากกระแสคูณแรงดันระบุ';
+                return { text: txt, warn: !!r.backupShort };
+            }
+
             function showBatNote(counts) {
                 const el = document.getElementById('batMatchNote');
                 if (!el) return;
                 const inv = refInverter();
+
+                /* วาดสองบรรทัดเสมอ บรรทัดล่างจะว่างถ้ายังไม่ได้เลือกแบตเตอรี่ */
+                const paint = (cls, head) => {
+                    el.className = 'dev-note' + (cls ? ' ' + cls : '');
+                    el.textContent = '';
+                    const a = document.createElement('div');
+                    a.textContent = head;
+                    el.appendChild(a);
+                    const pw = batPowerLine();
+                    if (pw) {
+                        const b = document.createElement('div');
+                        b.textContent = pw.text;
+                        b.style.marginTop = '2px';
+                        if (pw.warn) b.style.fontWeight = '600';
+                        el.appendChild(b);
+                        if (pw.warn && cls !== 'err') el.className = 'dev-note warn';
+                    }
+                };
+
                 if (!window.AscBatMatch) { el.textContent = ''; el.className = 'dev-note'; return; }
                 if (!inv) {
-                    el.className = 'dev-note warn';
-                    el.textContent = 'ยังไม่ได้เลือกอินเวอร์เตอร์ จึงยังตรวจความเข้ากันได้ของแบตเตอรี่ไม่ได้';
+                    paint('warn', 'ยังไม่ได้เลือกอินเวอร์เตอร์ จึงยังตรวจความเข้ากันได้ของแบตเตอรี่ไม่ได้');
                     return;
                 }
                 const name = (inv.Manufacturer ? inv.Manufacturer + ' ' : '') + (inv.Model_Name || inv.model);
                 if (!counts) {
-                    el.className = 'dev-note';
-                    el.textContent = 'จับคู่กับ ' + name + ' — เลือกยี่ห้อเพื่อดูรุ่นที่เข้ากันได้';
+                    paint('', 'จับคู่กับ ' + name + ' — เลือกยี่ห้อเพื่อดูรุ่นที่เข้ากันได้');
                     return;
                 }
                 const bits = [];
@@ -4455,9 +4501,9 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 if (counts.no)      bits.push('ไม่เข้ากัน ' + counts.no);
                 if (counts.unknown) bits.push('ข้อมูลไม่พอ ' + counts.unknown);
                 const good = (counts.doc || 0) + (counts.volt || 0);
-                el.className = 'dev-note' + (good ? ' ok' : ' warn');
-                el.textContent = 'จับคู่กับ ' + name + ' — ' + (bits.join(' · ') || 'ไม่มีรุ่นในยี่ห้อนี้') +
-                                 (good ? '' : ' — ยี่ห้อนี้ไม่มีรุ่นที่เข้ากับอินเวอร์เตอร์ตัวนี้');
+                paint(good ? 'ok' : 'warn',
+                      'จับคู่กับ ' + name + ' — ' + (bits.join(' · ') || 'ไม่มีรุ่นในยี่ห้อนี้') +
+                      (good ? '' : ' — ยี่ห้อนี้ไม่มีรุ่นที่เข้ากับอินเวอร์เตอร์ตัวนี้'));
             }
 
             function fillModels(pick) {
@@ -4517,6 +4563,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 });
 
                 msel.disabled = false;
+                lastBatCounts = counts;
                 showBatNote(counts);
             }
 
@@ -4553,6 +4600,14 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 /* เปลี่ยนอินเวอร์เตอร์แล้วผลจับคู่ของแบตเตอรี่เปลี่ยนตาม
                    ต้องจัดกลุ่มใหม่ทันที ไม่ใช่รอให้ผู้ใช้สลับยี่ห้อไปมาเอง */
                 if (typ === 'inv1' || typ === 'inv2') ascRefreshBatMatch();
+
+                /* เลือกแบตเตอรี่แล้วบรรทัดกำลังต้องขึ้นทันที
+                   fillModels() คิดกลุ่มใหม่ทั้งชุดซึ่งเกินจำเป็น จึงวาดโน้ตอย่างเดียว */
+                if (typ === 'bat') {
+                    const bp = picks.filter(p => p.dataset.cat === 'ESS')[0];
+                    const bsel = bp && bp.querySelector('.dev-brand');
+                    showBatNote(bsel && bsel.value ? lastBatCounts : null);
+                }
             }
 
             /* จัดกลุ่มรายการแบตเตอรี่ใหม่ตามอินเวอร์เตอร์ปัจจุบัน
