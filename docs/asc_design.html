@@ -548,6 +548,57 @@
                             <input type="number" id="lpsEarthOhm" min="0" step="0.1" placeholder="เกณฑ์ ≤ 10">
                         </div>
                         <div id="lpsSpdHint" style="font-size: 11px; margin-top: 8px; padding: 6px 8px; border-radius: 4px; background: #fff; border: 1px solid #fde047; color: #713f12;"></div>
+
+                        <!-- เครื่องคำนวณระยะการแยก S · โผล่เมื่ออาคารมีระบบล่อฟ้า
+                             สูตรและค่าสัมประสิทธิ์อยู่ใน asc-lps.js พร้อมที่มา -->
+                        <div id="lpsCalcBox" style="display: none; border-top: 1px dashed #fde047; padding-top: 10px; margin-top: 10px;">
+                            <div style="font-weight: 600; color: #a16207; font-size: 11.5px; margin-bottom: 6px;">
+                                <i class="fa-solid fa-ruler"></i> คำนวณระยะการแยก S
+                            </div>
+                            <label style="font-size: 11.5px;">ชั้นของระบบป้องกันฟ้าผ่า (LPL)</label>
+                            <select id="lpsLevel" style="margin-bottom: 8px;">
+                                <option value="">— ยังไม่ระบุ —</option>
+                                <option value="I">ระดับ I</option>
+                                <option value="II">ระดับ II</option>
+                                <option value="III">ระดับ III</option>
+                                <option value="IV">ระดับ IV</option>
+                            </select>
+                            <label style="font-size: 11.5px;">วัสดุที่คั่นระหว่างตัวนำกับส่วนโลหะ</label>
+                            <select id="lpsMaterial" style="margin-bottom: 8px;">
+                                <option value="air">อากาศ (km = 1)</option>
+                                <option value="solid">คอนกรีต อิฐ ไม้ (km = 0.5)</option>
+                            </select>
+                            <div style="display: flex; gap: 8px;">
+                                <div style="flex: 1;">
+                                    <label style="font-size: 11.5px;">จำนวนตัวนำลงดิน</label>
+                                    <input type="number" id="lpsDownConductors" min="1" step="1" placeholder="เช่น 2">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="font-size: 11.5px;">ความยาวตัวนำ l (ม.)</label>
+                                    <input type="number" id="lpsConductorLen" min="0" step="0.1" placeholder="เช่น 17">
+                                </div>
+                            </div>
+                            <div style="font-size: 10.5px; color: #713f12; margin: 4px 0 8px 0; line-height: 1.5;">
+                                l วัดจากจุดที่พิจารณา ไปถึงจุดประสานศักย์หรือจุดต่อลงดินที่ใกล้ที่สุด (l = l₁+l₂+l₃)
+                            </div>
+
+                            <div style="font-weight: 600; color: #a16207; font-size: 11.5px; margin: 10px 0 6px 0;">
+                                <i class="fa-solid fa-bolt-lightning"></i> เสาล่อฟ้าบนผัง
+                            </div>
+                            <div style="display: flex; gap: 8px; align-items: flex-end;">
+                                <div style="flex: 1;">
+                                    <label style="font-size: 11.5px;">ความสูงเหนือหลังคา (ม.)</label>
+                                    <input type="number" id="lpsRodHeight" min="0.1" step="0.1" value="2">
+                                </div>
+                                <button type="button" id="btnPlaceRod" class="btn-search" style="white-space: nowrap; height: 28px;">
+                                    <i class="fa-solid fa-location-crosshairs"></i> ปักเสา
+                                </button>
+                            </div>
+                            <div style="font-size: 10.5px; color: #713f12; margin-top: 4px;">
+                                กดปักเสาแล้วคลิกบนแผนที่ · กด Esc เพื่อยกเลิก · คลิกที่เสาเพื่อดึงค่ากลับมาแก้
+                            </div>
+                            <div id="lpsCalcOut" style="font-size: 11px; margin-top: 8px; padding: 6px 8px; border-radius: 4px; background: #fff; border: 1px solid #fde047; color: #713f12;"></div>
+                        </div>
                     </div>
 					
                     <div class="form-group">
@@ -1535,6 +1586,7 @@
          เพราะก้อนนั้นอ่านค่าคงที่ตั้งแต่ตอนแจงไฟล์ ไม่ได้รอ DOMContentLoaded
          โมดูลอื่น (asc-tree, asc-ridge, asc-kb, asc-advisor) โหลดท้ายไฟล์ได้เพราะถูกเรียกทีหลัง -->
     <script src="asc-eit.js"></script>
+    <script src="asc-lps.js"></script>
 
     <!-- แผนที่ฐาน — ต้องโหลดก่อนสคริปต์ก้อนใหญ่ เพราะก้อนนั้นสร้างแผนที่ทันทีตอนแจงไฟล์ -->
     <script src="asc-basemap.js"></script>
@@ -3971,6 +4023,10 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                             set('lpsSeparation', L.separation || 'unknown');
                             set('lpsDownConductorSqmm', L.down_conductor_sqmm);
                             set('lpsEarthOhm', L.earth_resistance_ohm);
+                            set('lpsLevel', L.lpl || '');
+                            set('lpsMaterial', L.separation_material || 'air');
+                            set('lpsDownConductors', L.down_conductor_count);
+                            set('lpsConductorLen', L.conductor_length_m);
                             if (typeof ascSyncLpsUI === 'function') ascSyncLpsUI();
                         })();
                         document.getElementById('roofHeightM').value = d3.buildingHeight_m || 10;
@@ -5669,11 +5725,19 @@ processPolygonsAndPanels = function() {
         function ascReadLps() {
             const g = id => document.getElementById(id);
             const numOrNull = v => { const n = parseFloat(v); return isFinite(n) && n > 0 ? n : null; };
+            const rods = (window.AscLps && AscLps.list) ? AscLps.recompute() : { count: 0, rods: [], verdict: null };
             return {
                 external:   (g('lpsExternal')   || {}).value || 'unknown',
                 separation: (g('lpsSeparation') || {}).value || 'unknown',
                 down_conductor_sqmm:  numOrNull((g('lpsDownConductorSqmm') || {}).value),
-                earth_resistance_ohm: numOrNull((g('lpsEarthOhm') || {}).value)
+                earth_resistance_ohm: numOrNull((g('lpsEarthOhm') || {}).value),
+                /* ระดับ 3-4 · ข้อมูลคำนวณระยะแยก S และเสาล่อฟ้าบนผัง */
+                lpl:                  (g('lpsLevel')    || {}).value || null,
+                separation_material:  (g('lpsMaterial') || {}).value || null,
+                down_conductor_count: numOrNull((g('lpsDownConductors') || {}).value),
+                conductor_length_m:   numOrNull((g('lpsConductorLen') || {}).value),
+                air_terminals:        rods.rods,
+                measured_verdict:     rods.verdict
             };
         }
         window.ascReadLps = ascReadLps;
@@ -5690,6 +5754,10 @@ processPolygonsAndPanels = function() {
             sep.disabled = !hasLps;
             if (!hasLps) sep.value = 'unknown';
             if (box) box.style.display = hasLps ? 'block' : 'none';
+
+            /* ตัวคำนวณระยะแยกต้องทำงานทุกเส้นทาง ไม่ใช่เฉพาะตอนตัดสิน SPD ได้
+               จึงเรียกตรงนี้ก่อนทางแยกทั้งหมด ไม่ใช่ต่อท้ายแบบ setTimeout */
+            if (typeof ascSyncLpsCalc === 'function') ascSyncLpsCalc();
 
             const lps = ascReadLps();
             const pick = (window.AscEIT && AscEIT.spdClassFor) ? AscEIT.spdClassFor(lps) : null;
@@ -5714,10 +5782,88 @@ processPolygonsAndPanels = function() {
         }
         window.ascSyncLpsUI = ascSyncLpsUI;
 
-        ['lpsExternal', 'lpsSeparation', 'lpsDownConductorSqmm', 'lpsEarthOhm'].forEach(id => {
+        /* ── ระดับ 3-4 · คำนวณระยะแยก S และสรุปเสาล่อฟ้าบนผัง ───────────────
+
+           เดิมช่อง "รักษาระยะแยกได้ไหม" ให้ผู้ใช้เดาเอง ตอนนี้คำนวณให้แล้ว
+           แต่ยัง **ไม่เขียนทับคำตอบของผู้ใช้** เพราะระยะจริงที่โปรแกรมวัดได้
+           เป็นระยะถึงขอบพื้นที่วางแผง ไม่ใช่ระยะถึงชิ้นโลหะที่ใกล้ที่สุดจริง ๆ
+           จึงเสนอเป็นคำแนะนำพร้อมปุ่มให้กดรับ ไม่ใช่ตัดสินแทน */
+        function ascSyncLpsCalc() {
+            const box = document.getElementById('lpsCalcBox');
+            const out = document.getElementById('lpsCalcOut');
+            if (!box || !out) return;
+
+            const hasLps = (document.getElementById('lpsExternal') || {}).value === 'yes';
+            box.style.display = hasLps ? 'block' : 'none';
+            if (!hasLps || !window.AscLps) { out.innerHTML = ''; return; }
+
+            const g = id => (document.getElementById(id) || {}).value;
+            const need = AscLps.separation({
+                lpl: g('lpsLevel'),
+                material: g('lpsMaterial'),
+                downConductors: parseFloat(g('lpsDownConductors')),
+                length: parseFloat(g('lpsConductorLen'))
+            });
+
+            const lines = [];
+            if (!need.ok) {
+                lines.push('<b>ยังคำนวณ S ไม่ได้</b> — ขาด ' + need.missing.join(' · '));
+            } else {
+                lines.push('<b>ระยะแยกที่ต้องการ s = ' + need.s + ' ม.</b>');
+                lines.push('<span style="font-family: monospace; font-size: 10.5px;">' + need.working + '</span>');
+            }
+
+            /* สรุปเสาล่อฟ้าที่ปักไว้ */
+            const sum = AscLps.recompute();
+            if (sum.count) {
+                lines.push('<hr style="border: none; border-top: 1px dashed #fde047; margin: 6px 0;">');
+                lines.push('<b>เสาล่อฟ้า ' + sum.count + ' ต้น</b>');
+                sum.rods.forEach((r, i) => {
+                    const z = r.result && r.result.zone;
+                    const bits = ['ต้นที่ ' + (i + 1) + ' สูง ' + r.data.height_m + ' ม.'];
+                    if (z && z.outOfRange) bits.push('เกินช่วงตารางมุมป้องกัน');
+                    else if (z) bits.push('เขตป้องกันรัศมี ' + z.radius + ' ม. (มุม ' + z.alpha + '°)');
+                    if (r.result && r.result.gap !== null && r.result.gap !== undefined)
+                        bits.push('ห่างขอบแผง ' + r.result.gap + ' ม.');
+                    lines.push('<span style="font-size: 10.5px;">' + bits.join(' · ') + '</span>');
+                });
+                if (sum.verdict === 'not_ok')
+                    lines.push('<b style="color: #b91c1c;">มีเสาที่ระยะจริงน้อยกว่า s — รักษาระยะแยกไม่ได้</b>');
+                else if (sum.verdict === 'ok')
+                    lines.push('<b style="color: #15803d;">ทุกเสาห่างไม่น้อยกว่า s — รักษาระยะแยกได้</b>');
+
+                if (sum.verdict && (document.getElementById('lpsSeparation') || {}).value === 'unknown') {
+                    lines.push('<button type="button" id="btnAdoptSep" class="btn-search" style="margin-top: 6px; font-size: 10.5px;">' +
+                               'ใช้ผลนี้เติมช่อง "รักษาระยะแยก"</button>');
+                }
+            } else if (need.ok) {
+                lines.push('<span style="font-size: 10.5px;">ยังไม่ได้ปักเสาล่อฟ้าบนผัง จึงยังเทียบกับระยะจริงไม่ได้</span>');
+            }
+
+            out.innerHTML = lines.join('<br>');
+
+            const adopt = document.getElementById('btnAdoptSep');
+            if (adopt) adopt.addEventListener('click', () => {
+                const sel = document.getElementById('lpsSeparation');
+                if (sel && sum.verdict) { sel.value = sum.verdict; ascSyncLpsUI(); }
+            });
+        }
+        window.ascSyncLpsCalc = ascSyncLpsCalc;
+
+        ['lpsExternal', 'lpsSeparation', 'lpsDownConductorSqmm', 'lpsEarthOhm',
+         'lpsLevel', 'lpsMaterial', 'lpsDownConductors', 'lpsConductorLen', 'lpsRodHeight'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('change', ascSyncLpsUI);
         });
+
+        (function () {
+            const btn = document.getElementById('btnPlaceRod');
+            if (btn) btn.addEventListener('click', () => {
+                if (window.AscLps) { AscLps.arm(); btn.textContent = 'คลิกบนแผนที่...';
+                    setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> ปักเสา'; }, 4000); }
+            });
+        })();
+
         ascSyncLpsUI();
 
         // 🌟 แก้ไข: ย้ายการอัปเดต Azimuth ไปใช้ syncActiveConfig()
