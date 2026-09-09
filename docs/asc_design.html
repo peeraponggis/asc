@@ -516,6 +516,39 @@
                             <div class="radio-item"><input type="radio" id="bldgCom" name="buildingType" value="1500"><label for="bldgCom">ธุรกิจ/โรงงาน (Max 1,500V)</label></div>
                         </div>
                     </div>
+
+                    <!-- ระบบป้องกันฟ้าผ่าของอาคาร · วสท. ข้อ 3.6 และภาคผนวก จ
+                         สองช่องแรกเป็นตัวตัดสิน class ของ SPD ตามตารางที่ 3.2 หน้า 33
+                         ซึ่งเดิมโปรแกรมใส่ Type 2 ตายตัวทุกงาน ผิดกับสองในสามเคสของตาราง
+                         สองช่องหลังเป็นค่าที่วัดหน้างาน ใช้ให้ผลตรวจแบบเทียบเกณฑ์ภาคผนวก จ.2 -->
+                    <div class="form-group" style="background: #fefce8; border: 1px solid #fde047; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
+                        <label style="color: #a16207; font-weight: bold;"><i class="fa-solid fa-bolt"></i> ระบบป้องกันฟ้าผ่าของอาคาร (วสท. ข้อ 3.6)</label>
+                        <div style="font-size: 11px; color: #713f12; margin: 2px 0 8px 0; line-height: 1.5;">
+                            ตัดสินชนิด SPD และขนาดสายต่อประสานศักย์ · ไม่ระบุ = โปรแกรมตัดสินให้ไม่ได้ และจะขึ้นเตือนในผลตรวจ
+                        </div>
+                        <label style="font-size: 11.5px;">อาคารมีระบบป้องกันฟ้าผ่าภายนอกหรือไม่</label>
+                        <select id="lpsExternal" style="margin-bottom: 8px;">
+                            <option value="unknown" selected>— ยังไม่ระบุ —</option>
+                            <option value="none">ไม่มี</option>
+                            <option value="yes">มี</option>
+                        </select>
+                        <label style="font-size: 11.5px;">รักษาระยะการแยก S จากระบบล่อฟ้าได้หรือไม่</label>
+                        <select id="lpsSeparation" style="margin-bottom: 8px;" disabled>
+                            <option value="unknown" selected>— ยังไม่ประเมิน —</option>
+                            <option value="ok">รักษาได้</option>
+                            <option value="not_ok">รักษาไม่ได้ (ต้องต่อประสานเข้าระบบล่อฟ้าโดยตรง)</option>
+                        </select>
+                        <div id="lpsMeasuredBox" style="display: none; border-top: 1px dashed #fde047; padding-top: 8px; margin-top: 4px;">
+                            <div style="font-size: 11px; color: #713f12; margin-bottom: 6px;">
+                                ค่าที่วัด/ออกแบบหน้างาน — เว้นว่างได้ ถ้ายังไม่มีข้อมูล
+                            </div>
+                            <label style="font-size: 11.5px;">ขนาดตัวนำลงดินของระบบล่อฟ้า (ตร.มม.)</label>
+                            <input type="number" id="lpsDownConductorSqmm" min="0" step="1" placeholder="เกณฑ์ ≥ 50" style="margin-bottom: 8px;">
+                            <label style="font-size: 11.5px;">ความต้านทานดินของระบบล่อฟ้าที่วัดได้ (โอห์ม)</label>
+                            <input type="number" id="lpsEarthOhm" min="0" step="0.1" placeholder="เกณฑ์ ≤ 10">
+                        </div>
+                        <div id="lpsSpdHint" style="font-size: 11px; margin-top: 8px; padding: 6px 8px; border-radius: 4px; background: #fff; border: 1px solid #fde047; color: #713f12;"></div>
+                    </div>
 					
                     <div class="form-group">
                         <label>ค้นหาที่ตั้งโครงการ</label>
@@ -3929,6 +3962,17 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                             const rb = document.querySelector(`input[name="buildingType"][value="${d3.buildingVoltageLimit}"]`);
                             if(rb) rb.checked = true;
                         }
+                        /* ระบบป้องกันฟ้าผ่า — ไฟล์เก่าไม่มีก้อนนี้ ให้กลับไปเป็น "ยังไม่ระบุ"
+                           ซึ่งจะไปขึ้นเตือนในผลตรวจ ไม่ใช่เดาเป็น "ไม่มีล่อฟ้า" เงียบ ๆ */
+                        (function(){
+                            const L = d3.lightning_protection || {};
+                            const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v === null || v === undefined) ? '' : v; };
+                            set('lpsExternal', L.external || 'unknown');
+                            set('lpsSeparation', L.separation || 'unknown');
+                            set('lpsDownConductorSqmm', L.down_conductor_sqmm);
+                            set('lpsEarthOhm', L.earth_resistance_ohm);
+                            if (typeof ascSyncLpsUI === 'function') ascSyncLpsUI();
+                        })();
                         document.getElementById('roofHeightM').value = d3.buildingHeight_m || 10;
                         /* ชายคาปลายที่สอง — ไฟล์เก่าไม่มีค่านี้ ให้เท่ากับปลายแรก ผลจึงเหมือนเดิมทุกประการ */
                         if (isFinite(parseFloat(d3.eaveHeightB_m))) {
@@ -5618,6 +5662,63 @@ processPolygonsAndPanels = function() {
 
         // Listener สำหรับประเภทอาคาร
         document.querySelectorAll('input[name="buildingType"]').forEach(radio => radio.addEventListener('change', () => calculateStringSizing()));
+
+        /* ── ระบบป้องกันฟ้าผ่า · ผูกช่องกรอกเข้ากับตารางที่ 3.2 ──────────────
+           โชว์ผลลัพธ์ให้เห็นตั้งแต่ตอนกรอก ไม่ต้องรอกด Generate BOM
+           เพราะ class ของ SPD เปลี่ยนราคาและเปลี่ยนของที่ต้องสั่ง */
+        function ascReadLps() {
+            const g = id => document.getElementById(id);
+            const numOrNull = v => { const n = parseFloat(v); return isFinite(n) && n > 0 ? n : null; };
+            return {
+                external:   (g('lpsExternal')   || {}).value || 'unknown',
+                separation: (g('lpsSeparation') || {}).value || 'unknown',
+                down_conductor_sqmm:  numOrNull((g('lpsDownConductorSqmm') || {}).value),
+                earth_resistance_ohm: numOrNull((g('lpsEarthOhm') || {}).value)
+            };
+        }
+        window.ascReadLps = ascReadLps;
+
+        function ascSyncLpsUI() {
+            const sel  = document.getElementById('lpsExternal');
+            const sep  = document.getElementById('lpsSeparation');
+            const box  = document.getElementById('lpsMeasuredBox');
+            const hint = document.getElementById('lpsSpdHint');
+            if (!sel || !sep || !hint) return;
+
+            const hasLps = sel.value === 'yes';
+            /* ไม่มีล่อฟ้าก็ไม่มีอะไรให้แยก คำถามเรื่องระยะแยกจึงไม่มีความหมาย */
+            sep.disabled = !hasLps;
+            if (!hasLps) sep.value = 'unknown';
+            if (box) box.style.display = hasLps ? 'block' : 'none';
+
+            const lps = ascReadLps();
+            const pick = (window.AscEIT && AscEIT.spdClassFor) ? AscEIT.spdClassFor(lps) : null;
+            const bond = (window.AscEIT && AscEIT.bondingSqmmFor) ? AscEIT.bondingSqmmFor(lps) : null;
+
+            if (!pick) {
+                hint.style.color = '#b45309';
+                hint.innerHTML = '<b>ยังตัดสินชนิด SPD ให้ไม่ได้</b> — ' +
+                    (sel.value === 'yes'
+                        ? 'อาคารมีระบบล่อฟ้า ต้องระบุด้วยว่ารักษาระยะแยก S ได้หรือไม่'
+                        : 'ต้องระบุก่อนว่าอาคารมีระบบป้องกันฟ้าผ่าภายนอกหรือไม่') +
+                    '<br>รายการวัสดุจะยังไม่ใส่ชนิด SPD ให้ และผลตรวจแบบจะขึ้นเตือน';
+                return;
+            }
+            hint.style.color = '#166534';
+            hint.innerHTML = '<b>ตารางที่ 3.2:</b> ' + pick.label +
+                '<br>SPD ฝั่งไฟตรง <b>class ' + pick.dc + '</b> · ฝั่งไฟสลับ <b>class ' + pick.ac + '</b>' +
+                (bond ? ' · สายต่อประสานศักย์ <b>' + bond + ' ตร.มม.</b>' : '') +
+                (pick.scenario === 's-not-ok'
+                    ? '<br>รักษาระยะแยกไม่ได้ ต้องต่อตัวนำโดยตรงเข้าระบบล่อฟ้า <b>และ</b> ต่อผ่าน SPD (ข้อ 3.6.2 (1))'
+                    : '');
+        }
+        window.ascSyncLpsUI = ascSyncLpsUI;
+
+        ['lpsExternal', 'lpsSeparation', 'lpsDownConductorSqmm', 'lpsEarthOhm'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', ascSyncLpsUI);
+        });
+        ascSyncLpsUI();
 
         // 🌟 แก้ไข: ย้ายการอัปเดต Azimuth ไปใช้ syncActiveConfig()
         let customAzimuth = null;
@@ -7625,6 +7726,9 @@ function updateFinalDcLength() {
                     globalSlope: Math.max(0, Math.min(90, parseFloat(document.getElementById('sysSlope').value) || 0)),
                     globalAzimuthOverride: parseFloat(document.getElementById('sysAzimuth').value) || null,
                     buildingVoltageLimit: parseInt(document.querySelector('input[name="buildingType"]:checked').value) || 1000,
+                    /* ระบบป้องกันฟ้าผ่าของอาคาร · วสท. ข้อ 3.6 และภาคผนวก จ
+                       ไฟล์เก่าไม่มีก้อนนี้ ตัวตรวจแบบจึงต้องรับกรณี undefined ได้ */
+                    lightning_protection: (typeof ascReadLps === 'function') ? ascReadLps() : null,
                     roofPolygons: exportedRoofPolygons, // 🌟 เปลี่ยนมาใช้ตัวแปรที่ฝังพิกัด customLayout แล้ว
                     mountType: document.getElementById('mountDisplayText').innerText,
                     orientation: document.querySelector('input[name="panelOrientation"]:checked').value,
@@ -8615,13 +8719,28 @@ function ascFileStamp(projectName, kind) {
                   + `</span>`
                 : `<br><span style="font-size: 0.85em; color: #475569;">ประมาณจากกระแสทำงาน เพราะยังไม่มีค่า Isc ของแผง</span>`),
                 numStrings, "ชุด", "#f59e0b");
-            addRow("DC Box", "DC Surge Protection (SPD)", `Type 2, &ge; ${Math.ceil(maxVocArray/100)*100}Vdc, Imax &ge; 20kA`, state.inv1Qty + state.inv2Qty, "ตัว", "#f59e0b");
+            /* ชนิด SPD มาจากตารางที่ 3.2 หน้า 33 ตามระบบป้องกันฟ้าผ่าของอาคาร
+               เดิมใส่ Type 2 ตายตัวทุกงาน ซึ่งผิดกับสองในสามเคสของตาราง
+               ถ้าผู้ใช้ยังไม่ระบุ ให้เว้นชนิดไว้แล้วเขียนกำกับ ไม่ใช่เดาเป็น Type 2 */
+            const lpsNow   = (typeof ascReadLps === 'function') ? ascReadLps() : {};
+            const spdPick  = (window.AscEIT && AscEIT.spdClassFor) ? AscEIT.spdClassFor(lpsNow) : null;
+            const bondSqmm = (window.AscEIT && AscEIT.bondingSqmmFor) ? AscEIT.bondingSqmmFor(lpsNow) : null;
+            const spdNote  = spdPick
+                ? `<br><span style="font-size: 0.85em; color: #475569;">วสท. ตารางที่ 3.2 · ${spdPick.label}</span>`
+                : `<br><span style="font-size: 0.85em; color: #b45309;">⚠ ยังไม่ได้ระบุระบบป้องกันฟ้าผ่าของอาคาร จึงเลือกชนิดให้ไม่ได้ (วสท. ตารางที่ 3.2)</span>`;
+
+            addRow("DC Box", "DC Surge Protection (SPD)",
+                (spdPick ? `Type ${spdPick.dc}` : 'ต้องระบุชนิด') +
+                `, &ge; ${Math.ceil(maxVocArray/100)*100}Vdc, Imax &ge; 20kA` + spdNote,
+                state.inv1Qty + state.inv2Qty, "ตัว", "#f59e0b");
 
             let acVoltsText = `${fmtNum(acVolts)}V (${acPhase === 3 ? '3-Phase' : '1-Phase'})` +
                               (acVoltsFromSheet ? ' ตามดาต้าชีต' : '');
             addRow("AC Box", "AC Breaker (MCB/MCCB)", `พิกัด ${acBreakerAmp}A / ${acVoltsText}<br><span style="font-size: 0.85em; color: #475569;">คิดจากกระแสขาออกสูงสุด ${fmtNum(maxAcCurrent)} A ${acCurrentFromSheet ? '(จากดาต้าชีต)' : '(ประมาณจากกำลังพิกัด เพราะดาต้าชีตไม่ระบุ)'} × 1.25</span>`, 1, "ตัว", "#10b981");
             addRow("AC Box", "เครื่องตัดไฟรั่ว (RCD)", `Type B, ป้องกันกระแสรั่ว &le; 30mA`, 1, "ตัว", "#10b981");
-            addRow("AC Box", "AC Surge Protection (SPD)", `Type 2, 275Vac/400Vac`, 1, "ตัว", "#10b981");
+            addRow("AC Box", "AC Surge Protection (SPD)",
+                (spdPick ? `Type ${spdPick.ac}` : 'ต้องระบุชนิด') + `, 275Vac/400Vac` + spdNote,
+                1, "ตัว", "#10b981");
             addRow("AC Box", "มิเตอร์กันย้อน (Smart Meter)", `เข้ากันได้กับแบรนด์ ${state.inv1Mfg}`, 1, "ชุด", "#10b981");
 
             // 🌟 ป้ายตาม วสท. 022013-25 บทที่ 6 (ข้อ 6.3-6.5) เป็นข้อบังคับ ไม่ใช่ของแถม
@@ -8642,6 +8761,18 @@ function ascFileStamp(projectName, kind) {
             addRow("Cable", "สายไฟ DC (PV1-F)", `ขนาด <b>${dcCableSize} sq.mm</b> (V-Drop &le; 1%) <br><span style="font-size: 0.85em; color: #dc2626;">(อ้างอิง V-Drop ต่อสตริง: วสท.สูงสุด = ${maxOneWayAllowed} ม. | เดินสายจริง = ${Math.round(oneWayRouteLength)} ม.)</span><br><span style="font-size: 0.8em; color: #475569;">*ระยะสายจัดซื้อรวม (ขั้วบวก/ลบ) สำหรับทั้งหมด ${numStrings} สตริง</span>`, dcLength, "เมตร", "#64748b");
             addRow("Cable", "สายไฟ AC (THW/CV)", `ขนาด <b>${acCableSize} sq.mm</b> (${acPhase === 3 ? '4 Core' : '2 Core'})`, acLength, "เมตร", "#64748b");
             addRow("Cable", "สายดินหลัก (Grounding)", `ชนิด THW สีเขียว-เหลือง ขนาด <b>${gndCableSize} sq.mm</b>`, gndLength, "เมตร", "#64748b");
+
+            /* สายต่อประสานศักย์ของ PV array · รูปที่ จ.3 (4 ตร.มม.) และ จ.4 (16 ตร.มม.)
+               เดิมไม่มีในตารางเลย ทั้งที่ทุกงานต้องมี จึงเป็นต้นทุนที่โผล่หน้างาน
+               ความยาวประเมินจากความยาวรางรวม เพราะสายวิ่งเลาะรางไปตามแถวแผง */
+            if (bondSqmm && totalPanels > 0) {
+                const bondLength = Math.ceil(totalRailLengthM * 1.1);
+                addRow("Cable", "สายต่อประสานศักย์ (Equipotential bonding)",
+                    `ชนิด THW ขนาด <b>${bondSqmm} sq.mm</b>` +
+                    `<br><span style="font-size: 0.85em; color: #475569;">วสท. ${bondSqmm === 16 ? 'รูปที่ จ.4 · อาคารมีระบบล่อฟ้า' : 'รูปที่ จ.3 · อาคารไม่มีระบบล่อฟ้า'} (ภาคผนวก จ เป็นข้อแนะนำ)</span>` +
+                    `<br><span style="font-size: 0.8em; color: #475569;">*ประเมินจากความยาวรางรวมเผื่อ 10% ต้องปรับตามแนวเดินจริงหน้างาน</span>`,
+                    bondLength, "เมตร", "#64748b");
+            }
             
             // 🌟 อัปเกรดวิศวกรรม: แก้ไขบั๊กความยาวท่อ/ราง (ไม่เอาความยาวสายไฟรวมมาสั่งซื้อเป็นราง)
             // ประเมินระยะรางเมนหลัก (Main Trunk) จาก 1/3 ของความยาวโครงสร้างแผงรวม + ระยะแนวดิ่งลง MDB
@@ -8776,8 +8907,12 @@ function ascFileStamp(projectName, kind) {
                     ac_breaker_amp: acBreakerAmp,
                     // 🌟 ชนิด SPD และจำนวนป้าย ตรงกับที่ addRow ใส่ในตารางจริง
                     //    เดิมตารางมีของ แต่ข้อมูลไม่ไหลไป DB2 ตัวตรวจแบบจึงตรวจไม่ได้
-                    dc_spd_class: 'II',
-                    ac_spd_class: 'II',
+                    //    ชนิด SPD มาจากตารางที่ 3.2 แล้ว ไม่ได้ hardcode เป็น II อีกต่อไป
+                    //    null = ยังไม่ระบุระบบล่อฟ้า ตัวตรวจแบบจะขึ้นเตือน
+                    dc_spd_class: spdPick ? spdPick.dc : null,
+                    ac_spd_class: spdPick ? spdPick.ac : null,
+                    spd_scenario: spdPick ? spdPick.scenario : null,
+                    bonding_sqmm: bondSqmm,
                     signage_sets: signageQty
                 },
                 mounting_structure: {
