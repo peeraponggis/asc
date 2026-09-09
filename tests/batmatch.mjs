@@ -184,6 +184,34 @@ eq('SBR256 + SH10T ยังตรงตามเอกสาร',   BM.match(SH
 /* ตู้ที่ไม่ได้บอกจำนวนโมดูล คิดไม่ได้ ต้องคืน null ไม่ใช่เดา */
 eq('ไม่มีจำนวนโมดูลในดาต้าชีต ต้องคืน null', BM.moduleFit(SH10T, SBR128), null);
 
+/* ตู้ที่โมดูลต่อขนานกัน เพิ่มโมดูลแล้วแรงดันไม่ขยับ สูตรนี้ใช้ไม่ได้
+
+   Pylontech Force-L1 เป็นตู้ 48 V 2-7 โมดูล ช่วงแรงดัน 43.5-54 V เท่ากันทุกขนาด
+   ถ้าเผลอคิดต่อจะได้ 43.5/7 = 6.2 V ต่อโมดูล ซึ่งไม่มีอยู่จริง
+   แล้วบางคู่จะถูกตัดสินว่าใช้ด้วยกันไม่ได้ทั้งที่ใช้ได้ */
+const FORCE_L1 = {
+    Manufacturer: 'Pylontech', Model_Name: 'Force-L1', Battery_Voltage_Class: 'LV',
+    Module_Voltage_V: 48, Nominal_Voltage_V: 48,
+    Operating_Voltage_Min_V: 43.5, Operating_Voltage_Max_V: 54,
+    Number_of_Modules_Recorded: 7, Min_Modules_Per_Stack: 2, Max_Modules_Per_Stack: 7,
+    Compatible_Inverter_Models: 'Solis S6-EH1P(3-10)K-L-PLUS (Solis battery option PYLON_LV)'
+};
+eq('ตู้ที่ต่อขนาน ต้องไม่คิดจำนวนโมดูล', BM.moduleFit(EH1P6K, FORCE_L1), null);
+eq('และต้องยังตรงตามเอกสาร ไม่ถูกลดชั้น', BM.match(EH1P6K, FORCE_L1).level, 'doc');
+
+/* ตู้อนุกรมที่บอกแรงดันโมดูลมาด้วย ต้องยังคิดได้เหมือนเดิม
+   Dyness PowerRack HV1-15s โมดูล 48 V จำนวน 15 ก้อน แรงดันรวม 720 V */
+const HV1_15S = {
+    Manufacturer: 'Dyness', Model_Name: 'PowerRack HV1-15s', Battery_Voltage_Class: 'HV',
+    Module_Voltage_V: 48, Nominal_Voltage_V: 720,
+    Operating_Voltage_Min_V: 630, Operating_Voltage_Max_V: 810,
+    Number_of_Modules_Recorded: 15, Min_Modules_Per_Stack: 9, Max_Modules_Per_Stack: 15
+};
+const mHV1 = BM.moduleFit(EH3P20K, HV1_15S);
+eq('ตู้อนุกรมที่บอกแรงดันโมดูล ยังคิดได้', mHV1 !== null, true);
+eq('  จำนวนโมดูลสูงสุดที่รับได้', mHV1 && mHV1.max, 14);
+eq('  ตู้ 15 โมดูลจึงเกินช่วง',    mHV1 && mHV1.ok, false);
+
 /* ── 3c. กำลังชาร์จและคายประจุ ───────────────────────────────────────
 
    พิกัดไฟสำรองบนดาต้าชีตเป็นของอินเวอร์เตอร์ ไม่ใช่ของทั้งระบบ
