@@ -75,6 +75,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <a href="#m2-prep"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้นเตรียม · ดาต้าชีตอุปกรณ์</a>
                 <a href="#m2-step1"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 1 · ข้อมูลและอุปกรณ์</a>
                 <a href="#m2-devbank" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">คลังสเปกอุปกรณ์ · เลือกยี่ห้อ &gt; รุ่น</a>
+                <a href="#m2-batmatch" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">แบตเตอรี่เข้ากับอินเวอร์เตอร์หรือไม่</a>
                 <a href="#m2-splitter" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ปรับความกว้างแผงกรอกข้อมูล</a>
                 <a href="#m2-accouple" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ระบบออนกริดเดิม (AC Coupling)</a>
                 <a href="#m2-step2"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 2 · วางผังบนแผนที่</a>
@@ -667,6 +668,45 @@ Is_Bifacial = False</div>
                         เลือกไฟล์ <span class="kbd">.txt</span> พร้อมกันหลายไฟล์ได้ ระบบจะอ่านและตรวจให้ก่อน
                         แสดงว่าไฟล์ไหนผ่าน ไฟล์ไหนคีย์ซ้ำ ไฟล์ไหนฟิลด์บังคับไม่ครบ และไฟล์ไหนจะเขียนทับรุ่นเดิม
                         <b>ยังไม่บันทึกจนกว่าจะกดยืนยัน</b>
+                    </p>
+                </div>
+
+                <h3 id="m2-batmatch" class="text-lg font-bold text-slate-800 mb-3">แบตเตอรี่เข้ากับอินเวอร์เตอร์หรือไม่</h3>
+                <p class="text-slate-600 leading-relaxed mb-4">
+                    เมื่อเลือกอินเวอร์เตอร์ (INV 1) แล้ว รายการรุ่นแบตเตอรี่จะ<b>จัดกลุ่มใหม่ตามอินเวอร์เตอร์ตัวนั้น</b>
+                    และมีบรรทัดสรุปสีเขียวหรือเหลืองอยู่ใต้ช่องเลือก บอกว่ากำลังจับคู่กับรุ่นไหนและเจออะไรบ้าง
+                </p>
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
+                    <h4 class="font-bold text-slate-800 text-sm mb-2">ห้ากลุ่มในรายการ แปลว่าอะไร</h4>
+                    <ul class="list-disc pl-6 space-y-1 text-slate-600 text-sm">
+                        <li><b>ตรงตามเอกสาร</b> — ดาต้าชีตฝั่งใดฝั่งหนึ่งระบุอีกฝั่งไว้ตรง ๆ ใช้ได้แน่นอน</li>
+                        <li><b>แรงดันเข้ากันได้</b> — ช่วงแรงดันตรงกัน แต่เอกสารไม่ได้ยืนยัน
+                            ต้องเช็ค compatibility list กับผู้ผลิตอินเวอร์เตอร์ก่อนสั่งของ</li>
+                        <li><b>แรงดันล้นช่วงบางส่วน</b> — ตู้เต็มแล้วแรงดันเกินที่อินเวอร์เตอร์รับได้
+                            มักแก้ได้ด้วยการลดจำนวนโมดูลในตู้ลง</li>
+                        <li><b>ไม่เข้ากัน</b> — คนละชนิดแรงดัน (แรงดันสูงกับแรงดันต่ำ) หรือช่วงไม่ซ้อนกันเลย</li>
+                        <li><b>ข้อมูลไม่พอ</b> — ดาต้าชีตขาดช่วงแรงดัน โปรแกรมตัดสินแทนไม่ได้</li>
+                    </ul>
+                </div>
+                <ul class="list-disc pl-6 space-y-2 text-slate-600 mb-4">
+                    <li><b>ไม่มีรุ่นไหนถูกซ่อน</b> ทุกรุ่นยังเลือกได้ เพราะเอกสาร compatibility list ของผู้ผลิต
+                        ไม่เคยครบทุกคู่ ถ้าซ่อนจะไปบล็อกคู่ที่ใช้ได้จริงแต่เอกสารไม่ได้เขียนไว้</li>
+                    <li>ถ้าเลือกรุ่นในกลุ่ม <b>ไม่เข้ากัน</b> หรือ <b>ล้นช่วงบางส่วน</b>
+                        โปรแกรมจะถามยืนยันพร้อมบอกเหตุผลก่อน ไม่ได้ห้าม</li>
+                    <li>บางรุ่นมีข้อความ <span class="kbd">ตั้งค่าเป็น PYLON_LV</span> ต่อท้าย
+                        นั่นคือ <b>Battery Option</b> ที่ช่างต้องตั้งในเครื่องหน้างาน ถ้าตั้งผิด BMS จะคุยกันไม่รู้เรื่อง
+                        ทั้งที่สายต่อถูกทุกอย่าง</li>
+                    <li>เปลี่ยนอินเวอร์เตอร์เมื่อไร รายการแบตเตอรี่จัดกลุ่มใหม่ทันที</li>
+                </ul>
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8">
+                    <h4 class="font-bold text-amber-900 text-sm mb-2">ผลตรวจแบบก็ตรวจข้อนี้ด้วย</h4>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        แผงตรวจแบบในขั้นที่ 4 และในหน้ารายงานมีข้อ
+                        <b>แบตเตอรี่กับอินเวอร์เตอร์</b> เพิ่มเข้ามา คู่ที่ต่อกันไม่ได้จะขึ้นเป็น
+                        <b class="text-red-700">สีแดง</b> คู่ที่ล้นช่วงขึ้น <b class="text-amber-700">สีเหลือง</b>
+                        และคู่ที่แรงดันได้แต่เอกสารไม่ยืนยันขึ้นเป็นข้อสังเกต
+                        ข้อนี้ไม่ได้มาจากเล่ม วสท. แต่เป็นความผิดพลาดที่เงียบที่สุดชนิดหนึ่ง
+                        เพราะโปรแกรมยังคำนวณจนจบและออกใบเสนอราคาได้ตามปกติ
                     </p>
                 </div>
 

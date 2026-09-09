@@ -7770,6 +7770,9 @@ function renderCADLayout() {
 <script src="asc-eit.js"></script>
 <script src="asc-accoupling.js"></script>
 <script src="asc-kb.js"></script>
+<!-- ตัวจับคู่แบตเตอรี่กับอินเวอร์เตอร์ ต้องมาก่อน asc-advisor.js เพราะกฎ bat-inverter เรียกใช้
+     ถ้าไฟล์นี้หาย กฎจะคืน null เงียบ ๆ ผลตรวจข้ออื่นไม่กระทบ -->
+<script src="asc-batmatch.js"></script>
 <script src="asc-advisor.js"></script>
 <script>
 /* ==========================================================================

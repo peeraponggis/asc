@@ -79,6 +79,12 @@
         .dev-pick select:disabled { background: #f1f5f9; color: #94a3b8; }
         /* รุ่นที่ดาต้าชีตยังกรอกฟิลด์บังคับไม่ครบ ต้องเห็นตั้งแต่ก่อนเลือก */
         .dev-pick .dev-model option[data-incomplete="1"] { color: #b45309; }
+        /* หมายเหตุการจับคู่แบตเตอรี่กับอินเวอร์เตอร์ ใต้ตัวเลือกรุ่น */
+        .dev-note { font-size: 0.82em; line-height: 1.45; margin: -2px 0 6px; color: #475569; }
+        .dev-note.ok   { color: #15803d; }
+        .dev-note.warn { color: #b45309; }
+        .dev-note.err  { color: #b91c1c; }
+        .dev-note b    { font-weight: 600; }
 
         /* อัปโหลดไฟล์เองกลายเป็นทางสำรอง จึงลดน้ำหนักลงแต่ไม่ซ่อน
            ยังต้องใช้จริงกับอุปกรณ์ที่ยังไม่มีในคลัง */
@@ -638,6 +644,7 @@
                             <select class="dev-brand" aria-label="ยี่ห้อแบตเตอรี่"><option value="">-- ยี่ห้อ --</option></select>
                             <select class="dev-model" aria-label="รุ่นแบตเตอรี่" disabled><option value="">-- รุ่น --</option></select>
                         </div>
+                        <div id="batMatchNote" class="dev-note"></div>
                         <div class="file-upload-row dev-fallback">upload BAT: <input type="file" id="batFile" accept=".txt"></div>
                     </div>
                     <div class="form-group smart-db smart-db-opt">
@@ -1512,6 +1519,10 @@
     <script src="asc-cloud.js"></script>
     <script src="asc-datasheet-parse.js"></script>
     <script src="asc-devices.js"></script>
+
+    <!-- จับคู่แบตเตอรี่กับอินเวอร์เตอร์ ใช้ทั้งในตัวเลือกอุปกรณ์และในตัวตรวจแบบ
+         ต้องโหลดก่อนสคริปต์ก้อนใหญ่ เพราะตัวเลือกผูกเหตุการณ์ตั้งแต่ตอนแจงไฟล์ -->
+    <script src="asc-batmatch.js"></script>
 
     <script>
 	
@@ -4404,23 +4415,109 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 msel.innerHTML = '<option value="">-- รุ่น --</option>';
             }
 
+            /* อินเวอร์เตอร์ที่ใช้เป็นตัวอ้างอิงในการจับคู่แบตเตอรี่
+               ใช้ inv1 เป็นหลัก ถ้ายังไม่ได้เลือกค่อยลอง inv2 */
+            function refInverter() {
+                const r = (typeof state !== 'undefined' && state.rawEquipData) || {};
+                const has = o => (o && (o.Model_Name || o.model)) ? o : null;
+                return has(r.inv1) || has(r.inv2) || null;
+            }
+
+            function matchOf(spec) {
+                const inv = refInverter();
+                if (!inv || !window.AscBatMatch) return null;
+                return AscBatMatch.match(inv, spec || {});
+            }
+
+            /* บอกให้เห็นว่ากำลังจับคู่กับอินเวอร์เตอร์ตัวไหน และเจออะไรบ้าง
+               ไม่ซ่อนตัวเลือกไหนเลย เพราะเอกสารของผู้ผลิตไม่เคยครบ
+               ถ้าซ่อนจะไปบล็อกคู่ที่ใช้ได้จริงแต่เอกสารไม่ได้เขียนไว้ */
+            function showBatNote(counts) {
+                const el = document.getElementById('batMatchNote');
+                if (!el) return;
+                const inv = refInverter();
+                if (!window.AscBatMatch) { el.textContent = ''; el.className = 'dev-note'; return; }
+                if (!inv) {
+                    el.className = 'dev-note warn';
+                    el.textContent = 'ยังไม่ได้เลือกอินเวอร์เตอร์ จึงยังตรวจความเข้ากันได้ของแบตเตอรี่ไม่ได้';
+                    return;
+                }
+                const name = (inv.Manufacturer ? inv.Manufacturer + ' ' : '') + (inv.Model_Name || inv.model);
+                if (!counts) {
+                    el.className = 'dev-note';
+                    el.textContent = 'จับคู่กับ ' + name + ' — เลือกยี่ห้อเพื่อดูรุ่นที่เข้ากันได้';
+                    return;
+                }
+                const bits = [];
+                if (counts.doc)     bits.push('ตรงตามเอกสาร ' + counts.doc);
+                if (counts.volt)    bits.push('แรงดันเข้ากันได้ ' + counts.volt);
+                if (counts.partial) bits.push('แรงดันล้นช่วงบางส่วน ' + counts.partial);
+                if (counts.no)      bits.push('ไม่เข้ากัน ' + counts.no);
+                if (counts.unknown) bits.push('ข้อมูลไม่พอ ' + counts.unknown);
+                const good = (counts.doc || 0) + (counts.volt || 0);
+                el.className = 'dev-note' + (good ? ' ok' : ' warn');
+                el.textContent = 'จับคู่กับ ' + name + ' — ' + (bits.join(' · ') || 'ไม่มีรุ่นในยี่ห้อนี้') +
+                                 (good ? '' : ' — ยี่ห้อนี้ไม่มีรุ่นที่เข้ากับอินเวอร์เตอร์ตัวนี้');
+            }
+
             function fillModels(pick) {
                 const cat = pick.dataset.cat;
                 const bsel = pick.querySelector('.dev-brand');
                 const msel = pick.querySelector('.dev-model');
                 msel.innerHTML = '<option value="">-- รุ่น --</option>';
-                if (!bsel.value) { msel.disabled = true; return; }
+                if (!bsel.value) {
+                    msel.disabled = true;
+                    if (cat === 'ESS') showBatNote(null);
+                    return;
+                }
 
-                AscDevices.models(cat, bsel.value).forEach(d => {
+                const list = AscDevices.models(cat, bsel.value);
+
+                const makeOption = d => {
                     const o = document.createElement('option');
                     o.value = d.id;
                     /* ติดธงรุ่นที่ฟิลด์บังคับยังไม่ครบ ให้เห็นก่อนเลือก ไม่ใช่หลังเลือก */
                     const flag = d.missing && d.missing.length ? '⚠ ' : '';
                     o.textContent = flag + d.label + (d.summary ? '  ·  ' + d.summary : '');
                     if (flag) o.dataset.incomplete = '1';
-                    msel.appendChild(o);
+                    return o;
+                };
+
+                /* หมวดอื่นแสดงเรียงตามชื่อรุ่นเหมือนเดิม ไม่มีอะไรให้จับคู่ */
+                if (cat !== 'ESS' || !window.AscBatMatch || !refInverter()) {
+                    list.forEach(d => msel.appendChild(makeOption(d)));
+                    msel.disabled = false;
+                    if (cat === 'ESS') showBatNote(null);
+                    return;
+                }
+
+                /* แบตเตอรี่ จัดเป็นกลุ่มตามความมั่นใจ เรียงกลุ่มที่มั่นใจที่สุดขึ้นก่อน */
+                const ORDER = ['doc', 'volt', 'partial', 'unknown', 'no'];
+                const buckets = {};
+                const counts  = {};
+                list.forEach(d => {
+                    const r = matchOf(d.spec) || { level: 'unknown' };
+                    (buckets[r.level] = buckets[r.level] || []).push({ d: d, r: r });
+                    counts[r.level] = (counts[r.level] || 0) + 1;
                 });
+
+                ORDER.forEach(lv => {
+                    const items = buckets[lv];
+                    if (!items || !items.length) return;
+                    const gp = document.createElement('optgroup');
+                    gp.label = AscBatMatch.LABEL[lv] + ' (' + items.length + ')';
+                    items.forEach(it => {
+                        const o = makeOption(it.d);
+                        /* ชื่อ Battery Option ที่ช่างต้องตั้งในเครื่อง มีค่ามากตอนติดตั้งจริง */
+                        if (it.r.option) o.textContent += '  ·  ตั้งค่าเป็น ' + it.r.option;
+                        o.dataset.match = lv;
+                        gp.appendChild(o);
+                    });
+                    msel.appendChild(gp);
+                });
+
                 msel.disabled = false;
+                showBatNote(counts);
             }
 
             function choose(pick) {
@@ -4431,11 +4528,47 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 const spec = AscDevices.spec(id);
                 if (!spec) { alert('ไม่พบสเปกของรุ่นนี้ในคลัง ลองรีเฟรชหน้าใหม่'); return; }
                 const t = TARGET[typ];
+
+                /* แบตเตอรี่ที่จับคู่กับอินเวอร์เตอร์ไม่ได้ ต้องถามก่อน ไม่ใช่ห้าม
+                   เพราะเอกสารไม่เคยครบ แต่ก็ต้องไม่ปล่อยให้พลาดเงียบ ๆ */
+                if (typ === 'bat' && window.AscBatMatch) {
+                    const r = matchOf(spec);
+                    if (r && (r.level === 'no' || r.level === 'partial')) {
+                        const head = r.level === 'no'
+                            ? 'แบตเตอรี่รุ่นนี้ต่อกับอินเวอร์เตอร์ที่เลือกไว้ไม่ได้'
+                            : 'แบตเตอรี่รุ่นนี้เข้ากับอินเวอร์เตอร์ที่เลือกไว้ได้ไม่เต็มชุด';
+                        const LF = String.fromCharCode(10);
+                        if (!confirm(head + LF + LF + r.why + LF + LF + 'ยืนยันจะใช้รุ่นนี้หรือไม่')) {
+                            msel.value = '';
+                            return;
+                        }
+                    }
+                }
+
                 /* ส่งสำเนา ไม่ส่งอ็อบเจกต์ในแคชโดยตรง
                    เพราะปลายทางเก็บลง state.rawEquipData แล้วไหลต่อไป DB2
                    ถ้าใครเผลอแก้ค่า จะไปแก้แคชของคลังทั้งก้อนตามไปด้วย */
                 applyEquipmentData(JSON.parse(JSON.stringify(spec)), typ, t.label, t.select, { source: 'db' });
+
+                /* เปลี่ยนอินเวอร์เตอร์แล้วผลจับคู่ของแบตเตอรี่เปลี่ยนตาม
+                   ต้องจัดกลุ่มใหม่ทันที ไม่ใช่รอให้ผู้ใช้สลับยี่ห้อไปมาเอง */
+                if (typ === 'inv1' || typ === 'inv2') ascRefreshBatMatch();
             }
+
+            /* จัดกลุ่มรายการแบตเตอรี่ใหม่ตามอินเวอร์เตอร์ปัจจุบัน
+               เปิดเป็นชื่อบน window ให้จุดอื่นที่เปลี่ยนอินเวอร์เตอร์เรียกได้ด้วย
+               เช่นตอนอัปโหลดไฟล์เอง หรือตอนกดล้างอินเวอร์เตอร์ */
+            function ascRefreshBatMatch() {
+                const bp = picks.filter(p => p.dataset.cat === 'ESS');
+                bp.forEach(p => {
+                    const msel = p.querySelector('.dev-model');
+                    const keep = msel.value;
+                    fillModels(p);
+                    if (keep) msel.value = keep;
+                });
+                if (!bp.length) showBatNote(null);
+            }
+            window.ascRefreshBatMatch = ascRefreshBatMatch;
 
             picks.forEach(pick => {
                 pick.querySelector('.dev-brand').addEventListener('change', () => fillModels(pick));
