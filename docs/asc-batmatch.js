@@ -150,6 +150,113 @@
 
     const cls = o => str(o.Battery_Coupling_Class || o.Battery_Voltage_Class).toUpperCase();
 
+    /* ── จำนวนโมดูลที่ใช้ได้จริง ───────────────────────────────────────────
+
+       ตู้แบตแรงดันสูงคือโมดูลต่ออนุกรมกัน แรงดันจึงแปรตรงกับจำนวนโมดูล
+       ดาต้าชีตให้ช่วงแรงดันของตู้ตามจำนวนโมดูลที่รุ่นนั้นมี หารด้วยจำนวนโมดูล
+       ก็ได้แรงดันต่อโมดูล แล้วคิดกลับได้ว่าอินเวอร์เตอร์ตัวนี้รับได้กี่โมดูล
+
+       ตัวอย่างจริง  SBR256 เป็นตู้ 8 โมดูล 432-584 V จึงเท่ากับ 54-73 V ต่อโมดูล
+       อินเวอร์เตอร์ SH5.0RS-20 รับแบตได้ 80-460 V
+         ขั้นต่ำ  80 / 54  = 1.5  ปัดขึ้นเป็น 2 โมดูล
+         ขั้นสูง  460 / 73 = 6.3  ปัดลงเป็น 6 โมดูล
+       ตู้ 8 โมดูลจึงเกิน ต้องใช้รุ่นที่ไม่เกิน 6 โมดูลแทน
+
+       ใช้ได้เฉพาะตู้ที่ต่ออนุกรม แบตแรงดันต่ำ 48 V ที่ขนานกันไม่เข้าข่าย
+       เพราะเพิ่มโมดูลแล้วแรงดันไม่ขยับ ตัวจำกัดคือกระแสกับกำลัง ไม่ใช่แรงดัน */
+
+    function moduleFit(inv, bat) {
+        const I = inv || {}, B = bat || {};
+        const have = num(B.Number_of_Modules_Recorded);
+        const lo = num(B.Operating_Voltage_Min_V), hi = num(B.Operating_Voltage_Max_V);
+        const maxM = num(B.Max_Modules_Per_Stack);
+        const iw = invWindow(I);
+
+        /* ต้องเป็นตู้อนุกรมที่เพิ่มลดโมดูลได้จริง ไม่งั้นคิดไปก็ไม่มีประโยชน์ */
+        if (!have || !lo || !hi || hi <= lo || !maxM || maxM < 2 || !iw) return null;
+
+        const perLo = lo / have, perHi = hi / have;
+        if (!(perLo > 0) || !(perHi > 0)) return null;
+
+        /* เผื่อคลาดเคลื่อนทศนิยมนิดหน่อย ไม่งั้น 460/73 ที่ควรได้ 6 พอดี
+           อาจกลายเป็น 5 เพราะเลขทศนิยมลอยตัว */
+        const EPS = 1e-9;
+        const minM = num(B.Min_Modules_Per_Stack) || 1;
+        const nMin = Math.max(minM, Math.ceil(iw.lo / perLo - EPS));
+        const nMax = Math.min(maxM, Math.floor(iw.hi / perHi + EPS));
+
+        return {
+            have: have, min: nMin, max: nMax,
+            perLo: perLo, perHi: perHi,
+            none: nMax < nMin,               // ไม่มีจำนวนโมดูลไหนใช้ได้เลย
+            ok: !(nMax < nMin) && have >= nMin && have <= nMax
+        };
+    }
+
+    /* ข้อความบอกจำนวนโมดูลที่ใช้ได้ เขียนไว้ที่เดียวจะได้ไม่เพี้ยนกันสองที่ */
+    function moduleWhy(m) {
+        if (!m) return '';
+        const per = 'โมดูลละ ' + Math.round(m.perLo) + '-' + Math.round(m.perHi) + ' V';
+        if (m.none) return 'ไม่มีจำนวนโมดูลไหนที่อยู่ในช่วงของอินเวอร์เตอร์ได้เลย (' + per + ')';
+        if (m.ok)   return 'อินเวอร์เตอร์ตัวนี้รับได้ ' + m.min + '-' + m.max + ' โมดูล ตู้รุ่นนี้มี ' +
+                           m.have + ' โมดูล จึงอยู่ในช่วง (' + per + ')';
+        return 'อินเวอร์เตอร์ตัวนี้รับได้ ' + m.min + '-' + m.max + ' โมดูล แต่ตู้รุ่นนี้มี ' +
+               m.have + ' โมดูล (' + per + ') ให้เลือกรุ่นที่มีโมดูลอยู่ในช่วงนั้นแทน';
+    }
+
+    /* ── กำลังชาร์จและคายประจุ ─────────────────────────────────────────────
+
+       เรื่องนี้ไม่ใช่ความปลอดภัย แต่เป็นตัวเลขที่ไปโผล่ในข้อเสนอลูกค้า
+       ถ้าอินเวอร์เตอร์พิกัดไฟสำรอง 10 kW แต่แบตจ่ายต่อเนื่องได้ 3.07 kW
+       ไฟสำรองจริงคือ 3.07 kW ไม่ใช่ 10 kW  BMS จะจำกัดให้เอง
+
+       ดาต้าชีตบางฉบับให้เป็นกระแสไม่ใช่กำลัง จึงมีทางสำรองคูณกับแรงดันระบุ
+       แล้วติดธง derived ไว้ให้รู้ว่าเป็นค่าที่คิดเอง ไม่ใช่ค่าที่พิมพ์มา */
+
+    function batPower(bat, dir) {
+        const B = bat || {};
+        const k = dir === 'chg' ? 'Max_Continuous_Charge_Power_kw' : 'Max_Continuous_Discharge_Power_kw';
+        const kAlt = dir === 'chg' ? 'Max_Continuous_Charge_Power_kW' : 'Max_Continuous_Discharge_Power_kW';
+        const p = num(B[k]) || num(B[kAlt]);
+        if (p) return { kw: p, derived: false };
+        const a = num(dir === 'chg' ? B.Max_Continuous_Charge_Current_A : B.Max_Continuous_Discharge_Current_A);
+        const v = num(B.Nominal_Voltage_V);
+        if (a && v) return { kw: a * v / 1000, derived: true };
+        return null;
+    }
+
+    function powerFit(inv, bat, opts) {
+        const I = inv || {}, B = bat || {}, o = opts || {};
+        const bq = Math.max(num(o.batQty) || num(B.qty) || 1, 1);
+        const iq = Math.max(num(o.invQty) || num(I.qty) || 1, 1);
+
+        const bc = batPower(B, 'chg'), bd = batPower(B, 'dis');
+        const ic = num(I.Max_Charge_Power_kW), id = num(I.Max_Discharge_Power_kW);
+        const backup = num(I.Backup_Rated_Power_kW);
+        if (!bc && !bd) return null;
+        if (!ic && !id && !backup) return null;
+
+        const r = {
+            batQty: bq, invQty: iq,
+            batChg: bc ? bc.kw * bq : null,
+            batDis: bd ? bd.kw * bq : null,
+            invChg: ic ? ic * iq : null,
+            invDis: id ? id * iq : null,
+            backup: backup ? backup * iq : null,
+            derived: !!((bc && bc.derived) || (bd && bd.derived))
+        };
+        r.chgLimit = (r.batChg && r.invChg) ? Math.min(r.batChg, r.invChg) : (r.batChg || r.invChg);
+        r.disLimit = (r.batDis && r.invDis) ? Math.min(r.batDis, r.invDis) : (r.batDis || r.invDis);
+        r.chgLimitedByBattery = !!(r.batChg && r.invChg && r.batChg < r.invChg);
+        r.disLimitedByBattery = !!(r.batDis && r.invDis && r.batDis < r.invDis);
+        /* พิกัดไฟสำรองที่โฆษณาไว้ แต่แบตจ่ายไม่ถึง คือข้อที่ต้องเตือนจริง ๆ
+           เพราะตัวเลขนี้ไปอยู่ในข้อเสนอที่ลูกค้าเซ็น */
+        r.backupShort = !!(r.backup && r.batDis && r.batDis < r.backup);
+        return r;
+    }
+
+    const fmtKw = v => (Math.round(v * 100) / 100).toString();
+
     /* ── ผลการจับคู่ ──────────────────────────────────────────────────────
 
        level  doc     เอกสารของฝั่งใดฝั่งหนึ่งระบุรุ่นนี้ไว้ตรง ๆ
@@ -181,6 +288,7 @@
         const byInv = listMatches(I.Compatible_Battery_Models, bModel, bBrand);
 
         const iw = invWindow(I), bw = batWindow(B);
+        const mod = moduleFit(I, B);
         let volt = 'unknown', voltWhy = '';
 
         if (iCls && bCls && iCls !== bCls) {
@@ -220,18 +328,43 @@
         }
 
         if (byBat || byInv) {
+            const docWhy = byBat
+                ? 'ดาต้าชีตแบตเตอรี่ระบุรุ่นอินเวอร์เตอร์นี้ไว้ (' + byBat + ')'
+                : 'ดาต้าชีตอินเวอร์เตอร์ระบุรุ่นแบตเตอรี่นี้ไว้ (' + byInv + ')';
+
+            /* เอกสารระบุว่าตระกูลนี้ใช้ด้วยกันได้ แต่ไม่ได้บอกว่าใช้ได้ทุกจำนวนโมดูล
+               ถ้าแรงดันของตู้ขนาดนี้ล้นช่วง ต้องบอกให้ลดโมดูล ไม่ใช่ตอบว่าผ่าน
+
+               เคสจริง Dyness Tower T21 (6 โมดูล 504-648 V) กับ Solis S6-EH3P10K2-H
+               (รับแบต 120-600 V) รายการของ Solis ระบุตระกูล Tower ไว้จริง
+               แต่ตู้ 6 โมดูลแรงดันเกินไป 48 V ต้องเหลือไม่เกิน 5 โมดูล */
+            if (volt === 'partial') {
+                return { level: 'partial',
+                    why: docWhy + ' แต่ ' + voltWhy + (mod ? ' · ' + moduleWhy(mod) : ''),
+                    doc: byBat || byInv, volt: volt, modules: mod, option: batteryOption(B) };
+            }
+
             return {
                 level: 'doc',
-                why: byBat
-                    ? 'ดาต้าชีตแบตเตอรี่ระบุรุ่นอินเวอร์เตอร์นี้ไว้ (' + byBat + ')'
-                    : 'ดาต้าชีตอินเวอร์เตอร์ระบุรุ่นแบตเตอรี่นี้ไว้ (' + byInv + ')',
-                doc: byBat || byInv, volt: volt, voltWhy: voltWhy,
+                why: docWhy + (mod && !mod.ok ? ' แต่ ' + moduleWhy(mod) : ''),
+                doc: byBat || byInv, volt: volt, voltWhy: voltWhy, modules: mod,
                 option: batteryOption(B)
             };
         }
 
-        if (volt === 'fit')    return { level: 'volt',    why: voltWhy, volt: volt, option: batteryOption(B) };
-        if (volt === 'partial') return { level: 'partial', why: voltWhy, volt: volt, option: batteryOption(B) };
+        if (volt === 'fit')    return { level: 'volt', why: voltWhy, volt: volt,
+                                        modules: mod, option: batteryOption(B) };
+
+        if (volt === 'partial') {
+            /* ล้นช่วงแล้วยังไม่มีจำนวนโมดูลไหนใช้ได้เลย = ใช้ไม่ได้จริง ไม่ใช่แค่ต้องลดโมดูล
+               ต้องแยกให้ออก ไม่งั้นจะบอกผู้ใช้ให้ไปลดโมดูลทั้งที่ลดยังไงก็ไม่พอ */
+            if (mod && mod.none) {
+                return { level: 'no', why: voltWhy + ' · ' + moduleWhy(mod), volt: 'no', modules: mod };
+            }
+            return { level: 'partial', why: voltWhy + (mod ? ' · ' + moduleWhy(mod) : ''),
+                     volt: volt, modules: mod, option: batteryOption(B) };
+        }
+
         if (volt === 'no')      return { level: 'no',      why: voltWhy, volt: volt };
         return { level: 'unknown', why: voltWhy };
     }
@@ -254,6 +387,10 @@
 
     global.AscBatMatch = {
         match       : match,
+        moduleFit   : moduleFit,
+        moduleWhy   : moduleWhy,
+        powerFit    : powerFit,
+        fmtKw       : fmtKw,
         LABEL       : LABEL,
         RANK        : RANK,
         batteryOption: batteryOption,

@@ -1,5 +1,5 @@
 /* ============================================================================
- *  ชุดทดสอบกฎ bat-inverter ในตัวตรวจแบบ
+ *  ชุดทดสอบกฎ bat-inverter และ bat-power ในตัวตรวจแบบ
  *
  *  รัน   node tests/advisor-batrule.mjs
  *
@@ -64,6 +64,7 @@ const HVM138 = {
 const SBR256 = {
     Manufacturer: 'Sungrow', Model_Name: 'SBR256', Battery_Voltage_Class: 'HV',
     Operating_Voltage_Min_V: 432, Operating_Voltage_Max_V: 584,
+    Number_of_Modules_Recorded: 8, Min_Modules_Per_Stack: 2, Max_Modules_Per_Stack: 8,
     Compatible_Inverter_Models: ''
 };
 const SH5RS20 = {
@@ -85,9 +86,9 @@ const db2 = (inv1, bat) => ({
     simulation_params_db2: {}
 });
 
-function findingOf(g, inv1, bat) {
+function findingOf(g, inv1, bat, id) {
     const r = g.AscAdvisor.analyze(db2(inv1, bat));
-    return r.findings.find(f => f.id === 'bat-inverter') || null;
+    return r.findings.find(f => f.id === (id || 'bat-inverter')) || null;
 }
 
 /* ── 1. ระดับของกฎ ───────────────────────────────────────────────────── */
@@ -104,6 +105,16 @@ eq('SBR256 + SH5.0RS-20 ล้นช่วง ต้องเป็น warn',
 eq('ยังไม่ได้เลือกแบตเตอรี่ ต้องไม่มีข้อนี้เลย',
    findingOf(G, SH10T, {}), null);
 
+/* กรณีล้นช่วง ต้องบอกจำนวนโมดูลที่ใช้ได้เป็นตัวเลข ไม่ใช่บอกลอย ๆ ว่าให้ลดโมดูล
+   เพราะคนอ่านต้องเอาไปเขียนในแบบและคิดความจุใหม่ก่อนเสนอราคา */
+const fPartial = findingOf(G, SH5RS20, SBR256);
+eq('บอกช่วงจำนวนโมดูลในหลักฐาน',
+   /ใช้ได้ 2-6 โมดูล จากที่ตู้มี 8/.test((fPartial || {}).evidence || ''), true);
+eq('วิธีแก้บอกจำนวนโมดูลสูงสุดที่เหลือได้',
+   /ไม่เกิน 6 โมดูล/.test(((fPartial || {}).fix || []).join(' ')), true);
+eq('เตือนว่าความจุที่ได้จริงลดลง',
+   /ความจุที่ได้จริงจะลดลง/.test(((fPartial || {}).fix || []).join(' ')), true);
+
 /* ข้อความต้องอ้าง Battery Option ที่ช่างต้องตั้ง เมื่อเอกสารให้มา */
 const fSolis = (() => {
     const inv = { Manufacturer: 'Solis', Model_Name: 'S6-EH3P20K-H', Inverter_Type: 'Hybrid',
@@ -118,6 +129,53 @@ eq('บอกชื่อ Battery Option ในผลตรวจ',
 eq('บทความ battery-match มีอยู่จริงในฐานความรู้',
    !!G.AscKB.get('battery-match'), true);
 
+/* ── 1b. กฎ bat-power ─────────────────────────────────────────────────
+
+   พิกัดไฟสำรองบนดาต้าชีตเป็นของอินเวอร์เตอร์ ไม่ใช่ของทั้งระบบ
+   ถ้าแบตจ่ายไม่ถึง เลขที่ไปอยู่ในข้อเสนอที่ลูกค้าเซ็นจะเกินจริง
+   ข้อนี้จึงเป็นคำเตือน ไม่ใช่แค่ข้อสังเกต */
+
+const SH10RL = {
+    Manufacturer: 'Sungrow', Model_Name: 'SH10RL', Inverter_Type: 'Hybrid',
+    Battery_Coupling_Class: 'LV',
+    Battery_Voltage_Range_Min_V: 40, Battery_Voltage_Range_Max_V: 60,
+    Rated_AC_Output_Power_kW: 10,
+    Max_Charge_Power_kW: 10, Max_Discharge_Power_kW: 10, Backup_Rated_Power_kW: 10,
+    qty: 1
+};
+const MGL060 = {
+    Manufacturer: 'Sungrow', Model_Name: 'MGL060', Battery_Voltage_Class: 'LV',
+    Nominal_Voltage_V: 51.2, Operating_Voltage_Min_V: 44.8, Operating_Voltage_Max_V: 57.6,
+    Max_Continuous_Charge_Current_A: 60, Max_Continuous_Discharge_Current_A: 60,
+    qty: 1
+};
+
+const fPw1 = findingOf(G, SH10RL, MGL060, 'bat-power');
+eq('แบตก้อนเดียวจ่ายไม่ถึงพิกัดไฟสำรอง ต้องเป็น warn', (fPw1 || {}).level, 'warn');
+eq('ต้องบอกตัวเลขไฟสำรองที่ใช้ได้จริง',
+   /3.07 kW/.test((fPw1 || {}).detail || ''), true);
+eq('ต้องบอกว่ากำลังของแบตเป็นค่าที่คำนวณมา',
+   /คำนวณจากกระแส/.test((fPw1 || {}).evidence || ''), true);
+eq('วิธีแก้ต้องเสนอให้เพิ่มจำนวนชุดแบต',
+   /เพิ่มจำนวนชุดแบตเตอรี่/.test(((fPw1 || {}).fix || []).join(' ')), true);
+
+const fPw4 = findingOf(G, SH10RL, Object.assign({}, MGL060, { qty: 4 }), 'bat-power');
+eq('สี่ก้อนจ่ายครบพิกัดแล้ว ต้องผ่าน', (fPw4 || {}).level, 'ok');
+eq('และต้องบอกกำลังที่ทำได้จริง 10 kW',
+   /คายประจุได้จริง 10 kW/.test((fPw4 || {}).detail || ''), true);
+
+/* แบตจำกัดต่ำกว่าพิกัดสูงสุดของอินเวอร์เตอร์เฉย ๆ เป็นเรื่องปกติและตั้งใจ
+   จึงต้องเป็นข้อสังเกต ไม่ใช่คำเตือน ไม่งั้นจะเตือนเกือบทุกโครงการ */
+const SH10NB = Object.assign({}, SH10RL, { Backup_Rated_Power_kW: 0 });
+const fPwInfo = findingOf(G, SH10NB, MGL060, 'bat-power');
+eq('ไม่มีพิกัดไฟสำรอง แบตแค่จำกัดกำลัง ต้องเป็น info', (fPwInfo || {}).level, 'info');
+
+/* ข้อมูลไม่พอ ต้องเงียบ ไม่ใช่เดา */
+eq('ไม่มีข้อมูลกำลังทั้งสองฝั่ง ต้องไม่มีข้อนี้',
+   findingOf(G, SH10T, SBR128, 'bat-power'), null);
+eq('ยังไม่ได้เลือกแบตเตอรี่ ต้องไม่มีข้อ bat-power',
+   findingOf(G, SH10RL, {}, 'bat-power'), null);
+
 /* ── 2. ไม่มี asc-batmatch.js ต้องเงียบ ไม่พัง ──────────────────────── */
 
 const G2 = boot(false);
@@ -126,15 +184,24 @@ try { res2 = G2.AscAdvisor.analyze(db2(SH10T, US5000)); } catch (e) { crashed = 
 eq('ไม่มีโมดูลจับคู่ ตัวตรวจต้องไม่พัง', crashed, false);
 eq('ไม่มีโมดูลจับคู่ ต้องไม่มีข้อ bat-inverter',
    !!(res2 && res2.findings.find(f => f.id === 'bat-inverter')), false);
+eq('ไม่มีโมดูลจับคู่ ต้องไม่มีข้อ bat-power',
+   !!(res2 && res2.findings.find(f => f.id === 'bat-power')), false);
 
 /* ── 3. ของเดิมต้องไม่หายไป ──────────────────────────────────────────── */
 
 const base = G2.AscAdvisor.analyze(db2(SH10T, SBR128));
 const now  = G.AscAdvisor.analyze(db2(SH10T, SBR128));
-const idsBase = base.findings.map(f => f.id).filter(id => id !== 'bat-inverter').sort().join(',');
-const idsNow  = now.findings.map(f => f.id).filter(id => id !== 'bat-inverter').sort().join(',');
+const skip = id => id === 'bat-inverter' || id === 'bat-power';
+const idsBase = base.findings.map(f => f.id).filter(id => !skip(id)).sort().join(',');
+const idsNow  = now.findings.map(f => f.id).filter(id => !skip(id)).sort().join(',');
 eq('ข้อตรวจเดิมยังครบเหมือนเดิม', idsNow, idsBase);
+/* คู่นี้ไม่มีข้อมูลกำลัง กฎ bat-power จึงต้องเงียบ เพิ่มมาแค่ข้อเดียว */
 eq('กฎใหม่เพิ่มมาหนึ่งข้อพอดี', now.findings.length - base.findings.length, 1);
+
+/* คู่ที่มีข้อมูลกำลังครบ ต้องเพิ่มมาสองข้อ */
+const nowPw = G.AscAdvisor.analyze(db2(SH10RL, MGL060));
+const basePw = G2.AscAdvisor.analyze(db2(SH10RL, MGL060));
+eq('คู่ที่มีข้อมูลกำลังครบ เพิ่มมาสองข้อ', nowPw.findings.length - basePw.findings.length, 2);
 
 /* ไม่มีกฎไหน throw จนกลายเป็น finding ระดับ info ที่ขึ้นต้นว่า "กฎ" */
 const thrown = now.findings.filter(f => /^กฎ .* ทำงานไม่สำเร็จ/.test(f.title || ''));
