@@ -207,13 +207,62 @@ SH15/20/25T เป็นฉบับ IEC ทั้งสองฉบับไม
 เป็นอินเวอร์เตอร์สำหรับโรงไฟฟ้า ไม่ใช่งานหลังคาที่ ASC ออกแบบ
 จึงควรทำทีหลังหรือไม่ทำเลย เว้นแต่จะมีงานจริงที่ต้องใช้
 
-## แบตเตอรี่
+## แบตเตอรี่ · ทำแล้ว 42 รุ่น (9 ก.ย. 2569)
 
-ผู้ใช้ระบุไว้ว่า
-* ใช้กับ **Solis** ได้แก่ Solis · Pylontech · Dyness · BYD · LVTOPSUN
-* ใช้กับ **Sungrow** ได้แก่ Sungrow · BYD
+แบตเตอรี่ไม่มีในทะเบียน PEA เพราะไม่ใช่อุปกรณ์ที่ต้องขออนุญาตเชื่อมต่อโครงข่าย
+ความเข้ากันได้จึงอ้างจากเอกสารของผู้ผลิตอินเวอร์เตอร์แทน
 
-แบตเตอรี่ไม่มีในทะเบียน PEA ตามที่อธิบายไว้ด้านบน การยืนยันความเข้ากันได้
-ต้องดูจากเอกสาร compatibility list ของผู้ผลิตอินเวอร์เตอร์แต่ละราย
-แล้วกรอกลงฟิลด์ `Compatible_Inverter_Models` กับ `BMS_Communication_Protocol`
-ในโครง `BATTERY_ESS_STRUCTURE.txt` ซึ่งเป็นสองฟิลด์ที่ใช้จับคู่จริงในโปรแกรม
+| ยี่ห้อ | รุ่น | จำนวน | แรงดัน | เอกสารที่ใช้ |
+|---|---|---|---|---|
+| Sungrow | SBR064-256 | 7 | HV 108-584 V | SBR Datasheet V5 (2024) |
+| Sungrow | SBH100-400 | 7 | HV 118-642 V | SBH Datasheet V3.1 (2024) IEC |
+| Sungrow | MGL060 | 1 | LV 51.2 V | MG RL + MGL060 Datasheet V6 (2025) |
+| BYD | Battery-Box Premium HVS 5.1-12.8 | 4 | HV 160-600 V | HVS Datasheet V1.4 (2024) |
+| BYD | Battery-Box Premium HVM 8.3-22.1 | 6 | HV 120-472 V | HVM Datasheet V1.4 (2024) |
+| BYD | Battery-Box Premium LVS 4.0-24.0 | 6 | LV 40-57.6 V | LVS Datasheet V1.0 (2024) |
+| Pylontech | US2000C · US3000C · US5000 · US5000B | 4 | LV 48 V | Residential BESS Rack Mounted |
+| Pylontech | H48050 | 1 | HV โมดูล 48 V | Product Spec จากเว็บผู้ผลิต |
+| Dyness | Tower T7 · T10 · T14 · T17 · T21 | 5 | HV 168-648 V | Dyness Tower 20241226-EN |
+| LVTOPSUN | LVTS-512100-G3 | 1 | LV 51.2 V | product parameter (2025-02) |
+
+คลังตอนนี้มี **234 รายการ** (INV 128 · ESS 59 · PV 35 · OPT 7 · EV 5)
+
+### แหล่งอ้างอิงความเข้ากันได้
+
+`Compatible_Inverter_Models` และ `BMS_Communication_Protocol` กรอกจากเอกสารเหล่านี้
+
+* **Sungrow SBR/SBH** จากตารางในคู่มือ SH5T-25T ฉบับ Ver17 (2025-04) หัวข้อ 3.3
+  Battery Management ซึ่งระบุรุ่นและเวอร์ชันเฟิร์มแวร์ขั้นต่ำไว้ตรง ๆ
+* **Sungrow MGL060** จากชื่อแผ่นสเปกที่รวมอินเวอร์เตอร์ MG RL กับแบตเตอรี่ไว้ในเอกสารเดียวกัน
+* **BYD · Pylontech · Dyness · LVTOPSUN** จาก *Solis Energy Storage Inverters
+  Battery Matching Compatibility List* V2.3 (2025-11) ซึ่งให้ทั้งรุ่นแบตเตอรี่และ
+  ชื่อ **Battery Option** ที่ต้องตั้งในเครื่อง เช่น `B_BOX_HV BYD` `PYLON_LV` `Dyness HV`
+  ชื่อ Battery Option ถูกเก็บไว้ในวงเล็บท้ายฟิลด์ เพราะเป็นค่าที่ช่างต้องตั้งหน้างานจริง
+
+### เรื่องที่ต้องบอกให้ชัด
+
+**ไม่มีแบตเตอรี่ยี่ห้อ Solis** ในรายการความเข้ากันได้ฉบับทางการของ Ginlong Solis
+คำว่า `Solis-Alpha` ในรายการนั้นเป็นชื่อ Battery Option ของแบตเตอรี่ยี่ห้อ **Alpha**
+รุ่น 13.3P ส่วนแบตเตอรี่ที่ขายในชื่อ *Solis ESS* (solis-ess.com) เป็นคนละบริษัท
+กับ Ginlong Solis ที่ทำอินเวอร์เตอร์ จึงยังไม่ทำ ต้องให้ผู้ใช้ยืนยันก่อนว่าหมายถึงอันไหน
+
+**`Max_Continuous_Charge_Power_kw` เป็นค่าที่คำนวณ ไม่ใช่ค่าที่พิมพ์ในเอกสาร**
+สำหรับแบตที่แผ่นสเปกให้เป็น *กระแส* ไม่ใช่ *กำลัง* (SBR · BYD ทั้งสามตระกูล ·
+Pylontech · MGL060) คำนวณจากแรงดันระบุคูณกระแสต่อเนื่อง แล้วแปะ `[UNCERTAIN]` กำกับ
+เหตุผลคือ `asc_report.html:3115` ใช้ฟิลด์นี้เป็นเพดานกำลังของแบตเตอรี่ในการจำลอง
+ถ้าปล่อยเป็น 0 โปรแกรมจะ**ตกไปใช้พิกัดอินเวอร์เตอร์แทน** ซึ่งให้ผลจำลองสูงเกินจริงมาก
+(เช่น SBR064 ของจริง 3.84 kW แต่ถ้าปล่อยว่างแล้วคู่กับ SH25T จะกลายเป็น 25 kW)
+วิธีเดียวกับที่ SBH ใช้อยู่แล้ว เพราะแถว *Rated DC power* ของ SBH ก็คือแรงดันคูณ 50 A พอดี
+
+**โปรแกรมยังไม่ได้ใช้ฟิลด์จับคู่** ตรวจแล้วว่า `Compatible_Inverter_Models`
+`Compatible_Battery_Models` และ `Battery_Voltage_Class` **ยังไม่ถูกอ่านที่ไหนเลย**
+ในโค้ดหน้าออกแบบและหน้ารายงาน ตอนนี้ข้อมูลถูกเก็บไว้พร้อมใช้ แต่การกรองรายการแบตเตอรี่
+ตามอินเวอร์เตอร์ที่เลือก ยังต้องเขียนเพิ่มเป็นงานถัดไป
+
+### ยังไม่ทำ
+
+* แบตเตอรี่ยี่ห้อ Solis (รอผู้ใช้ยืนยันว่าหมายถึงอันไหน)
+* Pylontech Force L1/L2 · Force H1/H2/H3 · Powercube M1
+* Dyness ตระกูลแรงดันต่ำ (DL LV · Power LV · A/B/BX LV · PowerBrick) และ PowerRack HV
+* BYD Battery-Box LV5.0 · Battery-Max Lite
+* LVTOPSUN LV48100 · LVTS-512200/512300
