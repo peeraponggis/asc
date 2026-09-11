@@ -237,7 +237,7 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
       <button class="btn" onclick="exportBrief()">⬇ ส่งออก .json</button>
       <span id="photo-usage" style="font-size:12px;color:#B9C7D6"></span>
       <span id="offline-note" style="display:none;font-size:12px;color:#F6C453"></span>
-      <button class="btn" onclick="document.getElementById('pick').click()">📂 เปิดไฟล์ design</button>
+      <button class="btn" onclick="document.getElementById('pick').click()">📂 เปิดไฟล์ design/report</button>
       <input type="file" id="pick" accept=".txt,.json" style="display:none" onchange="importFile(this.files[0])">
       <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="onPhotoChosen(this)">
     </div>
@@ -259,6 +259,8 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
     <p>ใบสั่งงานช่างสร้างจากไฟล์ <b>design</b> ของหน้าออกแบบระบบ — ไปที่แท็บ System Design
        กรอกข้อมูลงานและทีมติดตั้ง กด <b>คำนวณตารางวัสดุอุปกรณ์</b> แล้วส่งออก design
        หรือจะลากไฟล์ design มาวางที่หน้านี้ก็ได้</p>
+    <p style="margin-top:6px">เปิดด้วยไฟล์ <b>report</b> จากเมนู Proposal &amp; Report ก็ได้เหมือนกัน
+       แต่ไฟล์นั้นไม่มีข้อมูลใบงาน (ลูกค้า · กำหนดการ · ทีมช่าง) ติดมาด้วย ต้องกรอกเองในหน้านี้</p>
     <div class="actions">
       <button class="btn" onclick="document.getElementById('pick').click()">เลือกไฟล์ design/report…</button>
       <button class="btn" onclick="gotoDesign()">ไปที่แท็บ System Design</button>
@@ -461,10 +463,62 @@ window.addEventListener('message', ev => {
     }
     const db2 = d.payload && d.payload.db2;
     const db1 = d.payload && d.payload.db1;
-    if (db2 || db1) loadDB2(db2 || db1); else showEmpty();
+    const db3 = d.payload && d.payload.db3;
+    /* ใช้ไฟล์ design ก่อนเสมอ เพราะมีข้อมูลใบงานครบกว่า
+       ถ้ายังไม่มี ค่อยถอยไปใช้ไฟล์ report ที่ไหลมาจากเมนู 3 */
+    if (db2 || db1) loadDB2(db2 || db1);
+    else if (db3 && db3.app_state) loadDB2(db3ToDesign(db3));
+    else showEmpty();
 });
 
 function gotoDesign(){ try { window.parent.postMessage({type:'SWITCH_TAB', tab:'asc'}, '*'); } catch(e) {} }
+
+/* ══════════════════════════════════════════════════════════════════
+   ไฟล์ report (จากเมนู 3) ใช้กับใบสั่งงานช่างได้ด้วย
+
+   ไฟล์ report ไม่ได้เก็บโครง step1..step7 แบบไฟล์ design แต่เก็บ app_state
+   ที่หน้ารายงานใช้จริง ซึ่งมีสเปกอุปกรณ์เต็ม ผังหลังคา และตารางวัสดุครบ
+   จึงแปลงกลับเป็นโครงเดียวกันได้ โดยไม่ต้องแตะตัวอ่านเดิม
+
+   สิ่งที่ไฟล์ report ไม่มีติดมาด้วย เพราะหน้ารายงานไม่ได้เก็บไว้
+     · ข้อมูลใบงาน (ลูกค้า · กำหนดการ · ทีมช่าง · หมายเหตุ)
+     · การจัดสตริงตามมาตรฐาน วสท.
+   สองอย่างนี้ต้องบอกผู้ใช้ตรง ๆ ห้ามปล่อยให้เข้าใจว่าใบงานครบแล้ว
+   ══════════════════════════════════════════════════════════════════ */
+function db3ToDesign(j){
+    const st = j.app_state || {};
+    const ui = j.ui_inputs || {};
+    const eq = st.equipData || {};
+    const res = st.results || {};
+    const pick = (id) => (ui[id] == null ? '' : String(ui[id])).trim();
+
+    return {
+        step1_initialization: {
+            projectName : pick('inp-proj'),
+            coordinates : pick('inp-coords'),
+            locationName: pick('inp-loc'),
+            job: {},                       // ไฟล์ report ไม่มีข้อมูลใบงาน
+            db0_reference: st.db0Data || null
+        },
+        step2_equipment: {
+            pv: eq.pv || {}, inv1: eq.inv1 || {}, inv2: eq.inv2 || {},
+            bat: eq.bat || {}, opt: eq.opt || {},
+            industrial_settings: eq.industrial_settings || {},
+            existing: st.existing || null
+        },
+        step3_design_and_layout: {
+            roofPolygons: Array.isArray(st.sysPolygons) ? st.sysPolygons : []
+        },
+        step4_validation_results: {
+            equipmentCounts: eq.counts || {},
+            totalDcCapacity_kWp: res.pnom || 0,
+            dcAcRatio: '',                 // ไฟล์ report ไม่ได้เก็บค่านี้ไว้
+            stringConfiguration_EIT_Standard: {},
+            engineering_and_bom: st.bomData || {}
+        },
+        __fromReport: true                 // ให้ loadDB2 รู้ว่าต้องขึ้นคำเตือน
+    };
+}
 
 function importFile(file){
     if (!file) return;
@@ -472,11 +526,13 @@ function importFile(file){
     r.onload = e => {
         try {
             const j = JSON.parse(e.target.result);
-            if (!(j.base_layout_db1 || j.step1_initialization)) {
-                alert('ไฟล์นี้ไม่ใช่ไฟล์ design ของหน้าออกแบบระบบ');
-                return;
+            if (j.base_layout_db1 || j.step1_initialization) {
+                loadDB2(j);
+            } else if (j.is_asc_db3 || j.app_state) {
+                loadDB2(db3ToDesign(j));
+            } else {
+                alert('ไฟล์นี้ไม่ใช่ไฟล์ design หรือ report ของระบบ');
             }
-            loadDB2(j);
         } catch(err) { alert('อ่านไฟล์ไม่สำเร็จ: ' + err.message); }
     };
     r.readAsText(file);
@@ -534,6 +590,13 @@ function loadDB2(raw){
        ไม่งั้นผู้ใช้จะเข้าใจว่ากำลังดูของเก่าทั้งที่เพิ่งซิงก์มาสด ๆ */
     const note = document.getElementById('offline-note');
     if (note) { note.style.display = 'none'; note.innerText = ''; }
+
+    /* เปิดจากไฟล์ report ต้องบอกให้ชัดว่าอะไรไม่ได้ติดมากับไฟล์
+       ห้ามปล่อยให้ช่างถือใบงานที่ข้อมูลลูกค้าว่างโดยไม่รู้ว่าทำไม */
+    if (raw.__fromReport && note) {
+        note.style.display = '';
+        note.innerText = 'เปิดจากไฟล์ report — ไม่มีข้อมูลใบงาน (ลูกค้า · กำหนดการ · ทีมช่าง) และการจัดสตริง ให้กรอกเองในหน้านี้ หรือเปิดด้วยไฟล์ design แทน';
+    }
     render();
     cacheForOffline();
 }
