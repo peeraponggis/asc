@@ -2369,6 +2369,10 @@
                             if(jsonData.app_state.financials) AppState.financials = jsonData.app_state.financials;
                             if(jsonData.app_state.results) AppState.results = jsonData.app_state.results;
                             if(jsonData.app_state.existing !== undefined) AppState.existing = jsonData.app_state.existing;
+                            /* ต้องกู้สองก้อนนี้ด้วย ไม่งั้นเปิดไฟล์ report แล้วส่งออกซ้ำ
+                               ข้อมูลใบงานกับการจัดสตริงจะหายไปจากไฟล์รอบถัดไป */
+                            if(jsonData.app_state.job !== undefined) AppState.job = jsonData.app_state.job;
+                            if(jsonData.app_state.stringConfig) AppState.stringConfig = jsonData.app_state.stringConfig;
                             
                             // 🌟 กู้คืนรูปภาพหน้าปกโครงการเข้าสู่หน่วยความจำหลัก
                             // 💡 กฎเหล็ก: จะเอาภาพจาก DB3 มาทับ ก็ต่อเมื่อ DB3 นั้น "มีรูปภาพเซฟไว้อยู่จริง (length > 0)"
@@ -2488,6 +2492,10 @@
                     AppState.isBifacial = pv.Is_Bifacial === "True";
 
                     setVal('inp-proj', step1.projectName || "-"); setVal('inp-loc', step1.locationName || "-"); setVal('inp-coords', step1.coordinates || "-");
+                    /* ข้อมูลใบงาน (ลูกค้า · กำหนดการ · ทีมช่าง · หมายเหตุ) หน้ารายงานไม่ได้ใช้เอง
+                       แต่ต้องพกติดไปกับไฟล์ report เพื่อให้ใบสั่งงานช่างเปิดจากไฟล์ report ได้ครบ
+                       ไม่งั้นช่างจะได้ใบงานที่ช่องลูกค้าว่างโดยไม่รู้สาเหตุ */
+                    AppState.job = step1.job || null;
 					// 🌟 แก้ไข: ลบการเรียก fetchMeteoData() แฝงออก เพื่อล็อคค่า GHI ให้ตรงกับ DB2 แน่นอน
                     if(db2.meteoData && db2.meteoData.yearlyGHI_kWh_m2) { setVal('inp-ghi', db2.meteoData.yearlyGHI_kWh_m2); }
 
@@ -3414,6 +3422,8 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 financials: AppState.financials || [],
                 results: AppState.results || {},
                 existing: AppState.existing || null,   // ระบบออนกริดเดิม ส่งต่อให้หน้าบทสรุปอ่าน
+                job: AppState.job || null,             // ข้อมูลใบงาน ส่งต่อให้ใบสั่งงานช่าง
+                stringConfig: AppState.stringConfig || {},  // การจัดสตริงตามมาตรฐาน วสท.
                 // 🌟 เพิ่มการแบคอัปรูปภาพหน้าปกลงในไฟล์ DB3
                 projectImagesBase64: typeof projectImagesBase64 !== 'undefined' ? projectImagesBase64 : []
             };
