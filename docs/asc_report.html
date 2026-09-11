@@ -7241,9 +7241,6 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             let trKva = ascSpec(ind.transformerRatingKva, ' kVA'); let mdbAmp = ascSpec(ind.targetMdbAmps, 'A'); let ctRatio = ascSpec(ind.ctRatio); let meterBrand = ind.meterBrand || "Smart Meter";
             let totalPanels = counts.totalPanels || 0; let invKw = ascSpec(inv1.Rated_AC_Output_Power_kW, 'kW');
             let pvSpec = `${pv.Manufacturer || '-'} ${pv.Model_Name || '-'}`; let invSpec = `${inv1.Manufacturer || '-'} ${inv1.Model_Name || '-'}`;
-            // ป้ายรุ่นแผงอยู่ริมขวา เหลือที่ถึงขอบกระดาษราว 40 ตัวอักษร ยาวกว่านั้นต้องตัด
-            // ไม่งั้นล้นออกนอกกรอบ (ใช้ธรรมเนียมเดียวกับ shortName ด้านล่าง)
-            let pvSpecShort = pvSpec.length > 40 ? pvSpec.substring(0, 40) + '...' : pvSpec;
             let dateStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });
             let shortName = pName.length > 45 ? pName.substring(0, 45) + '...' : pName;
 
@@ -7378,8 +7375,12 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                      และชนคอลัมน์สตริงเมื่อสตริงเยอะ เพราะสตริงกินพื้นที่ถึง x=1280 -->
                 <text x="1330" y="850" font-size="10">${totalStrings} Strings</text>
                 <text x="1330" y="865" font-size="10">(Total ${totalPanels} Panels)</text>
-                <text x="1330" y="880" font-size="10" font-weight="bold">${pvSpecShort}</text>
                 ${overflowWarning}
+
+                <!-- ชื่อรุ่นแผงวางใต้กรอบ PV ARRAY เพราะต้องแสดงเต็มไม่ตัดคำ
+                     แถบนี้ (x 20..628, y 1136..1163) ว่างจริง กว้างราว 590 px
+                     มากกว่าริมขวาที่เหลือถึงขอบกระดาษแค่ 240 px จึงไม่ต้องตัดชื่อรุ่นอีก -->
+                <text x="40" y="1155" font-size="10" font-weight="bold">PV MODULE: ${pvSpec}</text>
 
                 <!-- Grounding PV Array -->
                 <line x1="1240" y1="1050" x2="1320" y2="1050" stroke="#00b050" stroke-width="1.5"/>
