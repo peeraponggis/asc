@@ -93,11 +93,10 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <a href="#m3d-export" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ส่งออกภาพ</a>
                 <a href="#m3d-glb"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ส่งออกโมเดล .glb</a>
 
-                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 4 · วางผังอุปกรณ์</div>
-                <a href="#m4-cal"     class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 1 · ปรับเทียบผนัง</a>
-                <a href="#m4-place"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 2 · วางอุปกรณ์</a>
-                <a href="#m4-catalog" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">แคตตาล็อกอุปกรณ์</a>
-                <a href="#m4-export"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 3 · บันทึกและส่งออก</a>
+                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 4 · บทสรุประบบ</div>
+                <a href="#m6-load"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">เปิดและนำเข้าข้อมูล</a>
+                <a href="#m6-read"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">อ่านแต่ละส่วนของหน้า</a>
+                <a href="#m6-voice" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">เสียงบรรยายและวิดีโอ</a>
 
                 <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 5 · รายงาน</div>
                 <a href="#m3-import" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">นำเข้าข้อมูล</a>
@@ -107,10 +106,11 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                 <a href="#m3-lang"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ออกรายงานภาษาอังกฤษ</a>
                 <a href="#m3-eit"    class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ผลตรวจตามมาตรฐาน วสท.</a>
 
-                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 6 · บทสรุประบบ</div>
-                <a href="#m6-load"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">เปิดและนำเข้าข้อมูล</a>
-                <a href="#m6-read"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">อ่านแต่ละส่วนของหน้า</a>
-                <a href="#m6-voice" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">เสียงบรรยายและวิดีโอ</a>
+                <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 6 · วางผังอุปกรณ์</div>
+                <a href="#m4-cal"     class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 1 · ปรับเทียบผนัง</a>
+                <a href="#m4-place"   class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 2 · วางอุปกรณ์</a>
+                <a href="#m4-catalog" class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">แคตตาล็อกอุปกรณ์</a>
+                <a href="#m4-export"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ขั้น 3 · บันทึกและส่งออก</a>
 
                 <div class="px-5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">เมนู 7 · ใบสั่งงานช่าง</div>
                 <a href="#m7-what"  class="toc-link block px-5 py-2 pl-7 border-l-[3px] border-transparent hover:bg-slate-50 transition">ใบสั่งงานช่างคืออะไร</a>
@@ -145,16 +145,17 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'
                     ออกแบบระบบโซลาร์เซลล์<br>ตั้งแต่บิลค่าไฟจนถึงรายงานเสนอลูกค้า
                 </h1>
                 <p class="text-slate-600 leading-relaxed">
-                    โปรแกรมแบ่งเป็น 6 เมนูที่ทำงานต่อกันเป็นทอด ๆ ผลลัพธ์ของเมนูก่อนหน้าคือวัตถุดิบของเมนูถัดไป
+                    โปรแกรมแบ่งเป็น 7 เมนูที่ทำงานต่อกันเป็นทอด ๆ ผลลัพธ์ของเมนูก่อนหน้าคือวัตถุดิบของเมนูถัดไป
                     คู่มือนี้ไล่ตามลำดับการใช้งานจริง เปิดค้างไว้ข้าง ๆ ระหว่างทำงานได้เลย
                 </p>
                 <div class="mt-6 flex flex-wrap gap-2">
                     <button onclick="jumpTo('pea')"    class="no-print text-xs bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition">เริ่มที่เมนู 1 <i class="fa-solid fa-arrow-right ml-1"></i></button>
                     <button onclick="jumpTo('asc')"    class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 2</button>
                     <button onclick="jumpTo('model3d')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 3</button>
-                    <button onclick="jumpTo('device')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 4</button>
+                    <button onclick="jumpTo('summary')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 4</button>
                     <button onclick="jumpTo('report')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 5</button>
-                    <button onclick="jumpTo('summary')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 6</button>
+                    <button onclick="jumpTo('device')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 6</button>
+                    <button onclick="jumpTo('brief')" class="no-print text-xs bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold transition">ไปเมนู 7</button>
                 </div>
             </header>
 
@@ -1460,101 +1461,159 @@ Is_Bifacial = False</div>
 
             <hr class="my-14 border-slate-200">
 
-            <!-- ═══════════ เมนู 4 · Device Location ═══════════ -->
+            <!-- ═══════════ เมนู 4 ═══════════ -->
             <div class="flex items-center gap-3 mb-6">
-                <div class="step-num bg-amber-500 text-white">4</div>
-                <h2 class="text-2xl font-bold text-slate-900">วางผังอุปกรณ์บนภาพถ่าย</h2>
+                <div class="step-num bg-sky-600 text-white">4</div>
+                <h2 class="text-2xl font-bold text-slate-900">บทสรุประบบ</h2>
             </div>
             <p class="text-slate-600 leading-relaxed mb-8">
-                เมนูนี้ใช้ตอนสำรวจหน้างาน ถ่ายภาพผนังห้องไฟฟ้าแล้ววางอินเวอร์เตอร์ ตู้ MDB แบตเตอรี่ และรางเดินสาย
-                ลงไปตามขนาดจริง เพื่อดูว่าของทั้งหมดลงตัวไหมก่อนสั่งซื้อ ทำงานแยกจากเมนูอื่น ไม่ต้องมีไฟล์ DB
+                หน้าสรุปหน้าเดียวสำหรับเปิดคุยกับลูกค้า อ่านง่ายกว่ารายงาน PDF เต็มเล่ม
+                รวมอุปกรณ์ กำลังผลิต การไหลของพลังงานตลอดวัน ความคุ้มค่า และคำแนะนำการลงทุนไว้ในหน้าเดียว
+                มีเสียงบรรยายและส่งออกเป็นวิดีโอได้ เหมาะกับส่งให้ลูกค้าดูเองที่บ้าน
             </p>
 
             <section class="mb-12">
-                <h3 id="m4-cal" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 1 · ปรับเทียบผนัง</h3>
+                <h3 id="m6-load" class="text-lg font-bold text-slate-800 mb-3">เปิดและนำเข้าข้อมูล</h3>
                 <p class="text-slate-600 leading-relaxed mb-5">
-                    ขั้นนี้สำคัญที่สุด ถ้าข้ามไปขนาดอุปกรณ์ทั้งหมดจะผิด
+                    หน้านี้อ่านจากไฟล์ <b>DB3</b> ซึ่งเป็นผลจำลองรายชั่วโมงจากเมนู 5
+                    ถ้ายังไม่มี DB3 หน้าจะว่างพร้อมบอกทางไปต่อ
                 </p>
                 <ol class="space-y-4 mb-5">
                     <li class="flex gap-4">
-                        <div class="step-num bg-amber-50 text-amber-700">1</div>
+                        <div class="step-num bg-sky-50 text-sky-700">1</div>
                         <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
-                            กด <span class="btn-ref">📷 ถ่ายภาพ</span> หรือเลือกภาพจากคลัง
-                            บนคอมพิวเตอร์ลากไฟล์มาวางหรือกด <span class="kbd">Ctrl</span>+<span class="kbd">V</span> ก็ได้
+                            ไปเมนู 5 กด <span class="btn-ref">▶ ประมวลผลและสร้างรายงาน</span> ให้จบก่อน
+                            แล้วกด <span class="btn-ref">Export DB3</span> หนึ่งครั้ง
+                            ข้อมูลจะถูกส่งเข้าโครงการให้อัตโนมัติ
                         </p></div>
                     </li>
                     <li class="flex gap-4">
-                        <div class="step-num bg-amber-50 text-amber-700">2</div>
+                        <div class="step-num bg-sky-50 text-sky-700">2</div>
                         <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
-                            กด <span class="btn-ref">📐 ปรับเทียบผนัง</span> แล้วแตะมุมผนังทีละมุมตามลำดับ
-                            ซ้ายล่าง ขวาล่าง ขวาบน ซ้ายบน
-                        </p></div>
-                    </li>
-                    <li class="flex gap-4">
-                        <div class="step-num bg-amber-50 text-amber-700">3</div>
-                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
-                            กรอกความกว้างและความสูงจริงของผนังที่ล้อมด้วยสี่มุมนั้น แล้วกด <span class="btn-ref">ยืนยัน</span>
+                            กลับมาที่แท็บ <b>System Summary</b> หน้าจะดึงข้อมูลขึ้นมาเองทันที
+                            ถ้าเปิดหน้านี้เดี่ยว ๆ ให้กด <span class="btn-ref">เลือกไฟล์ DB3…</span>
+                            หรือ <b>ลากไฟล์ DB3 มาวางบนหน้า</b> ก็ได้
                         </p></div>
                     </li>
                 </ol>
-                <div class="bg-amber-50 border-l-4 border-amber-400 rounded-r-lg p-4">
-                    <p class="text-sm text-slate-700 leading-relaxed">
-                        ต้องใช้สี่มุม ไม่ใช่สองจุด เพราะห้องไฟฟ้ามักแคบจนต้องถ่ายเฉียง
-                        การวัดระยะสองจุดจะถูกต้องเฉพาะเมื่อถ่ายตั้งฉากพอดีเท่านั้น
-                        ภาพที่เอียงเพียงเล็กน้อยก็ทำให้ขนาดอุปกรณ์ผิดได้เกือบสองในสิบส่วน
-                        แต่ดูเหมือนถูกต้องจนไม่มีใครสังเกต
-                    </p>
-                </div>
-            </section>
-
-            <section class="mb-12">
-                <h3 id="m4-place" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 2 · วางอุปกรณ์</h3>
-                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed mb-5">
-                    <li>กดชื่ออุปกรณ์ที่แถบล่างเพื่อวางลงกลางผนัง แล้วลากไปยังตำแหน่งที่ต้องการ</li>
-                    <li>แถบด้านล่างบอกระยะห่างจากขอบซ้ายและความสูงจากพื้นของชิ้นที่เลือกอยู่</li>
-                    <li>ปุ่มลูกศรสี่ทิศขยับทีละ 5 เซนติเมตร ใช้ตอนต้องการความละเอียด</li>
-                    <li><span class="btn-ref">⟳ หมุน 90°</span> สำหรับของที่ติดตั้งได้สองแนว · รางเดินสายมีแถบปรับความยาว</li>
-                    <li>กด <span class="btn-ref">⬓ ผังพื้น</span> ดูมุมมองจากด้านบน ตรวจว่าอุปกรณ์ยื่นออกจากผนังมากแค่ไหน ชนทางเดินหรือเปล่า</li>
-                </ul>
                 <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
                     <p class="text-sm text-slate-700 leading-relaxed">
-                        ระบบตรวจให้อัตโนมัติสี่อย่าง — อุปกรณ์ทับกัน ระยะเว้นว่างรอบตัวไม่พอตามคู่มือผู้ผลิต
-                        อุปกรณ์ล้นออกนอกขอบผนัง และติดตั้งต่ำกว่า 15 เซนติเมตรจากพื้น
-                        แถบเตือนสีแดงคือต้องแก้ สีส้มคือควรทบทวน
+                        แถบหัวเรื่องมีช่อง <b>ค่าไฟ</b> ปรับได้ทันที ตัวเลขความคุ้มค่าจะคำนวณใหม่ตามค่าที่กรอก
+                        ใช้ตอบลูกค้าหน้างานได้เลยว่า &ldquo;ถ้าค่าไฟขึ้นเป็นเท่านี้ จะคืนทุนเร็วขึ้นแค่ไหน&rdquo;
+                        และปุ่ม <span class="btn-ref">ไทย</span> <span class="btn-ref">English</span> สลับภาษาทั้งหน้ารวมถึงเสียงบรรยาย
                     </p>
                 </div>
             </section>
 
             <section class="mb-12">
-                <h3 id="m4-catalog" class="text-lg font-bold text-slate-800 mb-3">แคตตาล็อกอุปกรณ์</h3>
-                <p class="text-slate-600 leading-relaxed mb-5">
-                    กด <span class="btn-ref">✎ แคตตาล็อก</span> เพื่อเพิ่มหรือแก้อุปกรณ์ของคุณเอง
-                    กรอกกว้าง สูง ลึก และระยะเว้นว่างรอบตัวตามคู่มือผู้ผลิต
-                    ค่าที่กรอกถูกจำไว้ในเครื่อง ใช้กับงานถัดไปได้เลยไม่ต้องกรอกซ้ำ
+                <h3 id="m6-read" class="text-lg font-bold text-slate-800 mb-3">อ่านแต่ละส่วนของหน้า</h3>
+
+                <div class="space-y-3 mb-5">
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">การไหลของพลังงานใน 24 ชั่วโมง (ซ้ายบน)</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            แผนภาพเส้นทางไฟฟ้า แดด → แผง → อินเวอร์เตอร์ → อาคาร แบตเตอรี่ และการไฟฟ้า
+                            <b>เส้นที่กำลังวิ่งคือเส้นทางที่มีพลังงานไหลจริงในชั่วโมงนั้น</b>
+                            เลื่อนแถบเวลาด้านล่างเพื่อไล่ดูทีละชั่วโมง หรือกด <span class="btn-ref">▶</span> ให้เดินเองครบ 24 ชั่วโมง
+                            ป้ายบนโหนดบอกกำลังเป็น kW และเปอร์เซ็นต์แบตเตอรี่ตามเวลานั้น
+                            (ตัวเลขเป็นค่าเฉลี่ยรายวันจากผลจำลอง 8,760 ชั่วโมง)
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">กราฟเทียบกำลังผลิตกับการใช้ไฟ (ขวาบน)</h4>
+                        <ul class="text-sm text-slate-600 space-y-1.5">
+                            <li>• <b class="text-green-600">เส้นเขียว</b> กำลังผลิตของแผง พื้นที่ใต้กราฟคือพลังงานที่ผลิตได้</li>
+                            <li>• <b class="text-red-600">เส้นแดง</b> โหลดของอาคาร ช่วงที่เส้นเขียวอยู่เหนือเส้นแดงคือช่วงที่ผลิตได้เกินใช้</li>
+                            <li>• <b class="text-slate-500">เส้นประเทา</b> ไฟที่ต้องซื้อจากการไฟฟ้า</li>
+                            <li>• <b class="text-pink-500">เส้นประชมพู</b> ระดับพลังงานที่เหลือในแบตเตอรี่ (แสดงเมื่อระบบมีแบตเตอรี่)</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">อุปกรณ์ในระบบ และกำลังการผลิต</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            รายการแผง อินเวอร์เตอร์ แบตเตอรี่ พร้อมขนาดและ DC/AC Ratio
+                            ตามด้วยตัวเลขสมรรถนะหกช่อง — ขนาดติดตั้ง พลังงานที่ผลิตได้ต่อปี
+                            <b>Performance Ratio</b> (ยิ่งสูงยิ่งสูญเสียน้อย) กำลังผลิตสูงสุด
+                            ผลผลิตจำเพาะ kWh ต่อ kWp และพลังงานที่ใช้เองโดยประมาณต่อวัน
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">ความคุ้มค่าในการลงทุน</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            เงินลงทุน ค่าไฟที่ประหยัดได้ปีแรก ระยะคืนทุน และต้นทุนต่อ kWp
+                            พร้อมแถบแสดงระยะคืนทุนเทียบอายุระบบ 25 ปี
+                            ตัวเลขทั้งหมดขยับตามค่าไฟที่กรอกไว้บนหัวเรื่อง
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">พลังงานรายเดือน · คำแนะนำการลงทุน · กระแสเงินสด 25 ปี</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            กราฟแท่งรายเดือนบอกฤดูที่ผลิตได้มากน้อย
+                            ถัดมาคือ <b>คำแนะนำในการตัดสินใจลงทุน</b> ที่ระบบสร้างเองจากตัวเลขของโครงการนี้
+                            เช่นเตือนเมื่อ DC/AC Ratio สูงจนเกิด Clipping หรือเมื่อมีไฟส่วนเกินมากจนควรพิจารณาแบตเตอรี่
+                            ปิดท้ายด้วยตารางกระแสเงินสด 25 ปี แถวที่เงินสะสมเปลี่ยนจากแดงเป็นเขียวคือปีที่คืนทุน
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-5">
+                    <h4 class="font-bold text-amber-900 text-sm mb-2"><i class="fa-solid fa-circle-info mr-1.5"></i> ถ้าโหลดอาคารขึ้นเป็นศูนย์</h4>
+                    <p class="text-sm text-amber-900 leading-relaxed">
+                        แปลว่าผลจำลองชุดนั้นรันในโหมดวิศวกรรมที่จ่ายไฟเข้าระบบทั้งหมด ไม่ได้ระบุโหลด
+                        หน้าจะบอกไว้ใต้กราฟให้เอง ถ้าต้องการเห็นสัดส่วนการใช้เอง
+                        ให้กลับไปรันผลจำลองแบบระบุโหลดในเมนู 5 แล้ว Export DB3 ใหม่
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m6-voice" class="text-lg font-bold text-slate-800 mb-3">เสียงบรรยายและการส่งออกวิดีโอ</h3>
+
+                <h4 class="font-bold text-slate-800 text-sm mb-2">ฟังคำอธิบายระบบ</h4>
+                <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                    กด <span class="btn-ref">🔊 ฟังคำอธิบายระบบ</span> บนแถบหัวเรื่อง
+                    ระบบจะอ่านสรุปให้ฟังสี่ตอนตามหัวข้อบนหน้าจอ —
+                    ภาพรวมระบบ · การไหลของพลังงาน 24 ชั่วโมง · วิธีอ่านกราฟ · คำแนะนำการลงทุนทีละข้อ
+                    ใช้เสียงที่มีอยู่ในเครื่องของผู้ใช้ ไม่ต้องต่ออินเทอร์เน็ต และเปลี่ยนภาษาตามปุ่มไทย/English
                 </p>
-                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed">
-                    <li>อัปโหลดภาพจริงของอุปกรณ์ได้ ภาพจะถูกวางทับกล่องตามขนาดที่กรอก ทำให้ภาพผังดูเหมือนของจริง</li>
-                    <li>ภาพถูกย่อขนาดอัตโนมัติก่อนเก็บ เพื่อไม่ให้ไฟล์ผังใหญ่เกินไป</li>
-                    <li>ความลึกไม่แสดงในมุมมองผนัง แต่ใช้ในผังพื้นและใช้ตรวจระยะยื่น</li>
-                </ul>
-            </section>
-
-            <section class="mb-12">
-                <h3 id="m4-export" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 3 · บันทึกและส่งออก</h3>
-                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed mb-5">
-                    <li>งานถูกบันทึกลงเครื่องอัตโนมัติทุกครั้งที่แก้ เปิดหน้าใหม่จะถามว่าจะทำงานต่อไหม</li>
-                    <li><span class="btn-ref">💾 เซฟไฟล์ผัง</span> ได้ไฟล์ <span class="kbd">.json</span> สำหรับส่งต่อหรือเก็บถาวร</li>
-                    <li><span class="btn-ref">▭ มุมตรง</span> แปลงภาพถ่ายเฉียงให้เป็นภาพมองตรงเหมือนแบบก่อสร้าง</li>
-                    <li><span class="btn-ref">⬇ บันทึกภาพ</span> ได้ไฟล์ PNG พร้อมชื่อและขนาดของอุปกรณ์ทุกชิ้น
-                        ถ้าแปลงเป็นมุมตรงไว้แล้วจะมีเส้นบอกขนาดแบบแบบก่อสร้างให้ด้วย</li>
-                </ul>
-                <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
-                    <p class="text-sm text-slate-700 leading-relaxed">
-                        แถบซูมด้านบนภาพมีปุ่ม พอดีจอ ย่อ ขยาย และ 1:1
-                        กด <span class="kbd">Ctrl</span> ค้างแล้วหมุนลูกกลิ้งเมาส์ก็ซูมได้เหมือนกัน
-                        ลากอุปกรณ์ได้แม่นเท่าเดิมทุกระดับการซูม
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-5">
+                    <p class="text-sm text-blue-800 leading-relaxed">
+                        ระหว่างบรรยาย <b>ภาพการไหลของพลังงานจะเดินให้เองอัตโนมัติ</b>
+                        เริ่มเดินหลังเสียงเริ่มไปแล้ว 3 วินาที และหยุดก่อนเสียงจบ 2 วินาที
+                        ผู้ฟังจึงได้ดูภาพเคลื่อนไหวไปพร้อมกับคำอธิบายโดยไม่ต้องกดอะไรเพิ่ม
+                        กด <span class="btn-ref">หยุดเสียง</span> เมื่อไร ภาพจะหยุดตามทันที
                     </p>
                 </div>
+
+                <h4 class="font-bold text-slate-800 text-sm mb-2">Export Video</h4>
+                <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                    กด <span class="btn-ref">Export Video</span> จะมีให้เลือกสองแบบ
+                </p>
+                <div class="space-y-3 mb-5">
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">🔊 มีเสียงบรรยาย (บันทึกหน้าจอ + เสียงระบบ)</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            เบราว์เซอร์จะเปิดหน้าต่างขออนุญาตแชร์หน้าจอ —
+                            <b>ต้องเลือก &ldquo;ทั้งหน้าจอ (Entire screen)&rdquo; และเปิดสวิตช์ &ldquo;แชร์เสียงระบบ&rdquo;</b>
+                            แล้วกด Share จากนั้นปล่อยให้ทำงานจนเสียงบรรยายจบ
+                            ไฟล์ <span class="kbd">.webm</span> จะดาวน์โหลดเอง
+                            ถ้าลืมติ๊กแชร์เสียง ระบบจะถามก่อนว่าจะอัดแบบไม่มีเสียงต่อหรือไม่
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">🎞 ไม่มีเสียง (ไฟล์แอนิเมชัน 24 ชั่วโมง)</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            วาดภาพเองความละเอียด 1280×720 ไม่ต้องแชร์หน้าจอ ได้คลิปสั้นราว 12 วินาที
+                            แสดงแผนภาพการไหล กราฟ และตัวเลขสำคัญของแต่ละชั่วโมง
+                            เหมาะกับแนบไปในสไลด์หรือส่งทางแชต
+                        </p>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-500 leading-relaxed">
+                    อีกทางเลือกคือใช้ <b>Windows Game Bar</b> กด <span class="kbd">Win</span> + <span class="kbd">Alt</span> + <span class="kbd">R</span>
+                    เริ่มและหยุดอัดเอง แล้วกดปุ่ม ▶ กับปุ่มฟังคำอธิบายเองตามจังหวะที่ต้องการ
+                    ส่วนปุ่ม <span class="btn-ref">พิมพ์ / PDF</span> ใช้เก็บเป็นเอกสารหน้าเดียวแนบอีเมลได้
+                </p>
             </section>
 
             <!-- ═══════════ เมนู 5 ═══════════ -->
@@ -1873,159 +1932,101 @@ Is_Bifacial = False</div>
 
             <hr class="my-14 border-slate-200">
 
-            <!-- ═══════════ เมนู 6 ═══════════ -->
+            <!-- ═══════════ เมนู 6 · Device Location ═══════════ -->
             <div class="flex items-center gap-3 mb-6">
-                <div class="step-num bg-sky-600 text-white">6</div>
-                <h2 class="text-2xl font-bold text-slate-900">บทสรุประบบ</h2>
+                <div class="step-num bg-amber-500 text-white">6</div>
+                <h2 class="text-2xl font-bold text-slate-900">วางผังอุปกรณ์บนภาพถ่าย</h2>
             </div>
             <p class="text-slate-600 leading-relaxed mb-8">
-                หน้าสรุปหน้าเดียวสำหรับเปิดคุยกับลูกค้า อ่านง่ายกว่ารายงาน PDF เต็มเล่ม
-                รวมอุปกรณ์ กำลังผลิต การไหลของพลังงานตลอดวัน ความคุ้มค่า และคำแนะนำการลงทุนไว้ในหน้าเดียว
-                มีเสียงบรรยายและส่งออกเป็นวิดีโอได้ เหมาะกับส่งให้ลูกค้าดูเองที่บ้าน
+                เมนูนี้ใช้ตอนสำรวจหน้างาน ถ่ายภาพผนังห้องไฟฟ้าแล้ววางอินเวอร์เตอร์ ตู้ MDB แบตเตอรี่ และรางเดินสาย
+                ลงไปตามขนาดจริง เพื่อดูว่าของทั้งหมดลงตัวไหมก่อนสั่งซื้อ ทำงานแยกจากเมนูอื่น ไม่ต้องมีไฟล์ DB
             </p>
 
             <section class="mb-12">
-                <h3 id="m6-load" class="text-lg font-bold text-slate-800 mb-3">เปิดและนำเข้าข้อมูล</h3>
+                <h3 id="m4-cal" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 1 · ปรับเทียบผนัง</h3>
                 <p class="text-slate-600 leading-relaxed mb-5">
-                    หน้านี้อ่านจากไฟล์ <b>DB3</b> ซึ่งเป็นผลจำลองรายชั่วโมงจากเมนู 5
-                    ถ้ายังไม่มี DB3 หน้าจะว่างพร้อมบอกทางไปต่อ
+                    ขั้นนี้สำคัญที่สุด ถ้าข้ามไปขนาดอุปกรณ์ทั้งหมดจะผิด
                 </p>
                 <ol class="space-y-4 mb-5">
                     <li class="flex gap-4">
-                        <div class="step-num bg-sky-50 text-sky-700">1</div>
+                        <div class="step-num bg-amber-50 text-amber-700">1</div>
                         <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
-                            ไปเมนู 5 กด <span class="btn-ref">▶ ประมวลผลและสร้างรายงาน</span> ให้จบก่อน
-                            แล้วกด <span class="btn-ref">Export DB3</span> หนึ่งครั้ง
-                            ข้อมูลจะถูกส่งเข้าโครงการให้อัตโนมัติ
+                            กด <span class="btn-ref">📷 ถ่ายภาพ</span> หรือเลือกภาพจากคลัง
+                            บนคอมพิวเตอร์ลากไฟล์มาวางหรือกด <span class="kbd">Ctrl</span>+<span class="kbd">V</span> ก็ได้
                         </p></div>
                     </li>
                     <li class="flex gap-4">
-                        <div class="step-num bg-sky-50 text-sky-700">2</div>
+                        <div class="step-num bg-amber-50 text-amber-700">2</div>
                         <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
-                            กลับมาที่แท็บ <b>System Summary</b> หน้าจะดึงข้อมูลขึ้นมาเองทันที
-                            ถ้าเปิดหน้านี้เดี่ยว ๆ ให้กด <span class="btn-ref">เลือกไฟล์ DB3…</span>
-                            หรือ <b>ลากไฟล์ DB3 มาวางบนหน้า</b> ก็ได้
+                            กด <span class="btn-ref">📐 ปรับเทียบผนัง</span> แล้วแตะมุมผนังทีละมุมตามลำดับ
+                            ซ้ายล่าง ขวาล่าง ขวาบน ซ้ายบน
+                        </p></div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="step-num bg-amber-50 text-amber-700">3</div>
+                        <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
+                            กรอกความกว้างและความสูงจริงของผนังที่ล้อมด้วยสี่มุมนั้น แล้วกด <span class="btn-ref">ยืนยัน</span>
                         </p></div>
                     </li>
                 </ol>
+                <div class="bg-amber-50 border-l-4 border-amber-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        ต้องใช้สี่มุม ไม่ใช่สองจุด เพราะห้องไฟฟ้ามักแคบจนต้องถ่ายเฉียง
+                        การวัดระยะสองจุดจะถูกต้องเฉพาะเมื่อถ่ายตั้งฉากพอดีเท่านั้น
+                        ภาพที่เอียงเพียงเล็กน้อยก็ทำให้ขนาดอุปกรณ์ผิดได้เกือบสองในสิบส่วน
+                        แต่ดูเหมือนถูกต้องจนไม่มีใครสังเกต
+                    </p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <h3 id="m4-place" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 2 · วางอุปกรณ์</h3>
+                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed mb-5">
+                    <li>กดชื่ออุปกรณ์ที่แถบล่างเพื่อวางลงกลางผนัง แล้วลากไปยังตำแหน่งที่ต้องการ</li>
+                    <li>แถบด้านล่างบอกระยะห่างจากขอบซ้ายและความสูงจากพื้นของชิ้นที่เลือกอยู่</li>
+                    <li>ปุ่มลูกศรสี่ทิศขยับทีละ 5 เซนติเมตร ใช้ตอนต้องการความละเอียด</li>
+                    <li><span class="btn-ref">⟳ หมุน 90°</span> สำหรับของที่ติดตั้งได้สองแนว · รางเดินสายมีแถบปรับความยาว</li>
+                    <li>กด <span class="btn-ref">⬓ ผังพื้น</span> ดูมุมมองจากด้านบน ตรวจว่าอุปกรณ์ยื่นออกจากผนังมากแค่ไหน ชนทางเดินหรือเปล่า</li>
+                </ul>
                 <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
                     <p class="text-sm text-slate-700 leading-relaxed">
-                        แถบหัวเรื่องมีช่อง <b>ค่าไฟ</b> ปรับได้ทันที ตัวเลขความคุ้มค่าจะคำนวณใหม่ตามค่าที่กรอก
-                        ใช้ตอบลูกค้าหน้างานได้เลยว่า &ldquo;ถ้าค่าไฟขึ้นเป็นเท่านี้ จะคืนทุนเร็วขึ้นแค่ไหน&rdquo;
-                        และปุ่ม <span class="btn-ref">ไทย</span> <span class="btn-ref">English</span> สลับภาษาทั้งหน้ารวมถึงเสียงบรรยาย
+                        ระบบตรวจให้อัตโนมัติสี่อย่าง — อุปกรณ์ทับกัน ระยะเว้นว่างรอบตัวไม่พอตามคู่มือผู้ผลิต
+                        อุปกรณ์ล้นออกนอกขอบผนัง และติดตั้งต่ำกว่า 15 เซนติเมตรจากพื้น
+                        แถบเตือนสีแดงคือต้องแก้ สีส้มคือควรทบทวน
                     </p>
                 </div>
             </section>
 
             <section class="mb-12">
-                <h3 id="m6-read" class="text-lg font-bold text-slate-800 mb-3">อ่านแต่ละส่วนของหน้า</h3>
-
-                <div class="space-y-3 mb-5">
-                    <div class="bg-white border border-slate-200 rounded-xl p-5">
-                        <h4 class="font-bold text-slate-800 text-sm mb-2">การไหลของพลังงานใน 24 ชั่วโมง (ซ้ายบน)</h4>
-                        <p class="text-sm text-slate-600 leading-relaxed">
-                            แผนภาพเส้นทางไฟฟ้า แดด → แผง → อินเวอร์เตอร์ → อาคาร แบตเตอรี่ และการไฟฟ้า
-                            <b>เส้นที่กำลังวิ่งคือเส้นทางที่มีพลังงานไหลจริงในชั่วโมงนั้น</b>
-                            เลื่อนแถบเวลาด้านล่างเพื่อไล่ดูทีละชั่วโมง หรือกด <span class="btn-ref">▶</span> ให้เดินเองครบ 24 ชั่วโมง
-                            ป้ายบนโหนดบอกกำลังเป็น kW และเปอร์เซ็นต์แบตเตอรี่ตามเวลานั้น
-                            (ตัวเลขเป็นค่าเฉลี่ยรายวันจากผลจำลอง 8,760 ชั่วโมง)
-                        </p>
-                    </div>
-                    <div class="bg-white border border-slate-200 rounded-xl p-5">
-                        <h4 class="font-bold text-slate-800 text-sm mb-2">กราฟเทียบกำลังผลิตกับการใช้ไฟ (ขวาบน)</h4>
-                        <ul class="text-sm text-slate-600 space-y-1.5">
-                            <li>• <b class="text-green-600">เส้นเขียว</b> กำลังผลิตของแผง พื้นที่ใต้กราฟคือพลังงานที่ผลิตได้</li>
-                            <li>• <b class="text-red-600">เส้นแดง</b> โหลดของอาคาร ช่วงที่เส้นเขียวอยู่เหนือเส้นแดงคือช่วงที่ผลิตได้เกินใช้</li>
-                            <li>• <b class="text-slate-500">เส้นประเทา</b> ไฟที่ต้องซื้อจากการไฟฟ้า</li>
-                            <li>• <b class="text-pink-500">เส้นประชมพู</b> ระดับพลังงานที่เหลือในแบตเตอรี่ (แสดงเมื่อระบบมีแบตเตอรี่)</li>
-                        </ul>
-                    </div>
-                    <div class="bg-white border border-slate-200 rounded-xl p-5">
-                        <h4 class="font-bold text-slate-800 text-sm mb-2">อุปกรณ์ในระบบ และกำลังการผลิต</h4>
-                        <p class="text-sm text-slate-600 leading-relaxed">
-                            รายการแผง อินเวอร์เตอร์ แบตเตอรี่ พร้อมขนาดและ DC/AC Ratio
-                            ตามด้วยตัวเลขสมรรถนะหกช่อง — ขนาดติดตั้ง พลังงานที่ผลิตได้ต่อปี
-                            <b>Performance Ratio</b> (ยิ่งสูงยิ่งสูญเสียน้อย) กำลังผลิตสูงสุด
-                            ผลผลิตจำเพาะ kWh ต่อ kWp และพลังงานที่ใช้เองโดยประมาณต่อวัน
-                        </p>
-                    </div>
-                    <div class="bg-white border border-slate-200 rounded-xl p-5">
-                        <h4 class="font-bold text-slate-800 text-sm mb-2">ความคุ้มค่าในการลงทุน</h4>
-                        <p class="text-sm text-slate-600 leading-relaxed">
-                            เงินลงทุน ค่าไฟที่ประหยัดได้ปีแรก ระยะคืนทุน และต้นทุนต่อ kWp
-                            พร้อมแถบแสดงระยะคืนทุนเทียบอายุระบบ 25 ปี
-                            ตัวเลขทั้งหมดขยับตามค่าไฟที่กรอกไว้บนหัวเรื่อง
-                        </p>
-                    </div>
-                    <div class="bg-white border border-slate-200 rounded-xl p-5">
-                        <h4 class="font-bold text-slate-800 text-sm mb-2">พลังงานรายเดือน · คำแนะนำการลงทุน · กระแสเงินสด 25 ปี</h4>
-                        <p class="text-sm text-slate-600 leading-relaxed">
-                            กราฟแท่งรายเดือนบอกฤดูที่ผลิตได้มากน้อย
-                            ถัดมาคือ <b>คำแนะนำในการตัดสินใจลงทุน</b> ที่ระบบสร้างเองจากตัวเลขของโครงการนี้
-                            เช่นเตือนเมื่อ DC/AC Ratio สูงจนเกิด Clipping หรือเมื่อมีไฟส่วนเกินมากจนควรพิจารณาแบตเตอรี่
-                            ปิดท้ายด้วยตารางกระแสเงินสด 25 ปี แถวที่เงินสะสมเปลี่ยนจากแดงเป็นเขียวคือปีที่คืนทุน
-                        </p>
-                    </div>
-                </div>
-
-                <div class="bg-amber-50 border border-amber-200 rounded-xl p-5">
-                    <h4 class="font-bold text-amber-900 text-sm mb-2"><i class="fa-solid fa-circle-info mr-1.5"></i> ถ้าโหลดอาคารขึ้นเป็นศูนย์</h4>
-                    <p class="text-sm text-amber-900 leading-relaxed">
-                        แปลว่าผลจำลองชุดนั้นรันในโหมดวิศวกรรมที่จ่ายไฟเข้าระบบทั้งหมด ไม่ได้ระบุโหลด
-                        หน้าจะบอกไว้ใต้กราฟให้เอง ถ้าต้องการเห็นสัดส่วนการใช้เอง
-                        ให้กลับไปรันผลจำลองแบบระบุโหลดในเมนู 5 แล้ว Export DB3 ใหม่
-                    </p>
-                </div>
+                <h3 id="m4-catalog" class="text-lg font-bold text-slate-800 mb-3">แคตตาล็อกอุปกรณ์</h3>
+                <p class="text-slate-600 leading-relaxed mb-5">
+                    กด <span class="btn-ref">✎ แคตตาล็อก</span> เพื่อเพิ่มหรือแก้อุปกรณ์ของคุณเอง
+                    กรอกกว้าง สูง ลึก และระยะเว้นว่างรอบตัวตามคู่มือผู้ผลิต
+                    ค่าที่กรอกถูกจำไว้ในเครื่อง ใช้กับงานถัดไปได้เลยไม่ต้องกรอกซ้ำ
+                </p>
+                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed">
+                    <li>อัปโหลดภาพจริงของอุปกรณ์ได้ ภาพจะถูกวางทับกล่องตามขนาดที่กรอก ทำให้ภาพผังดูเหมือนของจริง</li>
+                    <li>ภาพถูกย่อขนาดอัตโนมัติก่อนเก็บ เพื่อไม่ให้ไฟล์ผังใหญ่เกินไป</li>
+                    <li>ความลึกไม่แสดงในมุมมองผนัง แต่ใช้ในผังพื้นและใช้ตรวจระยะยื่น</li>
+                </ul>
             </section>
 
             <section class="mb-12">
-                <h3 id="m6-voice" class="text-lg font-bold text-slate-800 mb-3">เสียงบรรยายและการส่งออกวิดีโอ</h3>
-
-                <h4 class="font-bold text-slate-800 text-sm mb-2">ฟังคำอธิบายระบบ</h4>
-                <p class="text-sm text-slate-600 leading-relaxed mb-3">
-                    กด <span class="btn-ref">🔊 ฟังคำอธิบายระบบ</span> บนแถบหัวเรื่อง
-                    ระบบจะอ่านสรุปให้ฟังสี่ตอนตามหัวข้อบนหน้าจอ —
-                    ภาพรวมระบบ · การไหลของพลังงาน 24 ชั่วโมง · วิธีอ่านกราฟ · คำแนะนำการลงทุนทีละข้อ
-                    ใช้เสียงที่มีอยู่ในเครื่องของผู้ใช้ ไม่ต้องต่ออินเทอร์เน็ต และเปลี่ยนภาษาตามปุ่มไทย/English
-                </p>
-                <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-5">
-                    <p class="text-sm text-blue-800 leading-relaxed">
-                        ระหว่างบรรยาย <b>ภาพการไหลของพลังงานจะเดินให้เองอัตโนมัติ</b>
-                        เริ่มเดินหลังเสียงเริ่มไปแล้ว 3 วินาที และหยุดก่อนเสียงจบ 2 วินาที
-                        ผู้ฟังจึงได้ดูภาพเคลื่อนไหวไปพร้อมกับคำอธิบายโดยไม่ต้องกดอะไรเพิ่ม
-                        กด <span class="btn-ref">หยุดเสียง</span> เมื่อไร ภาพจะหยุดตามทันที
+                <h3 id="m4-export" class="text-lg font-bold text-slate-800 mb-3">ขั้นที่ 3 · บันทึกและส่งออก</h3>
+                <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed mb-5">
+                    <li>งานถูกบันทึกลงเครื่องอัตโนมัติทุกครั้งที่แก้ เปิดหน้าใหม่จะถามว่าจะทำงานต่อไหม</li>
+                    <li><span class="btn-ref">💾 เซฟไฟล์ผัง</span> ได้ไฟล์ <span class="kbd">.json</span> สำหรับส่งต่อหรือเก็บถาวร</li>
+                    <li><span class="btn-ref">▭ มุมตรง</span> แปลงภาพถ่ายเฉียงให้เป็นภาพมองตรงเหมือนแบบก่อสร้าง</li>
+                    <li><span class="btn-ref">⬇ บันทึกภาพ</span> ได้ไฟล์ PNG พร้อมชื่อและขนาดของอุปกรณ์ทุกชิ้น
+                        ถ้าแปลงเป็นมุมตรงไว้แล้วจะมีเส้นบอกขนาดแบบแบบก่อสร้างให้ด้วย</li>
+                </ul>
+                <div class="bg-slate-100 border-l-4 border-slate-400 rounded-r-lg p-4">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        แถบซูมด้านบนภาพมีปุ่ม พอดีจอ ย่อ ขยาย และ 1:1
+                        กด <span class="kbd">Ctrl</span> ค้างแล้วหมุนลูกกลิ้งเมาส์ก็ซูมได้เหมือนกัน
+                        ลากอุปกรณ์ได้แม่นเท่าเดิมทุกระดับการซูม
                     </p>
                 </div>
-
-                <h4 class="font-bold text-slate-800 text-sm mb-2">Export Video</h4>
-                <p class="text-sm text-slate-600 leading-relaxed mb-3">
-                    กด <span class="btn-ref">Export Video</span> จะมีให้เลือกสองแบบ
-                </p>
-                <div class="space-y-3 mb-5">
-                    <div class="bg-white border border-slate-200 rounded-xl p-5">
-                        <h4 class="font-bold text-slate-800 text-sm mb-2">🔊 มีเสียงบรรยาย (บันทึกหน้าจอ + เสียงระบบ)</h4>
-                        <p class="text-sm text-slate-600 leading-relaxed">
-                            เบราว์เซอร์จะเปิดหน้าต่างขออนุญาตแชร์หน้าจอ —
-                            <b>ต้องเลือก &ldquo;ทั้งหน้าจอ (Entire screen)&rdquo; และเปิดสวิตช์ &ldquo;แชร์เสียงระบบ&rdquo;</b>
-                            แล้วกด Share จากนั้นปล่อยให้ทำงานจนเสียงบรรยายจบ
-                            ไฟล์ <span class="kbd">.webm</span> จะดาวน์โหลดเอง
-                            ถ้าลืมติ๊กแชร์เสียง ระบบจะถามก่อนว่าจะอัดแบบไม่มีเสียงต่อหรือไม่
-                        </p>
-                    </div>
-                    <div class="bg-white border border-slate-200 rounded-xl p-5">
-                        <h4 class="font-bold text-slate-800 text-sm mb-2">🎞 ไม่มีเสียง (ไฟล์แอนิเมชัน 24 ชั่วโมง)</h4>
-                        <p class="text-sm text-slate-600 leading-relaxed">
-                            วาดภาพเองความละเอียด 1280×720 ไม่ต้องแชร์หน้าจอ ได้คลิปสั้นราว 12 วินาที
-                            แสดงแผนภาพการไหล กราฟ และตัวเลขสำคัญของแต่ละชั่วโมง
-                            เหมาะกับแนบไปในสไลด์หรือส่งทางแชต
-                        </p>
-                    </div>
-                </div>
-                <p class="text-sm text-slate-500 leading-relaxed">
-                    อีกทางเลือกคือใช้ <b>Windows Game Bar</b> กด <span class="kbd">Win</span> + <span class="kbd">Alt</span> + <span class="kbd">R</span>
-                    เริ่มและหยุดอัดเอง แล้วกดปุ่ม ▶ กับปุ่มฟังคำอธิบายเองตามจังหวะที่ต้องการ
-                    ส่วนปุ่ม <span class="btn-ref">พิมพ์ / PDF</span> ใช้เก็บเป็นเอกสารหน้าเดียวแนบอีเมลได้
-                </p>
             </section>
 
             <hr class="my-14 border-slate-200">
@@ -2052,9 +2053,9 @@ Is_Bifacial = False</div>
                     สิ่งที่ต้องเตรียมเองจริง ๆ จึงมีแค่รูปหน้างาน
                 </p>
                 <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-5">
-                    <h4 class="font-bold text-amber-900 text-sm mb-2"><i class="fa-solid fa-circle-info mr-1.5"></i> ต่างจากเมนู 6 อย่างไร</h4>
+                    <h4 class="font-bold text-amber-900 text-sm mb-2"><i class="fa-solid fa-circle-info mr-1.5"></i> ต่างจากเมนู 4 อย่างไร</h4>
                     <p class="text-sm text-amber-900 leading-relaxed">
-                        <b>เมนู 6 บทสรุประบบ</b> ทำให้ <b>ลูกค้า</b> ดู เน้นความคุ้มค่าและการตัดสินใจลงทุน<br>
+                        <b>เมนู 4 บทสรุประบบ</b> ทำให้ <b>ลูกค้า</b> ดู เน้นความคุ้มค่าและการตัดสินใจลงทุน<br>
                         <b>เมนู 7 ใบสั่งงานช่าง</b> ทำให้ <b>ช่าง</b> ดู เน้นว่าไปที่ไหน ติดตั้งตรงไหน ใช้ของอะไร ต้องทำอะไรบ้าง
                     </p>
                 </div>

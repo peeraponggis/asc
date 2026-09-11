@@ -1855,13 +1855,12 @@ const INDUSTRIAL_SOLAR_CONFIG = {
                         <b><span style="color:#ea580c;">ความกว้าง (Est):</span></b> ${estWidthM.toFixed(2)} ม.
                     </div>
                 `;
-                // 🌟 เฟส 8: ไม่โชว์ป้ายตอน hover อีกต่อไป — เก็บข้อมูลไว้ แล้วโชว์เฉพาะวัตถุที่ถูก "คลิกเลือก"
+                // 🌟 เฟส 8: ไม่โชว์ป้ายตอน hover — เก็บข้อมูลไว้เผื่อใช้ที่อื่น
+                // 🌟 เฟส 15: ผู้ใช้ขอเอาป้ายขาว (พื้นที่รวม/ความยาว/ความกว้าง) ออกจากแผนที่
+                //    เพราะบังภาพและซ้ำกับตัวเลขที่มีอยู่แล้วในแผงกรอกข้อมูลด้านขวา
+                //    เก็บ layer._areaInfoHtml ไว้เหมือนเดิม เผื่อมีจุดอื่นอยากใช้ในอนาคต
+                //    แค่ไม่ bindTooltip ให้ขึ้นบนแผนที่อีกต่อไป (ลูกศรทิศลาดสีน้ำเงินยังอยู่ตามเดิม)
                 layer._areaInfoHtml = popupHtml;
-                if (typeof activeRoofLayer !== 'undefined' && layer === activeRoofLayer) {
-                    layer.unbindTooltip();
-                    layer.bindTooltip(popupHtml, { permanent: true, direction: 'center', className: 'area-info-tooltip' });
-                    if (layer.openTooltip) layer.openTooltip();
-                }
             });
         }
 
@@ -9705,20 +9704,11 @@ function ascFileStamp(projectName, kind) {
 			} catch (err) { console.error('rotate error:', err); }
 		}
 
-		// Wrapper ครอบ setActiveRoofLayer: จัดการป้ายพื้นที่ + แถบเครื่องมือ โดยไม่แตะฟังก์ชันเดิม
+		// Wrapper ครอบ setActiveRoofLayer: จัดการแถบเครื่องมือ โดยไม่แตะฟังก์ชันเดิม
+		// 🌟 เฟส 15: เลิกโชว์ป้ายขาว (พื้นที่รวม/ความยาว/ความกว้าง) ตอนคลิกเลือกวัตถุแล้ว ตามที่ผู้ใช้ขอ
 		const _setActiveRoofLayerCore = setActiveRoofLayer;
 		setActiveRoofLayer = function(layer) {
-			// ปิดป้ายพื้นที่ของวัตถุที่ถูกยกเลิกการเลือก
-			if (activeRoofLayer && activeRoofLayer !== layer && activeRoofLayer._areaInfoHtml && activeRoofLayer.unbindTooltip) {
-				activeRoofLayer.unbindTooltip();
-			}
 			_setActiveRoofLayerCore(layer);
-			// เปิดป้ายพื้นที่ "เฉพาะ" วัตถุที่ถูกคลิกเลือก
-			if (layer && layer._areaInfoHtml && layer.bindTooltip) {
-				layer.unbindTooltip();
-				layer.bindTooltip(layer._areaInfoHtml, { permanent: true, direction: 'center', className: 'area-info-tooltip' });
-				if (layer.openTooltip) layer.openTooltip();
-			}
 			// แสดง/ซ่อนแถบเครื่องมือวัตถุ
 			const tb = document.getElementById('objToolbar');
 			if (tb) {

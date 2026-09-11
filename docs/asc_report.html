@@ -300,6 +300,12 @@
         .pp-tbl td.it{ font-family:'Kanit',sans-serif; font-weight:500; color:#0B2233; }
         .pp-tbl td.hi{ color:#B8862F; font-family:'Kanit',sans-serif; font-weight:600; }
 
+        /* ตารางหนาแน่น 7 คอลัมน์ x 26 แถว (Financial Evaluation Table) ต้องย่อขนาดตัวอักษร
+           และลด padding ลงจาก .pp-tbl ปกติ ไม่เช่นนั้นจะล้นหน้ากระดาษที่ตรึงขนาดไว้ */
+        .pp-tbl-sm{ font-size:1.12cqw; }
+        .pp-tbl-sm thead th{ padding-bottom:.8cqw; }
+        .pp-tbl-sm tbody td{ padding:.55cqw 0; }
+
         .pp-chart{ margin:1cqw 0 0; border:1px solid #D9DFE4; background:#fff; padding:1.6cqw; }
         .pp-chart img{ width:100%; height:auto; display:block; }
 
@@ -3704,6 +3710,31 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 let vBifacialGain = AppState.isBifacial ? ((AppState.bifacialParams?.albedo || 0.2) * 20) : 0;
                 let vMismatch = 1.0; // Base Mismatch Loss
 
+                // 🌟 จัดอันดับปัจจัยสูญเสียจากค่าจริงของโปรเจกต์นี้ (ไม่ใช่ลำดับตายตัว) เพื่อชี้เป้าให้วิศวกร
+                const RECO_TH = {
+                    'IAM Loss': 'ปรับปรุงมุมติดตั้ง (tilt/azimuth) ให้รับแสงตรงมุมมากขึ้น หรือพิจารณาแผงที่มีสารเคลือบป้องกันการสะท้อนแสง (AR coating)',
+                    'Soiling Loss': 'เพิ่มความถี่ในการล้างทำความสะอาดแผง โดยเฉพาะพื้นที่ฝุ่นมากหรือใกล้ถนน/โรงงาน',
+                    'Temperature Loss': 'เพิ่มระยะห่างใต้แผงเพื่อระบายความร้อน หรือเลือกแผงที่มีสัมประสิทธิ์อุณหภูมิ (Pmax Temp. Coeff.) ต่ำกว่า',
+                    'LID Loss': 'เลือกแผงชนิด N-type หรือแผงที่มีการรับประกัน LID ต่ำจากผู้ผลิต',
+                    'Module/String Mismatch': 'ตรวจสอบการจัดกลุ่มสตริงให้แผงมีคุณสมบัติไฟฟ้าใกล้เคียงกัน และลดผลจากการบังแดดบางส่วน (partial shading)',
+                    'Ohmic Wiring Loss': 'ตรวจสอบขนาดและความยาวสายไฟฝั่ง DC เพื่อลดแรงดันตกคร่อมสาย (IR drop)',
+                    'Inverter Loss': 'ตรวจสอบจุดทำงาน (operating point) ของอินเวอร์เตอร์เทียบกับอัตราส่วน DC/AC ที่ออกแบบไว้',
+                };
+                let lossFactors = [
+                    { name: 'IAM Loss', pct: vIAM },
+                    { name: 'Soiling Loss', pct: vSoil },
+                    { name: 'Temperature Loss', pct: vTemp },
+                    { name: 'LID Loss', pct: vLID },
+                    { name: 'Module/String Mismatch', pct: vMismatch },
+                    { name: 'Ohmic Wiring Loss', pct: vWire },
+                    { name: 'Inverter Loss', pct: vInv },
+                ].filter(f => f.pct > 0).sort((a, b) => b.pct - a.pct);
+                let rankListHtml = lossFactors.map((f, i) =>
+                    `<li>${i + 1}. <b>${f.name}</b>: -${formatNum(f.pct, 2)}%</li>`
+                ).join('');
+                let topFactor = lossFactors[0] || { name: '-', pct: 0 };
+                let topRecoTh = RECO_TH[topFactor.name] || 'ตรวจสอบจุดที่มีการสูญเสียสูงสุดในผังนี้เพิ่มเติม';
+
                 let dtlWF = `
                 <p><b>1) โครงสร้างภาพ: จาก "รังสีตกกระทบ" → "พลังงานสุทธิที่ได้"</b><br>
                 ภาพนี้เป็น แผนภาพ Sankey (flow diagram) ที่แสดงการไหลของพลังงานจากขั้นต้นไปยังขั้นสุดท้าย โดยมีการลดทอนเป็น "losses" ตามกลไกต่าง ๆ จนเหลือเป็นพลังงานสุทธิ/กำลังไฟฟ้าขาออก</p>
@@ -3730,8 +3761,14 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 2. มี IAM loss และ Temperature loss ซึ่ง Temperature loss ในภาพมีขนาดเด่น (<b>-${formatNum(vTemp, 2)}%</b>)<br>
                 3. ด้านบิฟาเชียลมี Bifacial gain เป็น "กำไร" ชดเชยบางส่วน<br>
                 4. เมื่อเข้าขั้นไฟฟ้า ยังมี loss สำคัญจาก LID, mismatch, wiring (ohmic) และ inverter loss<br>
-                5. ผลสุดท้ายคือ Energy to grid <b>${formatNum((r.effPR || 0) * 100, 2)}%</b> ของกรอบพลังงานอ้างอิงในภาพ (PR สะท้อนความสามารถของระบบ)</p>`;
-                
+                5. ผลสุดท้ายคือ Energy to grid <b>${formatNum((r.effPR || 0) * 100, 2)}%</b> ของกรอบพลังงานอ้างอิงในภาพ (PR สะท้อนความสามารถของระบบ)</p>
+
+                <p><b>6) จัดอันดับปัจจัยสูญเสียของโปรเจกต์นี้ (เรียงจากมากไปน้อย)</b><br>
+                <ol class="list-none pl-0">${rankListHtml}</ol>
+                ปัจจัยที่ฉุดประสิทธิภาพมากที่สุดในระบบนี้คือ <b class="text-red-600">${topFactor.name} (-${formatNum(topFactor.pct, 2)}%)</b><br>
+                <b>คำแนะนำเชิงวิศวกรรม:</b> ${topRecoTh}<br>
+                <span class="text-gray-500">หมายเหตุ: เปอร์เซ็นต์แต่ละขั้นเป็นการลดทอนแบบทวีคูณต่อเนื่อง (multiplicative) ตามลำดับในผัง Sankey ไม่ใช่การบวกตรง ๆ ผลรวมสุดท้ายจึงดูได้จาก Energy to Grid (PR) ด้านบน</span></p>`;
+
                 descWaterfall.innerHTML = getDescHtml("waterfall", RT("PV System Loss Diagram (แผนภาพการสูญเสียพลังงานของระบบ)", "PV System Loss Diagram"), RT("ลำดับการลดทอนพลังงานตั้งแต่รังสีตกกระทบแผง จนกลายเป็นกระแสไฟฟ้า AC โดยแจกแจงปัจจัยความสูญเสียทีละขั้น", "Step by step attenuation from irradiance on the array through to AC output, with each loss factor itemised"), RT(`ระบบมีการสูญเสียรวม <b>${formatNum(100 - ((r.effPR || 0) * 100), 2)}%</b> ช่วยให้วิศวกรวิเคราะห์เพื่อปรับปรุงการจัดการพลังงานได้ตรงจุด`, `Total system loss is <b>${formatNum(100 - ((r.effPR || 0) * 100), 2)}%</b>, letting the engineer target the right stage for improvement`), RT("<li><b>Soiling Loss:</b> ความสูญเสียจากคราบสกปรกหรือฝุ่นละอองที่เกาะบนหน้าแผง</li><li><b>IAM Loss (Incidence Angle Modifier):</b> ความสูญเสียจากการสะท้อนของแสงที่ตกกระทบกระจกแผงในมุมเฉียง</li><li><b>Thermal Loss:</b> ความสูญเสียจากอุณหภูมิ (แผงร้อนขึ้น ประสิทธิภาพแปลงไฟจะลดลง)</li><li><b>Ohmic Wiring Loss:</b> ความสูญเสียในรูปของความร้อนตามสายไฟจากความต้านทานของสายตัวนำ</li>", "<li><b>Soiling Loss:</b> loss from dirt and dust settling on the module glass</li><li><b>IAM Loss (Incidence Angle Modifier):</b> loss from light reflecting off the module glass at oblique angles</li><li><b>Thermal Loss:</b> loss from temperature, as conversion efficiency falls when the module heats up</li><li><b>Ohmic Wiring Loss:</b> loss as heat along the cable, caused by conductor resistance</li>"), dtlWF);
             }
 
