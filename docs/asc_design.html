@@ -1056,6 +1056,10 @@
                             แสดงลูกศรทิศที่แผงหันไป (หางลูกศร = ด้านสัน) — วาดที่พื้นที่วางแผง ถ้ายังไม่มีกรอบจึงวาดที่หลังคา
                         </label>
                         <div id="roofDirBox" style="display:none; margin-top:2px;"></div>
+                        <label style="display:flex; align-items:center; gap:6px; color:#0369a1; font-weight:600; cursor:pointer; margin-top:4px;">
+                            <input type="checkbox" id="chkDimLines" checked style="width:auto; margin:0;" onchange="if(typeof recalculateLabels==='function') recalculateLabels();">
+                            แสดงเส้นบอกระยะพร้อมหัวลูกศรที่ขอบหลังคา (แบบแบบก่อสร้าง) — ปิดได้ถ้าผังแน่นเกินไป
+                        </label>
                     </div>
 
                     <div class="form-group">
@@ -1696,7 +1700,7 @@ const INDUSTRIAL_SOLAR_CONFIG = {
                         // จำนวนแผงและสถานะล็อกของพื้นที่นี้ (ใช้ได้ทั้งหลังคาและกรอบพื้นที่วางแผง)
                         if (feature.properties.ascPanel) layer.ascPanel = feature.properties.ascPanel;
                         if (layer.drawMode === 'roof') {
-                            layer.setStyle({ color: '#ea580c', weight: 2, fillColor: '#f97316', fillOpacity: 0.3 });
+                            layer.setStyle({ color: '#ea580c', weight: ASC_LW.outline, fillColor: '#f97316', fillOpacity: 0.3 });
                             // 🌟 เฟส 5: fallback ใช้ค่าจริงบนหน้าจอ (ที่เพิ่งถูกกู้คืน) แทนค่า hardcode เดิม
                             layer.panelConfig = feature.properties.panelConfig || {
                                 ori: (document.querySelector('input[name="panelOrientation"]:checked') || {}).value || 'P',
@@ -1790,23 +1794,88 @@ const INDUSTRIAL_SOLAR_CONFIG = {
                 const areaSqM = turf.area(geojson);
                 const coordsList = geojson.geometry.coordinates[0];
                 let maxEdgeM = 0;
-                
+
+                /* -- เส้นบอกระยะแบบแบบก่อสร้าง --------------------------------
+                   วาดเฉพาะขอบหลังคา เพราะเป็นเส้นที่ช่างต้องใช้วัดหน้างานจริง
+                   ส่วนกรอบอื่น (พื้นที่วางแผง หวงห้าม ทางเดิน) ยังเป็นตัวเลขลอยเหมือนเดิม
+                   ไม่งั้นผังจะแน่นจนอ่านไม่ออกเมื่อมีหลายกรอบซ้อนกัน
+
+                   ชุดหนึ่งประกอบด้วย เส้นช่วยสองเส้นจากมุมหลังคา + เส้นบอกระยะ +
+                   หัวลูกศรสองหัวชี้ออกจากกัน + ตัวเลขระยะกลางเส้น
+                   ระยะเยื้องและขนาดหัวลูกศรคิดจากขนาดรูป ผังเล็กผังใหญ่จึงได้สัดส่วนพอกัน */
+                const dimOn = (function () {
+                    const el = document.getElementById('chkDimLines');
+                    return layer.drawMode === 'roof' && (el ? el.checked : true);
+                })();
+                const clampM = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+                const dimOffsetM = clampM(Math.sqrt(areaSqM) * 0.09, 0.8, 5);
+                const arrowM = clampM(dimOffsetM * 0.45, 0.25, 1.6);
+                const cen = dimOn ? turf.centroid(geojson) : null;
+                const ll = f => [f.geometry.coordinates[1], f.geometry.coordinates[0]];
+                const DIM_COLOR = '#0369a1';
+
                 for (let i = 0; i < coordsList.length - 1; i++) {
-                    const pt1 = turf.point(coordsList[i]); 
+                    const pt1 = turf.point(coordsList[i]);
                     const pt2 = turf.point(coordsList[i+1]);
                     const dist = turf.distance(pt1, pt2, {units: 'meters'});
                     const mid = turf.midpoint(pt1, pt2);
                     if (dist > maxEdgeM) maxEdgeM = dist;
-                    
-                    // 🌟 เปลี่ยนป้ายให้เป็นแบบโปร่งแสง ไม่มีกรอบ และลดขนาดฟอนต์ พร้อมเอาไอคอนไม้บรรทัดออก
+
+                    let labelAt = mid;
+
+                    if (dimOn && dist > 0.4) {
+                        const brg = turf.bearing(pt1, pt2);
+                        /* เลือกด้านที่ชี้ออกนอกรูป โดยดูว่าเยื้องไปทางไหนแล้วห่างจุดศูนย์กลางมากกว่า
+                           ใช้ได้กับรูปนูนซึ่งเป็นทรงหลังคาเกือบทั้งหมด และไม่ต้องรู้ทิศทางการวนจุด */
+                        const c0 = turf.destination(mid, dimOffsetM, brg + 90, {units: 'meters'});
+                        const c1 = turf.destination(mid, dimOffsetM, brg - 90, {units: 'meters'});
+                        const outBrg = turf.distance(c0, cen, {units: 'meters'}) >= turf.distance(c1, cen, {units: 'meters'})
+                                     ? brg + 90 : brg - 90;
+
+                        const A = turf.destination(pt1, dimOffsetM, outBrg, {units: 'meters'});
+                        const B = turf.destination(pt2, dimOffsetM, outBrg, {units: 'meters'});
+                        labelAt = turf.midpoint(A, B);
+
+                        // เส้นช่วย เว้นช่องเล็กจากมุมหลังคา แล้วเลยเส้นบอกระยะไปนิดหนึ่งตามธรรมเนียมแบบ
+                        [pt1, pt2].forEach(function (corner) {
+                            const from = turf.destination(corner, dimOffsetM * 0.12, outBrg, {units: 'meters'});
+                            const to   = turf.destination(corner, dimOffsetM * 1.18, outBrg, {units: 'meters'});
+                            L.polyline([ll(from), ll(to)], {
+                                color: DIM_COLOR, weight: ASC_LW.dim, opacity: 0.85, interactive: false
+                            }).addTo(labelItems);
+                        });
+
+                        L.polyline([ll(A), ll(B)], {
+                            color: DIM_COLOR, weight: ASC_LW.dim, opacity: 0.95, interactive: false
+                        }).addTo(labelItems);
+
+                        // หัวลูกศรตัน ปลายอยู่ที่หัวเส้น ชี้ออกจากกันคนละทาง
+                        const head = function (tip, pointBrg) {
+                            const back = turf.destination(tip, arrowM, pointBrg + 180, {units: 'meters'});
+                            const w = arrowM * 0.30;
+                            return [
+                                ll(tip),
+                                ll(turf.destination(back, w, pointBrg + 90, {units: 'meters'})),
+                                ll(turf.destination(back, w, pointBrg - 90, {units: 'meters'}))
+                            ];
+                        };
+                        [[A, brg + 180], [B, brg]].forEach(function (h) {
+                            L.polygon(head(h[0], h[1]), {
+                                color: DIM_COLOR, weight: ASC_LW.dim * 0.6, opacity: 1,
+                                fillColor: DIM_COLOR, fillOpacity: 1, interactive: false
+                            }).addTo(labelItems);
+                        });
+                    }
+
+                    // ป้ายระยะโปร่งแสง ไม่มีกรอบ วางกลางเส้นบอกระยะ (ถ้าไม่มีเส้นก็กลางขอบเหมือนเดิม)
                     const transparentLabel = L.divIcon({
                         className: 'edge-label',
                         html: `<div style="background:transparent; color:#0369a1; padding:2px 4px; font-size:11px; font-weight:bold; text-shadow: 1px 1px 2px #fff, -1px -1px 2px #fff, 1px -1px 2px #fff, -1px 1px 2px #fff; pointer-events:none; white-space:nowrap; line-height:1;">${dist.toFixed(2)}m</div>`,
                         iconSize: null,
                         iconAnchor: [15, 8]
                     });
-                    
-                    L.marker([mid.geometry.coordinates[1], mid.geometry.coordinates[0]], {icon: transparentLabel, interactive:true}).addTo(labelItems);
+
+                    L.marker(ll(labelAt), {icon: transparentLabel, interactive:true}).addTo(labelItems);
                 }
 
                 const estWidthM = maxEdgeM > 0 ? areaSqM / maxEdgeM : 0;
@@ -2103,6 +2172,22 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
              lineCap  'butt'   ปลายเส้นตัดตรง ไม่มีหัวมนยื่นเกินจุดปลาย
              smoothFactor 0    ไม่ลดรูปเส้นตอนวาด เส้นจึงลากผ่านทุกจุดตามพิกัดจริง
                                (แผงใช้ค่านี้อยู่แล้ว ส่วนขอบหลังคามีไม่กี่จุด จึงไม่กระทบความลื่น) */
+        /* ── ลำดับน้ำหนักเส้นแบบแบบก่อสร้าง ──────────────────────────────
+           แบบก่อสร้างสื่อความหมายด้วย "ความหนาเส้น" ไม่ใช่แค่สี เส้นขอบเขตต้องหนากว่า
+           เส้นบอกระยะชัดเจน สายตาจึงอ่านลำดับความสำคัญได้ทันทีโดยไม่ต้องอ่านป้าย
+           อัตราส่วนไล่ตามชั้นประมาณ 1 : 0.6 : 0.4 : 0.3 : 0.23 ตามแนว ISO 128
+
+           เก็บไว้ที่เดียวเพื่อให้ปรับทั้งระบบพร้อมกันได้ และคนที่เพิ่มเลเยอร์ใหม่
+           หยิบไปใช้ได้ถูกชั้นโดยไม่ต้องเดาตัวเลขเอง */
+        const ASC_LW = {
+            outline: 2.6,   // ขอบเขตหลัก — ขอบหลังคา
+            zone:    1.6,   // กรอบพื้นที่ — พื้นที่วางแผง พื้นที่หวงห้าม
+            object:  1.0,   // วัตถุ — แผง ต้นไม้ ทางเดิน
+            service: 0.8,   // งานระบบ — เส้นเดินสาย
+            dim:     0.6,   // เส้นบอกระยะและเส้นช่วย
+            guide:   0.5    // เส้นนำตอนวาด
+        };
+
         if (window.L && L.Path && L.Path.mergeOptions) {
             L.Path.mergeOptions({ lineJoin: 'miter', lineCap: 'butt' });
         }
@@ -3489,7 +3574,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
 
         /* พื้นที่วางแผง (PV Zone) — กรอบที่ผู้ใช้วาดทับหลังคาเพื่อจำกัดขอบเขตการวางแผง
            ต้องโปร่งกว่าวัตถุอื่นมาก เพราะมันวางทับหลังคาและแผงที่ต้องมองเห็นอยู่ข้างใต้ */
-        const ASC_PVZONE_STYLE = { color: '#2563eb', weight: 2, fillColor: '#3b82f6', fillOpacity: 0.06, dashArray: '8, 5' };
+        const ASC_PVZONE_STYLE = { color: '#2563eb', weight: ASC_LW.zone, fillColor: '#3b82f6', fillOpacity: 0.06, dashArray: '8, 5' };
 
         function setActiveRoofLayer(layer) {
             // คืนค่าสีเดิมของแต่ละวัตถุตอนที่ยกเลิกการเลือก
@@ -3502,7 +3587,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                     } else if (activeRoofLayer.drawMode === 'pvzone') {
                         activeRoofLayer.setStyle({ color: ASC_PVZONE_STYLE.color, weight: ASC_PVZONE_STYLE.weight, dashArray: ASC_PVZONE_STYLE.dashArray });
                     } else {
-                        activeRoofLayer.setStyle({ color: '#ea580c', weight: 2 });
+                        activeRoofLayer.setStyle({ color: '#ea580c', weight: ASC_LW.outline });
                     }
                 } else if (activeRoofLayer.setOpacity) {
                     activeRoofLayer.setOpacity(1.0); // 🌟 คืนค่าโปร่งแสงปกติให้หมุด MDB
@@ -3639,10 +3724,10 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
         }
 
         const guideLinesLayer = L.layerGroup().addTo(map);
-        const verticalLine = L.polyline([], {color: '#fa0505', weight: 1.0, dashArray: '4,6', interactive: false}).addTo(guideLinesLayer);
-        const horizontalLine = L.polyline([], {color: '#fa0505', weight: 1.0, dashArray: '4,6', interactive: false}).addTo(guideLinesLayer);
+        const verticalLine = L.polyline([], {color: '#fa0505', weight: ASC_LW.guide, dashArray: '4,6', interactive: false}).addTo(guideLinesLayer);
+        const horizontalLine = L.polyline([], {color: '#fa0505', weight: ASC_LW.guide, dashArray: '4,6', interactive: false}).addTo(guideLinesLayer);
         let firstClickPoint = null;
-        const northGuideLine = L.polyline([], {color: '#f97316', weight: 1.0, dashArray: '4,4', opacity: 0.7, interactive: false}).addTo(guideLinesLayer);
+        const northGuideLine = L.polyline([], {color: '#f97316', weight: ASC_LW.guide, dashArray: '4,4', opacity: 0.7, interactive: false}).addTo(guideLinesLayer);
 
         function updateGuideLines(e) {
             if (!isDrawingMode) return;
@@ -3714,7 +3799,7 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
         // --- DRAW CONTROL ---
         const drawControl = new L.Control.Draw({
             draw: { 
-                polygon: { allowIntersection: false, showArea: true, repeatMode: false, shapeOptions: { color: '#ea580c', weight: 2, fillColor: '#ea580c', fillOpacity: 0.2 } }, 
+                polygon: { allowIntersection: false, showArea: true, repeatMode: false, shapeOptions: { color: '#ea580c', weight: ASC_LW.outline, fillColor: '#ea580c', fillOpacity: 0.2 } }, 
                 polyline: { shapeOptions: { color: '#000000', weight: 4 }, repeatMode: false }, 
                 marker: true, // 🌟 เปิดใช้งาน Marker สำหรับวางหมุด MDB 🌟
                 circle: false, rectangle: false, circlemarker: false 
@@ -5480,7 +5565,7 @@ processPolygonsAndPanels = function() {
             layer.drawMode = drawMode;
             
             if (drawMode === 'roof') { 
-                layer.setStyle({ color: '#ea580c', weight: 2, fillColor: '#f97316', fillOpacity: 0.3 }); 
+                layer.setStyle({ color: '#ea580c', weight: ASC_LW.outline, fillColor: '#f97316', fillOpacity: 0.3 }); 
                 
                 layer.panelConfig = {
                     ori: document.querySelector('input[name="panelOrientation"]:checked').value,
@@ -9432,7 +9517,7 @@ document.addEventListener('keydown', function(e) {
                 onEachFeature: function(feature, layer) {
                     layer.drawMode = feature.properties.drawMode;
                     if (layer.drawMode === 'roof') {
-                        layer.setStyle({ color: '#ea580c', weight: 2, fillColor: '#f97316', fillOpacity: 0.3 });
+                        layer.setStyle({ color: '#ea580c', weight: ASC_LW.outline, fillColor: '#f97316', fillOpacity: 0.3 });
                         layer.panelConfig = JSON.parse(JSON.stringify(feature.properties.panelConfig)); // คัดลอกการตั้งค่าแผงมาด้วย
                         layer.on('click', function(ev) { L.DomEvent.stop(ev); setActiveRoofLayer(this); });
                         layer.on('contextmenu', function(ev) { 
