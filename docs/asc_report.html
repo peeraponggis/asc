@@ -7250,13 +7250,30 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             // 🌟 ใช้จำนวนสตริงจาก DB (ถ้าไม่มี ค่อยคำนวณจากแผงรวมหารด้วย mps)
             let totalStrings = AppState.equipData?.numStrings || Math.ceil(totalPanels / mps) || 1;
             
-            let drawStrings = Math.min(totalStrings, 6); // วาดใน SLD ได้สูงสุด 6 เส้นเพื่อไม่ให้กราฟิกล้น
-            let sldCoords = [610, 750, 855, 995, 1100, 1240];
+            // 🌟 คำนวณตำแหน่งสตริงจากจำนวนจริงและพื้นที่ว่างจริง แทนตาราง 6 ค่าคงที่เดิม
+            // แนวคิดยืมจาก enterprise (solar-engine/src/report/sld.ts) ที่คำนวณตำแหน่งจากจำนวนกลุ่มจริง
+            // ไม่ใช่เปิดตารางพิกัดตายตัว (เขียนใหม่เป็น vanilla ทั้งหมด อ้างอิงแนวคิดเท่านั้น ไม่ได้ import โค้ด)
+            const BOX_LEFT = 560, BOX_RIGHT = 1280;   // ขอบเขตจริงของ DC COMBINER BOX / PV ARRAY
+            const MIN_SPACING_PX = 80;                // ระยะขั้นต่ำที่ label/fuse box ไม่ทับกัน
+            const maxDraw = Math.max(1, Math.floor((BOX_RIGHT - BOX_LEFT) / MIN_SPACING_PX));
+            let drawStrings = Math.min(totalStrings, maxDraw);
+            let spacing = (BOX_RIGHT - BOX_LEFT) / drawStrings;
+            let xOf = (i) => BOX_LEFT + spacing / 2 + i * spacing;
             let panelsRemaining = totalPanels;
             let stringsHtml = '';
 
+            // ถ้ายังมีสตริงที่วาดไม่ได้ ต้องบอกในผังเลย ห้ามหายไปเงียบๆ
+            // (แบบเดียวกับกฎ eit-lps ที่เขียนไว้ก่อนหน้านี้ในเซสชันนี้ — ห้ามเดา ต้องเตือน)
+            let undrawnStrings = totalStrings - drawStrings;
+            let overflowWarning = undrawnStrings > 0
+                ? `<text x="1100" y="830" font-size="10" fill="#dc2626" font-weight="bold">${RT(
+                    `⚠ แสดงเฉพาะ ${drawStrings}/${totalStrings} สตริง ที่เหลืออีก ${undrawnStrings} สตริงไม่ได้วาดในผังนี้ ดูรายละเอียดในตารางสตริงแบบเต็ม`,
+                    `⚠ Showing only ${drawStrings}/${totalStrings} strings, remaining ${undrawnStrings} strings not shown here — see full string table`
+                  )}</text>`
+                : '';
+
             for (let i = 0; i < drawStrings; i++) {
-                let x = sldCoords[i];
+                let x = xOf(i);
                 let pCount = Math.min(panelsRemaining, mps); // จำนวนแผงที่จะวาดในสตริงนี้
                 if (pCount <= 0 && i > 0) break; 
                 panelsRemaining -= pCount;
@@ -7355,6 +7372,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 <text x="530" y="800" font-size="12" font-weight="bold">PV ARRAY</text>
                 <text x="1100" y="800" font-size="10">${totalStrings} Strings (Total ${totalPanels} Panels)</text>
                 <text x="1100" y="815" font-size="10" font-weight="bold">${pvSpec}</text>
+                ${overflowWarning}
 
                 <!-- Grounding PV Array -->
                 <line x1="1240" y1="1050" x2="1320" y2="1050" stroke="#00b050" stroke-width="1.5"/>
