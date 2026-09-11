@@ -58,7 +58,36 @@
             kCapex: 'เงินลงทุนเริ่มต้น', kSave1: 'ประหยัดค่าไฟปีแรก',
             kNet25: 'ประหยัดสะสมตลอด 25 ปี',
             assume: 'สมมติฐาน: ค่าไฟปรับขึ้นเฉลี่ยปีละ 2.5% · แผงเสื่อมสภาพปีละ 0.5%',
-            noData: 'ยังไม่มีข้อมูล กรุณานำเข้าไฟล์ DB2/DB3 และกดประมวลผลก่อน'
+            noData: 'ยังไม่มีข้อมูล กรุณานำเข้าไฟล์ DB2/DB3 และกดประมวลผลก่อน',
+
+            p7: 'ASC Energy Overview (ภาพรวมพลังงานรายปี)',
+            p7lede: 'สรุปสมดุลพลังงานทั้งปีระหว่างพลังงานที่ผลิตได้ ความต้องการใช้ไฟของอาคาร และสัดส่วนที่ใช้เองได้ทันทีโดยไม่ต้องขายคืนกริด',
+            kProd: 'ผลิตรวม', kCons: 'ความต้องการใช้ไฟ', kSelfC: 'ใช้เองทันที (Self-Consumption)',
+
+            p8: 'ASC Daily Battery & PV Operation',
+            p8lede: 'ตัวอย่างพฤติกรรมการทำงานระบบในหนึ่งวัน แสดงการผลิตจากแผงโซลาร์ การใช้ไฟของอาคาร และการชาร์จ/คายประจุของแบตเตอรี่ (ถ้ามี) ตลอด 24 ชั่วโมง',
+
+            p9: 'ASC Monthly Energy Production & Performance Ratio (PR)',
+            p9lede: 'ผลผลิตพลังงานรายเดือนตลอดปี เทียบกับดัชนีประสิทธิภาพรวม (PR) ของระบบในแต่ละเดือน',
+
+            p10: 'ASC Probability Distribution (P50/P75/P90/P95)',
+            p10lede: 'ระดับความเชื่อมั่นของผลผลิตพลังงานรายปี คำนวณจากความไม่แน่นอนของสภาพอากาศและสเปกอุปกรณ์ ใช้เป็นเกณฑ์อ้างอิงในการประเมินความเสี่ยงทางการเงิน',
+            kP50: 'P50 (ค่าฐาน)', kP75: 'P75 (อนุรักษ์นิยม)', kP90: 'P90 (ขั้นต่ำที่กู้ได้)', kP95: 'P95 (ปลอดภัยสูงสุด)',
+
+            p11: 'ASC Bankability & Uncertainty Evaluation',
+            p11lede: 'แจกแจงองค์ประกอบความไม่แน่นอนที่นำมาคำนวณผลผลิตพลังงานแบบอนุรักษ์นิยม ซึ่งสถาบันการเงินมักใช้ค่า P90 เป็นเกณฑ์ประเมินวงเงินกู้',
+            thComponent: 'องค์ประกอบความไม่แน่นอน', thValuePct: 'ค่า (%)',
+            kMeteoUnc: 'ความแปรปรวนสภาพอากาศ (Meteo Variability)', kEquipUnc: 'ความคลาดเคลื่อนสเปกอุปกรณ์ (Equipment Tolerance)',
+            kGlobalUnc: 'ความไม่แน่นอนรวม (Global Variability)',
+
+            p12: 'ASC Cumulative Cash Flow',
+            p12lede: 'กระแสเงินสดสะสมตลอดอายุโครงการ 25 ปี แสดงจุดคืนทุน (Break-even) อย่างชัดเจน',
+
+            p13: 'ASC Financial Evaluation Table',
+            p13lede: 'ตารางกระแสเงินสดสุทธิ กระแสเงินสดคิดลด (DCF) และมูลค่าสะสมรายปีตลอดอายุโครงการ 25 ปี',
+            kNpv: 'มูลค่าปัจจุบันสุทธิ (NPV)',
+            thYear: 'ปีที่', thEnergy: 'พลังงาน (kWh)', thSavings: 'ประหยัดได้ (฿)', thOm: 'ค่าบำรุงรักษา (฿)',
+            thNet: 'กระแสเงินสดสุทธิ (฿)', thDcf: 'DCF (฿)', thCum: 'สะสม (฿)'
         },
         en: {
             docTitle: 'Project Proposal',
@@ -93,7 +122,36 @@
             kCapex: 'Initial investment', kSave1: 'First-year savings',
             kNet25: 'Cumulative savings over 25 years',
             assume: 'Assumptions: 2.5% annual tariff escalation · 0.5% annual module degradation',
-            noData: 'No data yet. Please import a DB2/DB3 file and run the simulation first.'
+            noData: 'No data yet. Please import a DB2/DB3 file and run the simulation first.',
+
+            p7: 'ASC Energy Overview (Annual Energy Summary)',
+            p7lede: "A whole-year energy balance between what the system generates, the building's demand, and the share consumed immediately without being exported to the grid.",
+            kProd: 'Total production', kCons: 'Consumption', kSelfC: 'Self-consumption',
+
+            p8: 'ASC Daily Battery & PV Operation',
+            p8lede: "A sample day showing how the array's generation, the building's load, and the battery's charge/discharge (where fitted) interact over 24 hours.",
+
+            p9: 'ASC Monthly Energy Production & Performance Ratio (PR)',
+            p9lede: "Monthly generation across the year, plotted against the system's monthly performance ratio (PR).",
+
+            p10: 'ASC Probability Distribution (P50/P75/P90/P95)',
+            p10lede: 'Confidence levels for annual energy yield, derived from weather and equipment uncertainty, used as the reference points for financial risk assessment.',
+            kP50: 'P50 (base case)', kP75: 'P75 (conservative)', kP90: 'P90 (bankable minimum)', kP95: 'P95 (most conservative)',
+
+            p11: 'ASC Bankability & Uncertainty Evaluation',
+            p11lede: 'The uncertainty components behind the conservative energy estimate; lenders typically size the loan against the P90 figure.',
+            thComponent: 'Uncertainty component', thValuePct: 'Value (%)',
+            kMeteoUnc: 'Meteo variability', kEquipUnc: 'Equipment tolerance',
+            kGlobalUnc: 'Global variability (combined)',
+
+            p12: 'ASC Cumulative Cash Flow',
+            p12lede: 'Cumulative cash flow over the 25-year project life, with the break-even point clearly marked.',
+
+            p13: 'ASC Financial Evaluation Table',
+            p13lede: 'Net cash flow, discounted cash flow (DCF) and cumulative value for every year of the 25-year project life.',
+            kNpv: 'Net present value (NPV)',
+            thYear: 'Year', thEnergy: 'Energy (kWh)', thSavings: 'Savings (THB)', thOm: 'O&M (THB)',
+            thNet: 'Net cash (THB)', thDcf: 'DCF (THB)', thCum: 'Cumulative (THB)'
         }
     };
 
@@ -167,6 +225,35 @@
         if (!usage && yieldY && r.pctSelfConsumption) usage = yieldY / (r.pctSelfConsumption / 100);
         const bill = usage * tariff;
 
+        // ── ข้อมูลสำหรับ 7 กราฟใหม่ที่เพิ่มเข้ามาในข้อเสนอ ──────────────────
+        // ใช้สูตร/ฟังก์ชันเดียวกับที่หน้ารายงานคำนวณไว้แล้ว (ascComputeEnergyBalance,
+        // AppState.financials, calculateIRR เป็น top-level function/const ในไฟล์หลัก
+        // จึงอยู่ใน global lexical scope เรียกตรงชื่อได้ ไม่ต้องผ่าน window)
+        let eb = null;
+        try { eb = (typeof ascComputeEnergyBalance === 'function') ? ascComputeEnergyBalance() : null; } catch (e) { eb = null; }
+
+        const finRows = (fin || []).map(row => ({
+            y: Number(row.y),
+            energy: Number(row.energy) || 0,
+            savings: Number(row.savings) || 0,
+            om: Number(row.om) || 0,
+            net: Number(row.net) || 0,
+            dcf: Number(row.dcf) || 0,
+            cum: Number(row.cum ?? row.cumulative ?? row.cumulativeCashFlow) || 0
+        })).filter(row => isFinite(row.y));
+
+        let npv = null;
+        if (finRows.length) npv = finRows[finRows.length - 1].cum;
+
+        const uMeteo = (A.uncertainties && A.uncertainties.meteoVariability_pct) || 2.0;
+        const uEquip = (A.uncertainties && A.uncertainties.equipmentTolerance_pct) || 1.0;
+        const uGlobal = Math.sqrt(uMeteo * uMeteo + uEquip * uEquip);
+        const p50 = yieldY;
+        const stdDev = p50 * (uGlobal / 100);
+        const p75 = p50 - (0.674 * stdDev);
+        const p90 = p50 - (1.282 * stdDev);
+        const p95 = p50 - (1.645 * stdDev);
+
         return {
             proj    : gs('inp-proj', '-'),
             loc     : gs('inp-loc', '-'),
@@ -191,7 +278,9 @@
             nPv : c.totalPanels || 0,
             nInv: (c.inv1Qty || 0) + (c.inv2Qty || 0),
             nOpt: c.optQty || 0,
-            nBat: c.batQty || 0
+            nBat: c.batQty || 0,
+            eb, finRows, npv,
+            uMeteo, uEquip, uGlobal, p50, p75, p90, p95
         };
     }
 
@@ -352,6 +441,133 @@
           </div>
           ${foot(d, docNo)}
         </section>`);
+
+        /* ── หน้า 7 · ASC Energy Overview ─────────────────────────────── */
+        pages.push(`
+        <section class="pp-sheet">
+          <div class="pp-pad">
+            ${head(t.p7, 7)}
+            <p class="pp-leadin">${esc(t.p7lede)}</p>
+            ${imgBlock('asc-flow-canvas')}
+            <div class="pp-figs" style="margin-top:4cqw">
+              ${fig(num(d.yieldY / 1000, 1), 'MWh', t.kProd)}
+              ${d.eb ? fig(num(d.eb.consumption / 1000, 1), 'MWh', t.kCons) : ''}
+              ${d.eb ? fig(num(d.eb.pctSelfConsumption, 1), '%', t.kSelfC) : ''}
+              ${fig(num(d.pr, 1), '%', t.kPr)}
+            </div>
+          </div>
+          ${foot(d, docNo)}
+        </section>`);
+
+        /* ── หน้า 8 · ASC Daily Battery & PV Operation ────────────────── */
+        {
+            const dailyImg = imgBlock('chart-daily-chartjs');
+            if (dailyImg) {
+                pages.push(`
+                <section class="pp-sheet">
+                  <div class="pp-pad">
+                    ${head(t.p8, 8)}
+                    <p class="pp-leadin">${esc(t.p8lede)}</p>
+                    ${dailyImg}
+                  </div>
+                  ${foot(d, docNo)}
+                </section>`);
+            }
+        }
+
+        /* ── หน้า 9 · ASC Monthly Energy Production & PR ──────────────── */
+        pages.push(`
+        <section class="pp-sheet">
+          <div class="pp-pad">
+            ${head(t.p9, 9)}
+            <p class="pp-leadin">${esc(t.p9lede)}</p>
+            ${monthlyBars(d) || imgBlock('chart-monthly-chartjs')}
+            <div class="pp-figs" style="margin-top:4cqw">
+              ${fig(num(d.yieldY, 0), 'kWh', t.kYield)}
+              ${fig(num(d.specific, 0), 'kWh/kWp', t.kSpecific)}
+              ${fig(num(d.pr, 1), '%', t.kPr)}
+            </div>
+          </div>
+          ${foot(d, docNo)}
+        </section>`);
+
+        /* ── หน้า 10 · ASC Probability Distribution (P50/P75/P90/P95) ── */
+        pages.push(`
+        <section class="pp-sheet">
+          <div class="pp-pad">
+            ${head(t.p10, 10)}
+            <p class="pp-leadin">${esc(t.p10lede)}</p>
+            ${imgBlock('chart-bell-chartjs')}
+            <div class="pp-figs" style="margin-top:4cqw">
+              ${fig(num(d.p50, 0), 'kWh', t.kP50)}
+              ${fig(num(d.p75, 0), 'kWh', t.kP75)}
+              ${fig(num(d.p90, 0), 'kWh', t.kP90)}
+              ${fig(num(d.p95, 0), 'kWh', t.kP95)}
+            </div>
+          </div>
+          ${foot(d, docNo)}
+        </section>`);
+
+        /* ── หน้า 11 · ASC Bankability & Uncertainty Evaluation ───────── */
+        pages.push(`
+        <section class="pp-sheet">
+          <div class="pp-pad">
+            ${head(t.p11, 11)}
+            <p class="pp-leadin">${esc(t.p11lede)}</p>
+            <table class="pp-tbl">
+              <thead><tr><th>${esc(t.thComponent)}</th><th class="n">${esc(t.thValuePct)}</th></tr></thead>
+              <tbody>
+                <tr><td class="it">${esc(t.kMeteoUnc)}</td><td class="n">${num(d.uMeteo, 2)}%</td></tr>
+                <tr><td class="it">${esc(t.kEquipUnc)}</td><td class="n">${num(d.uEquip, 2)}%</td></tr>
+                <tr><td class="it hi">${esc(t.kGlobalUnc)}</td><td class="n hi">${num(d.uGlobal, 2)}%</td></tr>
+              </tbody>
+            </table>
+            <div class="pp-figs" style="margin-top:4cqw">
+              ${fig(num(d.p50, 0), 'kWh', t.kP50)}
+              ${fig(num(d.p75, 0), 'kWh', t.kP75)}
+              ${fig(num(d.p90, 0), 'kWh', t.kP90)}
+            </div>
+          </div>
+          ${foot(d, docNo)}
+        </section>`);
+
+        /* ── หน้า 12 · ASC Cumulative Cash Flow ───────────────────────── */
+        pages.push(`
+        <section class="pp-sheet">
+          <div class="pp-pad">
+            ${head(t.p12, 12)}
+            <p class="pp-leadin">${esc(t.p12lede)}</p>
+            ${cashChart(d) || imgBlock('chart-cashflow-apex')}
+          </div>
+          ${foot(d, docNo)}
+        </section>`);
+
+        /* ── หน้า 13 · ASC Financial Evaluation Table ─────────────────── */
+        if (d.finRows.length) {
+            const rows = d.finRows.map(row => `
+                <tr><td class="n">${row.y}</td><td class="n">${num(row.energy, 0)}</td>
+                <td class="n">${num(row.savings, 0)}</td><td class="n">${num(row.om, 0)}</td>
+                <td class="n">${num(row.net, 0)}</td><td class="n">${num(row.dcf, 0)}</td>
+                <td class="n${row.cum >= 0 ? ' hi' : ''}">${num(row.cum, 0)}</td></tr>`).join('');
+            pages.push(`
+            <section class="pp-sheet">
+              <div class="pp-pad">
+                ${head(t.p13, 13)}
+                <p class="pp-leadin">${esc(t.p13lede)}</p>
+                <div class="pp-figs">
+                  ${fig(d.payback ? num(d.payback, 1) : '-', t.yrs, t.kPayback)}
+                  ${d.irr != null ? fig(num(d.irr, 1), '%', t.kIrr) : ''}
+                  ${d.npv != null ? fig(num(d.npv / 1e6, 2), t.mBaht, t.kNpv) : ''}
+                </div>
+                <table class="pp-tbl pp-tbl-sm" style="margin-top:3cqw">
+                  <thead><tr><th>${esc(t.thYear)}</th><th class="n">${esc(t.thEnergy)}</th><th class="n">${esc(t.thSavings)}</th>
+                  <th class="n">${esc(t.thOm)}</th><th class="n">${esc(t.thNet)}</th><th class="n">${esc(t.thDcf)}</th><th class="n">${esc(t.thCum)}</th></tr></thead>
+                  <tbody>${rows}</tbody>
+                </table>
+              </div>
+              ${foot(d, docNo)}
+            </section>`);
+        }
 
         host.innerHTML = pages.join('');
 
