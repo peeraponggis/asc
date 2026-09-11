@@ -260,7 +260,8 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
        กรอกข้อมูลงานและทีมติดตั้ง กด <b>คำนวณตารางวัสดุอุปกรณ์</b> แล้วส่งออก design
        หรือจะลากไฟล์ design มาวางที่หน้านี้ก็ได้</p>
     <p style="margin-top:6px">เปิดด้วยไฟล์ <b>report</b> จากเมนู Proposal &amp; Report ก็ได้เหมือนกัน
-       แต่ไฟล์นั้นไม่มีข้อมูลใบงาน (ลูกค้า · กำหนดการ · ทีมช่าง) ติดมาด้วย ต้องกรอกเองในหน้านี้</p>
+       ไฟล์ report จะพาข้อมูลใบงานและการจัดสตริงมาด้วย
+       ยกเว้นไฟล์ที่ส่งออกไว้ก่อนรุ่นนี้ ซึ่งจะมีแถบเหลืองบอกว่าขาดอะไร</p>
     <div class="actions">
       <button class="btn" onclick="document.getElementById('pick').click()">เลือกไฟล์ design/report…</button>
       <button class="btn" onclick="gotoDesign()">ไปที่แท็บ System Design</button>
@@ -480,10 +481,9 @@ function gotoDesign(){ try { window.parent.postMessage({type:'SWITCH_TAB', tab:'
    ที่หน้ารายงานใช้จริง ซึ่งมีสเปกอุปกรณ์เต็ม ผังหลังคา และตารางวัสดุครบ
    จึงแปลงกลับเป็นโครงเดียวกันได้ โดยไม่ต้องแตะตัวอ่านเดิม
 
-   สิ่งที่ไฟล์ report ไม่มีติดมาด้วย เพราะหน้ารายงานไม่ได้เก็บไว้
-     · ข้อมูลใบงาน (ลูกค้า · กำหนดการ · ทีมช่าง · หมายเหตุ)
-     · การจัดสตริงตามมาตรฐาน วสท.
-   สองอย่างนี้ต้องบอกผู้ใช้ตรง ๆ ห้ามปล่อยให้เข้าใจว่าใบงานครบแล้ว
+   ไฟล์ report ตั้งแต่รุ่นนี้พกข้อมูลใบงานและการจัดสตริงมาด้วยแล้ว จึงใช้แทนไฟล์
+   design ได้เกือบครบ ส่วนไฟล์ report ที่ส่งออกไว้ก่อนหน้านี้จะไม่มีสองก้อนนั้น
+   กรณีนั้นต้องบอกผู้ใช้ตรง ๆ ห้ามปล่อยให้เข้าใจว่าใบงานครบแล้ว
    ══════════════════════════════════════════════════════════════════ */
 function db3ToDesign(j){
     const st = j.app_state || {};
@@ -497,7 +497,7 @@ function db3ToDesign(j){
             projectName : pick('inp-proj'),
             coordinates : pick('inp-coords'),
             locationName: pick('inp-loc'),
-            job: {},                       // ไฟล์ report ไม่มีข้อมูลใบงาน
+            job: st.job || {},             // ไฟล์รุ่นเก่าไม่มีก้อนนี้ ปล่อยว่างแล้วเตือนแทน
             db0_reference: st.db0Data || null
         },
         step2_equipment: {
@@ -513,10 +513,16 @@ function db3ToDesign(j){
             equipmentCounts: eq.counts || {},
             totalDcCapacity_kWp: res.pnom || 0,
             dcAcRatio: '',                 // ไฟล์ report ไม่ได้เก็บค่านี้ไว้
-            stringConfiguration_EIT_Standard: {},
+            stringConfiguration_EIT_Standard: st.stringConfig || {},
             engineering_and_bom: st.bomData || {}
         },
-        __fromReport: true                 // ให้ loadDB2 รู้ว่าต้องขึ้นคำเตือน
+        /* บอก loadDB2 ว่ามาจากไฟล์ report และ "ขาดอะไรจริง ๆ บ้าง"
+           จะได้เตือนเฉพาะสิ่งที่ขาดจริง ไม่ใช่เตือนเหมารวมทุกครั้ง */
+        __fromReport: true,
+        __missing: [
+            (st.job && Object.keys(st.job).length) ? null : 'ข้อมูลใบงาน (ลูกค้า · กำหนดการ · ทีมช่าง)',
+            (st.stringConfig && Object.keys(st.stringConfig).length) ? null : 'การจัดสตริง'
+        ].filter(Boolean)
     };
 }
 
@@ -593,9 +599,10 @@ function loadDB2(raw){
 
     /* เปิดจากไฟล์ report ต้องบอกให้ชัดว่าอะไรไม่ได้ติดมากับไฟล์
        ห้ามปล่อยให้ช่างถือใบงานที่ข้อมูลลูกค้าว่างโดยไม่รู้ว่าทำไม */
-    if (raw.__fromReport && note) {
+    if (raw.__fromReport && note && (raw.__missing || []).length) {
         note.style.display = '';
-        note.innerText = 'เปิดจากไฟล์ report — ไม่มีข้อมูลใบงาน (ลูกค้า · กำหนดการ · ทีมช่าง) และการจัดสตริง ให้กรอกเองในหน้านี้ หรือเปิดด้วยไฟล์ design แทน';
+        note.innerText = 'เปิดจากไฟล์ report รุ่นเก่า — ไม่มี' + raw.__missing.join(' และ ')
+                       + ' ให้กรอกเองในหน้านี้ หรือส่งออกไฟล์ report ใหม่จากเมนู Proposal & Report';
     }
     render();
     cacheForOffline();
