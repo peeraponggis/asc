@@ -7241,6 +7241,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             let trKva = ascSpec(ind.transformerRatingKva, ' kVA'); let mdbAmp = ascSpec(ind.targetMdbAmps, 'A'); let ctRatio = ascSpec(ind.ctRatio); let meterBrand = ind.meterBrand || "Smart Meter";
             let totalPanels = counts.totalPanels || 0; let invKw = ascSpec(inv1.Rated_AC_Output_Power_kW, 'kW');
             let pvSpec = `${pv.Manufacturer || '-'} ${pv.Model_Name || '-'}`; let invSpec = `${inv1.Manufacturer || '-'} ${inv1.Model_Name || '-'}`;
+            // ป้ายรุ่นแผงอยู่ริมขวา เหลือที่ถึงขอบกระดาษราว 40 ตัวอักษร ยาวกว่านั้นต้องตัด
+            // ไม่งั้นล้นออกนอกกรอบ (ใช้ธรรมเนียมเดียวกับ shortName ด้านล่าง)
+            let pvSpecShort = pvSpec.length > 40 ? pvSpec.substring(0, 40) + '...' : pvSpec;
             let dateStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });
             let shortName = pName.length > 45 ? pName.substring(0, 45) + '...' : pName;
 
@@ -7266,7 +7269,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             // (แบบเดียวกับกฎ eit-lps ที่เขียนไว้ก่อนหน้านี้ในเซสชันนี้ — ห้ามเดา ต้องเตือน)
             let undrawnStrings = totalStrings - drawStrings;
             let overflowWarning = undrawnStrings > 0
-                ? `<text x="1100" y="830" font-size="10" fill="#dc2626" font-weight="bold">${RT(
+                ? `<text x="40" y="1130" font-size="10" fill="#dc2626" font-weight="bold">${RT(
                     `⚠ แสดงเฉพาะ ${drawStrings}/${totalStrings} สตริง ที่เหลืออีก ${undrawnStrings} สตริงไม่ได้วาดในผังนี้ ดูรายละเอียดในตารางสตริงแบบเต็ม`,
                     `⚠ Showing only ${drawStrings}/${totalStrings} strings, remaining ${undrawnStrings} strings not shown here — see full string table`
                   )}</text>`
@@ -7327,7 +7330,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 <use href="#sym-dof" x="250" y="180"/><text x="270" y="185" font-size="10">Drop out fuse 22kV.</text><line x1="250" y1="200" x2="250" y2="240" stroke="#000" stroke-width="1.5"/>
                 <rect x="210" y="240" width="80" height="90" fill="none" stroke="#000" stroke-width="1.5"/><use href="#sym-tr" x="250" y="285"/><text x="300" y="255" font-size="10" font-weight="bold">TR.1</text><text x="300" y="270" font-size="10">TRANSFORMER OIL TYPE</text><text x="300" y="285" font-size="10">${trKva}</text><text x="300" y="300" font-size="10">HV. 22kV / LV.400/230V</text><text x="300" y="315" font-size="10">Z = 6% DYN 11</text>
                 <line x1="250" y1="330" x2="250" y2="390" stroke="#000" stroke-width="2"/><text x="260" y="360" font-size="10">1x(4-300 Sq.mm THW)</text><text x="260" y="375" font-size="10">IN CONDUIT</text>
-                <rect x="220" y="390" width="60" height="30" fill="#fff" stroke="#00b050" stroke-width="1.5"/><text x="250" y="410" font-size="12" font-weight="bold" fill="#00b050" text-anchor="middle">AMI</text><text x="285" y="405" font-size="10">${RT('มิเตอร์การไฟฟ้า PEA', 'PEA utility meter')}</text><circle cx="250" cy="380" r="5" fill="none" stroke="#000" stroke-width="1.5"/><line x1="240" y1="380" x2="260" y2="380" stroke="#000" stroke-width="1.5"/><text x="180" y="383" font-size="10">3xCT 500/5A</text>
+                <rect x="220" y="390" width="60" height="30" fill="#fff" stroke="#00b050" stroke-width="1.5"/><text x="250" y="410" font-size="12" font-weight="bold" fill="#00b050" text-anchor="middle">METER</text><circle cx="250" cy="380" r="5" fill="none" stroke="#000" stroke-width="1.5"/><line x1="240" y1="380" x2="260" y2="380" stroke="#000" stroke-width="1.5"/><text x="180" y="383" font-size="10">3xCT 500/5A</text>
                 <line x1="250" y1="420" x2="250" y2="470" stroke="#000" stroke-width="2"/>
                 <rect x="150" y="470" width="220" height="120" fill="none" stroke="#ff0000" stroke-width="2" stroke-dasharray="8,4"/><text x="260" y="460" font-size="12" font-weight="bold">Zero Export Controller</text>
                 <rect x="220" y="520" width="40" height="30" fill="#fff" stroke="#00b050" stroke-width="1.5"/><text x="240" y="540" font-size="10" font-weight="bold" fill="#00b050" text-anchor="middle">DPM</text><text x="240" y="560" font-size="8" text-anchor="middle">${meterBrand}</text>
@@ -7336,7 +7339,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 <circle cx="250" cy="630" r="4" fill="#000"/><line x1="250" y1="630" x2="400" y2="630" stroke="#000" stroke-width="2"/><line x1="400" y1="630" x2="400" y2="670" stroke="#000" stroke-width="2"/><line x1="400" y1="670" x2="480" y2="670" stroke="#000" stroke-width="2"/> 
                 <line x1="250" y1="630" x2="250" y2="680" stroke="#000" stroke-width="2"/><use href="#sym-dof" x="250" y="700"/><text x="270" y="705" font-size="10">Drop out fuse 400A 400/230V</text>
                 <line x1="250" y1="720" x2="250" y2="760" stroke="#000" stroke-width="2"/><circle cx="250" cy="760" r="4" fill="#000"/><text x="180" y="765" font-size="10">${RT('จุดแท็บสาย', 'Cable tap point')}</text><line x1="250" y1="760" x2="350" y2="760" stroke="#000" stroke-width="1.5"/><rect x="335" y="770" width="30" height="20" fill="#fff" stroke="#000" stroke-width="1.5"/><text x="350" y="805" font-size="10" text-anchor="middle">${RT('อาคาร 1', 'Building 1')}</text>
-                <line x1="250" y1="760" x2="250" y2="820" stroke="#000" stroke-width="2"/><circle cx="250" cy="820" r="4" fill="#000"/><text x="180" y="825" font-size="10">${RT('จุดแท็บสาย', 'Cable tap point')}</text><line x1="250" y1="820" x2="150" y2="820" stroke="#000" stroke-width="1.5"/><rect x="135" y="830" width="30" height="20" fill="#fff" stroke="#000" stroke-width="1.5"/><text x="150" y="865" font-size="10" text-anchor="middle">${RT('อาคาร 2', 'Building 2')}</text><text x="260" y="790" font-size="10">1C(4x${acCable} THW)</text>
+                <line x1="250" y1="760" x2="250" y2="820" stroke="#000" stroke-width="2"/><circle cx="250" cy="820" r="4" fill="#000"/><text x="180" y="825" font-size="10">${RT('จุดแท็บสาย', 'Cable tap point')}</text><line x1="250" y1="820" x2="150" y2="820" stroke="#000" stroke-width="1.5"/><rect x="135" y="830" width="30" height="20" fill="#fff" stroke="#000" stroke-width="1.5"/><text x="150" y="865" font-size="10" text-anchor="middle">${RT('อาคาร 2', 'Building 2')}</text><text x="240" y="793" font-size="10" text-anchor="end">1C(4x${acCable} THW)</text>
                 <line x1="250" y1="820" x2="250" y2="900" stroke="#000" stroke-width="2"/><line x1="250" y1="900" x2="250" y2="920" stroke="#16a34a" stroke-width="2"/><line x1="235" y1="920" x2="265" y2="920" stroke="#16a34a" stroke-width="2"/><line x1="240" y1="925" x2="260" y2="925" stroke="#16a34a" stroke-width="2"/><line x1="245" y1="930" x2="255" y2="930" stroke="#16a34a" stroke-width="2"/><text x="270" y="920" font-size="10">GND</text>
 
                 <!-- ฝั่ง SMDB (AC Combiner & Comms) -->
@@ -7358,7 +7361,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 <!-- Inverter -->
                 <rect x="650" y="520" width="550" height="70" fill="#f0fdf4" stroke="#00b050" stroke-width="2"/>
                 <text x="925" y="545" font-size="12" font-weight="bold" fill="#00b050" text-anchor="middle">INVERTER</text><text x="925" y="560" font-size="10" text-anchor="middle">${invSpec} (${invKw})</text><text x="925" y="575" font-size="10" text-anchor="middle">DC to AC</text>
-                <line x1="720" y1="520" x2="720" y2="350" stroke="#000" stroke-width="3"/><text x="730" y="420" font-size="10">1C(4x${acCable} CV-FD)</text><text x="730" y="435" font-size="10">IN CABLE TRAY ${RT('หรือ', 'or')} ${conduitType}</text><text x="660" y="505" font-size="10">INV ${invKw}</text><text x="660" y="515" font-size="16" fill="#00b050">~</text>
+                <line x1="720" y1="520" x2="720" y2="350" stroke="#000" stroke-width="3"/><text x="730" y="420" font-size="10">1C(4x${acCable} CV-FD)</text><text x="730" y="435" font-size="10">IN CABLE TRAY ${RT('หรือ', 'or')} ${conduitType}</text><text x="660" y="497" font-size="10">INV ${invKw}</text><text x="660" y="515" font-size="16" fill="#00b050">~</text>
                 <polyline points="1200,555 1250,555 1250,292 1130,292" fill="none" stroke="#0000ff" stroke-width="1.5" stroke-dasharray="5,5"/><text x="1260" y="450" font-size="10" fill="#0000ff" font-weight="bold">RS485</text>
 
                 <!-- DC Combiner Box & PV Strings -->
@@ -7370,8 +7373,12 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 <!-- PV Array Outline -->
                 <rect x="520" y="810" width="800" height="300" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="15,10"/>
                 <text x="530" y="800" font-size="12" font-weight="bold">PV ARRAY</text>
-                <text x="1100" y="800" font-size="10">${totalStrings} Strings (Total ${totalPanels} Panels)</text>
-                <text x="1100" y="815" font-size="10" font-weight="bold">${pvSpec}</text>
+                <!-- ย้ายป้ายสรุปแผงมาไว้ริมขวานอกกรอบ PV ARRAY (x>1320 ว่างตลอด)
+                     ของเดิมอยู่ที่ x=1100 ซึ่งเส้นกรอบตู้และเส้นสตริงลากผ่ากลางตัวหนังสือ
+                     และชนคอลัมน์สตริงเมื่อสตริงเยอะ เพราะสตริงกินพื้นที่ถึง x=1280 -->
+                <text x="1330" y="850" font-size="10">${totalStrings} Strings</text>
+                <text x="1330" y="865" font-size="10">(Total ${totalPanels} Panels)</text>
+                <text x="1330" y="880" font-size="10" font-weight="bold">${pvSpecShort}</text>
                 ${overflowWarning}
 
                 <!-- Grounding PV Array -->
