@@ -201,7 +201,7 @@ setTimeout(function () {
       </div>
 
       <div class="note" id="roofNote"></div>
-      <button class="btn mini" id="btnReset" style="width:100%;margin-top:8px">↺ คืนค่าจากไฟล์ DB2</button>
+      <button class="btn mini" id="btnReset" style="width:100%;margin-top:8px">↺ คืนค่าจากไฟล์ design</button>
     </div>
 
     <!-- ═══ ดวงอาทิตย์ ═══ -->
@@ -253,10 +253,10 @@ setTimeout(function () {
     <!-- ═══ ภาพพื้นดาวเทียม ═══ -->
     <div class="sec">
       <h2>▸ ภาพดาวเทียมปูพื้น</h2>
-      <label class="chk"><input type="checkbox" id="cSat">ใช้ภาพจากไฟล์ DB3</label>
+      <label class="chk"><input type="checkbox" id="cSat">ใช้ภาพจากไฟล์ report</label>
       <div class="slrow"><span>ขนาด</span><input type="range" id="sSatScale" min="20" max="260" step="1" value="80"><span id="vSatScale">80 ม.</span></div>
       <div class="slrow"><span>หมุน</span><input type="range" id="sSatRot" min="-180" max="180" step="1" value="0"><span id="vSatRot">0°</span></div>
-      <div class="note">ภาพใน DB3 เป็นภาพจับหน้าจอแผนที่ ไม่มีข้อมูลขอบเขตพิกัดติดมาด้วย จึงต้องปรับขนาด/มุมหมุนด้วยตาเอง</div>
+      <div class="note">ภาพใน report เป็นภาพจับหน้าจอแผนที่ ไม่มีข้อมูลขอบเขตพิกัดติดมาด้วย จึงต้องปรับขนาด/มุมหมุนด้วยตาเอง</div>
     </div>
 
     <!-- ═══ ส่งออก ═══ -->
@@ -319,10 +319,10 @@ setTimeout(function () {
       </div>
     </div>
     <div class="big">🏗️</div>
-    <h2>วางไฟล์ DB2 (และ DB3) ที่นี่</h2>
+    <h2>วางไฟล์ design (และ report) ที่นี่</h2>
     <p>
-      <b>DB2</b> คือแหล่งข้อมูลเรขาคณิต — ขอบหลังคา ตำแหน่งแผงทุกใบ ความสูงอาคาร ความชัน และทิศ<br>
-      <b>DB3</b> (ถ้ามี) เพิ่มตัวเลขผลผลิตและภาพดาวเทียมปูพื้น
+      <b>design</b> คือแหล่งข้อมูลเรขาคณิต — ขอบหลังคา ตำแหน่งแผงทุกใบ ความสูงอาคาร ความชัน และทิศ<br>
+      <b>report</b> (ถ้ามี) เพิ่มตัวเลขผลผลิตและภาพดาวเทียมปูพื้น
     </p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
       <label class="btn primary file">📂 เลือกไฟล์<input type="file" id="filePick" accept=".txt,.json" multiple></label>
@@ -346,7 +346,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 
 /* ============================================================================
-   ASC 3D — แบบจำลองไซต์ติดตั้งโซลาร์จากไฟล์ DB2 / DB3
+   ASC 3D — แบบจำลองไซต์ติดตั้งโซลาร์จากไฟล์ design / report
    ----------------------------------------------------------------------------
    ระบบพิกัดที่ใช้ในไฟล์นี้
      ENU   : (east, north) หน่วยเมตร อ้างอิงจุดศูนย์กลางไซต์
@@ -418,7 +418,7 @@ function ascBuildStamp() {
    ============================================================================ */
 function parseDB2(j) {
   const b = j.base_layout_db1;
-  if (!b) throw new Error('ไม่พบ base_layout_db1 จึงน่าจะไม่ใช่ไฟล์ DB2');
+  if (!b) throw new Error('ไม่พบ base_layout_db1 จึงน่าจะไม่ใช่ไฟล์ design');
 
   const s1 = b.step1_initialization || {};
   const s3 = b.step3_design_and_layout || {};
@@ -444,7 +444,7 @@ function parseDB2(j) {
   const roofFs = feats.filter(f => f.properties && f.properties.drawMode === 'roof'
                                 && f.geometry && f.geometry.type === 'Polygon');
   const polys  = s3.roofPolygons || [];
-  if (!polys.length) throw new Error('ไม่พบ roofPolygons ใน DB2 แปลว่ายังไม่ได้วาดหลังคาไว้');
+  if (!polys.length) throw new Error('ไม่พบ roofPolygons ในไฟล์ design แปลว่ายังไม่ได้วาดหลังคาไว้');
 
   /* จุดอ้างอิงไซต์คือค่าเฉลี่ยของจุดยอดหลังคาทั้งหมด ถ้าไม่มี GeoJSON ให้ใช้พิกัดโครงการ */
   let lon0 = S.lon, lat0 = S.lat;
@@ -1313,7 +1313,7 @@ function exportGLB() {
   let meshes = 0;
   root.traverse(o => { if (o.isMesh) meshes++; });
   if (!meshes) {
-    note.innerHTML = '<b>ยังไม่มีอะไรให้ส่งออก</b> ให้โหลดไฟล์ DB2 ที่มีขอบเขตหลังคาก่อน';
+    note.innerHTML = '<b>ยังไม่มีอะไรให้ส่งออก</b> ให้โหลดไฟล์ design ที่มีขอบเขตหลังคาก่อน';
     return;
   }
 
@@ -1377,10 +1377,10 @@ function syncForm(flashEl) {
      ไม่ใช่ปล่อยให้เห็นฉากว่างแล้วเดาเอาเองว่าโปรแกรมเสีย */
   if (!r.lb.length)
     msgs.push('<b>ไฟล์นี้ไม่มีขอบเขตหลังคา (localBoundary)</b> จึงวาดรูปทรงไม่ได้ ' +
-              'เป็นไฟล์ DB2 รุ่นเก่า ให้เปิดโครงการในหน้าออกแบบแล้วส่งออก DB2 ใหม่');
+              'เป็นไฟล์ design รุ่นเก่า ให้เปิดโครงการในหน้าออกแบบแล้วส่งออก design ใหม่');
   else if (!r.layout.length)
     msgs.push('<b>ไฟล์นี้ไม่มีตำแหน่งแผง (customLayout)</b> จึงขึ้นหลังคาเปล่า ' +
-              'ให้กดประมวลผลในหน้าออกแบบแล้วส่งออก DB2 ใหม่');
+              'ให้กดประมวลผลในหน้าออกแบบแล้วส่งออก design ใหม่');
   if (r.db.heightIsDefault)
     msgs.push('<b>ความสูง 10 ม. เป็นค่าตั้งต้นของ asc_design</b> อาจไม่ได้กรอกจริง ควรตรวจสอบ');
   if (r.ridge < r.eave - 0.01)
@@ -1609,7 +1609,7 @@ function readFiles(list) {
         const j = JSON.parse(fr.result);
         if (j.base_layout_db1)      { parseDB2(j); got2 = true; }
         else if (j.is_asc_db3 || j.app_state) { S.db3 = j; got3 = true; }
-        else errs.push(f.name + ' — ไม่ใช่ไฟล์ DB2 หรือ DB3');
+        else errs.push(f.name + ' — ไม่ใช่ไฟล์ design หรือ report');
       } catch (e) {
         errs.push(f.name + ' — ' + e.message);
       }
@@ -1624,7 +1624,7 @@ function finish(got2, got3, errs) {
   $('#busy').style.display = 'none';
   if (!got2 && !S.roofs.length) {
     $('#err').innerHTML = (errs.length ? errs.join('<br>') + '<br>' : '')
-      + 'ต้องมีไฟล์ DB2 อย่างน้อยหนึ่งไฟล์ เพราะเป็นแหล่งข้อมูลเรขาคณิตเพียงแหล่งเดียว';
+      + 'ต้องมีไฟล์ design อย่างน้อยหนึ่งไฟล์ เพราะเป็นแหล่งข้อมูลเรขาคณิตเพียงแหล่งเดียว';
     return;
   }
   if (got3 && S.db3) parseDB3(S.db3);

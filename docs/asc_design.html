@@ -1372,28 +1372,9 @@
                     <!-- จบ: บันไดเซอร์วิส -->
 
 
-                    <!-- ── ส่วนย่อยที่ 3.2: (ลบหัวข้อ Engineering Diagram ออกตามคำขอ) ── -->
-                    <!-- 🌟 ย้ายปุ่ม Generate BOM ขึ้นมาไว้บนสุดของกลุ่มปุ่ม -->
-                    <div style="margin-top: 10px;">
-                        <button class="btn-save" id="btnCalculateBOM" style="background: linear-gradient(135deg, #6366f1, #4f46e5); box-shadow: 0 4px 6px rgba(79,70,229,0.25);">
-                            <i class="fa-solid fa-calculator"></i> คำนวณตารางวัสดุอุปกรณ์ (Generate BOM)
-                        </button>
-                    </div>
-
-                    <!-- 🌟 เฟส 16: ปุ่ม 3 ปุ่มเรียงต่อกัน ระยะเท่ากัน (ไม่มีกล่องห่อ) -->
-                    <button onclick="openIVModal()" class="btn-search" style="width: 100%; margin-top: 8px; background: rgba(99, 102, 241, 0.13); color: #4338ca; border: 1px solid rgba(99, 102, 241, 0.45); box-shadow: none; font-weight: 700;">
-                            ตรวจสอบ I-V Curve & ประสิทธิภาพแผง
-                        </button>
-                    <button id="btnToggleWiringStep6" class="btn-search" style="width: 100%; margin-top: 8px; background: rgba(99, 102, 241, 0.13); color: #4338ca; border: 1px solid rgba(99, 102, 241, 0.45); box-shadow: none; font-weight: 700;">
-                            แสดงจำลองการเดินสาย DC (Wiring Diagram)
-                        </button>
-                    <button id="btnGenerateSLD" class="btn-search" style="width: 100%; margin-top: 8px; background: rgba(99, 102, 241, 0.13); color: #4338ca; border: 1px solid rgba(99, 102, 241, 0.45); box-shadow: none; font-weight: 700;">
-                            สร้าง Single Line Diagram (SLD)
-                        </button>
-                    <div id="sld-preview-box" style="display: none; margin-top: 15px; padding: 15px; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 6px; text-align: center; color: #64748b; font-size: 0.85em;">
-                            <i class="fa-solid fa-tools" style="font-size: 2em; color: #94a3b8; margin-bottom: 10px; display: block;"></i>
-                            [พื้นที่สำหรับแสดงผล Single Line Diagram อัตโนมัติในอนาคต]
-                        </div>
+                     <!-- ── ส่วนย่อยที่ 3.2 ──
+                          ถอดปุ่ม I-V Curve / Wiring Diagram / SLD ออกตามคำขอของผู้ใช้
+                          และย้ายปุ่มคำนวณตารางวัสดุอุปกรณ์ไปไว้ท้ายกล่อง Voltage Drop -->
 
 
                     <!-- ── ส่วนย่อยที่ 3.3: พารามิเตอร์จำลอง (เดิมคือเมนู 4 / ขั้นตอนที่ 7) ── -->
@@ -1465,19 +1446,19 @@
                     <div id="saveChecklist">
                         <div class="save-check-row"><span><i class="fa-solid fa-microchip"></i> เลือกสเปกอุปกรณ์ (PV + Inverter)</span><span class="chk-status" id="chk-equip">—</span></div>
                         <div class="save-check-row"><span><i class="fa-solid fa-draw-polygon"></i> วาดผังและจัดเรียงแผง</span><span class="chk-status" id="chk-roof">—</span></div>
-                        <div class="save-check-row"><span><i class="fa-solid fa-calculator"></i> คำนวณ BOM (Engineering Data)</span><span class="chk-status" id="chk-bom">—</span></div>
-                        <div class="save-check-row"><span><i class="fa-solid fa-database"></i> บันทึก DB1 (ผังและอุปกรณ์)</span><span class="chk-status" id="chk-db1">—</span></div>
-                        <div class="save-check-row" style="border-bottom: none;"><span><i class="fa-solid fa-file-export"></i> บันทึก/ส่งออก DB2 (Simulation)</span><span class="chk-status" id="chk-db2">—</span></div>
+                        <div class="save-check-row"><span><i class="fa-solid fa-calculator"></i> คำนวณตารางวัสดุอุปกรณ์</span><span class="chk-status" id="chk-bom">—</span></div>
+                        <div class="save-check-row"><span><i class="fa-solid fa-database"></i> บันทึกพารามิเตอร์วิศวกรรม</span><span class="chk-status" id="chk-db1">—</span></div>
+                        <div class="save-check-row" style="border-bottom: none;"><span><i class="fa-solid fa-file-export"></i> บันทึก/ส่งออก (Design)</span><span class="chk-status" id="chk-db2">—</span></div>
                     </div>
 
                     <div class="section-header">บันทึกฐานข้อมูล (Save to Database)</div>
                     <div style="display: flex; gap: 10px;">
                         <button class="btn-search" id="btnCheckDesign" type="button" style="flex: 1; margin-top: 0; background:#d97706; color:#fff;" title="ตรวจแบบด้วยกฎ 18 ข้อ ก่อนส่งงาน"><i class="fa-solid fa-stethoscope"></i> ตรวจแบบ</button>
-                        <button class="btn-save" id="btnSaveDb2" style="flex: 2; margin-top: 0;"><i class="fa-solid fa-floppy-disk"></i> บันทึก + ส่งออก DB2</button>
+                        <button class="btn-save" id="btnSaveDb2" style="flex: 2; margin-top: 0;"><i class="fa-solid fa-floppy-disk"></i> บันทึก&amp;ส่งออก (Design)</button>
                         <button class="btn-save" id="btnExportDb2" style="flex: 1; background: #64748b; margin-top: 0; display: none;">Export DB2</button>
                     </div>
                     <div style="font-size: 0.75em; color: #64748b; margin-top: 8px; line-height: 1.4;">
-                        * DB1 (ผัง+อุปกรณ์) ถูกบันทึกอัตโนมัติเมื่อกด Generate BOM และเมื่อกดปุ่มนี้ · ไฟล์ DB2 ที่ส่งออกใช้นำเข้าระบบ ASC Report
+                        * พารามิเตอร์วิศวกรรมถูกบันทึกอัตโนมัติเมื่อกดคำนวณตารางวัสดุอุปกรณ์ และเมื่อกดปุ่มนี้ · ไฟล์ design ที่ส่งออกใช้นำเข้าเมนู Proposal &amp; Report
                     </div>
                 </div>
             </div>
@@ -1505,46 +1486,18 @@
             </div>
             <!-- 🌟 จบ: กล่องสรุปผลกระทบ Voltage Drop 🌟 -->
 
+            <!-- ปุ่มคำนวณตารางวัสดุอุปกรณ์ ย้ายมาไว้ท้ายส่วน Voltage Drop ตามคำขอผู้ใช้
+                 วางนอกกล่อง #vDropImpactBox โดยตั้งใจ เพราะกล่องนั้นถูกซ่อน/แสดงตามผลคำนวณ
+                 ถ้าเอาปุ่มไปไว้ข้างใน ปุ่มจะหายไปด้วยตอนกล่องถูกซ่อน -->
+            <div style="margin-bottom: 20px;">
+                <button class="btn-save" id="btnCalculateBOM" style="background: linear-gradient(135deg, #6366f1, #4f46e5); box-shadow: 0 4px 6px rgba(79,70,229,0.25);">
+                    <i class="fa-solid fa-calculator"></i> คำนวณตารางวัสดุอุปกรณ์
+                </button>
+            </div>
+
         </div>
     </div>
-<div id="ivCurveModal" class="iv-modal-overlay">
-        <div class="iv-modal-content">
-            <div class="iv-modal-header">
-                <span>📊 วิเคราะห์ I-V Curve และประสิทธิภาพแผง</span>
-                <button class="iv-close-btn" onclick="closeIVModal()">&times;</button>
-            </div>
-            <div class="iv-modal-body">
-                <div style="margin-bottom: 15px; display: flex; justify-content: flex-end;">
-                    <select id="ivChartMode" onchange="renderIVCurve()" style="padding: 8px; border: 1px solid #93c5fd; border-radius: 6px; font-weight: bold; color: #1d4ed8; background: #eff6ff; cursor: pointer; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); width: auto;">
-                        <option value="eit">กราฟ อุณหภูมิและแรงดัน </option>
-                        <option value="irradiance">กราฟ P-V & I-V ตามความเข้มแสง (Irradiance)</option>
-                    </select>
-                </div>
-                <div id="iv_validation_results" style="margin-bottom: 15px;"></div>
-                <div style="position: relative; height: 400px; width: 100%; background: white; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    <canvas id="ivChartCanvas"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-	<!-- SLD Modal -->
-    <div id="sldModal" class="iv-modal-overlay">
-        <div class="iv-modal-content" style="width: 95%; max-width: 1400px; height: 95vh;">
-            <div class="iv-modal-header" style="background: #0284c7;">
-                <span><i class="fa-solid fa-sitemap"></i> Single Line Diagram (SLD)</span>
-                <button class="iv-close-btn" onclick="document.getElementById('sldModal').style.display='none'">&times;</button>
-            </div>
-            <div class="iv-modal-body" style="background: #e2e8f0; display: flex; flex-direction: column;">
-                <div style="text-align: right; margin-bottom: 10px;">
-                    <button id="btnDownloadSLD" class="btn-search" style="background-color: #10b981; padding: 10px 15px; font-size: 1em;">
-                        <i class="fa-solid fa-download"></i> ดาวน์โหลดเป็น SVG
-                    </button>
-                </div>
-                <!-- 🌟 ขยายกล่อง SVG ให้กว้างเต็ม 100% และสูงอย่างน้อย 70vh -->
-                <div id="sld-svg-container" style="background: white; flex: 1; width: 100%; min-height: 70vh; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border-radius: 8px; overflow: hidden; padding: 10px;"></div>
-            </div>
-        </div>
-    </div>
+	<!-- ถอดโมดัล I-V Curve และ SLD ออกแล้ว เพราะปุ่มที่เปิดมันถูกถอดออกตามคำขอผู้ใช้ -->
 	<!-- ================= เริ่ม: หน้าต่าง Pop-up สำหรับ BOM ================= -->
     <div id="bomModal" class="iv-modal-overlay">
         <div class="iv-modal-content" style="max-width: 1000px;">
@@ -2160,6 +2113,9 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                วัดแล้วในโปรเจกต์จริงมีวัตถุที่ได้รับผลจากสวิตช์นี้เพียงชิ้นเดียว (ขอบหลังคา)
                เพราะแผงระบุ L.svg() ไว้เองอยู่แล้ว และเส้นเดินสายระบุ L.canvas() ไว้เอง — จึงไม่กระทบความลื่น */
             preferCanvas: false,
+            /* ปิดปุ่มซูมปริยาย (มันบังคับไปอยู่ซ้ายบน) แล้วไปเพิ่มเองที่ขวาบนด้านล่าง
+               เพื่อให้เครื่องมือบนแผนที่ทุกชิ้นรวมกันอยู่ริมขวาเป็นแถบเดียว */
+            zoomControl: false,
             /* ค่าเริ่มต้นเป็น Google ตามที่ผู้ใช้สั่ง เพราะให้ภาพลึกกว่าหนึ่งระดับซูม
                ถ้าปลายทางถูกตัดเมื่อไร ตัวเฝ้าด้านล่างจะสลับไป Esri ให้เอง */
             layers: [googleLayerFree]
@@ -2175,6 +2131,10 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
         
         // เพิ่มกล่องควบคุมลงบนแผนที่
         const ascLayerControl = L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map); // 🌟 เฟส 9: ย้ายไปขวาบนใต้เข็มทิศ
+
+        /* ปุ่มซูมอยู่ริมขวา ต่อจากปุ่มสลับแผนที่ (ลำดับในแถบเรียงตามลำดับที่ addTo)
+           ปุ่ม Fit-to-Project จะถูกต่อท้ายเข้าไปในแถบนี้อีกทีตอน DOM พร้อม */
+        L.control.zoom({ position: 'topright' }).addTo(map);
 
         /* ══════════════════════════════════════════════════════════════════
            ภาพดาวเทียมความละเอียดสูงด้วยคีย์ของผู้ใช้เอง
@@ -3731,7 +3691,10 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 marker: true, // 🌟 เปิดใช้งาน Marker สำหรับวางหมุด MDB 🌟
                 circle: false, rectangle: false, circlemarker: false 
             }, 
-            edit: { featureGroup: editableItems } 
+            edit: { featureGroup: editableItems },
+            /* เครื่องมือวาดอยู่ริมขวาของแผนที่ ให้อยู่รวมกลุ่มกับปุ่มซูม/สลับแผนที่
+               (ค่าปริยายของ Leaflet-Draw คือซ้ายบน) */
+            position: 'topright'
         });
         map.addControl(drawControl);
         
@@ -4185,6 +4148,13 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                         s7.uncertEquip = db2s.uncertainties?.equipmentTolerance_pct !== undefined ? db2s.uncertainties.equipmentTolerance_pct : s7.uncertEquip;
                         s7.horizonProfile = db2s.horizonProfile || s7.horizonProfile;
                         s7.invEffCurve = db2s.losses?.invEffCurve || s7.invEffCurve;
+                        s7.mountingPosition = db2s.mountingPosition || s7.mountingPosition;
+                        s7.meteoData = db2s.meteoData || s7.meteoData;
+                    }
+                    /* คืนค่าชุดอากาศที่ดึงไว้แล้ว เพื่อไม่ต้องยิง API ซ้ำเมื่อเปิดไฟล์กลับมา
+                       และเพื่อให้ไฟล์ design ที่ส่งออกต่อมีค่า GHI จริงติดไปด้วย ไม่ตกไปใช้ค่าปริยายเงียบ ๆ */
+                    if (s7.meteoData && typeof currentMeteoData !== 'undefined' && !currentMeteoData) {
+                        currentMeteoData = s7.meteoData;
                     }
                     if(s7) {
                         if(s7.meteoSource && document.getElementById('meteoSource')) {
@@ -5058,19 +5028,16 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
 // 1. (เปลี่ยนรูปแบบ UI เป็น File Upload มาตรฐานแล้ว ไม่ต้องผูกปุ่มคลิก)
 
 // 2. อ่านไฟล์ DB0
-document.getElementById('db0FileInput').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(ev) {
+/* แยกตัวนำเข้าออกมาเป็นฟังก์ชันเดียว เพื่อให้ไฟล์ที่ผู้ใช้เลือกเอง กับข้อมูลที่ไหลมา
+   ตามท่อจากเมนู 1 เดินเส้นทางเดียวกันทั้งหมด ไม่ต้องมีตรรกะนำเข้าสองชุดที่จะเพี้ยนออกจากกัน
+   origin = 'file' เมื่อผู้ใช้เลือกไฟล์เอง · 'sync' เมื่อรับมาตามท่อ (ไม่ขึ้น alert) */
+function ascApplyDB0(data, origin) {
         try {
-            const data = JSON.parse(ev.target.result);
             
             // เช็ค Format DB0
-            if (!data.metadata || data.metadata.format !== "DB0") {
-                alert("⚠️ ไฟล์ที่เลือกไม่ใช่รูปแบบ DB0 ตรวจสอบไฟล์อีกครั้ง");
-                return;
+            if (!data || !data.metadata || data.metadata.format !== "DB0") {
+                if (origin === 'file') alert("⚠️ ไฟล์ที่เลือกไม่ใช่รูปแบบ DB0 ตรวจสอบไฟล์อีกครั้ง");
+                return false;
             }
 			// 🌟 แทรกบรรทัดนี้: ให้ระบบจำข้อมูล DB0 ทั้งหมด (รวม loadProfile) ไว้ในหน่วยความจำ
             state.rawDB0Data = data;
@@ -5105,8 +5072,8 @@ document.getElementById('db0FileInput').addEventListener('change', function(e) {
                 const match = String(onGridKwP).match(/([\d\.]+)/);
                 if (match) kwpForCalc = parseFloat(match[1]);
             } else {
-                alert("⚠️ ข้อมูล sourceTab ไม่ตรงกับเงื่อนไขที่ระบบรองรับ (AMR_Analysis หรือ PEA_Calculator)");
-                return;
+                if (origin === 'file') alert("⚠️ ข้อมูล sourceTab ไม่ตรงกับเงื่อนไขที่ระบบรองรับ (AMR_Analysis หรือ PEA_Calculator)");
+                return false;
             }
 
             // บันทึกตัวเลขสำหรับนำไปคำนวณ และแสดงผลบน UI
@@ -5119,15 +5086,59 @@ document.getElementById('db0FileInput').addEventListener('change', function(e) {
             // คำนวณจำนวนแผงทันที
             calculateDB0Panels();
 
-            alert(`✅ นำเข้าข้อมูล DB0  "${customerName}" สำเร็จ!`);
+            if (origin === 'file') {
+                alert(`✅ นำเข้าข้อมูล DB0  "${customerName}" สำเร็จ!`);
+            } else {
+                /* ค่าที่ไหลมาตามท่อต้องไม่เปลี่ยนแบบเงียบ ๆ ผู้ใช้ต้องเห็นว่ามาจากเมนู 1 */
+                try { ascFlashNotice(`รับข้อมูลค่าไฟจากเมนู 1 แล้ว: ${customerName}`, 7000); } catch (e) {}
+            }
+            return true;
 
         } catch (err) {
             console.error(err);
-            alert("❌ ไม่สามารถอ่านไฟล์ DB0 ได้ ตรวจสอบโครงสร้างไฟล์ JSON");
+            if (origin === 'file') alert("❌ ไม่สามารถอ่านไฟล์ DB0 ได้ ตรวจสอบโครงสร้างไฟล์ JSON");
+            return false;
         }
+}
+
+document.getElementById('db0FileInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        let data = null;
+        try { data = JSON.parse(ev.target.result); }
+        catch (err) {
+            console.error(err);
+            alert("❌ ไม่สามารถอ่านไฟล์ DB0 ได้ ตรวจสอบโครงสร้างไฟล์ JSON");
+            return;
+        }
+        ascApplyDB0(data, 'file');
     };
     reader.readAsText(file);
     e.target.value = ''; 
+});
+
+/* ── ท่อรับ DB0 จากเมนู 1 (Load Energy Profiling) ────────────────────────
+   เชลล์ broadcast SYNC_PROJECT_STATE พร้อม payload.db0 อยู่แล้ว แต่หน้านี้
+   เดิมไม่เคยอ่าน จึงต้องส่งไฟล์ต่อกันด้วยมือทุกครั้ง
+
+   ท่อนี้ "ไม่บังคับ" ตามที่ออกแบบไว้ — ถ้าไม่มีข้อมูลไหลมา การเลือกไฟล์ DB0
+   เองยังทำงานเหมือนเดิมทุกขั้นตอน และการบันทึก/ส่งออกของหน้านี้ไม่ผูกกับท่อเลย */
+let ascLastDb0Stamp = '';
+window.addEventListener('message', function (ev) {
+    const d = ev.data;
+    if (!d || d.type !== 'SYNC_PROJECT_STATE') return;
+    const db0 = d.payload && d.payload.db0;
+    if (!db0 || !db0.metadata) return;
+
+    const stamp = String(db0.metadata.timestamp || '') + '|' + String(db0.metadata.customerName || '');
+    if (stamp === ascLastDb0Stamp) return;                 // ก้อนเดิม ไม่ต้องทำซ้ำ
+    if (state.rawDB0Data && !ascLastDb0Stamp) return;      // ผู้ใช้นำเข้าเองไว้แล้ว ห้ามทับ
+
+    ascLastDb0Stamp = stamp;
+    ascApplyDB0(db0, 'sync');
 });
 
 // 3. ฟังก์ชันคำนวณจำนวนแผงสีแดง
@@ -7951,7 +7962,13 @@ function updateFinalDcLength() {
                     invEffCurve: document.getElementById('invEffCurve') ? document.getElementById('invEffCurve').value : "",
                     uncertMeteo: parseFloat(document.getElementById('uncertMeteo').value) || 4.0,
                     uncertEquip: parseFloat(document.getElementById('uncertEquip').value) || 2.0,
-                    horizonProfile: document.getElementById('horizonProfile') ? document.getElementById('horizonProfile').value : ""
+                    horizonProfile: document.getElementById('horizonProfile') ? document.getElementById('horizonProfile').value : "",
+                    /* พารามิเตอร์จำลองต้องอยู่ครบใน DB1 เสมอ ไม่ใช่ครบเฉพาะตอนส่งออก design
+                       เดิมสามค่านี้มีแต่ใน DB2 ทำให้ไฟล์พารามิเตอร์วิศวกรรมที่บันทึกไว้
+                       เปิดกลับมาแล้วได้ค่าจำลองไม่ครบ ต้องไปตั้งใหม่เอง */
+                    mountingPosition: document.getElementById('mountDisplayText') ? document.getElementById('mountDisplayText').innerText : "",
+                    meteoData: currentMeteoData,
+                    bifacialAlbedo: parseFloat(document.getElementById('bifacialAlbedo') ? document.getElementById('bifacialAlbedo').value : 0.2) || 0.2
                 },
                 mapGeoJSON: mapGeoJSON
             };
@@ -8501,7 +8518,7 @@ function ascFileStamp(projectName, kind) {
                 box.parentElement.appendChild(el);
             }
             el.innerHTML = '<b>แบบเปลี่ยนแล้ว</b> ' + (reason || '') +
-                ' — ผลที่คำนวณไว้ถูกล้าง ต้องกด <b>Generate BOM</b> แล้วบันทึก DB2 ใหม่';
+                ' — ผลที่คำนวณไว้ถูกล้าง ต้องกด <b>คำนวณตารางวัสดุอุปกรณ์</b> แล้วบันทึก design ใหม่';
             el.style.display = 'block';
             clearTimeout(ascStaleNoteTimer);
             ascStaleNoteTimer = setTimeout(() => { el.style.display = 'none'; }, 12000);
@@ -9111,23 +9128,9 @@ function ascFileStamp(projectName, kind) {
         });
     
 // ==============================================================================
-        // --- 🌟 สมองกล I-V Curve & P-V Curve Engine (Dual Mode) 🌟 ---
+        // --- คณิตศาสตร์ I-V Curve (ยังใช้อยู่: generateDB2() เรียกไปสร้าง iv_curve_analysis_db2
+        //     ซึ่งหน้ารายงานอ่านต่อ) ส่วนโมดัลกราฟและปุ่มเปิดถูกถอดออกตามคำขอผู้ใช้
         // ==============================================================================
-        let ivChartInstance = null;
-
-        function openIVModal() {
-            if (state.pvPmax === 0 || state.inv1MaxDC === 0 || state.maxPanelsPerString === 0) {
-                alert("⚠️ เลือกสเปกแผง, อินเวอร์เตอร์ และจัด String ให้เรียบร้อยก่อนตรวจสอบ");
-                return;
-            }
-            document.getElementById('ivCurveModal').style.display = 'flex';
-            renderIVCurve();
-        }
-
-        function closeIVModal() { 
-            document.getElementById('ivCurveModal').style.display = 'none'; 
-        }
-
         // ฟังก์ชันคำนวณคณิตศาสตร์ (รองรับอุณหภูมิ และ ความเข้มแสง)
         function generateIVDataCalc(Voc, Isc, Vmp, Imp, numModules, temp_C, Tk_Voc, irradiance = 1000) {
             const dT = temp_C - 25;
@@ -9159,516 +9162,8 @@ function ascFileStamp(projectName, kind) {
             }
             return { pointsIV, pointsPV, Voc_total: correctedVoc, Isc_total: correctedIsc, Vmp_total: correctedVmp };
         }
-
-        // ฟังก์ชันวาดกราฟแยก 2 โหมด
-        function renderIVCurve() {
-            const modeEl = document.getElementById('ivChartMode');
-            const mode = modeEl ? modeEl.value : 'eit';
-            
-            const pv_voc = state.pvVoc; const pv_vmp = state.pvVmp;
-            // 🌟 แก้บั๊ก: ใส่ Fallback ดักไว้เสมอ ป้องกัน Error ถ้าไม่มี Isc ใน DB
-            const pv_isc = state.pvIsc || (state.pvPmax > 0 ? (state.pvPmax/state.pvVmp * 1.05) : 0); 
-            const pv_imp = state.pvImp || (state.pvPmax > 0 ? (state.pvPmax/state.pvVmp) : 0);
-            const pv_tk_voc = state.pvTempVoc;
-            const inv_max_v = state.inv1MaxDC; const inv_mppt_min = state.inv1MinMPPT;
-            
-            if (ivChartInstance) ivChartInstance.destroy();
-            
-            const canvasEl = document.getElementById('ivChartCanvas');
-            if(!canvasEl) return; // ดัก Error ถ้าหน้าจอหา Canvas ไม่เจอ
-            const ctx = canvasEl.getContext('2d');
-
-            if (mode === 'eit') {
-                // 🛑 โหมด 1: มาตรฐาน วสท. (ทั้ง String)
-                const modules = state.maxPanelsPerString;
-                const curveCold = generateIVDataCalc(pv_voc, pv_isc, pv_vmp, pv_imp, modules, 15, pv_tk_voc, 1000);
-                const curveNorm = generateIVDataCalc(pv_voc, pv_isc, pv_vmp, pv_imp, modules, 45, pv_tk_voc, 1000);
-                const curveHot = generateIVDataCalc(pv_voc, pv_isc, pv_vmp, pv_imp, modules, 70, pv_tk_voc, 1000);
-
-                let htmlAlerts = `<div style="padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;"><h3 style="font-weight: bold; color: #1e293b; margin-bottom: 8px; font-size: 1em;">📋 ผลการตรวจสอบระบบ (Typical String: ${modules} แผง)</h3><ul style="font-size: 0.9em; padding-left: 20px; margin: 0; line-height: 1.6;">`;
-                if (curveCold.Voc_total > inv_max_v) htmlAlerts += `<li style="color: #dc2626; font-weight: bold;">❌ แรงดันระบบที่อุณหภูมิต่ำสุด (${curveCold.Voc_total.toFixed(1)}V) เกินขีดจำกัดอินเวอร์เตอร์ (${inv_max_v}V)</li>`;
-                else htmlAlerts += `<li style="color: #16a34a;">✔️ แรงดันระบบสูงสุด (${curveCold.Voc_total.toFixed(1)}V) ปลอดภัย ไม่เกินพิกัดอินเวอร์เตอร์</li>`;
-                if (curveHot.Vmp_total < inv_mppt_min) htmlAlerts += `<li style="color: #dc2626; font-weight: bold;">❌ แรงดันทำงาน Vmp ที่อุณหภูมิสูงสุด (${curveHot.Vmp_total.toFixed(1)}V) ต่ำกว่าพิกัดขั้นต่ำ MPPT (${inv_mppt_min}V)</li>`;
-                else htmlAlerts += `<li style="color: #16a34a;">✔️ แรงดันทำงาน (Vmp Range) อยู่ในย่าน MPPT ที่เหมาะสม</li>`;
-                htmlAlerts += `</ul></div>`;
-                
-                const alertEl = document.getElementById('iv_validation_results');
-                if(alertEl) alertEl.innerHTML = htmlAlerts;
-
-                ivChartInstance = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        datasets: [
-                            { label: 'อุณหภูมิต่ำ(15°C) - Max Voc', data: curveCold.pointsIV, borderColor: '#3b82f6', borderWidth: 2, pointRadius: 0, borderDash: [5, 5] },
-                            { label: 'ทำงานปกติ (45°C)', data: curveNorm.pointsIV, borderColor: '#10b981', borderWidth: 3, pointRadius: 0 },
-                            { label: 'อุณหภูมิสูง (70°C) - Min Vmp', data: curveHot.pointsIV, borderColor: '#ef4444', borderWidth: 2, pointRadius: 0, borderDash: [5, 5] }
-                        ]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        scales: { x: { type: 'linear', title: { display: true, text: 'แรงดันไฟฟ้า Voltage (V)' } }, y: { title: { display: true, text: 'กระแสไฟฟ้า Current (A)' }, min: 0 } }
-                        // 🌟 ตัด plugin annotation (ขีดเส้นแดง) ออกไป เพื่อไม่ให้ Chart.js พัง
-                    }
-                });
-            } else {
-                // 🛑 โหมด 2: กราฟ P-V & I-V ตามความเข้มแสง
-                const modules = 1; 
-                const temp = 25; 
-                const irrLevels = [1000, 800, 600, 400, 200];
-                const colors = ['#3b82f6', '#ef4444', '#f59e0b', '#06b6d4', '#8b5cf6'];
-                let datasets = [];
-                
-                irrLevels.forEach((irr, idx) => {
-                    let curve = generateIVDataCalc(pv_voc, pv_isc, pv_vmp, pv_imp, modules, temp, pv_tk_voc, irr);
-                    datasets.push({ label: `${irr} W/m² (I)`, data: curve.pointsIV, borderColor: colors[idx], backgroundColor: colors[idx], borderWidth: 2, pointRadius: 0, yAxisID: 'y' });
-                    datasets.push({ label: `${irr} W/m² (P)`, data: curve.pointsPV, borderColor: colors[idx], backgroundColor: colors[idx], borderWidth: 1.5, pointRadius: 0, yAxisID: 'y2', borderDash: [4, 4] });
-                });
-
-                const alertEl = document.getElementById('iv_validation_results');
-                if(alertEl) alertEl.innerHTML = `<div style="padding: 10px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; border-radius: 6px; font-weight: bold; text-align: center; font-size: 1.1em;">📈 Current-Voltage & Power-Voltage Curve: <span style="color: #ea580c;">${state.pvMfg} ${state.pvModel}</span></div>`;
-
-                ivChartInstance = new Chart(ctx, {
-                    type: 'line',
-                    data: { datasets: datasets },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            x: { type: 'linear', title: { display: true, text: 'Voltage (V)', font: {weight: 'bold'} }, min: 0 },
-                            y: { type: 'linear', position: 'left', title: { display: true, text: 'Current (A)', font: {weight: 'bold'} }, min: 0 },
-                            y2: { type: 'linear', position: 'right', title: { display: true, text: 'Power (W)', font: {weight: 'bold'} }, min: 0, grid: { drawOnChartArea: false } }
-                        },
-                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true, font: {size: 11} } } }
-                    }
-                });
-            }
-        }
-// ==============================================================================
-        // --- 🌟 ควบคุมปุ่มและสร้าง Engineering Diagrams (Wiring & SLD) 🌟 ---
-        // ==============================================================================
-
-        // 1. จำลองการเดินสายและอุปกรณ์ในตู้ AC/DC Combiner Box (Wiring Diagram)
-        const btnToggleWiringStep6 = document.getElementById('btnToggleWiringStep6');
-        if(btnToggleWiringStep6) {
-            btnToggleWiringStep6.addEventListener('click', function() {
-                // 🌟 ดักจับว่าผ่านการคำนวณ BOM ขั้นตอนที่ 5 มาหรือยัง
-                if (!state.engineering_and_bom) {
-                    alert("⚠️ กดปุ่ม 'คำนวณตารางวัสดุอุปกรณ์ (Generate BOM)' ท้ายหัวข้อ Engineering Diagram ก่อน\nเพื่อให้ระบบทราบสเปกสายไฟและเบรกเกอร์สำหรับวาดตู้ Combiner Box ครับ");
-                    return;
-                }
-                
-                const dcBreaker = state.engineering_and_bom.protection.dc_breaker_amp || 16;
-                const acBreaker = state.engineering_and_bom.protection.ac_breaker_amp || 50;
-                const pName = document.getElementById('projectTextInput').value.trim() || 'Project';
-                
-                /* ระบบเดิมวาดนอกกรอบตู้ ผังจึงสูงขึ้นเมื่อมีระบบเดิม
-                   รูปวาดกับถ้อยคำอยู่ใน asc-accoupling.js ที่เดียวกับหน้ารายงาน */
-                const accEx  = (window.AscACC && state.existing) ? AscACC.read(state.existing) : null;
-                const accNew = (parseFloat(state.inv1AcKw) || 0) * (parseInt(state.inv1Qty, 10) || 1);
-                const accFrag = accEx ? AscACC.wiringFragment(state.existing, { newAcKw: accNew }) : '';
-                const accVB   = accEx ? AscACC.wiringViewBox(state.existing) : '0 0 1000 650';
-                let svgContent = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="${accVB}" width="100%" height="100%" style="background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, monospace;">
-                    <defs>
-                        <!-- สัญลักษณ์ Breaker ย่อย -->
-                        <g id="mcb-pole">
-                            <rect x="0" y="0" width="30" height="80" fill="#ffffff" stroke="#475569" stroke-width="2"/>
-                            <circle cx="15" cy="15" r="4" fill="#94a3b8"/>
-                            <circle cx="15" cy="65" r="4" fill="#94a3b8"/>
-                            <rect x="8" y="30" width="14" height="20" fill="#334155" rx="2"/>
-                        </g>
-                        <!-- สัญลักษณ์ SPD -->
-                        <g id="spd-pole">
-                            <rect x="0" y="0" width="30" height="80" fill="#ffffff" stroke="#ef4444" stroke-width="2"/>
-                            <rect x="4" y="25" width="22" height="30" fill="#fecaca"/>
-                            <circle cx="15" cy="10" r="3" fill="#000"/>
-                            <circle cx="15" cy="70" r="3" fill="#000"/>
-                        </g>
-                    </defs>
-
-                    <!-- กรอบตู้ AC/DC Combiner Box -->
-                    <rect x="50" y="50" width="900" height="550" fill="#f1f5f9" stroke="#64748b" stroke-width="6" rx="10"/>
-                    <rect x="60" y="60" width="880" height="530" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" rx="6"/>
-                    <text x="500" y="100" font-size="24" font-weight="bold" text-anchor="middle" fill="#0f172a">AC / DC COMBINER BOX (WIRING LAYOUT)</text>
-                    
-                    <!-- โซนตู้ DC (ซ้าย) -->
-                    <rect x="80" y="140" width="400" height="380" fill="#fef2f2" stroke="#dc2626" stroke-width="3" stroke-dasharray="5,5" rx="5"/>
-                    <text x="280" y="170" font-size="18" font-weight="bold" text-anchor="middle" fill="#dc2626">DC SECTION (แผงโซลาร์เซลล์)</text>
-                    
-                    <!-- ขั้วต่อสาย DC เข้า -->
-                    <rect x="100" y="220" width="60" height="150" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
-                    <text x="130" y="210" font-size="12" font-weight="bold" text-anchor="middle">Terminal</text>
-                    <text x="130" y="260" font-size="10" text-anchor="middle">DC+</text>
-                    <text x="130" y="320" font-size="10" text-anchor="middle">DC-</text>
-
-                    <!-- ชุด DC Breaker & SPD -->
-                    <use href="#mcb-pole" x="220" y="220"/>
-                    <use href="#mcb-pole" x="250" y="220"/>
-                    <text x="250" y="205" font-size="12" font-weight="bold" text-anchor="middle">DC FUSE ${dcBreaker}A</text>
-                    
-                    <use href="#spd-pole" x="330" y="220"/>
-                    <use href="#spd-pole" x="360" y="220"/>
-                    <text x="360" y="205" font-size="12" font-weight="bold" text-anchor="middle">DC SPD (Type 2)</text>
-
-                    <!-- สายไฟลากเชื่อม DC -->
-                    <!-- สายบวก (แดง) -->
-                    <path d="M 160 250 L 235 250 M 235 250 L 235 220" fill="none" stroke="#dc2626" stroke-width="3"/>
-                    <path d="M 235 300 L 235 340 L 345 340 L 345 300" fill="none" stroke="#dc2626" stroke-width="3"/>
-                    <path d="M 235 340 L 235 480" fill="none" stroke="#dc2626" stroke-width="3"/>
-                    <!-- สายลบ (ดำ) -->
-                    <path d="M 160 310 L 265 310 M 265 310 L 265 220" fill="none" stroke="#111111" stroke-width="3"/>
-                    <path d="M 265 300 L 265 360 L 375 360 L 375 300" fill="none" stroke="#111111" stroke-width="3"/>
-                    <path d="M 265 360 L 265 480" fill="none" stroke="#111111" stroke-width="3"/>
-                    
-                    <text x="250" y="500" font-size="12" font-weight="bold" text-anchor="middle" fill="#dc2626">To Inverter (DC In)</text>
-
-                    <!-- โซนตู้ AC (ขวา) -->
-                    <rect x="520" y="140" width="400" height="380" fill="#f0fdf4" stroke="#16a34a" stroke-width="3" stroke-dasharray="5,5" rx="5"/>
-                    <text x="720" y="170" font-size="18" font-weight="bold" text-anchor="middle" fill="#16a34a">AC SECTION (ไฟบ้าน/โรงงาน)</text>
-
-                    <!-- ขั้วต่อสาย AC เข้าจาก Inverter -->
-                    <rect x="540" y="220" width="60" height="150" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
-                    <text x="570" y="210" font-size="12" font-weight="bold" text-anchor="middle">From Inverter</text>
-                    <text x="570" y="250" font-size="10" text-anchor="middle">L1/L2/L3</text>
-                    <text x="570" y="320" font-size="10" text-anchor="middle">N</text>
-
-                    <!-- ชุด AC Breaker & SPD -->
-                    <use href="#mcb-pole" x="650" y="220"/>
-                    <use href="#mcb-pole" x="680" y="220"/>
-                    <use href="#mcb-pole" x="710" y="220"/>
-                    <use href="#mcb-pole" x="740" y="220"/>
-                    <text x="710" y="205" font-size="12" font-weight="bold" text-anchor="middle">AC MCB ${acBreaker}A</text>
-
-                    <use href="#spd-pole" x="810" y="220"/>
-                    <use href="#spd-pole" x="840" y="220"/>
-                    <use href="#spd-pole" x="870" y="220"/>
-                    <text x="855" y="205" font-size="12" font-weight="bold" text-anchor="middle">AC SPD (Type 2)</text>
-
-                    <!-- สายไฟลากเชื่อม AC -->
-                    <path d="M 600 240 L 665 240 M 665 240 L 665 220" fill="none" stroke="#78350f" stroke-width="3"/>
-                    <path d="M 665 300 L 665 360 M 665 360 L 665 480" fill="none" stroke="#78350f" stroke-width="3"/>
-                    <path d="M 665 360 L 825 360 L 825 300" fill="none" stroke="#78350f" stroke-width="3"/>
-                    <text x="695" y="500" font-size="12" font-weight="bold" text-anchor="middle" fill="#78350f">To Main MDB / Grid</text>
-
-                    <!-- บัสบาร์กราวด์ (Ground) ด้านล่างสุดยาวทะลุสองฝั่ง -->
-                    <rect x="100" y="530" width="800" height="15" fill="#eab308" stroke="#16a34a" stroke-width="2"/>
-                    <text x="500" y="542" font-size="12" font-weight="bold" text-anchor="middle" fill="#000">MAIN GROUND BUSBAR (GND)</text>
-                    
-                    <!-- ลากสายกราวด์ลงบัสบาร์ -->
-                    <line x1="345" y1="300" x2="345" y2="530" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,2"/>
-                    <line x1="375" y1="300" x2="375" y2="530" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,2"/>
-                    <line x1="825" y1="300" x2="825" y2="530" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,2"/>
-                    <line x1="855" y1="300" x2="855" y2="530" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,2"/>
-                    <line x1="885" y1="300" x2="885" y2="530" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,2"/>
-                    ${accFrag}
-                </svg>`;
-
-                // เปิดหน้าต่าง Modal แสดงวงจรตู้คอนโทรล
-                document.getElementById('sld-svg-container').innerHTML = svgContent;
-                document.getElementById('sldModal').style.display = 'flex';
-                document.querySelector('#sldModal .iv-modal-header span').innerHTML = '<i class="fa-solid fa-bolt"></i> AC/DC Combiner Box Wiring Diagram';
-                
-                // สลับการทำงานปุ่มดาวน์โหลดให้ตั้งชื่อไฟล์ใหม่
-                const downloadBtn = document.getElementById('btnDownloadSLD');
-                const newDownloadBtn = downloadBtn.cloneNode(true); 
-                downloadBtn.parentNode.replaceChild(newDownloadBtn, downloadBtn);
-                newDownloadBtn.addEventListener('click', function() {
-                    const blob = new Blob([svgContent], {type: "image/svg+xml;charset=utf-8"});
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `WiringDiagram_${pName.replace(/\s+/g, '_')}.svg`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                });
-            });
-        }
-
-        // 2. ฟังก์ชันสร้าง Single Line Diagram (SLD) ดึงข้อมูลตรงจาก BOM และ Multi-MDB
-        const btnGenerateSLD = document.getElementById('btnGenerateSLD');
-        if(btnGenerateSLD) {
-            btnGenerateSLD.addEventListener('click', function() {
-                const panelCount = parseInt(document.getElementById('finalPanelCount').value) || 0;
-                
-                // 🌟 บังคับตรวจสอบว่าผ่านขั้นตอนที่ 5 แล้ว (BOM & Engineering Data ต้องมี)
-                if (!state.engineering_and_bom) {
-                    alert("⚠️ กดปุ่ม 'คำนวณตารางวัสดุอุปกรณ์ (Generate BOM)' ท้ายหัวข้อ Engineering Diagram ก่อน\nเพื่อให้ระบบดึงข้อมูลท่อร้อยสาย, สายกราวด์ และขนาดเบรกเกอร์มาสร้าง SLD ครับ");
-                    return;
-                }
-
-                const pName = document.getElementById('projectTextInput').value.trim() || 'Project Name';
-                const loc = document.getElementById('locationName').innerText.replace('ที่ตั้ง: ', '') || '-';
-                const totalKwp = document.getElementById('outTotalKwp').innerText || '0.00 kWp';
-                const pvSpec = `${state.pvMfg} ${state.pvModel} (${panelCount} Pnl.)`;
-                const invSpec = `${state.inv1Mfg} ${state.inv1Model} (${state.inv1Qty} Units)`;
-                
-                // ดึงสเปกแบบเต็มพิกัดจาก Step 5 (BOM) และ Step 2 (MDB) แบบตรงเป๊ะ
-                let dcCable = state.engineering_and_bom.calculated_sizing.pv_cable_sqmm;
-                let acCable = state.engineering_and_bom.calculated_sizing.ac_cable_sqmm;
-                let gndCable = state.engineering_and_bom.calculated_sizing.gnd_cable_sqmm;
-                let conduitType = state.engineering_and_bom.calculated_sizing.conduit_or_wireway;
-                let acBreaker = state.engineering_and_bom.protection.ac_breaker_amp;
-                let dcBreaker = state.engineering_and_bom.protection.dc_breaker_amp;
-
-                const modulesPerString = state.maxPanelsPerString || 15;
-                const curveCold = generateIVDataCalc(state.pvVoc, state.pvIsc || 14, state.pvVmp, state.pvImp || 13, modulesPerString, 15, state.pvTempVoc || -0.27, 1000);
-                const curveHot = generateIVDataCalc(state.pvVoc, state.pvIsc || 14, state.pvVmp, state.pvImp || 13, modulesPerString, 70, state.pvTempVoc || -0.27, 1000);
-                const vVocColdCalculated = curveCold.Voc_total.toFixed(1);
-                const vVmpHotCalculated = curveHot.Vmp_total.toFixed(1);
-
-                let autoBusbarSize = "30x5 mm";
-                let matchedBusbar = INDUSTRIAL_SOLAR_CONFIG.BUSBAR_MATRIX.find(b => state.targetMdbAmps >= b.amp_min && state.targetMdbAmps <= b.amp_max);
-                if (matchedBusbar) autoBusbarSize = matchedBusbar.sizing;
-
-                const dateStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });
-
-                /* ระบบออนกริดเดิมวางในแถบที่ต่อขยายลงมาด้านล่าง ไม่ทับของเดิม
-                   ผังใบนี้แน่นทั้งใบ การหาที่ว่างแทรกกลางจึงเสี่ยงทับของเดิมโดยไม่รู้ตัว
-                   ต่อกรอบลงมาแทน ปลอดภัยกว่าและอ่านง่ายกว่า
-                   จุดต่อคือปลายขวาของบัสบาร์ MDB ที่ (650, 580) เดินอ้อมขวาลงมา */
-                const accEx  = (window.AscACC && state.existing) ? AscACC.read(state.existing) : null;
-                const accSld = accEx ? AscACC.sldBlock(state.existing, {
-                                   x: 60, y: 830, w: 1000,
-                                   tap: [[650, 580], [1080, 580], [1080, 907], [1060, 907]] }) : '';
-                const accSldVB = accEx ? '0 0 1122 1010' : '0 0 1122 793';
-                // เริ่มโครง SVG พิมพ์เขียว SLD
-                let svgContent = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="${accSldVB}" width="100%" height="100%" style="background-color: #ffffff; font-family: 'Segoe UI', Tahoma, monospace; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                    <defs>
-                        <g id="sym-transformer">
-                            <circle cx="-10" cy="0" r="15" fill="none" stroke="#000000" stroke-width="2"/>
-                            <circle cx="10" cy="0" r="15" fill="none" stroke="#000000" stroke-width="2"/>
-                            <text x="0" y="24" font-size="8" text-anchor="middle" font-weight="bold">YNd11</text>
-                        </g>
-                        <g id="sym-pv">
-                            <rect x="-30" y="-15" width="60" height="30" fill="none" stroke="#000" stroke-width="2"/>
-                            <line x1="-15" y1="-15" x2="-15" y2="15" stroke="#475569" stroke-width="1"/>
-                            <line x1="15" y1="-15" x2="15" y2="15" stroke="#475569" stroke-width="1"/>
-                            <text x="0" y="4" font-size="10" text-anchor="middle" font-weight="bold" fill="#0f172a">PV CELL</text>
-                        </g>
-                        <g id="sym-inv">
-                            <rect x="-40" y="-25" width="80" height="50" fill="#fafafa" stroke="#1e3a8a" stroke-width="2" rx="3"/>
-                            <line x1="-40" y1="-25" x2="40" y2="25" stroke="#1e3a8a" stroke-width="1" stroke-dasharray="2,2"/>
-                            <text x="-16" y="-6" font-size="11" font-weight="bold" fill="#dc2626" text-anchor="middle">DC</text>
-                            <text x="16" y="16" font-size="11" font-weight="bold" fill="#2563eb" text-anchor="middle">AC</text>
-                        </g>
-                        <g id="sym-cb">
-                            <circle cx="0" cy="-10" r="2.5" fill="#fff" stroke="#000" stroke-width="2"/>
-                            <circle cx="0" cy="10" r="2.5" fill="#fff" stroke="#000" stroke-width="2"/>
-                            <path d="M 0 -7 L 12 8" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
-                        </g>
-                        <g id="sym-spd">
-                            <rect x="-12" y="-12" width="24" height="24" fill="#fff" stroke="#000" stroke-width="1.5"/>
-                            <path d="M -8 6 L 0 -6 L 8 6" fill="none" stroke="#000" stroke-width="1.5"/>
-                        </g>
-                    </defs>
-
-                    <rect x="15" y="14" width="1092" height="765" fill="none" stroke="#0f172a" stroke-width="3"/>
-                    <rect x="21" y="20" width="1080" height="753" fill="none" stroke="#475569" stroke-width="1"/>
-                    <line x1="870" y1="14" x2="870" y2="779" stroke="#0f172a" stroke-width="2"/>
-
-                    <text x="885" y="45" font-size="11" font-weight="bold" fill="#475569">PROJECT NAME :</text>
-                    <foreignObject x="885" y="55" width="200" height="50">
-                        <div xmlns="http://www.w3.org/1999/xhtml" style="font-size: 13px; font-weight: bold; color: #0f172a; word-wrap: break-word; line-height: 1.2;">${pName}</div>
-                    </foreignObject>
-                    
-                    <line x1="870" y1="125" x2="1107" y2="125" stroke="#cbd5e1" stroke-width="1"/>
-                    <text x="885" y="150" font-size="11" font-weight="bold" fill="#475569">TOTAL DC CAPACITY :</text>
-                    <text x="885" y="175" font-size="18" font-weight="bold" fill="#ea580c">${totalKwp}</text>
-
-                    <line x1="870" y1="210" x2="1107" y2="210" stroke="#cbd5e1" stroke-width="1"/>
-                    <text x="885" y="235" font-size="11" font-weight="bold" fill="#475569">LOCATION SITE :</text>
-                    <foreignObject x="885" y="245" width="200" height="60">
-                        <div xmlns="http://www.w3.org/1999/xhtml" style="font-size: 11px; color: #334155; line-height: 1.3; word-wrap: break-word;">${loc}</div>
-                    </foreignObject>
-
-                    <line x1="870" y1="320" x2="1107" y2="320" stroke="#cbd5e1" stroke-width="1"/>
-                    <text x="885" y="345" font-size="11" font-weight="bold" fill="#475569">ENGINEERING STANDARD :</text>
-                    <text x="885" y="365" font-size="12" font-weight="bold" fill="#16a34a">มาตรฐาน วสท. ประเทศไทย</text>
-                    <text x="885" y="385" font-size="11" fill="#64748b">EIT / IEC 61439-2</text>
-
-                    <line x1="870" y1="645" x2="1107" y2="645" stroke="#cbd5e1" stroke-width="1"/>
-                    <text x="885" y="670" font-size="11" fill="#475569">DATE : ${dateStr}</text>
-                    <text x="885" y="695" font-size="11" fill="#475569">SCALE : NOT TO SCALE</text>
-                    <text x="885" y="720" font-size="12" font-weight="bold" fill="#0f172a">DWG NO : ASC-SLD-V10E</text>
-
-                    <text x="440" y="60" font-size="22" font-weight="bold" text-anchor="middle" fill="#1e3a8a">SINGLE LINE &amp; POWER SYSTEM DIAGRAM</text>
-                    <line x1="220" y1="70" x2="660" y2="70" stroke="#2563eb" stroke-width="2"/>
-
-                    <g transform="translate(50, 90)">`;
-
-                if (state.isIndustrialScale) {
-                    // โหมดโรงงาน (>300 kWp) ดึงค่าหม้อแปลงและ Zero Export Meter
-                    svgContent += `
-                        <line x1="40" y1="30" x2="760" y2="30" stroke="#dc2626" stroke-width="3"/>
-                        <text x="400" y="20" font-size="11" font-weight="bold" fill="#dc2626" text-anchor="middle">แนวสายส่งระบบไฟฟ้าแรงสูงการไฟฟ้า (MEA / PEA 22-24 kV)</text>
-                        
-                        <circle cx="700" cy="30" r="6" fill="none" stroke="#000" stroke-width="1.5"/>
-                        <circle cx="700" cy="30" r="3" fill="none" stroke="#000" stroke-width="1"/>
-                        <text x="700" y="16" font-size="9" text-anchor="middle" font-weight="bold">3CT ${state.ctRatio}</text>
-
-                        <use href="#sym-transformer" x="150" y="80"/>
-                        <line x1="150" y1="30" x2="150" y2="65" stroke="#000" stroke-width="1.5"/>
-                        <line x1="150" y1="95" x2="150" y2="150" stroke="#000" stroke-width="2"/>
-                        <text x="210" y="85" font-size="10" font-weight="bold">หม้อแปลงโรงงานโครงการ</text>
-                        <text x="210" y="100" font-size="10" font-weight="bold" fill="#475569">ขนาดพิกัด: ${state.transformerRatingKva} kVA 3-Phase</text>
-
-                        <!-- ตู้ MDB -->
-                        <rect x="40" y="150" width="740" height="20" fill="#e2e8f0" stroke="#0f172a" stroke-width="2"/>
-                        <text x="410" y="164" font-size="12" font-weight="bold" text-anchor="middle" fill="#0f172a">MAIN DISTRIBUTION BOARD (MDB | Busbar: ${state.targetMdbAmps}A | สเปก ${autoBusbarSize})</text>
-
-                        <!-- Solar ฝั่ง DC -->
-                        <use href="#sym-pv" x="150" y="240"/>
-                        <text x="150" y="275" font-size="11" font-weight="bold" text-anchor="middle" fill="#2563eb">${pvSpec}</text>
-                        
-                        <line x1="135" y1="240" x2="135" y2="330" stroke="#dc2626" stroke-width="2"/>
-                        <line x1="165" y1="240" x2="165" y2="330" stroke="#111111" stroke-width="2"/>
-                        <!-- 🌟 ดึงข้อมูลสายไฟและท่อร้อยสาย DC จาก BOM -->
-                        <text x="175" y="295" font-size="10" font-weight="bold" fill="#dc2626">PV1-F 2&times;${dcCable} mm&sup2;</text>
-                        <text x="175" y="310" font-size="9" font-weight="bold" fill="#475569">ร้อยใน ${conduitType}</text>
-
-                        <!-- ตู้ DC -->
-                        <rect x="60" y="330" width="180" height="100" fill="none" stroke="#ea580c" stroke-width="2" stroke-dasharray="4,2"/>
-                        <text x="150" y="346" font-size="10" font-weight="bold" text-anchor="middle" fill="#ea580c">ตู้ DC COMBINER BOX</text>
-                        <use href="#sym-cb" x="120" y="380"/>
-                        <text x="68" y="398" font-size="9" font-weight="bold">DC Fuse ${dcBreaker}A</text>
-                        <use href="#sym-spd" x="180" y="380"/>
-                        <text x="180" y="365" font-size="8" text-anchor="middle" fill="#b45309">DC SPD</text>
-
-                        <line x1="150" y1="400" x2="150" y2="460" stroke="#dc2626" stroke-width="2.5"/>
-
-                        <!-- Inverter -->
-                        <use href="#sym-inv" x="150" y="485"/>
-                        <text x="150" y="525" font-size="11" font-weight="bold" text-anchor="middle" fill="#1e3a8a">${invSpec}</text>
-
-                        <!-- AC Line ลายสี วสท. -->
-                        <g transform="translate(150, 510)">
-                            <line x1="-12" y1="0" x2="-12" y2="120" stroke="#78350f" stroke-width="2"/>
-                            <line x1="-4" y1="0" x2="-4" y2="120" stroke="#111111" stroke-width="2"/>
-                            <line x1="4" y1="0" x2="4" y2="120" stroke="#64748b" stroke-width="2"/>
-                            <line x1="12" y1="0" x2="12" y2="120" stroke="#0ea5e9" stroke-width="1.5"/>
-                            <!-- 🌟 ดึงข้อมูลสายไฟและท่อร้อยสาย AC จาก BOM -->
-                            <text x="24" y="60" font-size="10" font-weight="bold">สาย AC 4&times;${acCable} mm&sup2;</text>
-                            <text x="24" y="75" font-size="9" font-weight="bold" fill="#475569">ร้อยใน ${conduitType}</text>
-                        </g>
-
-                        <!-- ตู้ AC -->
-                        <rect x="60" y="570" width="180" height="90" fill="none" stroke="#10b981" stroke-width="2"/>
-                        <use href="#sym-cb" x="150" y="615"/>
-                        <text x="150" y="586" font-size="10" font-weight="bold" text-anchor="middle" fill="#16a34a">ตู้ AC COMBINER BOX</text>
-                        <text x="75" y="632" font-size="9" font-weight="bold">MCB ${acBreaker}A</text>
-
-                        <line x1="150" y1="660" x2="150" y2="690" stroke="#000" stroke-width="2"/>
-                        <path d="M 150 690 L 410 690 L 410 170" fill="none" stroke="#000" stroke-width="2.5"/>
-                        
-                        <!-- Zero Export Meter -->
-                        <g transform="translate(480, 240)">
-                            <rect x="0" y="0" width="280" height="150" fill="#faf5ff" stroke="#a855f7" stroke-width="2" rx="4"/>
-                            <rect x="0" y="0" width="280" height="24" fill="#f3e8ff" stroke="#a855f7"/>
-                            <text x="140" y="16" font-size="10" font-weight="bold" text-anchor="middle" fill="#6b21a8">ตู้จำกัดไฟไหลย้อน (ZERO EXPORT CONTROL)</text>
-                            <text x="15" y="50" font-size="10" font-weight="bold">• ชุดประมวลผลหลัก: ${state.meterBrand}</text>
-                            <text x="15" y="70" font-size="10" font-weight="bold">• สัญญาณกระแสไฟฟ้า: CT ${state.ctRatio}</text>
-                            <text x="15" y="90" font-size="10" font-weight="bold">${state.interconnection === 'MV' ? '• สัญญาณแรงดันไฟฟ้า: VT ' + state.vtRatio : '• สัญญาณแรงดันไฟฟ้า: แทรปตรงจากบัสบาร์ (LV)'}</text>
-                            <path d="M 140 100 L 140 240" fill="none" stroke="#4f46e5" stroke-width="1.5" stroke-dasharray="4,2"/>
-                            <text x="145" y="170" font-size="9" fill="#4f46e5" font-weight="bold">สายลิงก์สัญญาณ RS-485</text>
-                        </g>
-
-                        <!-- Ground System ดึงค่าสายกราวด์จาก BOM 🌟 -->
-                        <line x1="35" y1="150" x2="35" y2="720" stroke="#16a34a" stroke-width="3"/>
-                        <line x1="35" y1="720" x2="65" y2="720" stroke="#16a34a" stroke-width="3"/>
-                        <line x1="65" y1="715" x2="65" y2="725" stroke="#16a34a" stroke-width="2"/>
-                        <line x1="60" y1="718" x2="60" y2="722" stroke="#16a34a" stroke-width="2"/>
-                        <text x="45" y="740" font-size="10" font-weight="bold" fill="#16a34a">GROUND ROD + สายกราวด์ ${gndCable} mm&sup2;</text>
-                    `;
-                } else {
-                    // โหมดบ้าน (<300 kWp) ดึงค่าจาก BOM เหมือนกัน
-                    svgContent += `
-                        <use href="#sym-pv" x="200" y="100"/>
-                        <text x="200" y="140" font-size="12" text-anchor="middle" font-weight="bold">${pvSpec}</text>
-                        <line x1="200" y1="115" x2="200" y2="220" stroke="#dc2626" stroke-width="2"/>
-                        <text x="210" y="180" font-size="10" font-weight="bold" fill="#dc2626">PV1-F 2&times;${dcCable} mm&sup2; (ใน ${conduitType})</text>
-                        
-                        <use href="#sym-cb" x="200" y="230"/>
-                        <text x="230" y="235" font-size="11" font-weight="bold">DC Fuse/Breaker ${dcBreaker}A</text>
-                        <line x1="200" y1="240" x2="200" y2="320" stroke="#dc2626" stroke-width="2"/>
-
-                        <use href="#sym-inv" x="200" y="345"/>
-                        <text x="200" y="390" font-size="12" text-anchor="middle" fill="#2563eb" font-weight="bold">${invSpec}</text>
-                        <line x1="200" y1="370" x2="200" y2="470" stroke="#000" stroke-width="2"/>
-                        <text x="210" y="430" font-size="10" font-weight="bold" fill="#000">สาย AC ${acCable} mm&sup2; (ใน ${conduitType})</text>
-
-                        <use href="#sym-cb" x="200" y="480"/>
-                        <text x="230" y="485" font-size="11" font-weight="bold">AC MCB ${acBreaker}A</text>
-                        <line x1="200" y1="490" x2="200" y2="570" stroke="#000" stroke-width="2"/>
-
-                        <rect x="50" y="570" width="600" height="20" fill="#e2e8f0" stroke="#000" stroke-width="2"/>
-                        <text x="350" y="585" font-size="12" font-weight="bold" text-anchor="middle">ตู้จ่ายไฟหลักอาคาร (MAIN DISTRIBUTION BOARD - MDB)</text>
-
-                        <line x1="50" y1="570" x2="50" y2="700" stroke="#16a34a" stroke-width="3"/>
-                        <line x1="50" y1="700" x2="80" y2="700" stroke="#16a34a" stroke-width="3"/>
-                        <line x1="80" y1="695" x2="80" y2="705" stroke="#16a34a" stroke-width="2"/>
-                        <text x="60" y="720" font-size="10" font-weight="bold" fill="#16a34a">GROUND ROD + สายกราวด์ ${gndCable} mm&sup2;</text>
-                    `;
-                }
-
-                // 📊 ตารางวิเคราะห์อุณหภูมิ (เหมือนเดิม)
-                svgContent += `
-                    </g>
-                    <g transform="translate(460, 480)">
-                        <rect x="0" y="0" width="380" height="170" fill="#faf5ff" stroke="#4f46e5" stroke-width="2" rx="6"/>
-                        <rect x="0" y="0" width="380" height="26" fill="#e0e7ff" stroke="#4f46e5"/>
-                        <text x="190" y="18" font-size="11" font-weight="bold" text-anchor="middle" fill="#312e81">📊 ผลการทดสอบและวิเคราะห์ย่านแรงดันวิศวกรรม (วสท.)</text>
-                        
-                        <text x="15" y="48" font-size="11" font-weight="bold" fill="#475569">การจัดกลุ่มอนุกรมระบบ (String Config):</text>
-                        <text x="365" y="48" font-size="11" font-weight="bold" text-anchor="end">${modulesPerString} แผง/สตริง</text>
-
-                        <text x="15" y="78" font-size="11" fill="#475569">แรงดันระบบสูงสุดเมื่ออากาศหนาวจัด (Max Voc @15°C):</text>
-                        <text x="365" y="78" font-size="12" font-weight="bold" text-anchor="end" fill="#16a34a">${vVocColdCalculated} V</text>
-                        <text x="15" y="96" font-size="9.5" fill="#64748b">(ขีดจำกัดสูงสุดของเครื่อง Inverter: ${state.inv1MaxDC} V)</text>
-                        <text x="365" y="96" font-size="9.5" font-weight="bold" text-anchor="end" fill="#16a34a">PASS (SAFE)</text>
-
-                        <line x1="15" y1="110" x2="365" y2="110" stroke="#cbd5e1" stroke-width="1"/>
-
-                        <text x="15" y="132" font-size="11" fill="#475569">แรงดันทำงานต่ำสุดขณะหลังคาร้อนจัด (Min Vmp @70°C):</text>
-                        <text x="365" y="132" font-size="12" font-weight="bold" text-anchor="end" fill="#16a34a">${vVmpHotCalculated} V</text>
-                        <text x="15" y="150" font-size="9.5" fill="#64748b">(ย่านแรงดันขั้นต่ำของเครื่อง MPPT: ${state.inv1MinMPPT} V)</text>
-                        <text x="365" y="150" font-size="9.5" font-weight="bold" text-anchor="end" fill="#16a34a">PASS (OPTIMAL)</text>
-                    </g>
-                    ${accSld}
-                </svg>`;
-
-                document.getElementById('sld-svg-container').innerHTML = svgContent;
-                document.getElementById('sldModal').style.display = 'flex';
-                document.querySelector('#sldModal .iv-modal-header span').innerHTML = '<i class="fa-solid fa-sitemap"></i> Single Line Diagram (SLD)';
-
-                const downloadBtn = document.getElementById('btnDownloadSLD');
-                if (downloadBtn) {
-                    const newDownloadBtn = downloadBtn.cloneNode(true); 
-                    downloadBtn.parentNode.replaceChild(newDownloadBtn, downloadBtn);
-                    newDownloadBtn.addEventListener('click', function() {
-                        // 🌟 สร้างชุดตัวเลข วัน-เวลา (Datetime)
-                        const now = new Date();
-                        const dt = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
-                        
-                        const blob = new Blob([svgContent], {type: "image/svg+xml;charset=utf-8"});
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement("a");
-                        a.href = url;
-                        // 🌟 เปลี่ยนชื่อไฟล์ตามที่ต้องการ
-                        a.download = `${pName.replace(/\s+/g, '_')}_Single_Line_Diagram_${dt}.svg`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                    });
-                }
-
-                if (!state.engineering_and_bom) state.engineering_and_bom = {};
-                state.engineering_and_bom.sld_svg_data = svgContent;
-            });
-        }
+        // (ถอดตัววาดกราฟ I-V, ผังเดินสาย DC และ SLD ของหน้าออกแบบออกแล้วตามคำขอผู้ใช้
+        //  ผัง SLD ของหน้ารายงานเป็นคนละชุดและยังใช้งานอยู่ตามเดิม)
         // ฟังก์ชันโหลด DB1 กลับเข้าโปรแกรมแบบสมบูรณ์ (ดึงอุปกรณ์และวาดแผงคืน 100%)
         // 🌟 เฟส 5: listener นำเข้าไฟล์ชุดที่ 2 (เดิมเป็น dead code เพราะชุดแรกเคลียร์ input ก่อน)
         // ถูกยุบรวมเข้ากับ Unified Import ด้านบนแล้ว และปุ่ม Import ใช้ inline onclick อยู่แล้ว
@@ -9800,17 +9295,17 @@ function ascFileStamp(projectName, kind) {
 				});
 				zc.appendChild(a);
 			}
-			// 2) ย้ายปุ่ม Undo/Redo จากขวาบน เข้า Left Rail (ใต้เครื่องมือแก้ไข)
+			// 2) ย้ายปุ่ม Undo/Redo เข้าแถบขวาบน ต่อท้ายเครื่องมือแก้ไข
 			const undoBtn = document.getElementById('btnUndoMap');
-			const leftCorner = document.querySelector('.leaflet-top.leaflet-left');
-			if (undoBtn && leftCorner) {
+			const rightCorner = document.querySelector('.leaflet-top.leaflet-right');
+			if (undoBtn && rightCorner) {
 				const wrap = undoBtn.parentElement;
 				wrap.id = 'undoRedoRail';
 				wrap.classList.add('leaflet-control');
 				wrap.style.position = 'relative';
 				wrap.style.top = 'auto'; wrap.style.right = 'auto';
 				wrap.style.gap = '0';
-				leftCorner.appendChild(wrap);
+				rightCorner.appendChild(wrap);
 				if (window.L && L.DomEvent) { L.DomEvent.disableClickPropagation(wrap); L.DomEvent.disableScrollPropagation(wrap); }
 			}
 		})();
