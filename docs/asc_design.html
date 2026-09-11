@@ -360,6 +360,15 @@
         .leaflet-container.asc-draw-snap  .leaflet-draw-guide-dash { background-color: #fa0505 !important; width: 5px !important; height: 5px !important; }
         .leaflet-container.asc-draw-error .leaflet-draw-guide-dash { background-color: #b91c1c !important; }
        .interactive-panel { cursor: pointer !important; outline: none; shape-rendering: geometricPrecision; }
+
+        /* เส้นเวกเตอร์ทุกเส้นบนแผนที่ให้เรนเดอร์แบบคมตามเรขาคณิตจริง และมุมหักเป็นเหลี่ยม
+           stroke-miterlimit ค่าปริยายของ SVG คือ 4 ซึ่งจะตัดมุมแหลม ๆ ให้กลายเป็นมุมตัด
+           ขอบหลังคาที่มีมุมแคบจึงดูบิ่น ตั้งเป็น 10 ให้มุมแหลมยังคมอยู่แบบแบบก่อสร้าง */
+        .leaflet-overlay-pane svg path,
+        .leaflet-pane > svg path {
+            shape-rendering: geometricPrecision;
+            stroke-miterlimit: 10;
+        }
         
         .file-upload-row { display: flex; align-items: center; justify-content: space-between; font-size: 11px; margin-top: 4px; color: #64748b; }
         .file-upload-row input[type="file"] { width: 65%; padding: 4px; border: 1px dashed #cbd5e1; background: #f8fafc;}
@@ -2082,6 +2091,25 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
         const STRING_COLORS = ['#2563eb', '#16a34a', '#dc2626', '#9333ea', '#ea580c', '#0d9488', '#be123c', '#4338ca'];
 
         // --- ส่วนที่ 1: ประกาศตัวแปรเก็บแผนที่ดาวเทียมค่ายต่างๆ ---
+        /* ── เส้นแบบแบบ CAD ──────────────────────────────────────────────
+           ค่าปริยายของ Leaflet คือมุมและปลายเส้นแบบ "มน" (round) ซึ่งทำให้ขอบหลังคา
+           และเส้นเดินสายดูนุ่มเหมือนงานวาดมือ ไม่เหมือนแบบก่อสร้าง
+
+           ตั้งที่ L.Path ที่เดียวจึงมีผลกับทุกเลเยอร์พร้อมกัน (ขอบหลังคา · พื้นที่วางแผง ·
+           พื้นที่หวงห้าม · ทางเดิน · เส้นเดินสาย · เส้นนำ) ไม่ต้องไล่แก้ทีละจุดที่สร้างเลเยอร์
+           ซึ่งมีอยู่หลายสิบแห่งและจะหลุดได้ง่ายเมื่อมีคนเพิ่มเลเยอร์ใหม่
+
+             lineJoin 'miter'  มุมหักคมเป็นเหลี่ยม ตรงตามพิกัดจริง
+             lineCap  'butt'   ปลายเส้นตัดตรง ไม่มีหัวมนยื่นเกินจุดปลาย
+             smoothFactor 0    ไม่ลดรูปเส้นตอนวาด เส้นจึงลากผ่านทุกจุดตามพิกัดจริง
+                               (แผงใช้ค่านี้อยู่แล้ว ส่วนขอบหลังคามีไม่กี่จุด จึงไม่กระทบความลื่น) */
+        if (window.L && L.Path && L.Path.mergeOptions) {
+            L.Path.mergeOptions({ lineJoin: 'miter', lineCap: 'butt' });
+        }
+        if (window.L && L.Polyline && L.Polyline.mergeOptions) {
+            L.Polyline.mergeOptions({ smoothFactor: 0 });
+        }
+
         /* ── แผนที่ฐาน ────────────────────────────────────────────────────
            เดิมดึงไทล์จากปลายทางภายในของ Google (โดเมน mt1 ที่ไม่ใช่ API สาธารณะ)
            และตั้งเป็นค่าเริ่มต้นด้วย ผู้ใช้ทุกคนจึงยิงไปที่นั่นทุกครั้งที่เปิดโปรแกรม
