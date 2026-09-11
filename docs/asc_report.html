@@ -442,14 +442,14 @@
             <div class="flex items-center space-x-3">
                 <span class="text-[14px]  text-red-500 hidden sm:block">Image Proj.(2 ภาพ):</span>
                 <input type="file" id="upload-layout-img" accept="image/*" multiple class="text-sm border border-blue-300 rounded p-1 bg-blue-50 cursor-pointer" onchange="previewProjectImages(event)" title="อัปโหลดภาพผังโครงการ (เลือกได้หลายรูป)">
-                <span class="text-[14px] text-red-500 hidden sm:block">Import DB2/DB3 :</span>
+                <span class="text-[14px] text-red-500 hidden sm:block">Import design/report:</span>
                 <input type="file" id="file-upload" class="text-sm border border-gray-300 rounded p-1 bg-gray-50" onchange="handleFileUpload(event)">
                 <div class="flex border border-gray-400 rounded overflow-hidden shrink-0" title="ภาษาของรายงานบนหน้าจอและไฟล์ PDF ที่ส่งออก (Report language)">
                     <button id="rpt-lang-th" aria-pressed="true"  onclick="setReportLang('th')" class="rpt-lang text-xs font-bold py-2 px-2.5">ไทย</button>
                     <button id="rpt-lang-en" aria-pressed="false" onclick="setReportLang('en')" class="rpt-lang text-xs font-bold py-2 px-2.5">EN</button>
                 </div>
                 <button onclick="generatePDF()" class="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded text-sm font-bold shadow-md">Export PDF</button>
-                <button onclick="exportDB3()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm font-bold shadow-md ml-2">Export DB3</button>
+                <button onclick="exportDB3()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm font-bold shadow-md ml-2">Export Report</button>
             </div>
         </div>
 
@@ -553,7 +553,7 @@
 
                 <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-indigo-500 mt-6" id="box-hourly-sim">
                     <h3 class="font-bold text-indigo-800 mb-4 border-b pb-2">
-                        <i class="fa-solid fa-microchip"></i> ผลการจำลองคณิตศาสตร์วิศวกรรม (Hourly Simulation - DB3)
+                        <i class="fa-solid fa-microchip"></i> ผลการจำลองคณิตศาสตร์วิศวกรรม (Hourly Simulation - report)
                     </h3>
                     <p class="text-xs text-gray-500 mb-4">* ข้อมูลด้านล่างจะอัปเดตอัตโนมัติเมื่อกด "ประมวลผล (Run Simulation)" ในเมนู 3</p>
                     
@@ -1563,7 +1563,7 @@
             box.innerHTML =
                 `<b>⚠ ค่าสัมประสิทธิ์อุณหภูมิไม่ตรงกับดาต้าชีตของแผง</b><br>` +
                 rows.map(r => `${r.label}: ใช้อยู่ <b>${r.cur}</b> · ดาต้าชีตระบุ <b>${r.sheet}</b>`).join('<br>') +
-                `<br><span class="text-[11px]">ไฟล์ DB2 ที่บันทึกก่อนรุ่นนี้พาค่าเริ่มต้นติดมาแทนค่าจริงจากดาต้าชีต ` +
+                `<br><span class="text-[11px]">ไฟล์ design ที่บันทึกก่อนรุ่นนี้พาค่าเริ่มต้นติดมาแทนค่าจริงจากดาต้าชีต ` +
                 `ถ้าไม่ได้ตั้งใจกรอกทับ ให้กดใช้ค่าจากดาต้าชีตแล้วประมวลผลใหม่</span><br>` +
                 `<button type="button" onclick="ascApplySheetTempCoeff()" class="mt-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold py-1 px-2.5 rounded">ใช้ค่าจากดาต้าชีต</button>`;
             box.classList.remove('hidden');
@@ -2305,12 +2305,19 @@
             }
 		}
 
-        function handleFileUpload(event) {
-            const file = event.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
+        /* แสดงกล่องแจ้งข้อผิดพลาดการนำเข้า แยกออกมาเพื่อให้ทั้งสายไฟล์และสายท่อใช้ร่วมกัน */
+        function ascShowImportError(err) {
+            console.error("Error parsing JSON:", err);
+            let errList = document.getElementById('error-list');
+            if(errList) errList.innerHTML = `<li>ไฟล์ที่อัปโหลดไม่รองรับหรือไม่ใช่รูปแบบ JSON</li><li class="text-xs text-gray-500 mt-1">รายละเอียดข้อผิดพลาด: ${err.message}</li>`;
+            let errModal = document.getElementById('modal-error'); if(errModal) errModal.classList.remove('hidden');
+        }
+
+        /* แยกตัวนำเข้าออกจาก FileReader เพื่อให้ไฟล์ที่ผู้ใช้เลือกเอง กับข้อมูลที่ไหลมา
+           ตามท่อจากเมนู 2 (System Design) เดินเส้นทางเดียวกันทั้งหมด ไม่มีตรรกะนำเข้าสองชุด
+           origin = 'file' เมื่อผู้ใช้เลือกไฟล์เอง · 'sync' เมื่อรับมาตามท่อ */
+        function ascApplyImportedJson(jsonData, origin) {
                 try {
-                    const text = e.target.result; const jsonData = JSON.parse(text);
                     
                     // 🌟 1. ดักจับการนำเข้า DB3 (กู้คืนข้อมูลเดิม)
                     if (jsonData.is_asc_db3) {
@@ -2399,13 +2406,13 @@
                         // แสดงแจ้งเตือนและรันทันที
                         if(document.getElementById('preview-summary')) {
                             document.getElementById('preview-summary').innerHTML = `
-                                <p class="text-green-700 font-medium">✅ นำเข้าข้อมูล (DB3) สำเร็จ</p>
+                                <p class="text-green-700 font-medium">✅ นำเข้าข้อมูล (report) สำเร็จ</p>
                                 <hr class="my-2 border-gray-200">
                                 <p><b>ชื่อโครงการ:</b> ${getStr('inp-proj')}</p>
                                 <p>กู้คืนตัวแปรทั้งหมดเรียบร้อยแล้ว ระบบกำลังประมวลผล...</p>`;
                         }
                         if(document.getElementById('modal-preview')) document.getElementById('modal-preview').classList.remove('hidden');
-                        if(document.getElementById('file-upload')) document.getElementById('file-upload').value = ""; 
+                        if(document.getElementById('file-upload')) if (origin === 'file') document.getElementById('file-upload').value = ""; 
 
                         setTimeout(() => { 
                             try { 
@@ -2707,13 +2714,13 @@
                     AppState.ivParams = ivParams;
                     
                     document.getElementById('preview-summary').innerHTML = `
-                        <p class="text-blue-800 font-medium">📥 อ่านโครงสร้าง JSON สำเร็จ (DB2)</p>
+                        <p class="text-blue-800 font-medium">📥 อ่านโครงสร้าง JSON สำเร็จ (design)</p>
                         <hr class="my-2 border-gray-200">
                         <p><b>ชื่อโครงการ:</b> ${getStr('inp-proj')}</p>
                         <p><b>แผง PV:</b> ${getStr('inp-pv-model')} (${formatNum(getVal('inp-pv-qty'), 0)} แผง)</p>
                         <p><b>อินเวอร์เตอร์รวม:</b> ${getStr('inp-inv-model')} (${formatNum(getVal('inp-invKw'), 2)} kW)</p>`;
                     document.getElementById('modal-preview').classList.remove('hidden');
-                    document.getElementById('file-upload').value = ""; 
+                    if (origin === 'file') document.getElementById('file-upload').value = ""; 
 
                     setTimeout(() => { 
                         try { 
@@ -2725,14 +2732,58 @@
                     }, 500);
 
                 } catch(err) {
-                    console.error("Error parsing JSON:", err);
-                    let errList = document.getElementById('error-list');
-                    if(errList) errList.innerHTML = `<li>ไฟล์ที่อัปโหลดไม่รองรับหรือไม่ใช่รูปแบบ JSON</li><li class="text-xs text-gray-500 mt-1">รายละเอียดข้อผิดพลาด: ${err.message}</li>`;
-                    let errModal = document.getElementById('modal-error'); if(errModal) errModal.classList.remove('hidden');
+                    /* สายท่อเป็นทางเลือก ถ้าข้อมูลที่ไหลมาเสีย ไม่ควรเด้งกล่องขวางงานที่กำลังทำ
+                       แต่ต้องไม่เงียบ จึงเขียน console ไว้ให้ตรวจได้ */
+                    if (origin === 'file') ascShowImportError(err);
+                    else console.warn('ข้อมูลที่ไหลมาตามท่อใช้ไม่ได้ ข้ามไปก่อน', err);
+                    return false;
                 }
+                return true;
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                let jsonData = null;
+                try { jsonData = JSON.parse(e.target.result); }
+                catch (err) { ascShowImportError(err); return; }
+                ascApplyImportedJson(jsonData, 'file');
             };
             reader.readAsText(file);
         }
+
+        /* ── ท่อรับไฟล์ design (DB2) จากเมนู 2 ────────────────────────────────
+           เชลล์ broadcast SYNC_PROJECT_STATE พร้อม payload.db2 อยู่แล้ว หน้านี้
+           เดิมอ่านแค่ข้อมูลบริษัท จึงต้องส่งไฟล์ต่อกันด้วยมือทุกครั้ง
+
+           ท่อนี้ "ไม่บังคับ" — ถ้าไม่มีข้อมูลไหลมา การ Import design/report เองยัง
+           ทำงานเหมือนเดิมทุกขั้นตอน และจะไม่ทับค่าที่ผู้ใช้นำเข้าเองไว้แล้ว */
+        let ascLastDb2Sig = '';
+        window.addEventListener('message', function (ev) {
+            const d = ev.data;
+            if (!d || d.type !== 'SYNC_PROJECT_STATE') return;
+            const db2 = d.payload && d.payload.db2;
+            if (!db2 || !db2.base_layout_db1) return;
+
+            let sig = '';
+            try {
+                const st1 = db2.base_layout_db1.step1_initialization || {};
+                sig = (st1.projectName || '') + '|' + JSON.stringify(db2).length;
+            } catch (e) { return; }
+
+            if (sig === ascLastDb2Sig) return;                        // ก้อนเดิม ไม่ต้องทำซ้ำ
+
+            /* ห้ามทับงานที่ผู้ใช้นำเข้าเองไว้แล้ว
+               หมายเหตุ: AppState.equipData ถูกตั้งเป็นอ็อบเจกต์เปล่าไว้ตั้งแต่หน้าโหลด
+               จึงเช็คว่า "มีข้อมูลจริง" จากจำนวนแผง ไม่ใช่จากการมีอยู่ของอ็อบเจกต์ */
+            const มีข้อมูลอยู่ก่อน = !!(AppState.equipData && AppState.equipData.counts
+                                        && AppState.equipData.counts.totalPanels > 0);
+            if (มีข้อมูลอยู่ก่อน && !ascLastDb2Sig) return;
+
+            ascLastDb2Sig = sig;
+            ascApplyImportedJson(db2, 'sync');
+        });
 
         function autoSetOM() {
             let batQty = getVal('inp-bat-qty');
@@ -5307,7 +5358,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             let ctx;
             try { ctx = ShadingEngine.getSiteContext(); } catch (e) { ctx = null; }
             if (!ctx || !ctx.groups || ctx.groups.length === 0) {
-                if (msgBox) { msgBox.style.display = 'block'; msgBox.innerHTML = '⚠️ ยังไม่มีข้อมูลระนาบการวางแผง กรุณากรอกมุมเอียง/มุมทิศ หรือ Import ไฟล์ DB2 แล้วกด Run Simulation'; }
+                if (msgBox) { msgBox.style.display = 'block'; msgBox.innerHTML = '⚠️ ยังไม่มีข้อมูลระนาบการวางแผง กรุณากรอกมุมเอียง/มุมทิศ หรือ Import ไฟล์ design แล้วกด Run Simulation'; }
                 if (canvas) canvas.style.display = 'none';
                 return;
             }
@@ -7417,7 +7468,7 @@ function renderCADLayout() {
     let polygons = AppState.sysPolygons || [];
     
     if (polygons.length === 0) {
-        dashWrapper.innerHTML = '<div class="p-4 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded text-sm font-bold">⚠️ ไม่พบข้อมูลผังหลังคา (sysPolygons) จากไฟล์ DB2 ที่นำเข้า กรุณาตรวจสอบไฟล์ DB2 ว่ามีการวาดหลังคาไว้หรือไม่</div>';
+        dashWrapper.innerHTML = '<div class="p-4 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded text-sm font-bold">⚠️ ไม่พบข้อมูลผังหลังคา (sysPolygons) จากไฟล์ design ที่นำเข้า กรุณาตรวจสอบไฟล์ design ว่ามีการวาดหลังคาไว้หรือไม่</div>';
         return;
     }
 
@@ -7445,7 +7496,7 @@ function renderCADLayout() {
         let modsRaw = roof.customLayout || roof.modules || roof.panels || roof.Modules || [];
 
         if (ptsRaw.length === 0 && modsRaw.length === 0) {
-             dashWrapper.innerHTML += `<div class="p-4 bg-red-50 text-red-700 border border-red-200 rounded mb-4 text-sm font-bold">⚠️ ระนาบหลังคาที่ ${index + 1}: พบข้อมูลหลังคา แต่ไม่มีพิกัดขอบหลังคา (localBoundary) หรือ แผงโซลาร์เซลล์ (customLayout) ในไฟล์ DB2</div>`;
+             dashWrapper.innerHTML += `<div class="p-4 bg-red-50 text-red-700 border border-red-200 rounded mb-4 text-sm font-bold">⚠️ ระนาบหลังคาที่ ${index + 1}: พบข้อมูลหลังคา แต่ไม่มีพิกัดขอบหลังคา (localBoundary) หรือ แผงโซลาร์เซลล์ (customLayout) ในไฟล์ design</div>`;
              return;
         }
 
@@ -7874,7 +7925,7 @@ function runAdvisor() {
     const sum = document.getElementById('adv-summary');
     if (!box) return;
     if (typeof AppState === 'undefined' || !(AppState.sysPolygons || []).length) {
-        box.innerHTML = '<div class="text-gray-500 text-sm p-3 bg-gray-50 rounded border">ยังไม่มีข้อมูลผัง กรุณานำเข้าไฟล์ DB2 แล้วกดประมวลผลก่อน</div>';
+        box.innerHTML = '<div class="text-gray-500 text-sm p-3 bg-gray-50 rounded border">ยังไม่มีข้อมูลผัง กรุณานำเข้าไฟล์ design แล้วกดประมวลผลก่อน</div>';
         if (sum) sum.innerText = '';
         return;
     }

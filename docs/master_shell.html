@@ -131,9 +131,9 @@
             </button>
             <div class="flex items-center text-slate-300"><i class="fa-solid fa-chevron-right text-[10px]"></i></div>
 
-            <button onclick="switchTab('model3d')" id="tab-model3d" class="nav-step flex-1 sm:flex-none flex items-center px-4 h-full text-slate-500 hover:bg-slate-50 min-w-max">
+            <button onclick="switchTab('report')" id="tab-report" class="nav-step flex-1 sm:flex-none flex items-center px-4 h-full text-slate-500 hover:bg-slate-50 min-w-max">
                 <div class="step-num w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs font-bold mr-2">3</div>
-                <span class="text-sm">3D Model</span>
+                <span class="text-sm">Proposal &amp; Report</span>
             </button>
             <div class="flex items-center text-slate-300"><i class="fa-solid fa-chevron-right text-[10px]"></i></div>
 
@@ -143,9 +143,9 @@
             </button>
             <div class="flex items-center text-slate-300"><i class="fa-solid fa-chevron-right text-[10px]"></i></div>
 
-            <button onclick="switchTab('report')" id="tab-report" class="nav-step flex-1 sm:flex-none flex items-center px-4 h-full text-slate-500 hover:bg-slate-50 min-w-max">
+            <button onclick="switchTab('model3d')" id="tab-model3d" class="nav-step flex-1 sm:flex-none flex items-center px-4 h-full text-slate-500 hover:bg-slate-50 min-w-max">
                 <div class="step-num w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs font-bold mr-2">5</div>
-                <span class="text-sm">Proposal &amp; Report</span>
+                <span class="text-sm">3D Model</span>
             </button>
             <div class="flex items-center text-slate-300"><i class="fa-solid fa-chevron-right text-[10px]"></i></div>
 
@@ -652,7 +652,8 @@
         document.addEventListener('DOMContentLoaded', initApp);
 
         // ส่ง Session ให้หน้าลูกทันทีที่แต่ละ iframe โหลดเสร็จ
-        ['frame-manual','frame-pea','frame-asc','frame-model3d','frame-device','frame-report','frame-summary'].forEach(id => {
+        // frame-brief เคยตกหล่นจากลิสต์นี้ ทำให้ใบสั่งงานช่างไม่ได้รับข้อมูลตอนโหลด
+        ['frame-manual','frame-pea','frame-asc','frame-model3d','frame-device','frame-report','frame-summary','frame-brief'].forEach(id => {
             const f = document.getElementById(id);
             if (!f) return;
             f.addEventListener('load', function () {
