@@ -1152,7 +1152,7 @@
 						<!-- 🌟 เปลี่ยนปุ่ม Toggle เป็นสวิตช์ (เฟส 4) -->
 						<label class="switch-row" style="margin-bottom: 12px;">
 							<span class="sw-label"><i class="fa-solid fa-solar-panel"></i> แสดงแผงจำลองบนแผนที่ (Panels)</span>
-							<span class="switch"><input type="checkbox" id="btnTogglePanels" checked><span class="sw-slider"></span></span>
+							<span class="switch"><input type="checkbox" id="btnTogglePanels"><span class="sw-slider"></span></span>
 						</label>
                         
                         <!-- 🌟 ย้ายการเดินสายจัดสตริง มาไว้ก่อน Roof to MDB 🌟 -->
@@ -1444,6 +1444,45 @@
                         <textarea id="horizonProfile" rows="4" style="resize: vertical; font-family: monospace; font-size: 0.85em; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;" placeholder="0,0&#10;90,0&#10;180,0&#10;-90,0"></textarea>
                         <div style="font-size: 0.7em; color: #64748b; margin-top: 4px;">* พิมพ์แก้ไขข้อมูล (0 เหนือ|90 ออก|-90 ตก|±180 ใต้) : "0, 5",ทิศเหนือ มีสิ่งกีดขวางสูงจากแนวระดับ 5°</div>
                     </div>
+                    <!-- กล่อง Voltage Drop และปุ่มคำนวณตารางวัสดุอุปกรณ์ ย้ายเข้ามาอยู่ใน
+                         ขั้นตอนที่ 3 (วิศวกรรม) ขั้นตอนเดียว
+
+                         เดิมทั้งสองอย่างวางไว้นอก .accordion จึงไม่ถูก goToStep() ซ่อน
+                         และโผล่ค้างอยู่ทุกแท็บย่อย (ข้อมูล/ออกแบบ/วิศวกรรม/บันทึก)
+
+                         ที่ถูกต้องคือขั้นตอนที่ 3 เพราะระยะสายไฟที่ทำให้เกิดแรงดันตก
+                         กรอกอยู่ในขั้นตอนนี้ และปุ่มก็อ่านค่าจากช่องในขั้นตอนนี้ไปคำนวณ -->
+                    <!-- 🌟 เริ่ม: กล่องสรุปผลกระทบ Voltage Drop ใต้ขั้นตอนที่ 7 🌟 -->
+                    <div id="vDropImpactBox" style="display: none; background: #ffffff; border: 2px solid #ef4444; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; margin-bottom: 10px; color: #dc2626; font-size: 1.05em; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-triangle-exclamation"></i> ผลกระทบจากระยะสายไฟ (Voltage Drop)
+                        </h3>
+                        <div style="font-size: 0.9em; color: #334155; line-height: 1.6;">
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px; margin-bottom: 4px;">
+                                <span>กำลังการผลิตสูงสุด (Pmax):</span>
+                                <span id="vdrop-original-kwp" style="font-weight: bold; color: #0f172a;">0.00 kWp</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px; margin-bottom: 4px;">
+                                <span>ความสูญเสียในสายไฟ (Wiring Loss):</span>
+                                <span id="vdrop-loss-pct" style="font-weight: bold; color: #dc2626;">0.00%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; background: #fef2f2; padding: 6px; border-radius: 4px; margin-top: 8px;" id="vdrop-effective-bg">
+                                <span style="font-weight: bold; color: #991b1b;" id="vdrop-effective-label">กำลังการผลิตสุทธิ (Effective):</span>
+                                <span id="vdrop-effective-kwp" style="font-weight: bold; color: #ef4444; font-size: 1.1em;">0.00 kWp</span>
+                            </div>
+                        </div>
+                        <div id="vdrop-recommendation" style="font-size: 0.85em; font-weight: bold; margin-top: 10px; text-align: center; padding-top: 8px; border-top: 1px solid #e2e8f0;"></div>
+                    </div>
+                    <!-- 🌟 จบ: กล่องสรุปผลกระทบ Voltage Drop 🌟 -->
+
+                    <!-- ปุ่มคำนวณตารางวัสดุอุปกรณ์ ย้ายมาไว้ท้ายส่วน Voltage Drop ตามคำขอผู้ใช้
+                         วางนอกกล่อง #vDropImpactBox โดยตั้งใจ เพราะกล่องนั้นถูกซ่อน/แสดงตามผลคำนวณ
+                         ถ้าเอาปุ่มไปไว้ข้างใน ปุ่มจะหายไปด้วยตอนกล่องถูกซ่อน -->
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn-save" id="btnCalculateBOM" style="background: linear-gradient(135deg, #6366f1, #4f46e5); box-shadow: 0 4px 6px rgba(79,70,229,0.25);">
+                            <i class="fa-solid fa-calculator"></i> คำนวณตารางวัสดุอุปกรณ์
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -1476,37 +1515,6 @@
                 </div>
             </div>
             
-            <!-- 🌟 เริ่ม: กล่องสรุปผลกระทบ Voltage Drop ใต้ขั้นตอนที่ 7 🌟 -->
-            <div id="vDropImpactBox" style="display: none; background: #ffffff; border: 2px solid #ef4444; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <h3 style="margin-top: 0; margin-bottom: 10px; color: #dc2626; font-size: 1.05em; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-triangle-exclamation"></i> ผลกระทบจากระยะสายไฟ (Voltage Drop)
-                </h3>
-                <div style="font-size: 0.9em; color: #334155; line-height: 1.6;">
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px; margin-bottom: 4px;">
-                        <span>กำลังการผลิตสูงสุด (Pmax):</span>
-                        <span id="vdrop-original-kwp" style="font-weight: bold; color: #0f172a;">0.00 kWp</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px; margin-bottom: 4px;">
-                        <span>ความสูญเสียในสายไฟ (Wiring Loss):</span>
-                        <span id="vdrop-loss-pct" style="font-weight: bold; color: #dc2626;">0.00%</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; background: #fef2f2; padding: 6px; border-radius: 4px; margin-top: 8px;" id="vdrop-effective-bg">
-                        <span style="font-weight: bold; color: #991b1b;" id="vdrop-effective-label">กำลังการผลิตสุทธิ (Effective):</span>
-                        <span id="vdrop-effective-kwp" style="font-weight: bold; color: #ef4444; font-size: 1.1em;">0.00 kWp</span>
-                    </div>
-                </div>
-                <div id="vdrop-recommendation" style="font-size: 0.85em; font-weight: bold; margin-top: 10px; text-align: center; padding-top: 8px; border-top: 1px solid #e2e8f0;"></div>
-            </div>
-            <!-- 🌟 จบ: กล่องสรุปผลกระทบ Voltage Drop 🌟 -->
-
-            <!-- ปุ่มคำนวณตารางวัสดุอุปกรณ์ ย้ายมาไว้ท้ายส่วน Voltage Drop ตามคำขอผู้ใช้
-                 วางนอกกล่อง #vDropImpactBox โดยตั้งใจ เพราะกล่องนั้นถูกซ่อน/แสดงตามผลคำนวณ
-                 ถ้าเอาปุ่มไปไว้ข้างใน ปุ่มจะหายไปด้วยตอนกล่องถูกซ่อน -->
-            <div style="margin-bottom: 20px;">
-                <button class="btn-save" id="btnCalculateBOM" style="background: linear-gradient(135deg, #6366f1, #4f46e5); box-shadow: 0 4px 6px rgba(79,70,229,0.25);">
-                    <i class="fa-solid fa-calculator"></i> คำนวณตารางวัสดุอุปกรณ์
-                </button>
-            </div>
 
         </div>
     </div>

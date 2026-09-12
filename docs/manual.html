@@ -853,6 +853,10 @@ Is_Bifacial = False</div>
                     <p class="text-sm text-slate-600 leading-relaxed mt-2">
                         มือที่ถนัดจึงไม่บังผังตอนลากขอบหลังคา และแถบสรุปจำนวนแผงด้านล่างก็ไม่ถูกทับ
                     </p>
+                    <p class="text-sm text-slate-600 leading-relaxed mt-2">
+                        สวิตช์ <b>แสดงแผงจำลองบนแผนที่ (Panels)</b> ตั้งต้นเป็น <b>ปิด</b>
+                        เพื่อให้เห็นขอบหลังคาและเส้นบอกระยะชัด ๆ ตอนจัดผัง เปิดเมื่อต้องการดูการวางแผงจริง
+                    </p>
                 </div>
 
                 <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-6">
@@ -1221,8 +1225,10 @@ Is_Bifacial = False</div>
 
                 <h4 class="font-bold text-slate-800 mb-3">ถอดตารางวัสดุอุปกรณ์</h4>
                 <p class="text-sm text-slate-600 leading-relaxed mb-3">
-                    ปุ่ม <span class="btn-ref">คำนวณตารางวัสดุอุปกรณ์</span> ย้ายไปอยู่
-                    <b>ท้ายหัวข้อ &ldquo;ผลกระทบจากระยะสายไฟ (Voltage Drop)&rdquo;</b> ท้ายแถบซ้าย
+                    ปุ่ม <span class="btn-ref">คำนวณตารางวัสดุอุปกรณ์</span> อยู่
+                    <b>ท้ายหัวข้อ &ldquo;ผลกระทบจากระยะสายไฟ (Voltage Drop)&rdquo;</b>
+                    ใน <b>ขั้นตอนที่ 3 · วิศวกรรม</b> ที่เดียว (เดิมโผล่ค้างอยู่ทุกแท็บย่อย)
+                    เพราะระยะสายไฟที่ทำให้เกิดแรงดันตกกรอกอยู่ในขั้นตอนนี้ และปุ่มก็อ่านค่าจากช่องในขั้นตอนนี้ไปคำนวณ
                     กดแล้วระบบจะถอดของทั้งระบบเป็นรายการ ทั้งแผง อินเวอร์เตอร์ สาย เบรกเกอร์ ราง
                     และอุปกรณ์ยึด พร้อมจำนวนสำหรับทำใบเสนอราคา และบันทึกพารามิเตอร์วิศวกรรมให้อัตโนมัติ
                 </p>
@@ -1481,6 +1487,8 @@ Is_Bifacial = False</div>
                         <div class="pt-1"><p class="text-sm text-slate-600 leading-relaxed">
                             กด <span class="btn-ref">Export PDF</span> เพื่อออกรายงานฉบับสมบูรณ์
                             และกด <span class="btn-ref">Export Report</span> เพื่อเก็บผลจำลองไว้เปิดซ้ำภายหลัง
+                            <br>ส่วนเอกสารข้อเสนอลูกค้า ถ้าต้องการแก้ถ้อยคำหรือจัดหน้าเอง
+                            กด <span class="btn-ref">Export Docs (Word)</span> ในเมนูข้อเสนอ แล้วแก้ต่อในโปรแกรมเอกสารได้เลย
                         </p></div>
                     </li>
                 </ol>

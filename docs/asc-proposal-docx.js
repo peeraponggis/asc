@@ -279,7 +279,7 @@
             return;
         }
         const d = P.collect();
-        if (!d.kwp) { alert('ยังไม่มีข้อมูล กรุณานำเข้าไฟล์ DB2/DB3 และกดประมวลผลก่อน'); return; }
+        if (!d.kwp) { alert('ยังไม่มีข้อมูล กรุณานำเข้าไฟล์ design หรือ report แล้วกดประมวลผลก่อน'); return; }
 
         const btn = document.getElementById('pp-docx-btn');
         const old = btn ? btn.innerHTML : '';
