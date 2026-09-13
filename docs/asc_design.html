@@ -8343,6 +8343,16 @@ function ascFileStamp(projectName, kind) {
                                              stroke: layer.options.stroke, weight: layer.options.weight };
                     layer.setStyle({ opacity: 0, fillOpacity: 0, stroke: false, weight: 0 });
                 }
+                /* สิ่งกีดขวาง (พื้นที่หวงห้าม · ต้นไม้) เป็นข้อมูลที่ใช้ตอนคำนวณเงาและเว้นระยะ
+                   ไม่ใช่ของที่ต้องโชว์ในภาพผังที่ส่งลูกค้า กรอบสีแดงและวงต้นไม้จะบังแผง
+                   และทำให้ผังดูรก จึงซ่อนตอนถ่าย — ยกเว้น "ทางเดิน" ซึ่งเป็นส่วนของแบบติดตั้ง
+                   จริงที่ช่างต้องเห็นว่าอยู่ตรงไหน จึงคงไว้ตามเดิม
+                   ใช้ตัวแปรเก็บค่าเดิมชุดเดียวกัน ตัวคืนค่าหลังถ่ายจะคืนให้เองโดยไม่ต้องเพิ่มเงื่อนไข */
+                if (layer.drawMode === 'keepout' || layer.drawMode === 'tree') {
+                    layer._origRoofStyle = { opacity: layer.options.opacity, fillOpacity: layer.options.fillOpacity,
+                                             stroke: layer.options.stroke, weight: layer.options.weight };
+                    layer.setStyle({ opacity: 0, fillOpacity: 0, stroke: false, weight: 0 });
+                }
             });
 
             /* ลูกศรทิศลาดหลังคาก็เป็นเส้นช่วยเช่นกัน ซ่อนทั้งชั้นแล้วค่อยเปิดคืนหลังถ่ายเสร็จ */
