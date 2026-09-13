@@ -75,11 +75,12 @@
     }
 
     /* ── วาดลูกศรทิศลาดของหลังคาทุกผืน ─────────────────────────────────── */
-    function redraw() {
+    function redraw(opts) {
         if (typeof map === 'undefined' || !map) return;
         if (!dirLayer) dirLayer = L.layerGroup().addTo(map);
         dirLayer.clearLayers();
-        if (!document.getElementById('chkRoofDir') || !document.getElementById('chkRoofDir').checked) return;
+        const labelsOnly = opts && opts.labelsOnly;
+        if (!labelsOnly && (!document.getElementById('chkRoofDir') || !document.getElementById('chkRoofDir').checked)) return;
 
         arrowTargets().forEach(t => {
             const layer = t.layer;
@@ -87,29 +88,31 @@
             if (azi === null || !isFinite(azi)) return;
             const c = centroidLL(layer);
 
-            /* ความยาวลูกศรคิดจากขนาดหลังคา จะได้พอดีตัวทั้งอาคารเล็กและใหญ่ */
             const b = layer.getBounds();
             const diag = turf.distance([b.getWest(), b.getSouth()], [b.getEast(), b.getNorth()], { units: 'meters' });
             const len = Math.max(4, Math.min(diag * 0.28, 22));
 
-            const tip = turf.destination([c.lng, c.lat], len / 2, azi, { units: 'meters' }).geometry.coordinates;
             const tail = turf.destination([c.lng, c.lat], len / 2, (azi + 180) % 360, { units: 'meters' }).geometry.coordinates;
-            const head1 = turf.destination(tip, len * 0.28, (azi + 145) % 360, { units: 'meters' }).geometry.coordinates;
-            const head2 = turf.destination(tip, len * 0.28, (azi + 215) % 360, { units: 'meters' }).geometry.coordinates;
 
-            const style = { color: '#1d4ed8', weight: 3, opacity: 0.95 };
-            L.polyline([[tail[1], tail[0]], [tip[1], tip[0]]], style).addTo(dirLayer);
-            L.polyline([[head1[1], head1[0]], [tip[1], tip[0]], [head2[1], head2[0]]], style).addTo(dirLayer);
+            if (!labelsOnly) {
+                const tip = turf.destination([c.lng, c.lat], len / 2, azi, { units: 'meters' }).geometry.coordinates;
+                const head1 = turf.destination(tip, len * 0.28, (azi + 145) % 360, { units: 'meters' }).geometry.coordinates;
+                const head2 = turf.destination(tip, len * 0.28, (azi + 215) % 360, { units: 'meters' }).geometry.coordinates;
 
-            // เลขกำกับหลังคา วางที่หางลูกศร ซึ่งเป็นด้านสัน
+                const style = { color: '#1d4ed8', weight: 3, opacity: 0.95 };
+                L.polyline([[tail[1], tail[0]], [tip[1], tip[0]]], style).addTo(dirLayer);
+                L.polyline([[head1[1], head1[0]], [tip[1], tip[0]], [head2[1], head2[0]]], style).addTo(dirLayer);
+            }
+
             L.marker([tail[1], tail[0]], {
                 interactive: false,
                 icon: L.divIcon({
                     className: '',
                     html: '<div style="background:#1d4ed8;color:#fff;font-size:11px;font-weight:700;' +
-                          'padding:1px 6px;border-radius:9px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.4)">' +
+                          'padding:1px 6px;border-radius:9px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.4);' +
+                          'transform:translate(-50%,-50%)">' +
                           t.label + ' · ' + Math.round(azi) + '°</div>',
-                    iconSize: null, iconAnchor: [14, 8]
+                    iconSize: [0, 0], iconAnchor: [0, 0]
                 })
             }).addTo(dirLayer);
         });
