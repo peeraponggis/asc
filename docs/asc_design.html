@@ -8360,15 +8360,11 @@ function ascFileStamp(projectName, kind) {
                 }
             });
 
-            /* ลูกศรทิศลาด: ซ่อนลูกศร แต่คงป้ายโซนไว้ในภาพ
-               วาดใหม่โหมด labelsOnly เพื่อเอาแต่ป้ายชื่อ (ไม่มีลูกศร) */
+            /* ซ่อนลูกศรทิศลาดและป้ายโซนทั้งหมดตอนถ่ายภาพ */
             const dirWasOn = !!(document.getElementById('chkRoofDir') && document.getElementById('chkRoofDir').checked);
-            if (window.AscRoofDir) {
-                if (dirWasOn) {
-                    document.getElementById('chkRoofDir').checked = false;
-                    AscRoofDir.redraw();
-                }
-                AscRoofDir.redraw({ labelsOnly: true });
+            if (dirWasOn && window.AscRoofDir) {
+                document.getElementById('chkRoofDir').checked = false;
+                AscRoofDir.redraw();
             }
 
             // 2. นำเส้นขอบสีเทาเข้มมาใช้กับแผง (Grid Style)
@@ -8401,25 +8397,15 @@ function ascFileStamp(projectName, kind) {
 
             // 💡 ------------------------------------------- 💡
 
-            // สร้างลายน้ำ (Watermark)
             const watermark = document.createElement('div');
             watermark.id = 'map-watermark';
             const pName = document.getElementById('projectTextInput').value.trim() || 'Image:';
             watermark.innerText = pName;
-            watermark.style.position = 'absolute';
-            watermark.style.bottom = '20px';
-            watermark.style.left = '50%';
-            watermark.style.transform = 'translateX(-50%)';
-            watermark.style.textAlign = 'center';
-            watermark.style.backgroundColor = '#ffffff';
-            watermark.style.color = '#8B0000'; 
-            watermark.style.padding = '8px 12px';
-            watermark.style.border = '2px solid #cbd5e1';
-            watermark.style.borderRadius = '6px';
-            watermark.style.fontWeight = 'bold';
-            watermark.style.fontSize = '16px';
-            watermark.style.zIndex = '9999';
-            watermark.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+            watermark.style.cssText = 'position:absolute;bottom:20px;left:50%;transform:translateX(-50%);' +
+                'text-align:center;background:#ffffff;color:#8B0000;padding:8px 16px;' +
+                'border:2px solid #cbd5e1;border-radius:6px;font-weight:bold;font-size:16px;' +
+                'z-index:9999;box-shadow:0 2px 4px rgba(0,0,0,0.2);' +
+                'width:fit-content;max-width:90%;white-space:nowrap;';
             document.getElementById('map-wrapper').appendChild(watermark);
 
             // 🌟 ซ่อนแถบสถานะก่อนถ่ายภาพ
@@ -8496,11 +8482,9 @@ function ascFileStamp(projectName, kind) {
                     }
                 });
 
-                if (window.AscRoofDir) {
-                    if (dirWasOn) {
-                        const c = document.getElementById('chkRoofDir');
-                        if (c) c.checked = true;
-                    }
+                if (dirWasOn && window.AscRoofDir) {
+                    const c = document.getElementById('chkRoofDir');
+                    if (c) c.checked = true;
                     AscRoofDir.redraw();
                 }
 
