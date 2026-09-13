@@ -1826,12 +1826,14 @@ const INDUSTRIAL_SOLAR_CONFIG = {
 
         function recalculateLabels() {
             labelItems.clearLayers();
+            const currentZoom = map.getZoom();
+            const showDimText = currentZoom >= 21.5;
             editableItems.eachLayer(layer => {
                 if(!layer.toGeoJSON) return;
                 // 🌟 เพิ่ม Precision เป็น 12 เพื่อให้ตัวเลขแม่นยำขึ้น
                 const geojson = layer.toGeoJSON(12);
                 if(geojson.geometry.type !== 'Polygon') return;
-                
+
                 const areaSqM = turf.area(geojson);
                 const coordsList = geojson.geometry.coordinates[0];
                 let maxEdgeM = 0;
@@ -1864,7 +1866,7 @@ const INDUSTRIAL_SOLAR_CONFIG = {
 
                     let labelAt = mid;
 
-                    if (dimOn && dist > 0.4) {
+                    if (dimOn && dist > 0.4 && showDimText) {
                         const brg = turf.bearing(pt1, pt2);
                         /* เลือกด้านที่ชี้ออกนอกรูป โดยดูว่าเยื้องไปทางไหนแล้วห่างจุดศูนย์กลางมากกว่า
                            ใช้ได้กับรูปนูนซึ่งเป็นทรงหลังคาเกือบทั้งหมด และไม่ต้องรู้ทิศทางการวนจุด */
@@ -1908,15 +1910,15 @@ const INDUSTRIAL_SOLAR_CONFIG = {
                         });
                     }
 
-                    // ป้ายระยะโปร่งแสง ไม่มีกรอบ วางกลางเส้นบอกระยะ (ถ้าไม่มีเส้นก็กลางขอบเหมือนเดิม)
-                    const transparentLabel = L.divIcon({
-                        className: 'edge-label',
-                        html: `<div style="background:transparent; color:#0369a1; padding:2px 4px; font-size:11px; font-weight:bold; text-shadow: 1px 1px 2px #fff, -1px -1px 2px #fff, 1px -1px 2px #fff, -1px 1px 2px #fff; pointer-events:none; white-space:nowrap; line-height:1;">${dist.toFixed(2)}m</div>`,
-                        iconSize: null,
-                        iconAnchor: [15, 8]
-                    });
-
-                    L.marker(ll(labelAt), {icon: transparentLabel, interactive:true}).addTo(labelItems);
+                    if (showDimText) {
+                        const transparentLabel = L.divIcon({
+                            className: 'edge-label',
+                            html: `<div style="background:transparent; color:#0369a1; padding:2px 4px; font-size:11px; font-weight:bold; text-shadow: 1px 1px 2px #fff, -1px -1px 2px #fff, 1px -1px 2px #fff, -1px 1px 2px #fff; pointer-events:none; white-space:nowrap; line-height:1;">${dist.toFixed(2)}m</div>`,
+                            iconSize: null,
+                            iconAnchor: [15, 8]
+                        });
+                        L.marker(ll(labelAt), {icon: transparentLabel, interactive:true}).addTo(labelItems);
+                    }
                 }
 
                 const estWidthM = maxEdgeM > 0 ? areaSqM / maxEdgeM : 0;
@@ -2485,10 +2487,11 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
             }
         };
         zoomLevelControl.addTo(map);
-        map.on('zoomend', function() { 
-            zoomLevelControl.update(); 
+        map.on('zoomend', function() {
+            zoomLevelControl.update();
             // Trigger UI update to fix scaling on zoom
             renderPanels(parseInt(document.getElementById('finalPanelCount').value) || 0);
+            if (typeof recalculateLabels === 'function') recalculateLabels();
         });
 
         editableItems.addTo(map); 
@@ -8357,11 +8360,15 @@ function ascFileStamp(projectName, kind) {
                 }
             });
 
-            /* ลูกศรทิศลาดหลังคาก็เป็นเส้นช่วยเช่นกัน ซ่อนทั้งชั้นแล้วค่อยเปิดคืนหลังถ่ายเสร็จ */
+            /* ลูกศรทิศลาด: ซ่อนลูกศร แต่คงป้ายโซนไว้ในภาพ
+               วาดใหม่โหมด labelsOnly เพื่อเอาแต่ป้ายชื่อ (ไม่มีลูกศร) */
             const dirWasOn = !!(document.getElementById('chkRoofDir') && document.getElementById('chkRoofDir').checked);
-            if (dirWasOn && window.AscRoofDir) {
-                document.getElementById('chkRoofDir').checked = false;
-                AscRoofDir.redraw();
+            if (window.AscRoofDir) {
+                if (dirWasOn) {
+                    document.getElementById('chkRoofDir').checked = false;
+                    AscRoofDir.redraw();
+                }
+                AscRoofDir.redraw({ labelsOnly: true });
             }
 
             // 2. นำเส้นขอบสีเทาเข้มมาใช้กับแผง (Grid Style)
@@ -8489,10 +8496,11 @@ function ascFileStamp(projectName, kind) {
                     }
                 });
 
-                // เปิดลูกศรทิศลาดกลับมา ถ้าเดิมเปิดอยู่
-                if (dirWasOn && window.AscRoofDir) {
-                    const c = document.getElementById('chkRoofDir');
-                    if (c) c.checked = true;
+                if (window.AscRoofDir) {
+                    if (dirWasOn) {
+                        const c = document.getElementById('chkRoofDir');
+                        if (c) c.checked = true;
+                    }
                     AscRoofDir.redraw();
                 }
 
