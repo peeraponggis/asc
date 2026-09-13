@@ -876,8 +876,8 @@
                             <label><input type="checkbox" id="chk-sec-bom" class="form-checkbox text-blue-600" onchange="toggleSections()"> BOM & Equipment</label>
                             <label><input type="checkbox" id="chk-sec-iv" class="form-checkbox text-blue-600" onchange="toggleSections()"> I-V Curve Analysis</label>
                             <label><input type="checkbox" id="chk-sec-diagram" class="form-checkbox text-blue-600" onchange="toggleSections()"> Wiring & SLD Diagram</label>
-                            <!-- 🌟 เพิ่ม Checkbox ควบคุม CAD Layout -->
-                            <label><input type="checkbox" id="chk-sec-cad" class="form-checkbox text-blue-600" onchange="toggleSections()"> CAD Layout Plan</label>
+                            <label><input type="checkbox" id="chk-sec-cad-overall" checked class="form-checkbox text-blue-600" onchange="toggleSections()"> Overall Layout Plan</label>
+                            <label><input type="checkbox" id="chk-sec-cad" class="form-checkbox text-blue-600" onchange="toggleSections()"> CAD Layout Plan (per roof)</label>
                             <label><input type="checkbox" id="chk-sec-exec" checked class="form-checkbox text-blue-600" onchange="toggleSections()"> Executive Summary</label>
 						</div>
                     </div>
@@ -1155,9 +1155,13 @@
                         <div id="diagram-sld" class="svg-container w-full bg-gray-50 border border-gray-200 rounded p-2 overflow-x-auto"></div>
                     </div>
                     
-                    <!-- 🌟 18. กล่องรองรับภาพ CAD Layout -->
+                    <div class="chart-container avoid-break" id="cad-overall-container" style="display: none;">
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">22. ASC Overall PV Module Layout Plan</h3>
+                        <div id="dynamic-cad-overall-wrapper" class="w-full flex flex-col items-center gap-6"></div>
+                    </div>
+
                     <div class="chart-container avoid-break" id="cad-container" style="display: none;">
-                        <h3 class="font-bold text-lg mb-4 text-blue-800">22. ASC PV Module Layout Plan </h3>
+                        <h3 class="font-bold text-lg mb-4 text-blue-800">23. ASC PV Module Layout Plan</h3>
                         <div id="dynamic-cad-wrapper" class="w-full flex flex-col items-center gap-6"></div>
                     </div>
 
@@ -1509,7 +1513,7 @@
             </div>
         </div>
 
-        <!-- 🌟 โซน PDF: รองรับ CAD Layout (จะสร้างหน้าใหม่กี่หน้าก็ได้ตามจำนวนหลังคา) -->
+        <div id="prt-dynamic-cad-overall-wrapper" class="w-full"></div>
         <div id="prt-dynamic-cad-wrapper" class="w-full"></div>
         
 
@@ -3748,7 +3752,8 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
             try { renderAgingTable(); } catch(e) { console.error("Aging Table Failed", e); }
             try { renderChartjsAging(); } catch(e) { console.error("Aging Chart Failed", e); } // 🌟 [เพิ่มใหม่] สั่งวาดกราฟ Combo
             try { renderBankabilitySummary(r); } catch(e) { console.error("Bankability Failed", e); }
-            try { renderCADLayout(); } catch(e) { console.error("CAD Layout Failed", e); } // 🌟 เพิ่มบรรทัดนี้เพื่อวาด CAD
+            try { renderOverallCADLayout(); } catch(e) { console.error("Overall CAD Layout Failed", e); }
+            try { renderCADLayout(); } catch(e) { console.error("CAD Layout Failed", e); }
 			
             // 🌟 1. Helper Function รูปแบบใหม่ (ดักจับสถานะ Checkbox จากทั้ง DOM และ DB3 Cache ป้องกันบั๊กโหลดไฟล์)
             /* กล่องคำอธิบายใต้กราฟและตาราง
@@ -7213,7 +7218,8 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 'chk-sec-bom': { dash: ['#bom-container'], pdf: ['#prt-sec-bom'] },
                 'chk-sec-iv': { dash: ['#iv-eit-container', '#iv-irr-container'], pdf: ['#prt-sec-iv-eit', '#prt-sec-iv-irr'] },
                 'chk-sec-diagram': { dash: ['#wiring-container', '#sld-container'], pdf: ['#prt-sec-diagram-wiring', '#prt-sec-diagram-sld'] },
-				'chk-sec-cad': { dash: ['#cad-container'], pdf: ['#prt-dynamic-cad-wrapper'] }, // 🌟 เพิ่มบรรทัดนี้
+				'chk-sec-cad-overall': { dash: ['#cad-overall-container'], pdf: ['#prt-dynamic-cad-overall-wrapper'] },
+				'chk-sec-cad': { dash: ['#cad-container'], pdf: ['#prt-dynamic-cad-wrapper'] },
                 'chk-sec-exec': { dash: ['#exec-summary-container'], pdf: ['#prt-sec-exec'] }
             };
 
@@ -7491,7 +7497,222 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
                 ${(window.AscACC && AppState.existing) ? AscACC.sldFragment(AppState.existing, { t: RT }) : ''}
             </svg>`;
         }
-	        // 🌟 2.5 ฟังก์ชันใหม่: Engine สร้างแบบจำลอง CAD Layout อัตโนมัติ (True North, Auto-Flip Dimension & Title Block)
+function renderOverallCADLayout() {
+    const dashW = document.getElementById('dynamic-cad-overall-wrapper');
+    const pdfW  = document.getElementById('prt-dynamic-cad-overall-wrapper');
+    if (!dashW || !pdfW) return;
+    dashW.innerHTML = '';
+    pdfW.innerHTML  = '';
+
+    const polygons = AppState.sysPolygons || [];
+    if (polygons.length === 0) return;
+
+    const useWorld = polygons.length > 0 && polygons.every(p => (p.worldBoundary || []).length >= 3);
+    if (!useWorld) {
+        dashW.innerHTML = '<div class="p-4 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded text-sm font-bold">⚠️ Overall Layout ต้องใช้ไฟล์ design ที่มี worldBoundary (ไฟล์รุ่นเก่าไม่มี กรุณาส่งออกไฟล์ design ใหม่)</div>';
+        return;
+    }
+
+    const eq = AppState.equipData || {};
+    const pv = eq.pv || {};
+    const inv1 = eq.inv1 || {};
+    const counts = eq.counts || {};
+    const res = AppState.results || {};
+    const ivP = AppState.ivParams || {};
+
+    const pvModel = pv.Model_Name || pv.model || '-';
+    const pvPower = pv.Pmax_Wp || pv.pmax || 0;
+    const totalModules = counts.totalPanels || 0;
+    const invQty = counts.inv1Qty || 1;
+    const invModel = inv1.Model_Name || inv1.model || '-';
+    const totalPower = res.pnom ? res.pnom.toFixed(2) : '0.00';
+    const mps = ivP.modules_per_string || 0;
+    const totalStrings = eq.numStrings || (mps > 0 ? Math.ceil(totalModules / mps) : 0);
+
+    const pw = pv.Width_mm  ? pv.Width_mm  / 1000 : 1.134;
+    const ph = pv.Length_mm ? pv.Length_mm / 1000 : 2.382;
+
+    const dedupe = (arr) => {
+        if (arr.length > 2) {
+            const a0 = arr[0], zN = arr[arr.length - 1];
+            if (Math.abs(a0.x - zN.x) < 1e-9 && Math.abs(a0.y - zN.y) < 1e-9) return arr.slice(0, -1);
+        }
+        return arr;
+    };
+
+    let totalPanelsAll = 0;
+    const roofData = [];
+
+    polygons.forEach((roof, index) => {
+        const wbRaw = (roof.worldBoundary || []).map(q => ({ x: q.x, y: q.y }));
+        if (wbRaw.length < 3) return;
+        const wb = dedupe(wbRaw);
+        const wbFlip = wb.map(q => ({ x: q.x, y: -q.y }));
+
+        const ptsLocal = dedupe(
+            (roof.localBoundary || roof.points || roof.vertices || []).map(p => ({
+                x: p.x !== undefined ? p.x : (p.X || 0),
+                y: p.y !== undefined ? p.y : (p.Y || 0)
+            }))
+        );
+
+        const modsRaw = roof.customLayout || roof.modules || roof.panels || [];
+        totalPanelsAll += modsRaw.length;
+
+        const a = (roof.azimuth || 0) * Math.PI / 180;
+        const ux = [Math.cos(a), -Math.sin(a)], uy = [-Math.sin(a), -Math.cos(a)];
+        const cL = ptsLocal.reduce((s, q) => [s[0] + q.x, s[1] + q.y], [0, 0]).map(v => v / ptsLocal.length);
+        const cW = wb.reduce((s, q) => [s[0] + q.x, s[1] + q.y], [0, 0]).map(v => v / wb.length);
+        const T = [cW[0] - (ux[0] * cL[0] + uy[0] * cL[1]), cW[1] - (ux[1] * cL[0] + uy[1] * cL[1])];
+        const toW = (lx, ly) => {
+            const wx = T[0] + ux[0] * lx + uy[0] * ly;
+            const wy = T[1] + ux[1] * lx + uy[1] * ly;
+            return { x: wx, y: -wy };
+        };
+
+        const modQuads = modsRaw.map(m => {
+            const isLS = m.isLandscape === true || m.isLandscape === 'true' || m.isLandscape === 'True';
+            const mw = isLS ? ph : pw, mh = isLS ? pw : ph;
+            const lx = m.x !== undefined ? m.x : (m.cx || 0);
+            const ly = m.y !== undefined ? m.y : (m.cy || 0);
+            return [toW(lx, ly), toW(lx + mw, ly), toW(lx + mw, ly + mh), toW(lx, ly + mh)];
+        });
+
+        roofData.push({ wbFlip, modsRaw, modQuads, index });
+    });
+
+    if (roofData.length === 0) return;
+
+    let gMinX = Infinity, gMinY = Infinity, gMaxX = -Infinity, gMaxY = -Infinity;
+    roofData.forEach(rd => {
+        rd.wbFlip.forEach(p => {
+            if (p.x < gMinX) gMinX = p.x; if (p.x > gMaxX) gMaxX = p.x;
+            if (p.y < gMinY) gMinY = p.y; if (p.y > gMaxY) gMaxY = p.y;
+        });
+        rd.modQuads.forEach(q => q.forEach(p => {
+            if (p.x < gMinX) gMinX = p.x; if (p.x > gMaxX) gMaxX = p.x;
+            if (p.y < gMinY) gMinY = p.y; if (p.y > gMaxY) gMaxY = p.y;
+        }));
+    });
+    if (!isFinite(gMinX)) return;
+
+    let w = gMaxX - gMinX, h = gMaxY - gMinY;
+    if (w <= 0 || h <= 0) { w = 10; h = 10; }
+    const scale = Math.max(w, h);
+    const pad = scale * 0.12;
+    const viewBoxStr = `${gMinX - pad} ${gMinY - pad} ${w + pad*2} ${h + pad*2}`;
+    const SW  = scale * 0.005;
+    const FD  = scale * 0.018;
+    const FS  = scale * 0.007;
+    const FL  = scale * 0.022;
+    const MSW = scale * 0.002;
+    const OFF = scale * 0.03;
+
+    let svgParts = '';
+    roofData.forEach(rd => {
+        svgParts += `<polygon points="${rd.wbFlip.map(p => p.x+','+p.y).join(' ')}" fill="#ffedd5" fill-opacity="0.5" stroke="#ea580c" stroke-width="${SW}" />`;
+
+        const cx = rd.wbFlip.reduce((s, p) => s + p.x, 0) / rd.wbFlip.length;
+        const cy = rd.wbFlip.reduce((s, p) => s + p.y, 0) / rd.wbFlip.length;
+        for (let i = 0; i < rd.wbFlip.length; i++) {
+            const p1 = rd.wbFlip[i], p2 = rd.wbFlip[(i + 1) % rd.wbFlip.length];
+            const dist = Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2);
+            if (dist > 0.5) {
+                const midX = (p1.x + p2.x) / 2, midY = (p1.y + p2.y) / 2;
+                let angleDeg = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+                if (angleDeg > 90 || angleDeg < -90) angleDeg += 180;
+                const outX = midX - cx, outY = midY - cy;
+                const len = Math.sqrt(outX * outX + outY * outY);
+                const oX = len > 0 ? (outX / len) * OFF : 0;
+                const oY = len > 0 ? (outY / len) * OFF : 0;
+                svgParts += `<text x="${midX + oX}" y="${midY + oY}" font-size="${FD}" font-family="Arial" font-weight="bold" fill="#0284c7" text-anchor="middle" dominant-baseline="central" transform="rotate(${angleDeg}, ${midX + oX}, ${midY + oY})" paint-order="stroke" stroke="#ffffff" stroke-width="${FS}" stroke-linecap="round" stroke-linejoin="round">${dist.toFixed(2)} m</text>`;
+            }
+        }
+
+        let mMinX = Infinity, mMinY = Infinity, mMaxX = -Infinity, mMaxY = -Infinity;
+        rd.modQuads.forEach(q => {
+            svgParts += `<polygon points="${q.map(p => p.x+','+p.y).join(' ')}" fill="#111111" stroke="#94a3b8" stroke-width="${MSW}" />`;
+            q.forEach(p => {
+                if (p.x < mMinX) mMinX = p.x; if (p.x > mMaxX) mMaxX = p.x;
+                if (p.y < mMinY) mMinY = p.y; if (p.y > mMaxY) mMaxY = p.y;
+            });
+        });
+
+        if (rd.modsRaw.length > 0) {
+            svgParts += `<text x="${(mMinX+mMaxX)/2}" y="${mMaxY}" dy="${FL}" font-size="${FL}" font-family="Arial" font-weight="bold" fill="#b45309" text-anchor="middle">${RT('ผืนที่','Roof ')}${rd.index+1} (${rd.modsRaw.length})</text>`;
+        }
+    });
+
+    const svgHtml = `<svg viewBox="${viewBoxStr}" style="width:100%;height:100%;max-width:100%;max-height:100%;background:transparent;display:block;margin:0 auto;" shape-rendering="geometricPrecision">${svgParts}</svg>`;
+
+    const bom = AppState.bomData || {};
+    const bSize = bom.calculated_sizing || {};
+    const bMount = bom.mounting_structure || {};
+    const dcCable = ascSpec(bSize.pv_cable_sqmm, ' sq.mm');
+    const acCable = ascSpec(bSize.ac_cable_sqmm, ' sq.mm');
+    const conduit = ascSpec(bSize.conduit_or_wireway);
+    const walkwaySpec = bMount.walkway_sqm ? 'Walkway FRP/Aluminum' : 'WALKWAY 400 mm.';
+
+    const roofSummary = polygons.map((r, i) => {
+        const mods = (r.customLayout || r.modules || r.panels || []).length;
+        const az = r.azimuth !== undefined ? r.azimuth + '°' : '-';
+        return `${RT('ผืนที่','Roof ')}${i+1}: ${mods}${RT(' แผง',' mod')} / ${az}`;
+    }).join(' · ');
+
+    const titleBlockHtml = `
+        <div style="border:2px solid #000;width:100%;height:100%;display:flex;flex-direction:column;background:#fff;box-sizing:border-box;font-family:'Arial','Kanit',sans-serif;">
+            <div style="flex:1;position:relative;overflow:hidden;display:flex;justify-content:center;align-items:center;background:#fff;padding:20px;">
+                ${svgHtml}
+                <div style="position:absolute;top:15px;right:15px;width:70px;height:70px;z-index:10;">
+                    <svg viewBox="-35 -35 70 70" width="100%" height="100%" style="overflow:visible;">
+                        <circle cx="0" cy="0" r="25" fill="#fff" stroke="#000" stroke-width="1.5"/>
+                        <polygon points="-6,0 0,-20 6,0" fill="#fff" stroke="#000" stroke-width="1"/>
+                        <polygon points="-6,0 0,20 6,0" fill="#fff" stroke="#000" stroke-width="1"/>
+                        <polygon points="0,0 0,-20 6,0" fill="#dc2626"/>
+                        <text x="0" y="-28" font-size="14" font-family="Arial" font-weight="bold" fill="#dc2626" text-anchor="middle">N</text>
+                    </svg>
+                </div>
+            </div>
+            <div style="border-top:2px solid #000;display:flex;font-size:9px;line-height:1.2;">
+                <div style="flex:1.5;border-right:1px solid #000;padding:4px 8px;">
+                    <b style="font-size:10px;">PHOTOVOLTAICS MODULE</b><br>
+                    <b style="color:#b45309;">OVERALL LAYOUT &middot; ${polygons.length}${RT(' ผืนหลังคา',' roofs')} &middot; ${totalPanelsAll}${RT(' แผง',' modules')}</b><br>
+                    <b>TYPE OF MODULE :</b> ${pvModel}<br>
+                    <b>MODEL : MONO ${pvPower} W</b><br>
+                    TOTAL PV NUMBER OF SYM : ${totalModules} MODULES<br>
+                    TOTAL INVERTER NUMBER OF SYSTEM : ${invQty} UNITS<br>
+                    INVERTER 1 : ${invModel} , POWER OF PV : ${totalPower} kWp.dc<br>
+                    <b style="color:#2563eb;">${mps} PV/STRING = ${totalStrings} STRING, ${totalModules} MODULES</b><br>
+                    <b style="font-size:11px;">${RT('กำลังผลิตรวม','Total capacity')} : ${totalPower} ${RT('กิโลวัตต์','kW')}</b>
+                </div>
+                <div style="flex:1;border-right:1px solid #000;padding:4px 8px;display:flex;flex-direction:column;justify-content:space-between;">
+                    <div>
+                        <u><b>NOTE:</b></u><br><br>
+                        <b>📄:</b> ${getStr('inp-proj', '-')}<br>
+                        <b>📍:</b> ${getStr('inp-loc', '-')}<br>
+                        <div style="font-size:8px;margin-top:4px;color:#64748b;">${roofSummary}</div>
+                    </div>
+                    <div style="color:#dc2626;text-align:center;font-weight:bold;border-top:1px solid #fca5a5;padding-top:2px;font-size:10px;">Scale NTS</div>
+                </div>
+                <div style="flex:1;padding:2px;">
+                    <table style="width:100%;border-collapse:collapse;text-align:left;font-size:8px;">
+                        <tr><th style="border:1px solid #000;padding:2px;text-align:center;width:30%;">${RT('สัญลักษณ์','Symbol')}</th><th style="border:1px solid #000;padding:2px;text-align:center;">${RT('รายละเอียด','Description')}</th></tr>
+                        <tr><td style="border:1px solid #000;padding:2px;text-align:center;"><div style="width:16px;height:8px;background:#ffedd5;border:2px solid #ea580c;margin:auto;"></div></td><td style="border:1px solid #000;padding:2px;font-weight:bold;">${RT('ขอบหลังคา','Roof boundary')}</td></tr>
+                        <tr><td style="border:1px solid #000;padding:2px;text-align:center;color:#3b82f6;">—</td><td style="border:1px solid #000;padding:2px;">DC (PV1-F) ${dcCable}</td></tr>
+                        <tr><td style="border:1px solid #000;padding:2px;text-align:center;color:#ea580c;">—</td><td style="border:1px solid #000;padding:2px;">AC (THW/CV) ${acCable}</td></tr>
+                        <tr><td style="border:1px solid #000;padding:2px;text-align:center;"><div style="width:16px;height:4px;border:1px solid #000;margin:auto;"></div></td><td style="border:1px solid #000;padding:2px;">CABLE TRAY ${conduit}</td></tr>
+                        <tr><td style="border:1px solid #000;padding:2px;text-align:center;"><div style="width:16px;height:8px;background:#111;border:1px solid #000;margin:auto;"></div></td><td style="border:1px solid #000;padding:2px;font-weight:bold;">PV MODULE</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>`;
+
+    dashW.innerHTML = `<div class="w-full mb-6"><div style="height:600px;padding:10px;background:#f1f5f9;border-radius:8px;border:1px solid #cbd5e1;">${titleBlockHtml}</div></div>`;
+
+    pdfW.innerHTML = `<div class="pdf-page-landscape force-block" style="page-break-before:always;width:100%;height:100%;"><div style="width:100%;height:100%;padding:10mm;box-sizing:border-box;background-color:white;">${titleBlockHtml}</div></div>`;
+}
+
+	// Engine สร้างแบบจำลอง CAD Layout รายหลังคา (True North, Auto-Flip Dimension & Title Block)
 function renderCADLayout() {
     let dashWrapper = document.getElementById('dynamic-cad-wrapper');
     let pdfWrapper = document.getElementById('prt-dynamic-cad-wrapper');
@@ -7868,7 +8089,7 @@ function renderCADLayout() {
         const ASC_PRESETS = {
             // เน้นผลลัพธ์และเงิน ตัดรายละเอียดวิศวกรรมออกทั้งหมด
             customer: ['chk-sec-exec', 'chk-sec-overview', 'chk-sec-monthly',
-                       'chk-sec-finance', 'chk-sec-env'],
+                       'chk-sec-finance', 'chk-sec-env', 'chk-sec-cad-overall'],
 
             // เพิ่มความเสี่ยงและความมั่นใจของผลผลิตระยะยาว สำหรับยื่นขอสินเชื่อ
             bank:     ['chk-sec-exec', 'chk-sec-overview', 'chk-sec-monthly',
