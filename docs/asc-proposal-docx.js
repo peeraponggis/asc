@@ -302,7 +302,7 @@
 
             const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
             const name = (typeof global.ascFileStamp === 'function')
-                ? global.ascFileStamp(d.proj, 'proposal_' + P.getLang().toUpperCase())
+                ? global.ascFileStamp(d.proj, 'proposal_' + P.getLang().toUpperCase(), d.kwp)
                 : 'proposal';
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);

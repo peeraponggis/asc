@@ -703,7 +703,7 @@
         const title = document.title;
         const d = collect();
         document.title = (typeof global.ascFileStamp === 'function')
-            ? global.ascFileStamp(d.proj, 'proposal_' + LANG.toUpperCase())
+            ? global.ascFileStamp(d.proj, 'proposal_' + LANG.toUpperCase(), d.kwp)
             : 'proposal';
         setTimeout(function () {
             global.print();

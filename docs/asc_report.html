@@ -1168,6 +1168,7 @@
                     <div class="chart-container avoid-break mt-6" id="exec-summary-container" style="display: none; background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #1d4ed8;">
                         <div id="dashboard-exec-summary"></div>
                     </div>
+
                 </div>
                 </div>
 
@@ -1515,7 +1516,7 @@
 
         <div id="prt-dynamic-cad-overall-wrapper" class="w-full"></div>
         <div id="prt-dynamic-cad-wrapper" class="w-full"></div>
-        
+
 
     </div>
 <script>
@@ -1942,7 +1943,7 @@
            การนำเข้าไฟล์ของทุกโปรแกรมตรวจชนิดจากคีย์ในเนื้อ JSON
            (base_layout_db1 / simulation_params_db2 / is_asc_db3) ไม่ได้ดูชื่อไฟล์เลย
            การเปลี่ยนชื่อจึงไม่กระทบการนำเข้าส่งออกใด ๆ */
-        function ascFileStamp(projectName, kind) {
+        function ascFileStamp(projectName, kind, kwp) {
             let name = String(projectName || '').trim()
                          .replace(/[\\/:*?"<>|]/g, '_')
                          .replace(/\s+/g, '_')
@@ -1952,7 +1953,8 @@
             const d = new Date();
             const p = (n) => String(n).padStart(2, '0');
             const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
-            return `${name}_${kind}_${stamp}`;
+            const kwpStr = (kwp && isFinite(kwp)) ? `_${Number(kwp).toFixed(2)}kWp` : '';
+            return `${kind}_${name}${kwpStr}_${stamp}`;
         }
 
         function ascSpec(v, unit) {
@@ -3469,7 +3471,8 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
 
             let projName = getStr('inp-proj', 'Project');
             // ชื่อไฟล์รูปแบบเดียวกันทั้งชุดโปรแกรม : ชื่อโครงการ_report_YYYYMMDD_HHMM
-            let fileName = `${ascFileStamp(projName, 'report')}.txt`;
+            let kwp = getVal('inp-pnom') || (typeof calcPnom === 'function' ? calcPnom() : 0);
+            let fileName = `${ascFileStamp(projName, 'report', kwp)}.txt`;
             const blob = new Blob([JSON.stringify(db3Obj, null, 2)], { type: 'text/plain;charset=utf-8' }); 
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = fileName; a.click(); URL.revokeObjectURL(url);
@@ -7187,7 +7190,8 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
 
             // 🌟 2. สร้างวันที่และเวลา
             // ชื่อไฟล์ PDF ใช้รูปแบบเดียวกับไฟล์ txt เพราะเบราว์เซอร์ตั้งชื่อไฟล์ที่บันทึกจาก document.title
-            let fileName = ascFileStamp(projName, 'report_' + RPT_LANG.toUpperCase());
+            let kwpPdf = getVal('inp-pnom') || 0;
+            let fileName = ascFileStamp(projName, 'report_' + RPT_LANG.toUpperCase(), kwpPdf);
             let originalTitle = document.title; 
             
             document.title = fileName;
@@ -7549,17 +7553,30 @@ function renderOverallCADLayout() {
         const wb = dedupe(wbRaw);
         const wbFlip = wb.map(q => ({ x: q.x, y: -q.y }));
 
-        const ptsLocal = dedupe(
-            (roof.localBoundary || roof.points || roof.vertices || []).map(p => ({
-                x: p.x !== undefined ? p.x : (p.X || 0),
-                y: p.y !== undefined ? p.y : (p.Y || 0)
-            }))
-        );
+        /* คำนวณ localBoundary จาก worldBoundary + azimuth ทุกครั้ง
+           DB2 เก่าอาจเก็บ localBoundary ที่หมุนด้วยทิศอื่น ทำให้ centroid matching เพี้ยน
+           คำนวณใหม่จาก worldBoundary (พิกัดจริง) จึงถูกเสมอไม่ว่า DB2 รุ่นไหน */
+        const a = (roof.azimuth || 0) * Math.PI / 180;
+        let ptsLocal;
+        {
+            const ca = Math.cos(-a), sa = Math.sin(-a);
+            const cx = wb.reduce((s, p) => s + p.x, 0) / wb.length;
+            const cy = wb.reduce((s, p) => s + p.y, 0) / wb.length;
+            const rot = wb.map(p => {
+                const dx = p.x - cx, dy = p.y - cy;
+                return { x: ca * dx - sa * dy, y: sa * dx + ca * dy };
+            });
+            const minRX = Math.min(...rot.map(p => p.x));
+            const maxRY = Math.max(...rot.map(p => p.y));
+            ptsLocal = rot.map(p => ({
+                x: Number((p.x - minRX).toFixed(3)),
+                y: Number((maxRY - p.y).toFixed(3))
+            }));
+        }
 
         const modsRaw = roof.customLayout || roof.modules || roof.panels || [];
         totalPanelsAll += modsRaw.length;
 
-        const a = (roof.azimuth || 0) * Math.PI / 180;
         const ux = [Math.cos(a), -Math.sin(a)], uy = [-Math.sin(a), -Math.cos(a)];
         const cL = ptsLocal.reduce((s, q) => [s[0] + q.x, s[1] + q.y], [0, 0]).map(v => v / ptsLocal.length);
         const cW = wb.reduce((s, q) => [s[0] + q.x, s[1] + q.y], [0, 0]).map(v => v / wb.length);
@@ -7748,18 +7765,39 @@ function renderCADLayout() {
     let pvHeight = pv.Length_mm ? pv.Length_mm / 1000 : 2.382;
 
     polygons.forEach((roof, index) => {
-        let ptsRaw = roof.localBoundary || roof.points || roof.vertices || roof.Points || [];
         let modsRaw = roof.customLayout || roof.modules || roof.panels || roof.Modules || [];
+
+        /* คำนวณ localBoundary จาก worldBoundary + azimuth ทุกครั้ง
+           DB2 เก่าอาจเก็บ localBoundary ที่หมุนด้วยทิศอื่น ทำให้แผงเลื่อนจากหลังคา */
+        let ptsRaw;
+        const wbPerRoof = (roof.worldBoundary || []);
+        if (wbPerRoof.length >= 3) {
+            const aR = -(roof.azimuth || 0) * Math.PI / 180;
+            const caR = Math.cos(aR), saR = Math.sin(aR);
+            const cxR = wbPerRoof.reduce((s, p) => s + p.x, 0) / wbPerRoof.length;
+            const cyR = wbPerRoof.reduce((s, p) => s + p.y, 0) / wbPerRoof.length;
+            const rotR = wbPerRoof.map(p => {
+                const dx = p.x - cxR, dy = p.y - cyR;
+                return { x: caR * dx - saR * dy, y: saR * dx + caR * dy };
+            });
+            const minRXR = Math.min(...rotR.map(p => p.x));
+            const maxRYR = Math.max(...rotR.map(p => p.y));
+            ptsRaw = rotR.map(p => ({
+                x: Number((p.x - minRXR).toFixed(3)),
+                y: Number((maxRYR - p.y).toFixed(3))
+            }));
+        } else {
+            ptsRaw = roof.localBoundary || roof.points || roof.vertices || roof.Points || [];
+        }
 
         if (ptsRaw.length === 0 && modsRaw.length === 0) {
              dashWrapper.innerHTML += `<div class="p-4 bg-red-50 text-red-700 border border-red-200 rounded mb-4 text-sm font-bold">⚠️ ระนาบหลังคาที่ ${index + 1}: พบข้อมูลหลังคา แต่ไม่มีพิกัดขอบหลังคา (localBoundary) หรือ แผงโซลาร์เซลล์ (customLayout) ในไฟล์ design</div>`;
              return;
         }
 
-        // อ่านพิกัดตรงๆ ไม่ใช้ Invert Y เพื่อรักษาตำแหน่งการวาดเดิม 100%
         let svgPts = ptsRaw.map(p => ({
             x: p.x !== undefined ? p.x : (p.X || 0),
-            y: p.y !== undefined ? p.y : (p.Y || 0) 
+            y: p.y !== undefined ? p.y : (p.Y || 0)
         }));
 
         let svgMods = modsRaw.map(m => {

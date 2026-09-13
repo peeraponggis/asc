@@ -141,9 +141,19 @@ header h1 small{display:block;font-weight:300;font-size:.5em;color:#B9C7D6;margi
 /* ── เช็กลิสต์ขั้นตอนและส่งมอบงาน ───────────────────────────────── */
 .ck{list-style:none;margin:0;padding:0}
 .ck li{display:flex;gap:10px;align-items:flex-start;padding:9px 4px;border-bottom:1px solid var(--line)}
-.ck li.done span{color:var(--mute);text-decoration:line-through}
-.ck input{width:19px;height:19px;flex:none;margin-top:2px}
+.ck li.done span:not(.ck-edit-txt){color:var(--mute);text-decoration:line-through}
+.ck input[type=checkbox]{width:19px;height:19px;flex:none;margin-top:2px}
 .ck li .n{font-family:'Kanit';font-size:12px;color:var(--mute);flex:none;min-width:20px}
+.ck .ck-view{display:none}
+.ck-edit-txt{flex:1;border:1px solid var(--line);border-radius:4px;padding:3px 6px;font:inherit;font-size:14px;line-height:1.45;resize:none;min-height:26px;background:#fff}
+.ck-edit-txt:focus{border-color:var(--pv);outline:none}
+.ck-del{background:none;border:none;color:var(--warn);cursor:pointer;padding:2px 4px;font-size:13px;flex:none;opacity:.5}
+.ck-del:hover{opacity:1}
+.ck-add{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:5px 14px;
+  font:500 13px/1 'Kanit',sans-serif;border:1px dashed var(--pv);border-radius:6px;
+  background:none;color:var(--pv);cursor:pointer}
+.ck-add:hover{background:rgba(30,90,138,.06)}
+@media print{.ck-del,.ck-add,.ck-edit-txt{display:none!important}.ck .ck-view{display:inline}}
 
 /* ── โหมดหน้างาน (สั่งเองด้วยปุ่ม หรือจอเล็กจริง) ────────────────── */
 body.mobile .wrap{padding:0 12px}
@@ -411,10 +421,12 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
         <div>
           <h3 style="font-family:Kanit;font-size:15px;margin:0 0 6px">ขั้นตอนติดตั้ง</h3>
           <ul class="ck" id="ck-steps"></ul>
+          <button type="button" class="ck-add no-print" onclick="ckAddItem('steps')">＋ เพิ่มรายการ</button>
         </div>
         <div>
           <h3 style="font-family:Kanit;font-size:15px;margin:0 0 6px">ส่งมอบงาน</h3>
           <ul class="ck" id="ck-hand"></ul>
+          <button type="button" class="ck-add no-print" onclick="ckAddItem('hand')">＋ เพิ่มรายการ</button>
         </div>
       </div>
     </section>
@@ -952,8 +964,8 @@ function renderJobBar(){
    ข้อมูลบรีฟของโครงการหนึ่ง ก็ล้างได้ครบในคำสั่งเดียว
    ══════════════════════════════════════════════════════════════════ */
 
-/* รายการมาตรฐานของงานติดตั้งบนหลังคา ปรับให้ตรงกับกระบวนการของทีมได้ภายหลัง */
-const STEP_LIST = [
+/* รายการมาตรฐานของงานติดตั้งบนหลังคา — ใช้เป็นค่าตั้งต้น ผู้ใช้แก้ข้อความและเพิ่มข้อได้ */
+const STEP_DEFAULT = [
     'สำรวจหน้างานและยืนยันตำแหน่งติดตั้งกับลูกค้า',
     'ติดตั้งจุดยึดเชือกนิรภัยและอุปกรณ์กันตก',
     'ติดตั้ง L-Feet และรางยึดแผง',
@@ -967,7 +979,7 @@ const STEP_LIST = [
     'จ่ายไฟและตรวจการทำงานของอินเวอร์เตอร์',
     'ตรวจการทำงานของระบบกันไฟไหลย้อน (ถ้ามี)'
 ];
-const HAND_LIST = [
+const HAND_DEFAULT = [
     'เก็บวัสดุเหลือและทำความสะอาดพื้นที่ทำงาน',
     'ถ่ายรูปงานที่ติดตั้งเสร็จให้ครบทุกจุด',
     'ทดสอบระบบให้ลูกค้าดูและอธิบายการทำงาน',
@@ -976,6 +988,8 @@ const HAND_LIST = [
     'ให้ลูกค้าเซ็นรับมอบงาน',
     'แจ้งทีมออฟฟิศเพื่อดำเนินการขออนุญาตและตรวจรับ'
 ];
+let STEP_LIST = STEP_DEFAULT.slice();
+let HAND_LIST = HAND_DEFAULT.slice();
 
 /* mat = เบิกแล้ว · hide = เลือกไม่ให้ขึ้นในเอกสาร
    เก็บเฉพาะรายการที่ "ซ่อน" ไม่ใช่รายการที่ "แสดง" เพราะค่าปกติคือแสดงทุกรายการ
@@ -984,11 +998,15 @@ let CK = { mat: {}, steps: {}, hand: {}, hide: {} };
 
 async function loadChecklists(){
     CK = { mat: {}, steps: {}, hand: {}, hide: {} };
+    STEP_LIST = STEP_DEFAULT.slice();
+    HAND_LIST = HAND_DEFAULT.slice();
     if (typeof AscBriefStore === 'undefined') return;
     try {
         const st = await AscBriefStore.getState(PROJECT_ID);
         CK = { mat: st.mat || {}, steps: st.steps || {}, hand: st.hand || {}, hide: st.hide || {} };
         OV = st.overrides || {};
+        if (Array.isArray(st.customSteps) && st.customSteps.length) STEP_LIST = st.customSteps;
+        if (Array.isArray(st.customHand) && st.customHand.length) HAND_LIST = st.customHand;
     } catch(e) { console.warn('อ่านสถานะเช็กลิสต์ไม่สำเร็จ', e); }
 }
 /* อ่านก้อนเดิมมาก่อนแล้วค่อยเขียนทับเฉพาะส่วนเช็กลิสต์
@@ -1005,11 +1023,28 @@ function renderChecklists(){
     const build = (ulId, list, bag, key) => {
         const ul = document.getElementById(ulId);
         if (!ul) return;
-        ul.innerHTML = list.map((txt, i) =>
-            '<li class="' + (bag[i] ? 'done' : '') + '" id="' + key + i + '">'
-            + '<input type="checkbox" ' + (bag[i] ? 'checked' : '')
-            + ' onchange="toggleCk(\'' + key + '\',' + i + ',this.checked)">'
-            + '<span class="n">' + (i + 1) + '.</span><span>' + txt + '</span></li>').join('');
+        ul.innerHTML = '';
+        list.forEach((txt, i) => {
+            const esc = txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            const li = document.createElement('li');
+            li.className = bag[i] ? 'done' : '';
+            li.id = key + i;
+            li.innerHTML = '<input type="checkbox" ' + (bag[i] ? 'checked' : '')
+                + ' onchange="toggleCk(\'' + key + '\',' + i + ',this.checked)">'
+                + '<span class="n">' + (i + 1) + '.</span>'
+                + '<span class="ck-view">' + esc + '</span>'
+                + '<button type="button" class="ck-del no-print" title="ลบ" onclick="ckDelItem(\'' + key + '\',' + i + ')">✕</button>';
+            const ta = document.createElement('textarea');
+            ta.className = 'ck-edit-txt no-print';
+            ta.rows = 1;
+            ta.value = txt;
+            ta.dataset.key = key;
+            ta.dataset.idx = i;
+            ta.addEventListener('blur', function(){ ckEditSave(this); });
+            ta.addEventListener('keydown', function(e){ if(e.key==='Enter'){e.preventDefault();this.blur();} });
+            li.insertBefore(ta, li.querySelector('.ck-del'));
+            ul.appendChild(li);
+        });
     };
     build('ck-steps', STEP_LIST, CK.steps, 'steps');
     build('ck-hand',  HAND_LIST, CK.hand,  'hand');
@@ -1025,6 +1060,50 @@ function toggleCk(key, i, on){
 function updateCkProgress(){
     const a = Object.keys(CK.steps).length, b = Object.keys(CK.hand).length;
     set('ck-progress', 'ติดตั้ง ' + a + '/' + STEP_LIST.length + ' · ส่งมอบ ' + b + '/' + HAND_LIST.length);
+}
+
+function ckEditSave(ta){
+    const key = ta.dataset.key, idx = +ta.dataset.idx, val = ta.value.trim();
+    const list = key === 'steps' ? STEP_LIST : HAND_LIST;
+    if (!val || val === list[idx]) return;
+    list[idx] = val;
+    const view = ta.parentElement.querySelector('.ck-view');
+    if (view) view.textContent = val;
+    ckSaveLists();
+}
+
+function ckAddItem(key){
+    const list = key === 'steps' ? STEP_LIST : HAND_LIST;
+    list.push('');
+    ckSaveLists();
+    renderChecklists();
+    const ul = document.getElementById(key === 'steps' ? 'ck-steps' : 'ck-hand');
+    const last = ul ? ul.querySelector('li:last-child .ck-edit-txt') : null;
+    if (last) last.focus();
+}
+
+function ckDelItem(key, idx){
+    const list = key === 'steps' ? STEP_LIST : HAND_LIST;
+    if (list.length <= 1) return;
+    list.splice(idx, 1);
+    const bag = CK[key], nb = {};
+    Object.keys(bag).forEach(k => {
+        const ki = +k;
+        if (ki < idx) nb[ki] = bag[ki];
+        else if (ki > idx) nb[ki - 1] = bag[ki];
+    });
+    CK[key] = nb;
+    ckSaveLists();
+    saveChecklists();
+    renderChecklists();
+}
+
+function ckSaveLists(){
+    if (typeof AscBriefStore === 'undefined') return;
+    AscBriefStore.getState(PROJECT_ID)
+        .then(st => AscBriefStore.setState(PROJECT_ID,
+            Object.assign({}, st, { customSteps: STEP_LIST.slice(), customHand: HAND_LIST.slice() })))
+        .catch(e => console.warn('บันทึกรายการเช็กลิสต์ไม่สำเร็จ', e));
 }
 
 function matState(){ return CK.mat; }

@@ -3729,14 +3729,11 @@ if (totalPolygons > totalMPPTs && state.optMfg === "-") {
                 /* กรอบพื้นที่วางแผงมีทิศของตัวเองได้แล้ว ต้องบอกให้ชัดว่าค่าที่กรอกจะลงกรอบนี้
                    ไม่ใช่ลงหลังคา ไม่งั้นผู้ใช้จะแก้ผิดที่แล้วงงว่าทำไมแผงผืนอื่นไม่ขยับ */
                 const zAzi = ascZoneAzimuth(activeRoofLayer);
-                const own = activeRoofLayer.zoneConfig &&
-                            activeRoofLayer.zoneConfig.customAzimuth !== null &&
-                            activeRoofLayer.zoneConfig.customAzimuth !== undefined;
                 const zArea = (function () { try { return turf.area(activeRoofLayer.toGeoJSON()); } catch (e) { return 0; } })();
                 el.style.background = '#eff6ff'; el.style.border = '1px solid #93c5fd'; el.style.color = '#1e40af';
                 el.innerHTML = '✏️ กำลังแก้ไข <b>' + ascAreaName(activeRoofLayer) + '</b>' +
                     '<div style="font-weight:400; font-size:0.92em; margin-top:2px;">พื้นที่ ' + zArea.toFixed(1) + ' ตร.ม.' +
-                    (zAzi !== null ? ' · แผงหันทิศ ' + Math.round(zAzi) + '°' + (own ? ' (ตั้งเอง)' : ' (สืบทอดจากหลังคา)') : '') +
+                    (zAzi !== null ? ' · แผงหันทิศ ' + Math.round(zAzi) + '° (ตามหลังคา)' : '') +
                     ' · ค่าที่กรอกด้านล่างจะลงเฉพาะกรอบนี้</div>';
             } else if (activeRoofLayer) {
                 el.style.background = '#f8fafc'; el.style.border = '1px solid #cbd5e1'; el.style.color = '#475569';
@@ -6385,7 +6382,10 @@ processPolygonsAndPanels = function() {
                 let centerCoords = center.geometry.coordinates;
                 const mToDegLat = 1 / 111320;
                 const mToDegLng = 1 / (111320 * Math.cos(centerCoords[1] * Math.PI / 180));
-                
+
+                /* ทิศหลังคาเป็นหลักเสมอ — ห้ามให้พื้นที่วางแผงแทนค่า
+                   ถ้าต่างกัน localBoundary กับพิกัดแผงจะอยู่คนละกรอบ
+                   ทำให้ report/3D วาดแผงเลื่อนออกจากหลังคา */
                 const rotatedRoof = turf.transformRotate(geojson, -finalAzimuth, {pivot: center});
                 const bbox = turf.bbox(rotatedRoof);
                 const minX_m = (bbox[0] - centerCoords[0]) / mToDegLng;
@@ -6444,26 +6444,8 @@ processPolygonsAndPanels = function() {
                 layer.panelConfig.ridgeHeight_m = ridgeNow;
                 layer.panelConfig.eaveHeightB_m = eaveBNow;
 
-                /* ทิศที่จะบันทึกลงระเบียนหลังคา ต้องเป็นทิศที่แผงหันจริง
-                   เพราะ asc_report คิดพลังงานรายผืนจากช่องนี้ ถ้ากรอบพื้นที่วางแผง
-                   ตั้งทิศเอง แล้วระเบียนยังเก็บทิศของรูปหลังคา ตัวเลขพลังงานจะคิดผิด
-                   กรณีที่กรอบหลายกรอบบนผืนเดียวกันตั้งทิศต่างกัน ตัดสินแทนไม่ได้
-                   จึงคงทิศของหลังคาไว้แล้วเตือนให้เห็น ไม่ใช่เลือกอันใดอันหนึ่งเงียบ ๆ */
-                const zonesOnRoof = pvZonePolys.filter(z => {
-                    try { return turf.booleanIntersects(z, geojson); } catch (e) { return false; }
-                });
-                const zoneAzis = [];
-                zonesOnRoof.forEach(z => {
-                    const l = ascAreaLayer(z.properties._areaUid);
-                    const a = l ? ascZoneAzimuth(l) : null;
-                    if (a !== null && zoneAzis.indexOf(Math.round(a)) < 0) zoneAzis.push(Math.round(a));
-                });
-                let recordAzimuth = finalAzimuth;
-                if (zoneAzis.length === 1) recordAzimuth = zoneAzis[0];
-                else if (zoneAzis.length > 1) mixedAziRoofs.push((index + 1) + ' (' + zoneAzis.join('°, ') + '°)');
-
                 state.roofPolygonsData.push({
-                    id: index + 1, area: areaSqM, slope: currentSlope, azimuth: Math.round(recordAzimuth), 
+                    id: index + 1, area: areaSqM, slope: currentSlope, azimuth: Math.round(finalAzimuth),
                     mountType: config.mountType || document.getElementById('mountDisplayText').innerText,
                     runM: roofRunM,                 // 🌟 ระยะไหลหลังคา (ม.)
                     spanM: roofSpanM,               // 🌟 ความกว้างตามแนวสัน (ม.)
@@ -6510,14 +6492,10 @@ processPolygonsAndPanels = function() {
                         const cfg = Object.assign({}, config, zc || {});
                         // แผงในกรอบนี้เป็นของกรอบนี้ ไม่ใช่ของหลังคา จำนวนและการล็อกจึงแยกกันได้
                         cfg.areaUid = z.properties._areaUid;
-                        /* ทิศของกรอบมาก่อนทิศของหลังคา แผงคือของที่อยู่ในกรอบ
-                           กรอบที่ไม่ได้ตั้งทิศเองจะได้ทิศของหลังคาเหมือนเดิมทุกประการ */
-                        const zAzi = (zc && zc.customAzimuth !== null && zc.customAzimuth !== undefined
-                                      && isFinite(zc.customAzimuth))
-                                   ? ((Number(zc.customAzimuth) % 360) + 360) % 360
-                                   : finalAzimuth;
+                        /* ทิศหลังคาเป็นหลักเสมอ — ห้ามให้กรอบแทนค่า
+                           ถ้าต่างกัน localBoundary กับพิกัดแผงจะคนละกรอบ report/3D จะเพี้ยน */
                         state.allPossiblePanelsGeoJSON = state.allPossiblePanelsGeoJSON.concat(
-                            generatePanelGrid(geojson, center, zAzi, state.pvWid/1000, state.pvLen/1000, keepoutPolys, cfg, [z]));
+                            generatePanelGrid(geojson, center, finalAzimuth, state.pvWid/1000, state.pvLen/1000, keepoutPolys, cfg, [z]));
                     });
                 } else if (pvZonePolys.length) {
                     // มีกรอบในโครงการแล้ว แต่ผืนนี้ยังไม่มีกรอบทับ จึงยังไม่วางแผง
@@ -7666,12 +7644,11 @@ function updateFinalDcLength() {
         /* ทิศที่ใช้จริงกับแผงในกรอบพื้นที่วางแผงหนึ่งกรอบ
            ตั้งเองมาก่อน ถ้าไม่ตั้งจึงสืบทอดจากหลังคาที่กรอบวางทับอยู่
            คืน null เมื่อหาหลังคาที่รองรับไม่เจอและกรอบก็ไม่ได้ตั้งค่าเอง */
+        /* ทิศของกรอบ = ทิศของหลังคาที่ทับอยู่เสมอ ห้ามแทนค่าเอง
+           ถ้าต่างกัน localBoundary กับพิกัดแผงจะคนละกรอบ report/3D จะเพี้ยน */
         function ascZoneAzimuth(zoneLayer) {
-            const zc = zoneLayer && zoneLayer.zoneConfig;
-            let a = zc && zc.customAzimuth;
-            if (a !== null && a !== undefined && isFinite(a)) return ((Number(a) % 360) + 360) % 360;
             const inh = ascZoneInherited(zoneLayer) || {};
-            a = inh.customAzimuth;
+            let a = inh.customAzimuth;
             if (a === null || a === undefined || !isFinite(a)) a = inh.autoAzimuth;
             return isFinite(a) ? ((Number(a) % 360) + 360) % 360 : null;
         }
@@ -8274,7 +8251,7 @@ function generateDB2() {
    การนำเข้าไฟล์ของทุกโปรแกรมตรวจชนิดจากคีย์ในเนื้อ JSON
    (base_layout_db1 / simulation_params_db2 / is_asc_db3) ไม่ได้ดูชื่อไฟล์เลย
    การเปลี่ยนชื่อจึงไม่กระทบการนำเข้าส่งออกใด ๆ */
-function ascFileStamp(projectName, kind) {
+function ascFileStamp(projectName, kind, kwp) {
     let name = String(projectName || '').trim()
                  .replace(/[\\/:*?"<>|]/g, '_')
                  .replace(/\s+/g, '_')
@@ -8284,7 +8261,8 @@ function ascFileStamp(projectName, kind) {
     const d = new Date();
     const p = (n) => String(n).padStart(2, '0');
     const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
-    return `${name}_${kind}_${stamp}`;
+    const kwpStr = (kwp && isFinite(kwp)) ? `_${Number(kwp).toFixed(2)}kWp` : '';
+    return `${kind}_${name}${kwpStr}_${stamp}`;
 }
 
  function downloadTXT(content, filename) {
@@ -8553,7 +8531,8 @@ function ascFileStamp(projectName, kind) {
         // เริ่ม: โค้ดสร้างชุดตัวเลข วัน-เวลา (Datetime) ปัจจุบัน
         // ชื่อไฟล์รูปแบบเดียวกันทั้งชุดโปรแกรม : ชื่อโครงการ_design_YYYYMMDD_HHMM
         // การนำเข้าของทุกโปรแกรมดูจากคีย์ในเนื้อ JSON ไม่ได้ดูชื่อไฟล์ เปลี่ยนชื่อจึงไม่กระทบ
-        downloadTXT(JSON.stringify(db2Full, null, 2), `${ascFileStamp(pName, 'design')}.txt`);
+        const kwp = parseNumText(document.getElementById('outTotalKwp').innerText) || 0;
+        downloadTXT(JSON.stringify(db2Full, null, 2), `${ascFileStamp(pName, 'design', kwp)}.txt`);
         
         // 🌟 เฟส 16: ยกเลิกการถ่ายภาพ PNG 2K อัตโนมัติตอนบันทึก — ใช้ปุ่ม "บันทึกรูป (Capture Proj.)" แทน
 

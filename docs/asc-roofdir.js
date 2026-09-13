@@ -51,11 +51,16 @@
         if (!zones.length) {
             return roofs.map((l, i) => ({ layer: l, azi: aziOf(l), label: String(i + 1) }));
         }
-        const out = zones.map((z, i) => ({
-            layer: z,
-            azi: (typeof ascZoneAzimuth === 'function') ? ascZoneAzimuth(z) : aziOf(z),
-            label: 'โซน ' + (i + 1)
-        }));
+        /* ทิศหลังคาเป็นหลักเสมอ — กรอบใช้ทิศของหลังคาที่ทับอยู่ */
+        const out = zones.map((z, i) => {
+            let azi = aziOf(z);
+            try {
+                const zg = z.toGeoJSON();
+                const parent = roofs.find(r => turf.booleanIntersects(r.toGeoJSON(), zg));
+                if (parent) azi = aziOf(parent);
+            } catch (e) { /* keep zone's own */ }
+            return { layer: z, azi: azi, label: 'โซน ' + (i + 1) };
+        });
         roofs.forEach((r, i) => {
             let covered = false;
             try {

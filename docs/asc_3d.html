@@ -492,7 +492,38 @@ function parseDB2(j) {
   const gcDB     = num((s3.bifacial_params || {}).groundClearance_m, eaveSite);
 
   S.roofs = polys.map((p, i) => {
-    const lb = (p.localBoundary || []).map(q => ({ x: num(q.x, 0), y: num(q.y, 0) }));
+    let feat = roofFs.find(f => (f.properties.panelConfig || {}).roofId === p.id) || roofFs[i] || null;
+    const pc = feat ? (feat.properties.panelConfig || {}) : {};
+
+    const slopeDB = num(p.slope, num(s3.globalSlope, 15));
+    let aziRaw = pc.customAzimuth;
+    if (aziRaw === null || aziRaw === undefined || !isFinite(aziRaw)) aziRaw = pc.autoAzimuth;
+    let aziDB = num(aziRaw, num(p.azimuth, num(s3.globalAzimuthOverride, 0)));
+    aziDB = ((aziDB % 360) + 360) % 360;
+
+    let world = null;
+    if (feat) {
+      world = feat.geometry.coordinates[0].slice(0, -1).map(c => toENU(c[0], c[1], lon0, lat0));
+    }
+
+    /* คำนวณ localBoundary จาก world + azimuth ทุกครั้ง
+       DB2 เก่าอาจเก็บ localBoundary ที่หมุนด้วยทิศอื่น ทำให้ centroid matching เพี้ยน */
+    let lb;
+    if (world && world.length >= 3) {
+      const ar = -aziDB * D2R;
+      const ca = Math.cos(ar), sa = Math.sin(ar);
+      const cx = world.reduce(function(s, q) { return s + q[0]; }, 0) / world.length;
+      const cy = world.reduce(function(s, q) { return s + q[1]; }, 0) / world.length;
+      lb = world.map(function(q) {
+        var dx = q[0] - cx, dy = q[1] - cy;
+        return { x: ca * dx - sa * dy, y: sa * dx + ca * dy };
+      });
+      var minRX = Math.min.apply(null, lb.map(function(q) { return q.x; }));
+      var maxRY = Math.max.apply(null, lb.map(function(q) { return q.y; }));
+      lb = lb.map(function(q) { return { x: Number((q.x - minRX).toFixed(3)), y: Number((maxRY - q.y).toFixed(3)) }; });
+    } else {
+      lb = (p.localBoundary || []).map(q => ({ x: num(q.x, 0), y: num(q.y, 0) }));
+    }
     if (lb.length > 2) {
       const a = lb[0], z = lb[lb.length - 1];
       if (Math.abs(a.x - z.x) < 1e-9 && Math.abs(a.y - z.y) < 1e-9) lb.pop();
@@ -504,9 +535,6 @@ function parseDB2(j) {
     const xsL  = lb.map(q => q.x);
     const xMin = xsL.length ? Math.min.apply(null, xsL) : 0;
     const span = xsL.length ? Math.max(Math.max.apply(null, xsL) - xMin, 0.01) : 0.01;
-
-    let feat = roofFs.find(f => (f.properties.panelConfig || {}).roofId === p.id) || roofFs[i] || null;
-    const pc = feat ? (feat.properties.panelConfig || {}) : {};
 
     /* ความสูงชายคาของหลังคาผืนนี้
 
@@ -520,22 +548,11 @@ function parseDB2(j) {
        ขาดแค่ชายคาปลายแรกตัวเดียว จึงเป็นความไม่สอดคล้องกันในไฟล์เดียว */
     const eaveDB = num(p.eaveHeight_m, num(pc.eaveHeight_m, eaveSite));
 
-    const slopeDB = num(p.slope, num(s3.globalSlope, 15));
-    let aziRaw = pc.customAzimuth;
-    if (aziRaw === null || aziRaw === undefined || !isFinite(aziRaw)) aziRaw = pc.autoAzimuth;
-    let aziDB = num(aziRaw, num(p.azimuth, num(s3.globalAzimuthOverride, 0)));
-    aziDB = ((aziDB % 360) + 360) % 360;
-
     /* ความสูงสันหลังคา: อ่านจากไฟล์ถ้ามี (asc_design รุ่นใหม่) ถ้าไม่มีคำนวณย้อนจากความชัน */
     const ridgeDB = num(p.ridgeHeight_m,
                     num(pc.ridgeHeight_m, eaveDB + run * Math.tan(slopeDB * D2R)));
     /* ชายคาปลายที่สอง — ไฟล์เก่าไม่มี ให้เท่าปลายแรก ผลจึงเหมือนหลังคาลาดทางเดียวเดิมทุกประการ */
     const eaveBDB = num(p.eaveHeightB_m, num(pc.eaveHeightB_m, num(s3.eaveHeightB_m, eaveDB)));
-
-    let world = null;
-    if (feat) {
-      world = feat.geometry.coordinates[0].slice(0, -1).map(c => toENU(c[0], c[1], lon0, lat0));
-    }
 
     return {
       id: p.id != null ? p.id : i + 1,

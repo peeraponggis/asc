@@ -1006,7 +1006,8 @@
         
         // ชื่อไฟล์รูปแบบเดียวกันทั้งชุดโปรแกรม : ชื่อโครงการ_ประเภทงาน_วันเวลา
         // การนำเข้าทุกโปรแกรมดูจากคีย์ในเนื้อ JSON ไม่ได้ดูชื่อไฟล์ เปลี่ยนชื่อจึงไม่กระทบ
-        let filename = `${ascFileStamp(custName, 'eBill')}.txt`;
+        let eKwp = parseFloat((document.getElementById('amr_solar_kwp') || {}).innerText) || 0;
+        let filename = `${ascFileStamp(custName, 'eBill', eKwp)}.txt`;
 
         let link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
@@ -2170,7 +2171,7 @@ function drawAMRDaily24hChart() {
        การนำเข้าไฟล์ของทุกโปรแกรมตรวจชนิดจากคีย์ในเนื้อ JSON
        (base_layout_db1 / simulation_params_db2 / is_asc_db3) ไม่ได้ดูชื่อไฟล์เลย
        การเปลี่ยนชื่อจึงไม่กระทบการนำเข้าส่งออกใด ๆ */
-    function ascFileStamp(projectName, kind) {
+    function ascFileStamp(projectName, kind, kwp) {
         let name = String(projectName || '').trim()
                      .replace(/[\\/:*?"<>|]/g, '_')
                      .replace(/\s+/g, '_')
@@ -2180,11 +2181,13 @@ function drawAMRDaily24hChart() {
         const d = new Date();
         const p = (n) => String(n).padStart(2, '0');
         const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
-        return `${name}_${kind}_${stamp}`;
+        const kwpStr = (kwp && isFinite(kwp)) ? `_${Number(kwp).toFixed(2)}kWp` : '';
+        return `${kind}_${name}${kwpStr}_${stamp}`;
     }
 
     function reportFilename(type, ext) {
-        const base = ascFileStamp(document.getElementById('global_name').value, 'eBill');
+        const eKwpR = parseFloat((document.getElementById('amr_solar_kwp') || {}).innerText) || 0;
+        const base = ascFileStamp(document.getElementById('global_name').value, 'eBill', eKwpR);
         return ext ? `${base}.${ext}` : base;
     }
 
