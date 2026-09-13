@@ -113,6 +113,8 @@ setTimeout(function () {
 
   /* ---------- พื้นที่แสดงผล ---------- */
   #stage{flex:1;position:relative;background:var(--stage)}
+  #compass3d{position:absolute;top:12px;right:12px;z-index:6;pointer-events:none;
+             filter:drop-shadow(0 2px 6px rgba(15,23,42,.35))}
   #cv{display:block;width:100%;height:100%}
   #kpi{
     position:absolute;top:14px;right:14px;background:#ffffffE6;border:1px solid var(--line);
@@ -297,6 +299,20 @@ setTimeout(function () {
 <div id="stage">
   <canvas id="cv"></canvas>
 
+  <!-- เข็มทิศ: หมุนตามมุมกล้อง ให้รู้เสมอว่าทิศเหนืออยู่ทางไหนของภาพ
+       หน้าออกแบบมีเข็มทิศอยู่แล้ว หน้า 3 มิติเดิมไม่มี พอหมุนกล้องไปมา
+       จึงไม่รู้ว่ากำลังมองอาคารจากด้านไหน เทียบกับภาพจากหน้าออกแบบไม่ได้ -->
+  <div id="compass3d" title="ทิศเหนือ — เข็มหมุนตามมุมกล้อง">
+    <svg viewBox="0 0 48 48" width="48" height="48" shape-rendering="geometricPrecision">
+      <circle cx="24" cy="24" r="21" fill="rgba(255,255,255,.92)" stroke="#94a3b8" stroke-width="1.4"/>
+      <g id="compass3dNeedle">
+        <path d="M24 6 L30 26 L24 22 L18 26 Z" fill="#dc2626"/>
+        <path d="M24 42 L18 22 L24 26 L30 22 Z" fill="#cbd5e1"/>
+      </g>
+      <text x="24" y="15" text-anchor="middle" font-size="9" font-weight="bold" fill="#0f172a">N</text>
+    </svg>
+  </div>
+
   <div id="kpi" hidden>
     <div class="k"><span>กำลังติดตั้ง</span><b id="kKwp">—</b></div>
     <div class="k"><span>จำนวนแผง</span><b id="kQty">—</b></div>
@@ -323,6 +339,20 @@ setTimeout(function () {
     <p>
       <b>design</b> คือแหล่งข้อมูลเรขาคณิต — ขอบหลังคา ตำแหน่งแผงทุกใบ ความสูงอาคาร ความชัน และทิศ<br>
       <b>report</b> (ถ้ามี) เพิ่มตัวเลขผลผลิตและภาพดาวเทียมปูพื้น
+      <div style="margin-top:12px;padding:10px 12px;background:#11151B;border:1px solid var(--line);border-radius:8px;text-align:left;line-height:1.75;color:#cbd5e1;font-size:12px">
+        <b style="color:var(--accent)">ทำไมภาพที่นี่ไม่เหมือนภาพที่จับจากหน้าออกแบบ</b><br>
+        ตำแหน่งแผงเป็นชุดเดียวกันเสมอ เพราะอ่านจากไฟล์ design ตัวเดียวกัน ที่ต่างคือวิธีแสดงผล
+        <ul style="margin:6px 0 0 16px;padding:0">
+          <li><b>พื้นหลัง</b> — หน้าออกแบบใช้ภาพถ่ายดาวเทียมเสมอ ส่วนที่นี่ต้องมีไฟล์ <b>report</b>
+              ถึงจะปูภาพให้ได้ ถ้าเปิดด้วยไฟล์ design อย่างเดียวจะเห็นเป็นพื้นเปล่ากับเส้นตาราง</li>
+          <li><b>รูปทรง</b> — หน้าออกแบบเป็นภาพแบนมองจากด้านบน ส่วนที่นี่เป็นทรงสามมิติจริง
+              หลังคาที่เอียงจะดูสั้นลงตามมุมมอง และมีความหนากับเงาเพิ่มเข้ามา</li>
+          <li><b>สิ่งที่ไม่ถูกวาด</b> — พื้นที่หวงห้าม ทางเดิน และต้นไม้ ไม่ถูกส่งมาที่นี่
+              ที่นี่วาดเฉพาะรูปหลังคากับแผง</li>
+        </ul>
+        <span style="color:var(--dim)">เปิดไฟล์แล้วหน้านี้จะตั้งมุมมองจากด้านบนและปูภาพดาวเทียมให้เอง
+        เพื่อให้เทียบกับภาพจากหน้าออกแบบได้ทันที จากนั้นหมุนดูมุมอื่นได้ตามต้องการ</span>
+      </div>
     </p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
       <label class="btn primary file">📂 เลือกไฟล์<input type="file" id="filePick" accept=".txt,.json" multiple></label>
@@ -726,8 +756,23 @@ function initThree() {
   (function loop() {
     requestAnimationFrame(loop);
     if (controls.enableDamping) controls.update();
-    if (needRender) { renderer.render(scene, camera); needRender = false; }
+    if (needRender) { renderer.render(scene, camera); needRender = false; syncCompass(); }
   })();
+}
+
+/* แกนฉาก: x = ตะวันออก, z = ลบของทิศเหนือ  ทิศเหนือบนจอจึงอยู่ตรงข้ามกับ
+   ทิศที่กล้องมองเข้าหาเป้าหมาย หมุนเข็มตามมุมนั้นเข็มจึงชี้เหนือจริงเสมอ */
+function syncCompass() {
+  const g = document.getElementById('compass3dNeedle');
+  if (!g || !controls) return;
+  const dx = camera.position.x - controls.target.x;
+  const dz = camera.position.z - controls.target.z;
+  /* ทิศบนจอ: แนว "ขึ้น" ของภาพคือทิศที่พ้นออกจากกล้องไปทางเป้าหมาย
+     กล้องอยู่ทางใต้ของเป้า (dz > 0) จึงมองไปทางเหนือ เข็มต้องชี้ขึ้น = 0 องศา
+     กล้องอยู่ทางตะวันออก (dx > 0) มองไปทางตะวันตก ทิศเหนืออยู่ขวามือ = +90 องศา
+     ทั้งสองกรณีลงตัวกับ atan2(dx, dz) หมุนตามเข็มนาฬิกาแบบเดียวกับ SVG */
+  const deg = Math.atan2(dx, dz) * 180 / Math.PI;
+  g.setAttribute('transform', 'rotate(' + deg.toFixed(1) + ' 24 24)');
 }
 
 function resize() {
@@ -1587,6 +1632,10 @@ function refreshUI() {
 
   $('#cSat').disabled = !S.satImage;
   if (!S.satImage) $('#cSat').parentElement.style.opacity = .45;
+  /* มีภาพดาวเทียมติดมากับไฟล์ report ให้ปูพื้นให้เลย ผู้ใช้จะได้เห็นภาพแบบเดียว
+     กับที่จับจากหน้าออกแบบทันที ไม่ต้องรู้ว่ามีช่องนี้ซ่อนอยู่ในแถบซ้าย
+     ติ๊กให้ครั้งแรกครั้งเดียว ถ้าผู้ใช้ปิดเองแล้วจะไม่ไปติ๊กกลับให้ */
+  if (S.satImage && !S._satAutoOn) { S._satAutoOn = true; $('#cSat').checked = true; buildSat(); }
 
   syncForm();
 }
@@ -1631,7 +1680,7 @@ function finish(got2, got3, errs) {
   loadOverrides();
   refreshUI();
   buildScene();
-  setCam('ne');
+  setCam('top');
   $('#drop').style.display = 'none';
   if (errs.length) console.warn('ASC 3D:', errs);
 }
@@ -1671,7 +1720,7 @@ addEventListener('message', ev => {
     if (d.payload.db1 && d.payload.db2) {
       parseDB2({ base_layout_db1: d.payload.db1 });
       if (d.payload.db3) { S.db3 = d.payload.db3; parseDB3(d.payload.db3); }
-      loadOverrides(); refreshUI(); buildScene(); setCam('ne');
+      loadOverrides(); refreshUI(); buildScene(); setCam('top');
       $('#drop').style.display = 'none';
     }
   } catch (e) { console.warn('ASC 3D: SYNC ไม่สำเร็จ', e); }
