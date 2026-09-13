@@ -28,6 +28,24 @@
        ถ้าไฟล์นั้นหาย ยังคืนชื่อเล่มได้ ผลตรวจจึงไม่หายไปทั้งข้อ */
     const eitStd    = () => (global.AscEIT && global.AscEIT.STD) || 'วสท. 022013-25';
     const eitClause = k => (global.AscEIT && global.AscEIT.clause && global.AscEIT.clause[k]) || null;
+
+    /* ── แบตเตอรี่: เลือกไว้จริงหรือยัง และกี่ชุด ────────────────────────────
+       หน้าออกแบบเขียนช่อง model เป็น "<ยี่ห้อ> <รุ่น>" เสมอ ถึงยังไม่ได้เลือกก็ได้
+       สตริง "- -" ออกมา ซึ่งเป็นค่าจริงในเชิงบูลีน ถ้าเช็คแค่ว่ามีค่าไหมจะนับว่ามีแบตเตอรี่
+       ทั้งที่ยังไม่ได้เลือก จึงต้องกรองขีดกลางกับค่าว่างออกด้วย */
+    const batPicked = b => {
+        const name = String((b && (b.Model_Name || b.model)) || '').replace(/-/g, ' ').trim();
+        return name.length > 0;
+    };
+    /* คืน null เมื่อไฟล์ไม่ได้ระบุจำนวนมาเลย ซึ่งต่างจากระบุว่า 0
+       ไฟล์รุ่นเก่าและการเรียกใช้บางเส้นทางไม่มีช่องจำนวน ถ้าเหมาว่าเป็น 0
+       จะกลายเป็นข้ามการตรวจความเข้ากันได้เงียบ ๆ ซึ่งอันตรายกว่าเตือนเกิน */
+    const batQtyOf = b => {
+        const raw = b && (b.qty != null ? b.qty : b.Qty);
+        if (raw === undefined || raw === null || raw === '') return null;
+        const n = parseFloat(raw);
+        return isFinite(n) ? n : null;
+    };
     const fmt = (v, d) => (v === null || v === undefined || !isFinite(v)) ? '—' : Number(v).toFixed(d === undefined ? 2 : d);
 
     /* ── ดึงข้อมูลที่ต้องใช้ออกจากไฟล์ DB2/DB3 ให้อยู่ในรูปเดียวกัน ─────
@@ -1455,8 +1473,21 @@
 
             const bat = d.bat || {};
             const inv = d.inv1 || {};
-            if (!(bat.Model_Name || bat.model)) return null;      // ไม่มีแบตเตอรี่ ไม่ต้องตรวจ
+            if (!batPicked(bat)) return null;                     // ไม่มีแบตเตอรี่ ไม่ต้องตรวจ
             if (!(inv.Model_Name || inv.model)) return null;
+
+            /* เลือกรุ่นไว้แต่จำนวนเป็น 0 = ยังไม่ได้อยู่ในระบบที่จะสั่งของจริง
+               ตารางวัสดุอุปกรณ์จึงไม่มีแถวแบตเตอรี่ ถ้าตรงนี้ยังฟ้องเรื่องความเข้ากันได้
+               ผู้ใช้จะเจอสองแผงพูดคนละอย่างโดยไม่รู้ว่าอันไหนจริง
+               จึงบอกความไม่ตรงกันตรง ๆ แทน แล้วค่อยไปตรวจความเข้ากันได้เมื่อมีจำนวนจริง */
+            if (batQtyOf(bat) === 0) return { level: 'warn',
+                title: 'เลือกรุ่นแบตเตอรี่ไว้ แต่จำนวนเป็น 0',
+                detail: 'ระบบถือว่ายังไม่มีแบตเตอรี่อยู่ในแบบ ตารางวัสดุอุปกรณ์และใบเสนอราคาจึงไม่มีแบตเตอรี่ ' +
+                        'ถ้าตั้งใจจะใส่แบตเตอรี่จริง ให้กรอกจำนวนก่อน แล้วระบบจะตรวจความเข้ากันได้กับอินเวอร์เตอร์ให้',
+                evidence: ((bat.Manufacturer ? bat.Manufacturer + ' ' : '') + (bat.Model_Name || bat.model)) + ' · จำนวน 0',
+                fix: ['กรอกจำนวนแบตเตอรี่ในช่องจำนวน ถ้าต้องการใช้แบตเตอรี่จริง',
+                      'หรือล้างรุ่นแบตเตอรี่ออก ถ้างานนี้ไม่ใช้แบตเตอรี่'],
+                kb: 'eit-batmatch' };
 
             const r = BM.match(inv, bat);
             const iName = (inv.Manufacturer ? inv.Manufacturer + ' ' : '') + (inv.Model_Name || inv.model);
@@ -1530,8 +1561,9 @@
             if (!BM || !BM.powerFit) return null;
 
             const bat = d.bat || {}, inv = d.inv1 || {};
-            if (!(bat.Model_Name || bat.model)) return null;
+            if (!batPicked(bat)) return null;
             if (!(inv.Model_Name || inv.model)) return null;
+            if (batQtyOf(bat) === 0) return null;   // ระบุจำนวนมาว่า 0 = ยังไม่อยู่ในแบบ กฎ bat-inverter บอกไปแล้ว
 
             const r = BM.powerFit(inv, bat, { batQty: bat.qty, invQty: inv.qty });
             if (!r) return null;

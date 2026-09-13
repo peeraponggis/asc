@@ -1027,10 +1027,43 @@
                     <!-- 🌟 กลุ่มความสูง/ความชันหลังคา — เรียงตามลำดับที่ผู้ใช้กรอกจริงหน้างาน
                          วัดความสูง 2 ค่าด้วยเลเซอร์ แล้วให้โปรแกรมคำนวณ Slope ให้ -->
                     <div class="setting-group">
-                        <div class="setting-row"><span class="sr-label" style="color: #dc2626;" title="ค่านี้เป็นของหลังคาผืนที่เลือกอยู่ ถ้าไม่ได้เลือกผืนไหน จะใช้กับทุกผืน อาคารคนละหลังที่สูงไม่เท่ากัน ให้คลิกเลือกทีละผืนแล้วกรอกแยกกัน">ความสูงอาคาร (ชายคา):</span><span class="sr-ctrl"><input type="number" id="roofHeightM" value="10" step="0.1" min="0"> ม.</span></div>
+                        <div class="setting-row"><span class="sr-label" style="color: #dc2626;" title="ระยะจากพื้นดินขึ้นมาถึงขอบล่างของหลังคา (ชายคา) ด้านที่ต่ำที่สุด ค่านี้เป็นของหลังคาผืนที่เลือกอยู่ ถ้าไม่ได้เลือกผืนไหน จะใช้กับทุกผืน อาคารคนละหลังที่สูงไม่เท่ากัน ให้คลิกเลือกทีละผืนแล้วกรอกแยกกัน">ความสูงชายคา (ขอบล่างของหลังคา):</span><span class="sr-ctrl"><input type="number" id="roofHeightM" value="10" step="0.1" min="0"> ม.</span></div>
                         <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="font-size:0.78em; color:#64748b;">ค่านี้เป็นของหลังคาผืนที่เลือก</span><span class="sr-ctrl"><button type="button" id="btnEaveToAll" style="background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; border-radius:5px; padding:3px 8px; font-size:0.78em; font-weight:bold; cursor:pointer; white-space:nowrap;">ใช้ค่านี้กับทุกหลังคา</button></span></div>
-                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.92em; color:#64748b;" title="อาคารทรงโมเดิร์นที่ชายคาสองปลายไม่เท่ากัน ถ้าเท่ากันปล่อยไว้เท่าเดิม">↳ ชายคาอีกปลายหนึ่ง:</span><span class="sr-ctrl"><input type="number" id="eaveHeightBM" value="10" step="0.1" min="0"> ม.</span></div>
-                        <div class="setting-row"><span class="sr-label" style="color: #dc2626;" title="ความสูงของขอบหลังคาด้านที่สูงที่สุด ถ้าหลังคาผืนนี้เป็นเพิงแหงน ค่านี้คือชายคาด้านสูง ถ้าตัดเป็นจั่วด้วยเครื่องมือวาดสันแล้ว ค่านี้คือความสูงสันจั่ว">ความสูงด้านสูงของหลังคา:</span><span class="sr-ctrl"><input type="number" id="ridgeHeightM" value="10" step="0.1" min="0"> ม.</span></div>
+                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.92em; color:#64748b;" title="ใช้เมื่อชายคาสองปลายของหลังคาผืนเดียวกันสูงไม่เท่ากัน (อาคารทรงโมเดิร์นที่พื้นเอียงสองทาง) ถ้าสองปลายสูงเท่ากัน ปล่อยไว้เท่าเดิม ระบบจะถือว่าลาดทางเดียว">&#9492; ชายคาปลายตรงข้าม (ถ้าไม่เท่ากัน):</span><span class="sr-ctrl"><input type="number" id="eaveHeightBM" value="10" step="0.1" min="0"> ม.</span></div>
+                        <div class="setting-row"><span class="sr-label" style="color: #dc2626;" title="ระยะจากพื้นดินขึ้นมาถึงขอบบนของหลังคา หลังคาเพิงแหงนคือชายคาด้านสูง หลังคาจั่วคือสันจั่ว ระบบคำนวณให้อัตโนมัติจากชายคาและความชัน ถ้าวัดมาเองแล้วพิมพ์ทับ ระบบจะคำนวณความชันย้อนกลับให้">ความสูงสันหลังคา (ขอบบน):</span><span class="sr-ctrl"><input type="number" id="ridgeHeightM" value="10" step="0.1" min="0"> ม.</span></div>
+                        <!-- ภาพตัดขวางอธิบายว่าแต่ละค่าวัดจากตรงไหนถึงตรงไหน
+                             สามคำนี้ผู้ใช้สับสนบ่อย เพราะ "ความสูงอาคาร" กับ "ด้านสูงของหลังคา"
+                             ฟังดูเหมือนกัน ภาพเดียวอธิบายได้ชัดกว่าข้อความยาว ๆ -->
+                        <div style="margin:2px 0 10px; padding:8px 10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px;">
+                            <svg viewBox="0 0 260 108" width="100%" style="max-width:250px; display:block; margin:0 auto 4px;"
+                                 shape-rendering="geometricPrecision" stroke-linejoin="miter" stroke-linecap="butt">
+                                <!-- พื้นดิน -->
+                                <line x1="8" y1="96" x2="252" y2="96" stroke="#94a3b8" stroke-width="1.6"/>
+                                <text x="10" y="105" font-size="7" fill="#94a3b8">พื้นดิน</text>
+                                <!-- ตัวอาคาร -->
+                                <rect x="58" y="60" width="150" height="36" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.2"/>
+                                <!-- หลังคาเพิงแหงน: ชายคาซ้ายต่ำ สันขวาสูง -->
+                                <line x1="52" y1="60" x2="214" y2="28" stroke="#ea580c" stroke-width="2.4"/>
+                                <!-- เส้นบอกความสูงชายคา -->
+                                <line x1="30" y1="60" x2="30" y2="96" stroke="#0369a1" stroke-width="1"/>
+                                <path d="M27 63 L30 58 L33 63 Z" fill="#0369a1"/>
+                                <path d="M27 93 L30 98 L33 93 Z" fill="#0369a1"/>
+                                <text x="4" y="80" font-size="7.5" fill="#0369a1" font-weight="bold">ชายคา</text>
+                                <!-- เส้นบอกความสูงสัน -->
+                                <line x1="234" y1="28" x2="234" y2="96" stroke="#dc2626" stroke-width="1"/>
+                                <path d="M231 31 L234 26 L237 31 Z" fill="#dc2626"/>
+                                <path d="M231 93 L234 98 L237 93 Z" fill="#dc2626"/>
+                                <text x="238" y="62" font-size="7.5" fill="#dc2626" font-weight="bold">สัน</text>
+                                <!-- มุมลาด -->
+                                <text x="120" y="52" font-size="7.5" fill="#b45309" font-weight="bold">ความชัน</text>
+                            </svg>
+                            <div style="font-size:0.78em; color:#475569; line-height:1.55;">
+                                <b style="color:#0369a1;">ชายคา</b> = ขอบ<b>ล่าง</b>ของหลังคา วัดจากพื้นดินขึ้นมา ·
+                                <b style="color:#dc2626;">สัน</b> = ขอบ<b>บน</b>ของหลังคา<br>
+                                กรอกชายคาแล้วใส่ความชัน ระบบคำนวณสันให้เอง หรือวัดสันมาเองแล้วพิมพ์ทับ ระบบจะคำนวณความชันย้อนกลับให้<br>
+                                ชายคาสองปลายเท่ากัน = หลังคาลาดทางเดียว ไม่เท่ากัน = พื้นหลังคาบิดเอียงสองทาง
+                            </div>
+                        </div>
                         <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.88em; color:#64748b;">↳ หลังคาจั่ว/เพิงแหงนซ้อน:</span><span class="sr-ctrl"><button type="button" id="btnDrawRidge" onclick="AscRidge.start(activeRoofLayer)" style="font-size:0.85em; padding:3px 10px; border:1px solid #dc2626; background:#fff; color:#dc2626; border-radius:4px; cursor:pointer; font-weight:600;">✂ วาดเส้นสันหลังคา</button></span></div>
                         <div id="ridgeToolBox" style="display:none; margin:6px 0 10px; padding:8px 10px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; font-size:0.82em; line-height:1.5;">
                             <b style="color:#991b1b;">ลากจุดแดงสองจุดให้เส้นพาดตามแนวสันจริง</b><br>
