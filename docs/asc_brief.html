@@ -75,7 +75,7 @@ header h1 small{display:block;font-weight:300;font-size:.5em;color:#B9C7D6;margi
   transition:background .12s}
 .ed:hover{border-bottom-color:var(--sun);background:#FFF9EC;cursor:text}
 .ed:focus{background:#FFF9EC;border-bottom-color:var(--sun)}
-.ed.empty::before{content:attr(data-ph);color:#A9B4C0;font-style:italic;font-weight:400}
+.ed.empty::before{content:attr(data-ph);color:#A9B4C0;font-style:italic;font-weight:400;font-size:11px}
 .edit-hint{font-size:12px;color:var(--mute);margin-top:10px;display:flex;align-items:center;gap:6px}
 
 /* ตารางคู่ ป้าย/ค่า — รูปแบบหลักของบรีฟ อ่านเร็วกว่าย่อหน้า */
@@ -97,7 +97,7 @@ header h1 small{display:block;font-weight:300;font-size:.5em;color:#B9C7D6;margi
   gap:6px;color:var(--mute);font-size:13px;text-align:center;padding:16px}
 .shot .cap{font-family:'Kanit';font-size:13px;color:var(--ink-2)}
 .shot-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.shot.filled{border-style:solid;border-color:var(--line);background:#000;padding:0;position:relative;overflow:hidden;display:block}
+.shot.filled{border-style:solid;border-color:var(--line);background:#000;padding:0;position:relative;overflow:hidden;display:block;resize:both}
 .shot .frame{position:relative;line-height:0}
 .shot .frame img{width:100%;display:block}
 .shot .tools{position:absolute;right:8px;top:8px;display:flex;gap:6px;z-index:2}
@@ -204,32 +204,38 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
 
 /* ── พิมพ์ : หนึ่งสไลด์ต่อหนึ่งหน้ากระดาษ ───────────────────────── */
 @media print{
-  @page{size:A4 landscape;margin:10mm}
+  @page{size:A4 landscape;margin:12.7mm} /* 0.5 นิ้ว ทุกด้าน */
   header,.no-print,.empty{display:none !important}
   html,body{background:#fff;font-size:12px}
   .wrap{max-width:none;padding:0}
   #deck{padding:0}
-  /* หัวกระดาษแบบเต็มอยู่หน้าแรก หน้าถัด ๆ ไปใช้แถบบางแทน
-     เอกสารที่ส่งให้ลูกค้าหรือแนบเบิกของ ทุกแผ่นควรบอกได้ว่ามาจากใคร */
   .lh-slim{display:flex !important;align-items:center;gap:9px;border-bottom:1px solid #cbd5e1;
     padding-bottom:5px;margin-bottom:9px;font-size:9.5px;color:#64748b}
   .lh-slim img{height:20px;width:auto;max-width:90px;object-fit:contain}
   .lh-slim b{font-family:'Kanit';font-size:11px;color:#0f172a}
   .mat tbody tr.off{display:none}
   .mat-tools{display:none !important}
-  /* ช่องกรอกเองต้องดูเหมือนข้อความธรรมดาบนกระดาษ ไม่มีเส้นประหรือพื้นเหลือง */
   .ed{border:0 !important;background:none !important;padding:0}
   .ed.empty::before{content:'—';font-style:normal;color:#94a3b8}
   .edit-hint{display:none !important}
-  /* โหมดหน้างานซ่อนสไลด์ที่ไม่ได้เปิดอยู่ ตอนพิมพ์ต้องได้ครบทุกใบเสมอ */
   #jobbar,#pager,#lightbox{display:none !important}
   body.mobile #deck .slide{display:block}
   .slide{border:0;border-radius:0;padding:0 0 6mm;margin:0;
          break-after:page;page-break-after:always;break-inside:avoid}
   .slide:last-child{break-after:auto;page-break-after:auto}
   .slide-head{margin-bottom:10px}
-  .shot{min-height:120px}
+
+  /* ห้ามตัดรูป/ตารางระหว่างหน้าเด็ดขาด — รูปไม่พอก็ไปหน้าใหม่ */
+  .shot,.shot.filled,.shot-grid{break-inside:avoid;page-break-inside:avoid}
+  .shot{min-height:120px;resize:none}
+  .shot.filled{resize:none}
+
+  /* section 6 วัสดุ + 7 เช็กลิสต์: ตารางยาวข้ามหน้าได้ ใส่หัวตารางซ้ำ */
+  #s6,#s7{break-inside:auto;page-break-inside:auto}
+  .mat thead,.ck-thead-print{display:table-header-group}
   .mat{font-size:11px}
+  .mat tr{break-inside:avoid;page-break-inside:avoid}
+  .ck li{break-inside:avoid;page-break-inside:avoid}
 }
 </style>
 </head>
