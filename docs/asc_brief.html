@@ -97,9 +97,11 @@ header h1 small{display:block;font-weight:300;font-size:.5em;color:#B9C7D6;margi
   gap:6px;color:var(--mute);font-size:13px;text-align:center;padding:16px}
 .shot .cap{font-family:'Kanit';font-size:13px;color:var(--ink-2)}
 .shot-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.shot.filled{border-style:solid;border-color:var(--line);background:#000;padding:0;position:relative;overflow:hidden;display:block;resize:both}
+.shot.filled{border-style:solid;border-color:var(--line);background:#000;padding:0;position:relative;overflow:hidden;display:block;resize:both;cursor:grab}
+.shot.filled.dragging{cursor:grabbing;opacity:.85;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.shot.drop-target{outline:3px solid var(--sun);outline-offset:2px;background:#FFF9EC !important}
 .shot .frame{position:relative;line-height:0}
-.shot .frame img{width:100%;display:block}
+.shot .frame img{width:100%;display:block;pointer-events:none}
 .shot .tools{position:absolute;right:8px;top:8px;display:flex;gap:6px;z-index:2}
 .shot .tools button{background:rgba(15,30,51,.82);color:#fff;border:0;border-radius:8px;
   padding:5px 10px;font-family:'Kanit';font-size:12px}
@@ -227,8 +229,9 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
 
   /* ห้ามตัดรูป/ตารางระหว่างหน้าเด็ดขาด — รูปไม่พอก็ไปหน้าใหม่ */
   .shot,.shot.filled,.shot-grid{break-inside:avoid;page-break-inside:avoid}
-  .shot{min-height:120px;resize:none}
-  .shot.filled{resize:none}
+  .shot{min-height:120px;resize:none;cursor:auto}
+  .shot.filled{resize:none;cursor:auto}
+  .shot-placeholder{display:none}
 
   /* section 6 วัสดุ + 7 เช็กลิสต์: ตารางยาวข้ามหน้าได้ ใส่หัวตารางซ้ำ */
   #s6,#s7{break-inside:auto;page-break-inside:auto}
@@ -1282,6 +1285,96 @@ async function dropPhoto(slot, photoId){
     PHOTOS[slot] = (PHOTOS[slot] || []).filter(r => r.photoId !== photoId);
     renderPhotos(); showUsage();
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   5.5) ลากย้ายกรอบรูปอิสระ (drag & drop swap)
+   ══════════════════════════════════════════════════════════════════ */
+(function(){
+  let dragEl = null, placeholder = null, startX, startY, origX, origY;
+
+  function nearest(el, sel){ while(el && !el.matches(sel)) el = el.parentElement; return el; }
+
+  function onDown(e){
+    const shot = nearest(e.target, '.shot.filled');
+    if (!shot || e.target.closest('.tools') || e.target.closest('button') || e.target.closest('.cap-bar')) return;
+    e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    dragEl = shot;
+    const r = shot.getBoundingClientRect();
+    startX = pt.clientX; startY = pt.clientY;
+    origX = r.left; origY = r.top;
+
+    placeholder = document.createElement('div');
+    placeholder.className = 'shot-placeholder';
+    placeholder.style.cssText = 'border:2px dashed var(--sun);border-radius:12px;background:#FFF9EC;min-height:'+r.height+'px;opacity:.5';
+    shot.parentNode.insertBefore(placeholder, shot);
+
+    shot.style.position = 'fixed';
+    shot.style.left = r.left + 'px';
+    shot.style.top = r.top + 'px';
+    shot.style.width = r.width + 'px';
+    shot.style.zIndex = '9999';
+    shot.style.margin = '0';
+    shot.classList.add('dragging');
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('touchmove', onMove, {passive:false});
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchend', onUp);
+  }
+
+  function onMove(e){
+    if (!dragEl) return;
+    e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    const dx = pt.clientX - startX, dy = pt.clientY - startY;
+    dragEl.style.left = (origX + dx) + 'px';
+    dragEl.style.top = (origY + dy) + 'px';
+
+    const over = document.elementFromPoint(pt.clientX, pt.clientY);
+    const target = over ? nearest(over, '.shot[data-slot]') : null;
+    document.querySelectorAll('.shot.drop-target').forEach(s => s.classList.remove('drop-target'));
+    if (target && target !== dragEl) target.classList.add('drop-target');
+  }
+
+  function onUp(e){
+    if (!dragEl) return;
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    document.removeEventListener('touchend', onUp);
+
+    const pt = e.changedTouches ? e.changedTouches[0] : e;
+    dragEl.style.position = '';
+    dragEl.style.left = '';
+    dragEl.style.top = '';
+    dragEl.style.width = '';
+    dragEl.style.zIndex = '';
+    dragEl.style.margin = '';
+    dragEl.classList.remove('dragging');
+
+    if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
+
+    const over = document.elementFromPoint(pt.clientX, pt.clientY);
+    const target = over ? nearest(over, '.shot[data-slot]') : null;
+    document.querySelectorAll('.shot.drop-target').forEach(s => s.classList.remove('drop-target'));
+
+    if (target && target !== dragEl) {
+      const slotA = dragEl.dataset.slot, slotB = target.dataset.slot;
+      const capA = dragEl.dataset.cap, capB = target.dataset.cap;
+      dragEl.dataset.slot = slotB; dragEl.dataset.cap = capB;
+      target.dataset.slot = slotA; target.dataset.cap = capA;
+      const tmpPhotos = PHOTOS[slotA];
+      PHOTOS[slotA] = PHOTOS[slotB] || [];
+      PHOTOS[slotB] = tmpPhotos || [];
+      renderPhotos();
+    }
+
+    placeholder = null; dragEl = null;
+  }
+
+  document.getElementById('deck').addEventListener('mousedown', onDown);
+  document.getElementById('deck').addEventListener('touchstart', onDown, {passive:false});
+})();
 
 /* ══════════════════════════════════════════════════════════════════
    6) โหมดมือถือ และการส่งออก
