@@ -253,6 +253,11 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
   .shot.filled{resize:none;cursor:auto}
   .shot .resize-handle{display:none !important}
   .shot-placeholder{display:none}
+  /* ⚠ Reset A4-view screen CSS บนพิมพ์ ไม่งั้นจะพิมพ์ผิดขนาด/ทับหน้า */
+  body.a4-view #deck{display:block !important;background:#fff !important;padding:0 !important;min-height:0 !important;align-items:stretch !important}
+  body.a4-view .slide{width:auto !important;height:auto !important;padding:0 !important;margin:0 !important;
+    box-shadow:none !important;border:0 !important;overflow:visible !important;background:transparent !important}
+  body.a4-view .slide::after{display:none !important}
   /* คงตำแหน่ง (transform) และขนาดที่ผู้ใช้ตั้งไว้บน PDF */
 
   /* section 6 วัสดุ + 7 เช็กลิสต์: ตารางยาวข้ามหน้าได้ ใส่หัวตารางซ้ำ */
