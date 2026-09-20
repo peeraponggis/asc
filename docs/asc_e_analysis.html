@@ -135,7 +135,7 @@
     <div class="global-settings">
         <div>
             <label>ชื่อผู้ใช้ไฟฟ้า / โครงการ:</label>
-            <input type="text" id="global_name" value="ลุงพี" placeholder="ระบุชื่อ..." style="width: 250px;">
+            <input type="text" id="global_name" value="=ชื่อเจ้าของมิเตอร์" placeholder="ระบุชื่อ..." style="width: 250px;">
         </div>
         <div>
             <label>ค่า Ft (บาท/หน่วย):</label>
@@ -362,11 +362,11 @@
                 <!-- Data Summary Tables from AMR -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white rounded-lg shadow p-6">
-                        <h3 class="text-lg font-bold mb-4 text-indigo-800">สรุปการใช้ไฟฟ้า ทั้งปี (จาก AMR)</h3>
+                        <h3 id="amrSummaryTitle" class="text-lg font-bold mb-4 text-indigo-800">สรุปการใช้ไฟฟ้า (จาก AMR)</h3>
                         <ul class="space-y-2 text-sm">
-                            <li class="flex justify-between border-b pb-1"><span>Rate A (Peak 09.00-22.00):</span> <span id="sum_A" class="font-semibold">0 kWh</span></li>
-                            <li class="flex justify-between border-b pb-1"><span>Rate B (Off Peak 22.15-08.45):</span> <span id="sum_B" class="font-semibold">0 kWh</span></li>
-                            <li class="flex justify-between border-b pb-1"><span>Rate C (Holiday 24 ช.ม.):</span> <span id="sum_C" class="font-semibold">0 kWh</span></li>
+                            <li class="flex justify-between border-b pb-1"><span>Rate A (Peak 09.00-22.00):</span> <span><span id="sum_A" class="font-semibold">0 kWh</span> <span id="sum_A_baht" class="text-red-600 font-semibold ml-2"></span></span></li>
+                            <li class="flex justify-between border-b pb-1"><span>Rate B (Off Peak 22.15-08.45):</span> <span><span id="sum_B" class="font-semibold">0 kWh</span> <span id="sum_B_baht" class="text-red-600 font-semibold ml-2"></span></span></li>
+                            <li class="flex justify-between border-b pb-1"><span>Rate C (Holiday 24 ช.ม.):</span> <span><span id="sum_C" class="font-semibold">0 kWh</span> <span id="sum_C_baht" class="text-red-600 font-semibold ml-2"></span></span></li>
                             <li class="flex justify-between border-b pb-1 text-blue-600"><span>Rate A (Peak 09.00-15.00 น.):</span> <span id="sum_A_9_15" class="font-semibold">0 kWh</span></li>
                             <li class="flex justify-between border-b pb-1 text-blue-600"><span>Rate C (Holiday 09.00-15.00 น.):</span> <span id="sum_C_9_15" class="font-semibold">0 kWh</span></li>
                         </ul>
@@ -390,7 +390,7 @@
 
                 <!-- AMR Load Profile Export UI -->
                 <div class="bg-white rounded-lg shadow p-6 border border-gray-200">
-                    <h3 class="text-lg font-bold text-gray-800 border-b pb-2">พฤติกรรมการใช้ไฟรายชั่วโมง (24h Load Profile) & ส่งออก DB0</h3>
+                    <h3 class="text-lg font-bold text-gray-800 border-b pb-2">พฤติกรรมการใช้ไฟรายชั่วโมง (24h Load Profile)</h3>
                     <p class="text-sm text-gray-500 mt-2">ระบบจะดึงสัดส่วนการใช้ไฟกลางวัน (08:00-17:00) จากข้อมูล AMR มากระจายลงตารางอัตโนมัติ คุณสามารถปรับแก้ให้ได้รวม 100% (±5%) ก่อนบันทึก</p>
                     
                     <div id="load_profile_9" class="grid grid-cols-6 md:grid-cols-12 gap-2 mt-4">
@@ -400,9 +400,8 @@
                     <div class="flex items-center justify-between mt-6 pt-4 border-t">
                         <div class="text-lg"><strong>ผลรวม: <span id="load_sum_9" class="text-blue-600">0</span>%</strong></div>
                         <div class="flex gap-3 flex-wrap">
-                            <button onclick="exportDB0(9)" class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-5 rounded shadow-lg">Export DB0 (.txt)</button>
+                            <button onclick="exportDB0(9)" class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-5 rounded shadow-lg">Export Database</button>
                             <button onclick="exportPDF(9)" class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-5 rounded shadow-lg">📄 Export PDF</button>
-                            <button onclick="printReport(9)" class="bg-slate-600 hover:bg-slate-800 text-white font-bold py-2 px-5 rounded shadow-lg">🖨️ พิมพ์รายงาน</button>
                         </div>
                     </div>
 					<!-- 🟢 เริ่ม: กราฟ 24h Daily Operation และ AI Analysis -->
@@ -432,6 +431,38 @@
                 </div>
                 <!-- 🟢 จบ: กราฟ 24h และ AI Analysis -->
                 </div>
+
+                <!-- 🟢 เริ่ม: นำเข้าข้อมูลรายปี (Multi-Year) -->
+                <div class="bg-white rounded-lg shadow p-6 border-t-4 border-amber-500 mt-6">
+                    <h2 class="text-xl font-bold mb-4 text-amber-800">นำเข้าข้อมูลรายปี (เปรียบเทียบหลายปี)</h2>
+                    <p class="text-sm text-gray-500 mb-4">นำเข้าไฟล์ AMR แยกตามปี (CSV/Excel) ได้มากกว่า 1 ไฟล์ ระบบจะสรุปตารางและกราฟแท่งรายปี พร้อมเส้นมัธยฐาน</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm font-bold text-gray-700">ไฟล์ CSV/TXT รายปี:</label>
+                            <input type="file" id="yearlyFilesCsv" accept=".csv,.txt" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 border border-gray-300 rounded-md p-2 mt-1">
+                        </div>
+                        <div>
+                            <label class="text-sm font-bold text-gray-700">ไฟล์ Excel รายปี:</label>
+                            <input type="file" id="yearlyFilesXls" accept=".xlsx,.xls" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 border border-gray-300 rounded-md p-2 mt-1">
+                        </div>
+                    </div>
+                    <button onclick="processYearlyFiles()" class="mt-4 bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-6 rounded shadow transition">ประมวลผลรายปี</button>
+
+                    <div id="yearlyResults" class="hidden mt-6">
+                        <h3 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">สรุปการใช้ไฟฟ้ารายปี</h3>
+                        <div class="overflow-x-auto">
+                            <table id="yearlyTable" class="min-w-full text-sm border-collapse">
+                                <thead id="yearlyThead" class="bg-amber-50"></thead>
+                                <tbody id="yearlyTbody"></tbody>
+                            </table>
+                        </div>
+                        <div style="position:relative; height:400px; width:100%; margin-top:20px;">
+                            <canvas id="yearlyBarChart"></canvas>
+                        </div>
+                        <div id="yearlySummaryText" class="mt-6 space-y-3 text-sm"></div>
+                    </div>
+                </div>
+                <!-- 🟢 จบ: นำเข้าข้อมูลรายปี -->
             </div>
         </div>
     </div>
@@ -862,7 +893,6 @@
                     <div style="display:flex; gap:10px; flex-wrap:wrap;">
                         <button class="export-btn" onclick="exportDB0(${type})">Export Database</button>
                         <button class="pdf-btn" onclick="exportPDF(${type})">📄 Export PDF</button>
-                        <button class="print-btn" onclick="printReport(${type})">🖨️ พิมพ์รายงาน</button>
                     </div>
                 </div>
             </div>
@@ -1096,19 +1126,23 @@ async function parseAMRFiles(files, type) {
             if(!userExtracted) { extractAMRUserInfo(rows); userExtracted = true; }
             
             let dataStartIdx = -1;
-            for (let i = 0; i < Math.min(15, rows.length); i++) {
-                if (rows[i] && rows[i].some(cell => String(cell).toUpperCase().includes('RATE A'))) { dataStartIdx = i + 1; break; }
+            for (let i = 0; i < Math.min(40, rows.length); i++) {
+                if (rows[i] && rows[i].some(cell => /rate\s*a/i.test(String(cell || '')))) { dataStartIdx = i + 1; break; }
             }
-            
+
             if (dataStartIdx !== -1) {
                 for (let i = dataStartIdx; i < rows.length; i++) {
                     const row = rows[i];
-                    if (row.length >= 5 && String(row[0]).trim() !== '' && String(row[0]).trim() !== 'รวม') {
-                        let dtStr = String(row[0]).trim();
-                        let rateA = parseFloat(String(row[1]).replace(/,/g, '')) || 0;
-                        let rateB = parseFloat(String(row[2]).replace(/,/g, '')) || 0;
-                        let rateC = parseFloat(String(row[3]).replace(/,/g, '')) || 0;
-                        let total = parseFloat(String(row[4]).replace(/,/g, '')) || (rateA+rateB+rateC);
+                    if (!row || row.length < 5) continue;
+                    let dtStr = String(row[0] || '').trim();
+                    if (!dtStr || dtStr === 'รวม' || dtStr.includes('ผลรวมทั้งหมด') || dtStr.includes('***') || dtStr.includes('พิมพ์โดย')) continue;
+                    // ต้องมีตัวเลขวันที่ขึ้นต้น เพื่อกันแถว summary/notes
+                    if (!/^\d/.test(dtStr)) continue;
+                    {
+                        let rateA = parseFloat(String(row[1] || '').replace(/,/g, '')) || 0;
+                        let rateB = parseFloat(String(row[2] || '').replace(/,/g, '')) || 0;
+                        let rateC = parseFloat(String(row[3] || '').replace(/,/g, '')) || 0;
+                        let total = parseFloat(String(row[4] || '').replace(/,/g, '')) || (rateA+rateB+rateC);
 
                         amrMonthlyData.sumA += rateA; amrMonthlyData.sumB += rateB; amrMonthlyData.sumC += rateC;
                         amrMonthlyData.allValues.push(total);
@@ -1140,21 +1174,33 @@ async function parseAMRFiles(files, type) {
                 }
             }
         }
+        let amrYears = new Set();
+        for (let date of amrMonthlyData.uniqueDays) {
+            let m = date.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+            if (m) { let y = parseInt(m[3]); if (y < 100) y += 2000; amrYears.add(y > 2500 ? y : y + 543); }
+        }
+        let titleEl = document.getElementById('amrSummaryTitle');
+        if (titleEl) {
+            let yrStr = [...amrYears].sort().join(', ');
+            titleEl.textContent = 'สรุปการใช้ไฟฟ้า ปี พ.ศ. ' + (yrStr || '—') + ' (จาก AMR)';
+        }
+
         updateMonthlyUI();
         document.getElementById('monthlyResults').classList.remove('hidden');
     }
 
     function updateMonthlyUI() {
+        let pRate = parseFloat(document.getElementById('amr_peakRate').value) || PEA_RATES.amr.peak;
+        let opRate = parseFloat(document.getElementById('amr_offPeakRate').value) || PEA_RATES.amr.offPeak;
+
         document.getElementById('sum_A').innerText = amrMonthlyData.sumA.toLocaleString(undefined, {maximumFractionDigits:2}) + ' kWh';
         document.getElementById('sum_B').innerText = amrMonthlyData.sumB.toLocaleString(undefined, {maximumFractionDigits:2}) + ' kWh';
         document.getElementById('sum_C').innerText = amrMonthlyData.sumC.toLocaleString(undefined, {maximumFractionDigits:2}) + ' kWh';
         document.getElementById('sum_A_9_15').innerText = amrMonthlyData.sumA915.toLocaleString(undefined, {maximumFractionDigits:2}) + ' kWh';
         document.getElementById('sum_C_9_15').innerText = amrMonthlyData.sumC915.toLocaleString(undefined, {maximumFractionDigits:2}) + ' kWh';
-
-        // 🌟 คำนวณยอดเงินรวมและรายละเอียดบิลเพื่อใช้เก็บใน DB0 (ทศนิยม 4 ตำแหน่ง)
-        // อัตราในช่องกรอกคือแหล่งข้อมูลหลัก และถูก sync กลับเข้า PEA_RATES.amr เพื่อบันทึกไว้
-        let pRate = parseFloat(document.getElementById('amr_peakRate').value) || PEA_RATES.amr.peak;
-        let opRate = parseFloat(document.getElementById('amr_offPeakRate').value) || PEA_RATES.amr.offPeak;
+        document.getElementById('sum_A_baht').innerText = '(' + (amrMonthlyData.sumA * pRate).toLocaleString(undefined, {maximumFractionDigits:2}) + ' บาท)';
+        document.getElementById('sum_B_baht').innerText = '(' + (amrMonthlyData.sumB * opRate).toLocaleString(undefined, {maximumFractionDigits:2}) + ' บาท)';
+        document.getElementById('sum_C_baht').innerText = '(' + (amrMonthlyData.sumC * opRate).toLocaleString(undefined, {maximumFractionDigits:2}) + ' บาท)';
         PEA_RATES.amr.peak = pRate;
         PEA_RATES.amr.offPeak = opRate;
         saveRates();
@@ -1346,7 +1392,7 @@ function drawAMRDaily24hChart() {
         if (aiContainer && aiText) {
             aiText.innerHTML = `
                 <li><strong>ระบบ Solar PV ที่แนะนำ:</strong> ขนาด <span class="text-blue-700 font-bold">${kwp_total.toFixed(2)} kWp</span> (ปรับสมดุลตามการใช้ไฟช่วง 09:00-15:00 น. เพื่อไม่ให้ไฟย้อน)</li>
-                <li><strong>ลดหน่วยการใช้ไฟ (Energy Saving):</strong> ผลิตไฟช่วยลดโหลดได้รวม <span class="text-emerald-700 font-bold">${total_pv_kwh.toLocaleString('th-TH', {maximumFractionDigits:0})} kWh</span> (${dailyPvKwh.toLocaleString('th-TH', {maximumFractionDigits:1})} kWh/วัน × ${days} วัน) หรือประหยัดพลังงานได้ <span class="text-emerald-700 font-bold text-lg">${percent_kwh_saved.toFixed(1)}%</span> ของการใช้ไฟทั้งหมด</li>
+                <li><strong>ลดหน่วยการใช้ไฟ (Energy Saving):</strong> ผลิตไฟช่วยลดโหลดได้รวม <span class="text-emerald-700 font-bold">${total_pv_kwh.toLocaleString('th-TH', {maximumFractionDigits:0})} kWh</span> (<span class="text-red-600 font-bold">${saved_cost.toLocaleString('th-TH', {maximumFractionDigits:0})} บาท</span>) (${dailyPvKwh.toLocaleString('th-TH', {maximumFractionDigits:1})} kWh/วัน × ${days} วัน) หรือประหยัดพลังงานได้ <span class="text-emerald-700 font-bold text-lg">${percent_kwh_saved.toFixed(1)}%</span> ของการใช้ไฟทั้งหมด</li>
                 <li><strong>ประหยัดค่าใช้จ่าย (Cost Saving):</strong> เน้นตัดโหลดแพงช่วง Peak ทำให้ประหยัดค่าไฟได้ประมาณ <span class="text-emerald-700 font-bold">${saved_cost.toLocaleString('th-TH', {maximumFractionDigits:0})} บาท</span> คิดเป็นการลดบิลค่าไฟได้ถึง <span class="text-emerald-700 font-bold text-lg">${percent_cost_saved.toFixed(1)}%</span></li>
             `;
             aiContainer.classList.remove('hidden');
@@ -2067,16 +2113,18 @@ function drawAMRDaily24hChart() {
                 <tr><td style="${RPT.td} background:#f8fafc;"><b>ชื่อผู้ใช้ไฟ</b></td><td style="${RPT.td}">${amrUserInfo.name || '-'}</td>
                     <td style="${RPT.td} background:#f8fafc;"><b>Tariff</b></td><td style="${RPT.td}">${amrUserInfo.tariff || '-'}</td></tr>
                 <tr><td style="${RPT.td} background:#f8fafc;"><b>จำนวนวันที่มีข้อมูล</b></td><td style="${RPT.td}" colspan="3">${days.toLocaleString('th-TH')} วัน</td></tr>
-            </table>
-            <table style="${RPT.table} margin-top:8px;">
-                <tr><th style="${RPT.th}">ช่วงอัตรา</th><th style="${RPT.th} text-align:right; width:180px;">หน่วยรวม (kWh)</th></tr>
-                <tr><td style="${RPT.td}">Rate A — Peak (09:00-22:00)</td><td style="${RPT.tdR}">${fmt(amrMonthlyData.sumA)}</td></tr>
-                <tr><td style="${RPT.td}">Rate B — Off Peak (22:00-09:00)</td><td style="${RPT.tdR}">${fmt(amrMonthlyData.sumB)}</td></tr>
-                <tr><td style="${RPT.td}">Rate C — Holiday (24 ชม.)</td><td style="${RPT.tdR}">${fmt(amrMonthlyData.sumC)}</td></tr>
-                <tr><td style="${RPT.td} color:#1d4ed8;">Rate A — ช่วง 09:00-15:00 (ใช้วิเคราะห์ PV)</td><td style="${RPT.tdR} color:#1d4ed8;">${fmt(amrMonthlyData.sumA915)}</td></tr>
-                <tr><td style="${RPT.td} color:#1d4ed8;">Rate C — ช่วง 09:00-15:00 (ใช้วิเคราะห์ PV)</td><td style="${RPT.tdR} color:#1d4ed8;">${fmt(amrMonthlyData.sumC915)}</td></tr>
-                <tr><td style="${RPT.td}"><b>รวมหน่วยการใช้ไฟทั้งหมด</b></td><td style="${RPT.tdR}"><b>${fmt(window.amrGrandTotalKwh || 0)}</b></td></tr>
-                <tr><td style="${RPT.td}"><b>รวมหน่วยช่วง 09:00-15:00</b></td><td style="${RPT.tdR}"><b>${fmt(amrMonthlyData.sumA915 + amrMonthlyData.sumC915)}</b></td></tr>
+            </table>`;
+            let rptPRate = parseFloat(document.getElementById('amr_peakRate').value) || PEA_RATES.amr.peak;
+            let rptOPRate = parseFloat(document.getElementById('amr_offPeakRate').value) || PEA_RATES.amr.offPeak;
+            html += `<table style="${RPT.table} margin-top:8px;">
+                <tr><th style="${RPT.th}">ช่วงอัตรา</th><th style="${RPT.th} text-align:right; width:150px;">หน่วยรวม (kWh)</th><th style="${RPT.th} text-align:right; width:150px;">ค่าไฟ (บาท)</th></tr>
+                <tr><td style="${RPT.td}">Rate A — Peak (09:00-22:00)</td><td style="${RPT.tdR}">${fmt(amrMonthlyData.sumA)}</td><td style="${RPT.tdR}">${fmt(amrMonthlyData.sumA * rptPRate)}</td></tr>
+                <tr><td style="${RPT.td}">Rate B — Off Peak (22:00-09:00)</td><td style="${RPT.tdR}">${fmt(amrMonthlyData.sumB)}</td><td style="${RPT.tdR}">${fmt(amrMonthlyData.sumB * rptOPRate)}</td></tr>
+                <tr><td style="${RPT.td}">Rate C — Holiday (24 ชม.)</td><td style="${RPT.tdR}">${fmt(amrMonthlyData.sumC)}</td><td style="${RPT.tdR}">${fmt(amrMonthlyData.sumC * rptOPRate)}</td></tr>
+                <tr><td style="${RPT.td} color:#1d4ed8;">Rate A — ช่วง 09:00-15:00 (ใช้วิเคราะห์ PV)</td><td style="${RPT.tdR} color:#1d4ed8;">${fmt(amrMonthlyData.sumA915)}</td><td style="${RPT.tdR} color:#1d4ed8;">${fmt(amrMonthlyData.sumA915 * rptPRate)}</td></tr>
+                <tr><td style="${RPT.td} color:#1d4ed8;">Rate C — ช่วง 09:00-15:00 (ใช้วิเคราะห์ PV)</td><td style="${RPT.tdR} color:#1d4ed8;">${fmt(amrMonthlyData.sumC915)}</td><td style="${RPT.tdR} color:#1d4ed8;">${fmt(amrMonthlyData.sumC915 * rptOPRate)}</td></tr>
+                <tr><td style="${RPT.td}"><b>รวมหน่วยการใช้ไฟทั้งหมด</b></td><td style="${RPT.tdR}"><b>${fmt(window.amrGrandTotalKwh || 0)}</b></td><td style="${RPT.tdR}"><b>${fmt((window.amrGrandTotalBaht || 0))}</b></td></tr>
+                <tr><td style="${RPT.td}"><b>รวมหน่วยช่วง 09:00-15:00</b></td><td style="${RPT.tdR}"><b>${fmt(amrMonthlyData.sumA915 + amrMonthlyData.sumC915)}</b></td><td style="${RPT.tdR}"><b>${fmt(amrMonthlyData.sumA915 * rptPRate + amrMonthlyData.sumC915 * rptOPRate)}</b></td></tr>
             </table>`;
         }
 
@@ -2091,7 +2139,7 @@ function drawAMRDaily24hChart() {
         }
 
         // 4. ผลประเมิน PV
-        html += `<p style="${RPT.h2}">${isAmr ? '3' : '2'}. ผลการประเมินกำลังผลิต Solar PV</p>`;
+        html += `<p style="${RPT.h2} page-break-before: always; break-before: page;">${isAmr ? '3' : '2'}. ผลการประเมินกำลังผลิต Solar PV</p>`;
         if (isAmr) {
             let a = window.amrAnalysis || {};
             html += `<table style="${RPT.table}">
@@ -2121,18 +2169,98 @@ function drawAMRDaily24hChart() {
         }
 
         // 6. กราฟ
-        html += `<p style="${RPT.h2}">${isAmr ? '5' : '4'}. กราฟจำลองการทำงานเฉลี่ยรายวัน</p>${chartImageHtml(type)}`;
+        html += `<div class="no-break"><p style="${RPT.h2}">${isAmr ? '5' : '4'}. กราฟจำลองการทำงานเฉลี่ยรายวัน</p>${chartImageHtml(type)}</div>`;
 
         // 7. บทวิเคราะห์
         let aiEl = isAmr ? document.getElementById('aiAnalysisText') : document.getElementById(`ai_text_${type}`);
         if (aiEl && aiEl.innerText.trim()) {
-            html += `<p style="${RPT.h2}">${isAmr ? '6' : '5'}. บทวิเคราะห์และข้อเสนอแนะ</p>
+            html += `<div class="no-break"><p style="${RPT.h2}">${isAmr ? '6' : '5'}. บทวิเคราะห์และข้อเสนอแนะ</p>
                      <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:12px 14px; font-size:12.5px; color:#166534;">
                         ${isAmr ? '<ul style="margin:0; padding-left:18px;">' + aiEl.innerHTML + '</ul>' : aiEl.innerHTML}
-                     </div>`;
+                     </div></div>`;
         }
 
-        // 8. ท้ายรายงาน
+        // 8. ข้อมูลเปรียบเทียบรายปี (Multi-Year) — ถ้ามี
+        if (isAmr && Object.keys(yearlyData).length > 0) {
+            let secNum = aiEl && aiEl.innerText.trim() ? '7' : '6';
+            let pRate = parseFloat(document.getElementById('amr_peakRate').value) || PEA_RATES.amr.peak;
+            let opRate = parseFloat(document.getElementById('amr_offPeakRate').value) || PEA_RATES.amr.offPeak;
+            let yrs = Object.keys(yearlyData).map(Number).sort();
+
+            html += `<div style="page-break-before:always;"></div>`;
+            html += `<p style="${RPT.h2}">${secNum}. เปรียบเทียบการใช้ไฟฟ้ารายปี</p>`;
+            html += `<table style="${RPT.table}" class="allow-break">
+                <thead><tr>
+                    <th style="${RPT.th}">ปี (พ.ศ.)</th>
+                    <th style="${RPT.th} text-align:right;">เดือน</th>
+                    <th style="${RPT.th} text-align:right;">รวม (kWh)</th>
+                    <th style="${RPT.th} text-align:right;">Rate A (kWh)</th>
+                    <th style="${RPT.th} text-align:right;">Rate B (kWh)</th>
+                    <th style="${RPT.th} text-align:right;">Rate C (kWh)</th>
+                    <th style="${RPT.th} text-align:right;">ค่าไฟประมาณ (บาท)</th>
+                </tr></thead><tbody>`;
+            let yTotals = [];
+            for (let yr of yrs) {
+                let d = yearlyData[yr];
+                let cost = (d.rateA * pRate) + ((d.rateB + d.rateC) * opRate);
+                yTotals.push(d.total);
+                html += `<tr>
+                    <td style="${RPT.td}"><b>${yr + 543}</b></td>
+                    <td style="${RPT.tdR}">${d.monthSet.size || '-'}</td>
+                    <td style="${RPT.tdR}"><b>${fmtN(d.total)}</b></td>
+                    <td style="${RPT.tdR}">${fmtN(d.rateA)}</td>
+                    <td style="${RPT.tdR}">${fmtN(d.rateB)}</td>
+                    <td style="${RPT.tdR}">${fmtN(d.rateC)}</td>
+                    <td style="${RPT.tdR}"><b style="color:#dc2626;">${fmtN(cost)}</b></td>
+                </tr>`;
+            }
+            let medY = median(yTotals);
+            html += `<tr style="background:#fffbeb;"><td style="${RPT.td}" colspan="2"><b>มัธยฐาน</b></td>
+                <td style="${RPT.tdR}"><b>${fmtN(medY)}</b></td><td style="${RPT.tdR}" colspan="4"></td></tr>`;
+            html += `</tbody></table>`;
+
+            // กราฟ: ถ่ายภาพจาก canvas ที่แสดงอยู่
+            let yrCanvas = document.getElementById('yearlyBarChart');
+            if (yrCanvas) {
+                try {
+                    let yrImg = yrCanvas.toDataURL('image/png');
+                    html += `<div style="text-align:center; margin:12px 0;"><img src="${yrImg}" style="max-width:100%; height:auto;" /></div>`;
+                } catch(e) {}
+            }
+
+            // สรุปรายปี
+            html += `<p style="${RPT.h2}">สรุปรายปี</p>`;
+            for (let yr of yrs) {
+                let d = yearlyData[yr];
+                let costA = d.rateA * pRate;
+                let costBC = (d.rateB + d.rateC) * opRate;
+                let cost = costA + costBC;
+                let be = yr + 543;
+
+                let peakMonth = '', peakVal = 0;
+                for (let mi of Object.keys(d.monthlyDetail || {})) {
+                    if (d.monthlyDetail[mi].total > peakVal) { peakVal = d.monthlyDetail[mi].total; peakMonth = d.monthlyDetail[mi].name; }
+                }
+
+                html += `<div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px; padding:10px 14px; margin-bottom:8px; font-size:12px; page-break-inside:avoid;">
+                    <p style="margin:0 0 4px 0; font-weight:bold; color:#92400e; font-size:13px;">ปี พ.ศ. ${be}</p>
+                    <ul style="margin:0; padding-left:18px;">
+                        <li>Rate A (Peak): <b>${fmtN(d.rateA)}</b> kWh — <b style="color:#dc2626;">${fmtN(costA)}</b> บาท</li>
+                        <li>Rate B (Off-Peak): <b>${fmtN(d.rateB)}</b> kWh — <b style="color:#dc2626;">${fmtN(d.rateB * opRate)}</b> บาท</li>
+                        <li>Rate C (Holiday): <b>${fmtN(d.rateC)}</b> kWh — <b style="color:#dc2626;">${fmtN(d.rateC * opRate)}</b> บาท</li>
+                        <li>ภาพรวมทั้งปี: <b>${fmtN(d.total)}</b> kWh — <b style="color:#b91c1c;">${fmtN(cost)}</b> บาท</li>
+                        ${peakMonth ? `<li>เดือนที่ใช้ไฟมากสุด: <b style="color:#1d4ed8;">${peakMonth}</b> (${fmtN(peakVal)} kWh)</li>` : ''}
+                    </ul>`;
+                if (d.monthSet.size < 12) {
+                    let missing = [];
+                    for (let m = 0; m < 12; m++) { if (!d.monthSet.has(m)) missing.push(THAI_MONTHS_SHORT[m]); }
+                    html += `<p style="margin:4px 0 0 0; color:#ea580c; font-size:11px;">⚠ ข้อมูลไม่ครบ 12 เดือน — ไม่มีข้อมูล: ${missing.join(', ')}</p>`;
+                }
+                html += `</div>`;
+            }
+        }
+
+        // 9. ท้ายรายงาน
         html += `<div style="margin-top:22px; border-top:1px solid #cbd5e1; padding-top:8px;">
             <p style="${RPT.note}">
                 <b>หมายเหตุ:</b> รายงานนี้เป็นการประเมินเบื้องต้นเพื่อใช้ประกอบการออกแบบระบบ Solar PV เท่านั้น
@@ -2191,66 +2319,8 @@ function drawAMRDaily24hChart() {
         return ext ? `${base}.${ext}` : base;
     }
 
-    // --- 📄 ดาวน์โหลด PDF ทันที (html2canvas + jsPDF) ---
-    async function exportPDF(type) {
-        if (!reportReady(type)) return;
-
-        if (typeof html2canvas === 'undefined' || !window.jspdf) {
-            alert('โหลดไลบรารีสร้าง PDF ไม่สำเร็จ (ต้องต่ออินเทอร์เน็ต)\nกรุณาใช้ปุ่ม "🖨️ พิมพ์รายงาน" แล้วเลือก "Save as PDF" แทน');
-            return;
-        }
-
-        const overlay = document.getElementById('pdfOverlay');
-        const stage = document.getElementById('pdfStage');
-        overlay.style.display = 'flex';
-        try {
-            stage.innerHTML = buildReportHTML(type);
-            // รอให้เบราว์เซอร์ render ภาพกราฟ (data URI) เสร็จก่อนจับภาพ
-            await new Promise(r => setTimeout(r, 150));
-
-            const canvas = await html2canvas(stage.firstElementChild, {
-                scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false
-            });
-
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pageW = 210, pageH = 297;
-            const imgH = (canvas.height * pageW) / canvas.width;   // ความสูงรวมเมื่อย่อให้กว้างเท่าหน้า A4
-
-            if (imgH <= pageH) {
-                pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pageW, imgH);
-            } else {
-                // ตัดภาพเป็นหน้าๆ ด้วย canvas ย่อย เพื่อไม่ให้เนื้อหาซ้อนทับกัน
-                const pxPerPage = Math.floor((pageH * canvas.width) / pageW);
-                let y = 0, first = true;
-                while (y < canvas.height) {
-                    let sliceH = Math.min(pxPerPage, canvas.height - y);
-                    let part = document.createElement('canvas');
-                    part.width = canvas.width;
-                    part.height = sliceH;
-                    let pctx = part.getContext('2d');
-                    pctx.fillStyle = '#ffffff';
-                    pctx.fillRect(0, 0, part.width, part.height);
-                    pctx.drawImage(canvas, 0, y, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-
-                    if (!first) pdf.addPage();
-                    pdf.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pageW, (sliceH * pageW) / canvas.width);
-                    first = false;
-                    y += sliceH;
-                }
-            }
-            pdf.save(reportFilename(type, 'pdf'));
-        } catch (e) {
-            console.error(e);
-            alert('สร้าง PDF ไม่สำเร็จ: ' + e.message + '\nกรุณาลองใช้ปุ่ม "🖨️ พิมพ์รายงาน" แทน');
-        } finally {
-            stage.innerHTML = '';
-            overlay.style.display = 'none';
-        }
-    }
-
-// --- 🖨️ เปิดหน้าต่างพิมพ์ (ข้อความคมชัด ค้นหา/คัดลอกได้) ---
-    function printReport(type) {
+    // --- 📄 Export PDF (เปิดหน้าต่างใหม่ + Print → Save as PDF) ---
+    function exportPDF(type) {
         if (!reportReady(type)) return;
 
         let win = window.open('', '_blank');
@@ -2259,28 +2329,416 @@ function drawAMRDaily24hChart() {
             return;
         }
         let body = buildReportHTML(type);
-        win.document.open();
-        
-        // 🌟 แยกก้อน String ทุก Tag ไม่ให้ติดกัน เพื่อหลอกไม่ให้ Host (Google Sites/Editor) สับสนว่าหน้าเว็บจบแล้ว
+
         let htmlStr = "<!DOCTYPE html><html lang='th'><head><meta charset='UTF-8'>" +
             "<title>" + reportFilename(type, '').replace(/\.$/, '') + "</title>" +
             "<link href='https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap' rel='stylesheet'>" +
             "<" + "style>" +
-                "@page { size: A4; margin: 12mm; }" +
+                "@page { size: A4; margin: 12.7mm; }" +
                 "body { margin: 0; font-family: 'Sarabun', Tahoma, sans-serif; }" +
                 "body > div { width: 100% !important; padding: 0 !important; }" +
-                "table { page-break-inside: avoid; }" +
-                "img { page-break-inside: avoid; }" +
+                "table { page-break-inside: avoid; break-inside: avoid; border-collapse: collapse; }" +
+                "table.allow-break { page-break-inside: auto; break-inside: auto; }" +
+                "table.allow-break thead { display: table-header-group; }" +
+                "table.allow-break tr { page-break-inside: avoid; break-inside: avoid; }" +
+                "tr { page-break-inside: avoid; break-inside: avoid; }" +
+                "img { page-break-inside: avoid; break-inside: avoid; page-break-before: auto; max-width: 100%; }" +
+                "p, div, li { orphans: 3; widows: 3; page-break-inside: avoid; }" +
+                "ul, ol { page-break-inside: avoid; break-inside: avoid; }" +
+                "h1, h2, h3, h4, h5 { page-break-after: avoid; break-after: avoid; }" +
+                ".page-break { page-break-before: always; break-before: page; }" +
+                ".no-break { page-break-inside: avoid; break-inside: avoid; }" +
             "<" + "/style><" + "/head><" + "body>" + body + "<" + "/body><" + "/html>";
-            
+
+        win.document.open();
         win.document.write(htmlStr);
         win.document.close();
-        
-        // รอฟอนต์และภาพกราฟโหลดเสร็จก่อนสั่งพิมพ์
+
         let printed = false;
         const doPrint = () => { if (printed) return; printed = true; win.focus(); win.print(); };
         win.onload = () => setTimeout(doPrint, 400);
         setTimeout(doPrint, 1200);
+    }
+
+    // ==================================================================
+    // === 9.5 นำเข้าข้อมูลรายปี (Multi-Year Comparison) ===
+    // ==================================================================
+    let yearlyData = {};
+
+    async function readYearlyFileRows(file) {
+        let name = (file.name || '').toLowerCase();
+        // CSV / TXT → text-based parser (with HTML fallback for HTML-as-.xls)
+        if (name.endsWith('.csv') || name.endsWith('.txt')) {
+            return await parseFileToRows(file);
+        }
+        // Excel: try binary xlsx/xls first, fall back to HTML-as-xls text parser
+        try {
+            let buf = await file.arrayBuffer();
+            let bytes = new Uint8Array(buf);
+            // detect real xlsx (PK zip) or xls (D0 CF 11 E0)
+            let isBinary = (bytes[0] === 0x50 && bytes[1] === 0x4B) ||
+                           (bytes[0] === 0xD0 && bytes[1] === 0xCF && bytes[2] === 0x11 && bytes[3] === 0xE0);
+            if (isBinary) {
+                let wb = XLSX.read(buf, { type: 'array' });
+                let allRows = [];
+                for (let sn of wb.SheetNames) {
+                    let rs = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
+                    allRows = allRows.concat(rs);
+                }
+                return allRows;
+            }
+        } catch (e) { console.warn('binary parse failed, fallback to HTML', e); }
+        return await parseFileToRows(file);
+    }
+
+    async function processYearlyFiles() {
+        let csvFiles = Array.from(document.getElementById('yearlyFilesCsv').files || []);
+        let xlsFiles = Array.from(document.getElementById('yearlyFilesXls').files || []);
+        if (!csvFiles.length && !xlsFiles.length) { alert('กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์'); return; }
+
+        yearlyData = {};
+        let filesProcessed = 0;
+        let filesRead = 0;
+
+        let allFiles = [...csvFiles, ...xlsFiles];
+        for (let f of allFiles) {
+            filesRead++;
+            try {
+                let rows = await readYearlyFileRows(f);
+                let n = accumulateYearlyRows(rows, f.name);
+                if (n > 0) filesProcessed++;
+                else console.warn('No data found in', f.name);
+            } catch (e) {
+                console.error('Failed to read', f.name, e);
+            }
+        }
+
+        if (!Object.keys(yearlyData).length) {
+            alert('ไม่พบข้อมูลรายปีที่อ่านได้จากไฟล์ที่เลือก\n(อ่านไฟล์: ' + filesRead + ' | ประมวลผลได้: ' + filesProcessed + ')');
+            return;
+        }
+
+        renderYearlySummary();
+        document.getElementById('yearlyResults').classList.remove('hidden');
+    }
+
+    const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                         'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+    const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.',
+                               'ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+    // Return: จำนวนแถวข้อมูลที่อ่านได้ (0 = อ่านไม่ได้)
+    function accumulateYearlyRows(rows, fileName) {
+        let yearFromHeader = 0;
+        let monthFromHeader = -1;
+        let dataStartIdx = -1;
+        let headerIsTime = false;   // true=รายเดือน 15นาที (col0=เวลา), false=รายปี (col0=เดือน)
+
+        // 1) หา header — สแกน 40 แถวแรก
+        for (let i = 0; i < Math.min(40, rows.length); i++) {
+            if (!rows[i]) continue;
+            let line = rows[i].map(c => String(c || '')).join(' ');
+
+            // ปี พ.ศ. จาก "ประจำปี : 2567" หรือ "ประจำเดือน : กรกฎาคม 2568"
+            let ym = line.match(/(?:ประจำปี|ประจำเดือน)\s*:?\s*(?:\S+\s+)?(\d{4})/);
+            if (ym && !yearFromHeader) {
+                let y = parseInt(ym[1]);
+                yearFromHeader = (y > 2500) ? y - 543 : y;
+            }
+            // เดือนไทยจาก header "ประจำเดือน : กรกฎาคม 2568"
+            if (line.includes('ประจำเดือน')) {
+                let mi = THAI_MONTHS.findIndex(m => line.includes(m));
+                if (mi >= 0) monthFromHeader = mi;
+            }
+
+            // header row: มี "Rate A" หรือ "RATE A" (ไม่คำนึงตัวใหญ่/เล็ก)
+            if (rows[i].some(cell => /rate\s*a/i.test(String(cell || '')))) {
+                dataStartIdx = i + 1;
+                let col0Hdr = String(rows[i][0] || '').trim().toLowerCase();
+                headerIsTime = col0Hdr.includes('เวลา') || col0Hdr === 'time' || col0Hdr.includes('date');
+                break;
+            }
+        }
+        if (dataStartIdx === -1) return 0;
+
+        // 2) fallback: ดึงปีจากชื่อไฟล์
+        if (!yearFromHeader) {
+            let fnMatch = (fileName || '').match(/(25\d{2}|20\d{2})/);
+            if (fnMatch) {
+                let y = parseInt(fnMatch[1]);
+                yearFromHeader = (y > 2500) ? y - 543 : y;
+            }
+        }
+        // เดือนจากชื่อไฟล์ (เช่น "กรกฎาคม2568")
+        if (monthFromHeader < 0 && fileName) {
+            let mi = THAI_MONTHS.findIndex(m => fileName.includes(m));
+            if (mi >= 0) monthFromHeader = mi;
+        }
+
+        let rowsRead = 0;
+
+        for (let i = dataStartIdx; i < rows.length; i++) {
+            let row = rows[i];
+            if (!row || row.length < 5) continue;
+            let col0 = String(row[0] || '').trim();
+            if (!col0 || col0 === 'รวม' || col0.includes('ผลรวมทั้งหมด') || col0.includes('***') || col0.includes('พิมพ์โดย')) continue;
+
+            let rateA = parseFloat(String(row[1] || '').replace(/,/g, '')) || 0;
+            let rateB = parseFloat(String(row[2] || '').replace(/,/g, '')) || 0;
+            let rateC = parseFloat(String(row[3] || '').replace(/,/g, '')) || 0;
+            let total = parseFloat(String(row[4] || '').replace(/,/g, '')) || (rateA + rateB + rateC);
+            if (total <= 0) continue;
+
+            let yr = 0;
+            let monthIdx = -1;
+
+            // (ก) รายปี — ชื่อเดือนไทย
+            let mFound = THAI_MONTHS.findIndex(m => col0.includes(m));
+            if (mFound >= 0) {
+                yr = yearFromHeader;
+                monthIdx = mFound;
+            }
+            // (ข) รายเดือน 15 นาที — datetime "01/07/2568 00.15" หรือ "1-5-2024 00:15"
+            else {
+                let parts = col0.split(/\s+/);
+                let match = parts[0].match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+                if (match) {
+                    let y = parseInt(match[3]);
+                    if (y > 2500) y -= 543;
+                    else if (y < 100) y += 2000;
+                    yr = y;
+                    monthIdx = parseInt(match[2]) - 1;
+                } else if (headerIsTime && yearFromHeader && monthFromHeader >= 0) {
+                    // datetime อยู่ในรูปที่ regex match ไม่ได้ → ใช้ค่าจาก header
+                    yr = yearFromHeader;
+                    monthIdx = monthFromHeader;
+                }
+            }
+            if (!yr) continue;
+
+            if (!yearlyData[yr]) yearlyData[yr] = { total: 0, rateA: 0, rateB: 0, rateC: 0, monthSet: new Set(), monthlyDetail: {} };
+            let yd = yearlyData[yr];
+            yd.total += total;
+            yd.rateA += rateA;
+            yd.rateB += rateB;
+            yd.rateC += rateC;
+            if (monthIdx >= 0 && monthIdx < 12) {
+                yd.monthSet.add(monthIdx);
+                if (!yd.monthlyDetail[monthIdx]) yd.monthlyDetail[monthIdx] = { total: 0, rateA: 0, rateB: 0, rateC: 0, name: THAI_MONTHS[monthIdx] };
+                let md = yd.monthlyDetail[monthIdx];
+                md.total += total; md.rateA += rateA; md.rateB += rateB; md.rateC += rateC;
+            }
+            rowsRead++;
+        }
+        return rowsRead;
+    }
+
+    function fmtN(v) { return v.toLocaleString(undefined, {maximumFractionDigits:2}); }
+
+    function renderYearlySummary() {
+        let years = Object.keys(yearlyData).map(Number).sort();
+        if (!years.length) { alert('ไม่พบข้อมูลรายปีที่อ่านได้'); return; }
+
+        let pRate = parseFloat(document.getElementById('amr_peakRate').value) || PEA_RATES.amr.peak;
+        let opRate = parseFloat(document.getElementById('amr_offPeakRate').value) || PEA_RATES.amr.offPeak;
+
+        let thead = document.getElementById('yearlyThead');
+        let tbody = document.getElementById('yearlyTbody');
+        thead.innerHTML = `<tr>
+            <th class="border px-3 py-2 text-left font-bold text-amber-900">ปี (พ.ศ.)</th>
+            <th class="border px-3 py-2 text-right font-bold text-amber-900">เดือน</th>
+            <th class="border px-3 py-2 text-right font-bold text-amber-900">รวม (kWh)</th>
+            <th class="border px-3 py-2 text-right font-bold text-amber-900">Rate A (kWh)</th>
+            <th class="border px-3 py-2 text-right font-bold text-amber-900">Rate A (บาท)</th>
+            <th class="border px-3 py-2 text-right font-bold text-amber-900">Rate B (kWh)</th>
+            <th class="border px-3 py-2 text-right font-bold text-amber-900">Rate C (kWh)</th>
+            <th class="border px-3 py-2 text-right font-bold text-amber-900">Rate B/C (บาท)</th>
+            <th class="border px-3 py-2 text-right font-bold text-red-700">รวม (บาท)</th>
+        </tr>`;
+
+        let totals = [], costs = [];
+        let tbodyHtml = '';
+        let summaryHtml = '';
+
+        for (let yr of years) {
+            let d = yearlyData[yr];
+            let costA = d.rateA * pRate;
+            let costBC = (d.rateB + d.rateC) * opRate;
+            let cost = costA + costBC;
+            totals.push(d.total);
+            costs.push(cost);
+            let be = yr + 543;
+
+            tbodyHtml += `<tr class="hover:bg-amber-50">
+                <td class="border px-3 py-2 font-bold">${be}</td>
+                <td class="border px-3 py-2 text-right">${d.monthSet.size || '-'}</td>
+                <td class="border px-3 py-2 text-right font-semibold">${fmtN(d.total)}</td>
+                <td class="border px-3 py-2 text-right">${fmtN(d.rateA)}</td>
+                <td class="border px-3 py-2 text-right text-red-600">${fmtN(costA)}</td>
+                <td class="border px-3 py-2 text-right">${fmtN(d.rateB)}</td>
+                <td class="border px-3 py-2 text-right">${fmtN(d.rateC)}</td>
+                <td class="border px-3 py-2 text-right text-red-600">${fmtN(costBC)}</td>
+                <td class="border px-3 py-2 text-right font-bold text-red-700">${fmtN(cost)}</td>
+            </tr>`;
+
+            let peakMonth = '';
+            let peakVal = 0;
+            for (let mi of Object.keys(d.monthlyDetail)) {
+                if (d.monthlyDetail[mi].total > peakVal) {
+                    peakVal = d.monthlyDetail[mi].total;
+                    peakMonth = d.monthlyDetail[mi].name;
+                }
+            }
+
+            let missingNote = '';
+            if (d.monthSet.size < 12) {
+                let missing = [];
+                for (let m = 0; m < 12; m++) { if (!d.monthSet.has(m)) missing.push(THAI_MONTHS_SHORT[m]); }
+                missingNote = `<span class="text-orange-600"> ⚠ ข้อมูลไม่ครบ 12 เดือน — ไม่มีข้อมูล: ${missing.join(', ')}</span>`;
+            }
+
+            summaryHtml += `<div class="bg-gray-50 border rounded-lg p-4">
+                <p class="font-bold text-amber-800 text-base">ปี พ.ศ. ${be}</p>
+                <ul class="list-disc list-inside mt-1 space-y-0.5 text-gray-700">
+                    <li>Rate A (Peak): <b>${fmtN(d.rateA)}</b> kWh — <b class="text-red-600">${fmtN(costA)}</b> บาท</li>
+                    <li>Rate B (Off-Peak): <b>${fmtN(d.rateB)}</b> kWh — <b class="text-red-600">${fmtN(d.rateB * opRate)}</b> บาท</li>
+                    <li>Rate C (Holiday): <b>${fmtN(d.rateC)}</b> kWh — <b class="text-red-600">${fmtN(d.rateC * opRate)}</b> บาท</li>
+                    <li>ภาพรวมทั้งปี: <b>${fmtN(d.total)}</b> kWh — <b class="text-red-700">${fmtN(cost)}</b> บาท</li>
+                    ${peakMonth ? `<li>เดือนที่ใช้ไฟมากสุด: <b class="text-blue-700">${peakMonth}</b> (${fmtN(peakVal)} kWh)</li>` : ''}
+                </ul>
+                ${missingNote}
+            </div>`;
+        }
+
+        let medianKwh = median(totals);
+        let medianCost = median(costs);
+        tbodyHtml += `<tr class="bg-amber-100 font-bold">
+            <td class="border px-3 py-2" colspan="2">มัธยฐาน (Median)</td>
+            <td class="border px-3 py-2 text-right">${fmtN(medianKwh)}</td>
+            <td class="border px-3 py-2 text-right" colspan="5"></td>
+            <td class="border px-3 py-2 text-right text-red-700">${fmtN(medianCost)}</td>
+        </tr>`;
+        tbody.innerHTML = tbodyHtml;
+
+        document.getElementById('yearlySummaryText').innerHTML =
+            `<h4 class="text-base font-bold text-gray-800 border-b pb-1">สรุปรายปี</h4>` + summaryHtml;
+
+        drawYearlyBarChart(years);
+    }
+
+    function median(arr) {
+        if (!arr.length) return 0;
+        let s = [...arr].sort((a, b) => a - b);
+        let mid = Math.floor(s.length / 2);
+        return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+    }
+
+    function drawYearlyBarChart(years) {
+        if (typeof Chart === 'undefined') return;
+        if (window.yearlyChart) window.yearlyChart.destroy();
+        let canvas = document.getElementById('yearlyBarChart');
+        if (!canvas) return;
+
+        let rateAs = [], rateBs = [], rateCs = [], totals = [];
+        for (let yr of years) {
+            let d = yearlyData[yr];
+            rateAs.push(d.rateA);
+            rateBs.push(d.rateB);
+            rateCs.push(d.rateC);
+            totals.push(d.total);
+        }
+        let medA = median(rateAs), medB = median(rateBs), medC = median(rateCs);
+
+        window.yearlyChart = new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: years.map(yr => 'พ.ศ. ' + (yr + 543)),
+                datasets: [
+                    {
+                        label: 'Rate A — Peak (kWh)',
+                        data: rateAs,
+                        backgroundColor: 'rgba(220, 38, 38, 0.7)',
+                        borderColor: '#dc2626',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Rate B — Off-Peak (kWh)',
+                        data: rateBs,
+                        backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                        borderColor: '#2563eb',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Rate C — Holiday (kWh)',
+                        data: rateCs,
+                        backgroundColor: 'rgba(22, 163, 74, 0.7)',
+                        borderColor: '#16a34a',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Median Rate A (' + fmtN(medA) + ')',
+                        data: Array(years.length).fill(medA),
+                        type: 'line',
+                        borderColor: '#dc2626',
+                        borderDash: [8, 4],
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    },
+                    {
+                        label: 'Median Rate B (' + fmtN(medB) + ')',
+                        data: Array(years.length).fill(medB),
+                        type: 'line',
+                        borderColor: '#2563eb',
+                        borderDash: [8, 4],
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    },
+                    {
+                        label: 'Median Rate C (' + fmtN(medC) + ')',
+                        data: Array(years.length).fill(medC),
+                        type: 'line',
+                        borderColor: '#16a34a',
+                        borderDash: [8, 4],
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { family: 'Sarabun' } } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                if (ctx.datasetIndex >= 3) return ctx.dataset.label;
+                                return ctx.dataset.label + ': ' + fmtN(ctx.raw) + ' kWh';
+                            },
+                            footer: function(items) {
+                                let sum = 0;
+                                items.forEach(i => { if (i.datasetIndex < 3) sum += i.raw; });
+                                return 'รวม: ' + fmtN(sum) + ' kWh';
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: function(ctx) { return ctx.datasetIndex < 3; },
+                        anchor: 'end', align: 'top',
+                        font: { family: 'Sarabun', size: 10 },
+                        formatter: v => v >= 1000 ? (v/1000).toFixed(0) + 'k' : fmtN(v)
+                    }
+                },
+                scales: {
+                    x: { stacked: false },
+                    y: { stacked: false, title: { display: true, text: 'kWh', font: { family: 'Sarabun' } }, beginAtZero: true }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
     }
 
     // ==================================================================
