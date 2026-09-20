@@ -226,10 +226,12 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
 
 /* ── พิมพ์ : หนึ่งสไลด์ต่อหนึ่งหน้ากระดาษ ───────────────────────── */
 @media print{
-  @page{size:A4 landscape;margin:12.7mm} /* 0.5 นิ้ว ทุกด้าน */
+  /* A4 landscape เต็มหน้า padding = 0 เพราะ .slide จัดการ padding เองเมื่ออยู่ในโหมด A4 view
+     (ทำให้ WYSIWYG จริง — dimensions บนจอ = dimensions บน PDF ทุกกรณี) */
+  @page{size:A4 landscape;margin:0}
   header,.no-print,.empty{display:none !important}
-  html,body{background:#fff;font-size:12px}
-  .wrap{max-width:none;padding:0}
+  html,body{background:#fff;font-size:12px;margin:0;padding:0}
+  .wrap{max-width:none;padding:0;overflow:visible !important}
   #deck{padding:0}
   .lh-slim{display:flex !important;align-items:center;gap:9px;border-bottom:1px solid #cbd5e1;
     padding-bottom:5px;margin-bottom:9px;font-size:9.5px;color:#64748b}
@@ -242,7 +244,9 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
   .edit-hint{display:none !important}
   #jobbar,#pager,#lightbox{display:none !important}
   body.mobile #deck .slide{display:block}
-  .slide{border:0;border-radius:0;padding:0 0 6mm;margin:0;
+  /* Fallback (non A4 view): slide เต็ม A4 landscape พร้อม padding ในตัว */
+  .slide{border:0;border-radius:0;padding:12.7mm;margin:0;
+         width:297mm;height:210mm;box-sizing:border-box;overflow:hidden;
          break-after:page;page-break-after:always;break-inside:avoid}
   .slide:last-child{break-after:auto;page-break-after:auto}
   .slide-head{margin-bottom:10px}
@@ -253,10 +257,11 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
   .shot.filled{resize:none;cursor:auto}
   .shot .resize-handle{display:none !important}
   .shot-placeholder{display:none}
-  /* ⚠ Reset A4-view screen CSS บนพิมพ์ ไม่งั้นจะพิมพ์ผิดขนาด/ทับหน้า */
-  body.a4-view #deck{display:block !important;background:#fff !important;padding:0 !important;min-height:0 !important;align-items:stretch !important}
-  body.a4-view .slide{width:auto !important;height:auto !important;padding:0 !important;margin:0 !important;
-    box-shadow:none !important;border:0 !important;overflow:visible !important;background:transparent !important}
+  /* A4 view: คงขนาดสไลด์ = A4 landscape (297×210mm พร้อม padding 12.7mm)
+     dimension เดียวกับหน้าจอ WYSIWYG แท้ */
+  body.a4-view #deck{display:block !important;background:#fff !important;padding:0 !important;min-height:0 !important;align-items:stretch !important;gap:0 !important}
+  body.a4-view .slide{width:297mm !important;height:210mm !important;padding:12.7mm !important;margin:0 !important;
+    box-shadow:none !important;border:0 !important;background:#fff !important;box-sizing:border-box !important;overflow:hidden !important}
   body.a4-view .slide::after{display:none !important}
   /* คงตำแหน่ง (transform) และขนาดที่ผู้ใช้ตั้งไว้บน PDF */
 
