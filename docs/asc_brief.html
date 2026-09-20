@@ -97,7 +97,9 @@ header h1 small{display:block;font-weight:300;font-size:.5em;color:#B9C7D6;margi
   gap:6px;color:var(--mute);font-size:13px;text-align:center;padding:16px}
 .shot .cap{font-family:'Kanit';font-size:13px;color:var(--ink-2)}
 .shot-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.shot.filled{border-style:solid;border-color:var(--line);background:#000;padding:0;position:relative;overflow:hidden;display:block;resize:both;cursor:grab}
+.shot.filled{border-style:solid;border-color:var(--line);background:#000;padding:0;position:relative;overflow:hidden;display:block;resize:both;cursor:grab;
+  user-select:none;-webkit-user-select:none;touch-action:none}
+.shot.filled .frame img{-webkit-user-drag:none;user-drag:none;user-select:none;pointer-events:none}
 .shot.filled.dragging{cursor:grabbing;opacity:.85;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.3)}
 .shot.drop-target{outline:3px solid var(--sun);outline-offset:2px;background:#FFF9EC !important}
 .shot .frame{position:relative;line-height:0}
@@ -1325,14 +1327,25 @@ window.applyShotOffsets = applyShotOffsets;
   function onDown(e){
     const shot = nearest(e.target, '.shot.filled');
     if (!shot || e.target.closest('.tools') || e.target.closest('button') || e.target.closest('.cap-bar')) return;
-    e.preventDefault();
     const pt = e.touches ? e.touches[0] : e;
+    const rInit = shot.getBoundingClientRect();
+    // ไม่เข้ามุม resize (bottom-right 22×22 px) → ปล่อยให้ CSS resize:both ทำงาน
+    const HANDLE = 22;
+    if (pt.clientX >= rInit.right - HANDLE && pt.clientY >= rInit.bottom - HANDLE) return;
+
+    e.preventDefault();
     dragEl = shot;
+    // เก็บ inline styles เดิม เพื่อ restore หลัง drop (รักษาขนาดที่ผู้ใช้ย่อ/ขยาย)
+    dragEl._orig = {
+      width: shot.style.width, height: shot.style.height,
+      position: shot.style.position, left: shot.style.left, top: shot.style.top,
+      zIndex: shot.style.zIndex, margin: shot.style.margin,
+      transform: shot.style.transform
+    };
     // ยกเลิก transform ชั่วคราวก่อนวัด rect เพื่อให้ค่าตำแหน่งฐานถูกต้อง
-    const savedTransform = shot.style.transform;
     shot.style.transform = '';
     const r0 = shot.getBoundingClientRect();
-    shot.style.transform = savedTransform;
+    shot.style.transform = dragEl._orig.transform;
     const r = shot.getBoundingClientRect();
     startX = pt.clientX; startY = pt.clientY;
     origX = r.left; origY = r.top;
@@ -1341,7 +1354,7 @@ window.applyShotOffsets = applyShotOffsets;
 
     placeholder = document.createElement('div');
     placeholder.className = 'shot-placeholder';
-    placeholder.style.cssText = 'border:2px dashed var(--sun);border-radius:12px;background:#FFF9EC;min-height:'+r.height+'px;opacity:.5';
+    placeholder.style.cssText = 'border:2px dashed var(--sun);border-radius:12px;background:#FFF9EC;min-height:'+r.height+'px;min-width:'+r.width+'px;opacity:.5';
     shot.parentNode.insertBefore(placeholder, shot);
 
     shot.style.transform = '';
@@ -1349,6 +1362,7 @@ window.applyShotOffsets = applyShotOffsets;
     shot.style.left = r.left + 'px';
     shot.style.top = r.top + 'px';
     shot.style.width = r.width + 'px';
+    shot.style.height = r.height + 'px';
     shot.style.zIndex = '9999';
     shot.style.margin = '0';
     shot.classList.add('dragging');
@@ -1384,12 +1398,16 @@ window.applyShotOffsets = applyShotOffsets;
     const finalLeft = parseFloat(dragEl.style.left) || 0;
     const finalTop  = parseFloat(dragEl.style.top)  || 0;
 
-    dragEl.style.position = '';
-    dragEl.style.left = '';
-    dragEl.style.top = '';
-    dragEl.style.width = '';
-    dragEl.style.zIndex = '';
-    dragEl.style.margin = '';
+    // Restore inline styles เดิม (รักษาขนาดกรอบที่ผู้ใช้ resize ไว้)
+    const o = dragEl._orig || {};
+    dragEl.style.position = o.position || '';
+    dragEl.style.left     = o.left     || '';
+    dragEl.style.top      = o.top      || '';
+    dragEl.style.width    = o.width    || '';
+    dragEl.style.height   = o.height   || '';
+    dragEl.style.zIndex   = o.zIndex   || '';
+    dragEl.style.margin   = o.margin   || '';
+    dragEl.style.transform= o.transform|| '';
     dragEl.classList.remove('dragging');
 
     if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
