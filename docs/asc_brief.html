@@ -229,8 +229,8 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
 
   /* ห้ามตัดรูป/ตารางระหว่างหน้าเด็ดขาด — รูปไม่พอก็ไปหน้าใหม่ */
   .shot,.shot.filled,.shot-grid{break-inside:avoid;page-break-inside:avoid}
-  .shot{min-height:120px;resize:none;cursor:auto}
-  .shot.filled{resize:none;cursor:auto}
+  .shot{min-height:120px;resize:none;cursor:auto;transform:none !important}
+  .shot.filled{resize:none;cursor:auto;transform:none !important}
   .shot-placeholder{display:none}
 
   /* section 6 วัสดุ + 7 เช็กลิสต์: ตารางยาวข้ามหน้าได้ ใส่หัวตารางซ้ำ */
@@ -1252,6 +1252,7 @@ function renderPhotos(){
                       + ' onclick="pickPhoto(\'' + slot + '\')">+ เพิ่ม</button>';
         box.appendChild(bar);
     });
+    if (typeof applyShotOffsets === 'function') applyShotOffsets();
 }
 
 let _pickSlot = null;
@@ -1287,10 +1288,37 @@ async function dropPhoto(slot, photoId){
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   5.5) ลากย้ายกรอบรูปอิสระ (drag & drop swap)
+   5.5) ลากย้ายกรอบรูป — สลับตำแหน่งกับสล็อตอื่น หรือวางอิสระ
+        (double-click รีเซ็ตกลับตำแหน่งเดิม)
    ══════════════════════════════════════════════════════════════════ */
+function _offKey(){ return 'asc-brief-offsets:' + (PROJECT_ID || 'local'); }
+function loadShotOffsets(){
+  try { return JSON.parse(localStorage.getItem(_offKey()) || '{}'); } catch(e) { return {}; }
+}
+function saveShotOffsets(off){
+  try { localStorage.setItem(_offKey(), JSON.stringify(off)); } catch(e) {}
+}
+function applyShotOffsets(){
+  const off = loadShotOffsets();
+  document.querySelectorAll('.shot[data-slot]').forEach(s => {
+    const o = off[s.dataset.slot];
+    if (o && (o.x || o.y)) {
+      s.style.transform = 'translate(' + o.x + 'px,' + o.y + 'px)';
+      s.dataset.freePos = '1';
+    } else {
+      s.style.transform = '';
+      delete s.dataset.freePos;
+    }
+  });
+}
+function resetShotPos(slot){
+  const off = loadShotOffsets();
+  delete off[slot]; saveShotOffsets(off); applyShotOffsets();
+}
+window.applyShotOffsets = applyShotOffsets;
+
 (function(){
-  let dragEl = null, placeholder = null, startX, startY, origX, origY;
+  let dragEl = null, placeholder = null, startX, startY, origX, origY, movedPx = 0;
 
   function nearest(el, sel){ while(el && !el.matches(sel)) el = el.parentElement; return el; }
 
@@ -1300,15 +1328,23 @@ async function dropPhoto(slot, photoId){
     e.preventDefault();
     const pt = e.touches ? e.touches[0] : e;
     dragEl = shot;
+    // ยกเลิก transform ชั่วคราวก่อนวัด rect เพื่อให้ค่าตำแหน่งฐานถูกต้อง
+    const savedTransform = shot.style.transform;
+    shot.style.transform = '';
+    const r0 = shot.getBoundingClientRect();
+    shot.style.transform = savedTransform;
     const r = shot.getBoundingClientRect();
     startX = pt.clientX; startY = pt.clientY;
     origX = r.left; origY = r.top;
+    dragEl._baseX = r0.left; dragEl._baseY = r0.top;
+    movedPx = 0;
 
     placeholder = document.createElement('div');
     placeholder.className = 'shot-placeholder';
     placeholder.style.cssText = 'border:2px dashed var(--sun);border-radius:12px;background:#FFF9EC;min-height:'+r.height+'px;opacity:.5';
     shot.parentNode.insertBefore(placeholder, shot);
 
+    shot.style.transform = '';
     shot.style.position = 'fixed';
     shot.style.left = r.left + 'px';
     shot.style.top = r.top + 'px';
@@ -1327,6 +1363,7 @@ async function dropPhoto(slot, photoId){
     e.preventDefault();
     const pt = e.touches ? e.touches[0] : e;
     const dx = pt.clientX - startX, dy = pt.clientY - startY;
+    movedPx = Math.max(movedPx, Math.abs(dx) + Math.abs(dy));
     dragEl.style.left = (origX + dx) + 'px';
     dragEl.style.top = (origY + dy) + 'px';
 
@@ -1344,6 +1381,9 @@ async function dropPhoto(slot, photoId){
     document.removeEventListener('touchend', onUp);
 
     const pt = e.changedTouches ? e.changedTouches[0] : e;
+    const finalLeft = parseFloat(dragEl.style.left) || 0;
+    const finalTop  = parseFloat(dragEl.style.top)  || 0;
+
     dragEl.style.position = '';
     dragEl.style.left = '';
     dragEl.style.top = '';
@@ -1358,6 +1398,7 @@ async function dropPhoto(slot, photoId){
     const target = over ? nearest(over, '.shot[data-slot]') : null;
     document.querySelectorAll('.shot.drop-target').forEach(s => s.classList.remove('drop-target'));
 
+    // 1) วางบนสล็อตอื่น → สลับ (พร้อมเคลียร์ offset อิสระของทั้งคู่)
     if (target && target !== dragEl) {
       const slotA = dragEl.dataset.slot, slotB = target.dataset.slot;
       const capA = dragEl.dataset.cap, capB = target.dataset.cap;
@@ -1366,14 +1407,39 @@ async function dropPhoto(slot, photoId){
       const tmpPhotos = PHOTOS[slotA];
       PHOTOS[slotA] = PHOTOS[slotB] || [];
       PHOTOS[slotB] = tmpPhotos || [];
+      const off = loadShotOffsets();
+      delete off[slotA]; delete off[slotB];
+      saveShotOffsets(off);
       renderPhotos();
+    }
+    // 2) วางที่อื่น (ไม่ใช่สล็อต) และมีการลากจริง → เก็บ offset อิสระ
+    else if (movedPx > 5) {
+      const dx = Math.round(finalLeft - dragEl._baseX);
+      const dy = Math.round(finalTop  - dragEl._baseY);
+      const off = loadShotOffsets();
+      off[dragEl.dataset.slot] = { x: dx, y: dy };
+      saveShotOffsets(off);
+      applyShotOffsets();
+    }
+    // 3) คลิกโดยไม่ได้ลาก → คืนค่า transform ที่บันทึกไว้ (ถ้ามี)
+    else {
+      applyShotOffsets();
     }
 
     placeholder = null; dragEl = null;
   }
 
-  document.getElementById('deck').addEventListener('mousedown', onDown);
-  document.getElementById('deck').addEventListener('touchstart', onDown, {passive:false});
+  function onDblClick(e){
+    const shot = nearest(e.target, '.shot[data-slot]');
+    if (!shot || !shot.dataset.freePos) return;
+    if (!confirm('รีเซ็ตตำแหน่งกรอบนี้กลับที่เดิม?')) return;
+    resetShotPos(shot.dataset.slot);
+  }
+
+  const deck = document.getElementById('deck');
+  deck.addEventListener('mousedown', onDown);
+  deck.addEventListener('touchstart', onDown, {passive:false});
+  deck.addEventListener('dblclick', onDblClick);
 })();
 
 /* ══════════════════════════════════════════════════════════════════
