@@ -97,10 +97,16 @@ header h1 small{display:block;font-weight:300;font-size:.5em;color:#B9C7D6;margi
   gap:6px;color:var(--mute);font-size:13px;text-align:center;padding:16px}
 .shot .cap{font-family:'Kanit';font-size:13px;color:var(--ink-2)}
 .shot-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.shot.filled{border-style:solid;border-color:var(--line);background:#000;padding:0;position:relative;overflow:hidden;display:block;resize:both;cursor:grab;
+.shot.filled{border-style:solid;border-color:var(--line);background:#000;padding:0;position:relative;overflow:hidden;display:block;cursor:grab;
   user-select:none;-webkit-user-select:none;touch-action:none}
 .shot.filled .frame img{-webkit-user-drag:none;user-drag:none;user-select:none;pointer-events:none}
 .shot.filled.dragging{cursor:grabbing;opacity:.85;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.shot.filled.resizing{cursor:nwse-resize;opacity:.9}
+.shot .resize-handle{position:absolute;right:0;bottom:0;width:22px;height:22px;
+  background:rgba(15,30,51,.85);color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:14px;cursor:nwse-resize;z-index:3;border-top-left-radius:8px;line-height:1;
+  user-select:none;-webkit-user-select:none;touch-action:none}
+.shot .resize-handle:hover{background:var(--sun);color:var(--night)}
 .shot.drop-target{outline:3px solid var(--sun);outline-offset:2px;background:#FFF9EC !important}
 .shot .frame{position:relative;line-height:0}
 .shot .frame img{width:100%;display:block;pointer-events:none}
@@ -231,9 +237,11 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
 
   /* ห้ามตัดรูป/ตารางระหว่างหน้าเด็ดขาด — รูปไม่พอก็ไปหน้าใหม่ */
   .shot,.shot.filled,.shot-grid{break-inside:avoid;page-break-inside:avoid}
-  .shot{min-height:120px;resize:none;cursor:auto;transform:none !important}
-  .shot.filled{resize:none;cursor:auto;transform:none !important}
+  .shot{min-height:120px;resize:none;cursor:auto}
+  .shot.filled{resize:none;cursor:auto}
+  .shot .resize-handle{display:none !important}
   .shot-placeholder{display:none}
+  /* คงตำแหน่ง (transform) และขนาดที่ผู้ใช้ตั้งไว้บน PDF */
 
   /* section 6 วัสดุ + 7 เช็กลิสต์: ตารางยาวข้ามหน้าได้ ใส่หัวตารางซ้ำ */
   #s6,#s7{break-inside:auto;page-break-inside:auto}
@@ -1290,34 +1298,96 @@ async function dropPhoto(slot, photoId){
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   5.5) ลากย้ายกรอบรูป — สลับตำแหน่งกับสล็อตอื่น หรือวางอิสระ
-        (double-click รีเซ็ตกลับตำแหน่งเดิม)
+   5.5) ลากย้ายกรอบรูป + ย่อขยาย + บันทึกตำแหน่ง/ขนาด
+        - ลากที่กลางรูป → วางตำแหน่งใดก็ได้ / วางบนสล็อตอื่น = สลับ
+        - ลากมุมล่างขวา ⇘ → ย่อขยาย
+        - Double-click กรอบที่ย้ายอิสระ → รีเซ็ตกลับตำแหน่ง+ขนาดเดิม
    ══════════════════════════════════════════════════════════════════ */
 function _offKey(){ return 'asc-brief-offsets:' + (PROJECT_ID || 'local'); }
-function loadShotOffsets(){
-  try { return JSON.parse(localStorage.getItem(_offKey()) || '{}'); } catch(e) { return {}; }
-}
-function saveShotOffsets(off){
-  try { localStorage.setItem(_offKey(), JSON.stringify(off)); } catch(e) {}
-}
+function _sizeKey(){ return 'asc-brief-sizes:' + (PROJECT_ID || 'local'); }
+function loadShotOffsets(){ try { return JSON.parse(localStorage.getItem(_offKey()) || '{}'); } catch(e) { return {}; } }
+function loadShotSizes(){   try { return JSON.parse(localStorage.getItem(_sizeKey()) || '{}'); } catch(e) { return {}; } }
+function saveShotOffsets(off){ try { localStorage.setItem(_offKey(), JSON.stringify(off)); } catch(e) {} }
+function saveShotSizes(sz){    try { localStorage.setItem(_sizeKey(), JSON.stringify(sz)); } catch(e) {} }
+
 function applyShotOffsets(){
-  const off = loadShotOffsets();
+  const off = loadShotOffsets(), sz = loadShotSizes();
   document.querySelectorAll('.shot[data-slot]').forEach(s => {
     const o = off[s.dataset.slot];
     if (o && (o.x || o.y)) {
       s.style.transform = 'translate(' + o.x + 'px,' + o.y + 'px)';
       s.dataset.freePos = '1';
     } else {
-      s.style.transform = '';
-      delete s.dataset.freePos;
+      s.style.transform = ''; delete s.dataset.freePos;
+    }
+    const z = sz[s.dataset.slot];
+    if (z && z.w && z.h) {
+      s.style.width  = z.w + 'px';
+      s.style.height = z.h + 'px';
+    } else {
+      s.style.width = ''; s.style.height = '';
+    }
+    // เพิ่มปุ่มย่อขยาย (⇘) ถ้ายังไม่มี
+    if (s.classList.contains('filled') && !s.querySelector('.resize-handle')) {
+      const h = document.createElement('div');
+      h.className = 'resize-handle no-print';
+      h.title = 'ลากเพื่อย่อ/ขยาย';
+      h.textContent = '⇘';
+      s.appendChild(h);
     }
   });
 }
 function resetShotPos(slot){
-  const off = loadShotOffsets();
-  delete off[slot]; saveShotOffsets(off); applyShotOffsets();
+  const off = loadShotOffsets(), sz = loadShotSizes();
+  delete off[slot]; delete sz[slot];
+  saveShotOffsets(off); saveShotSizes(sz);
+  applyShotOffsets();
 }
 window.applyShotOffsets = applyShotOffsets;
+
+/* ── ย่อขยายกรอบ (JS-based resize) ── */
+(function(){
+  let target = null, sx, sy, sw, sh;
+  function onStart(e){
+    if (!e.target.classList || !e.target.classList.contains('resize-handle')) return;
+    e.preventDefault(); e.stopPropagation();
+    const pt = e.touches ? e.touches[0] : e;
+    target = e.target.parentElement;
+    const r = target.getBoundingClientRect();
+    sx = pt.clientX; sy = pt.clientY; sw = r.width; sh = r.height;
+    target.classList.add('resizing');
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchmove', onMove, {passive:false});
+    document.addEventListener('touchend', onEnd);
+  }
+  function onMove(e){
+    if (!target) return;
+    e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    const w = Math.max(120, sw + (pt.clientX - sx));
+    const h = Math.max(120, sh + (pt.clientY - sy));
+    target.style.width  = w + 'px';
+    target.style.height = h + 'px';
+  }
+  function onEnd(){
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onEnd);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('touchend', onEnd);
+    if (!target) return;
+    target.classList.remove('resizing');
+    const sz = loadShotSizes();
+    sz[target.dataset.slot] = {
+      w: parseInt(target.style.width) || 0,
+      h: parseInt(target.style.height) || 0
+    };
+    saveShotSizes(sz);
+    target = null;
+  }
+  document.getElementById('deck').addEventListener('mousedown', onStart);
+  document.getElementById('deck').addEventListener('touchstart', onStart, {passive:false});
+})();
 
 (function(){
   let dragEl = null, placeholder = null, startX, startY, origX, origY, movedPx = 0;
@@ -1327,12 +1397,9 @@ window.applyShotOffsets = applyShotOffsets;
   function onDown(e){
     const shot = nearest(e.target, '.shot.filled');
     if (!shot || e.target.closest('.tools') || e.target.closest('button') || e.target.closest('.cap-bar')) return;
+    // อย่าเริ่มลากถ้าเป้าหมายคือปุ่มย่อขยาย (มันมี handler ของตัวเอง)
+    if (e.target.classList && e.target.classList.contains('resize-handle')) return;
     const pt = e.touches ? e.touches[0] : e;
-    const rInit = shot.getBoundingClientRect();
-    // ไม่เข้ามุม resize (bottom-right 22×22 px) → ปล่อยให้ CSS resize:both ทำงาน
-    const HANDLE = 22;
-    if (pt.clientX >= rInit.right - HANDLE && pt.clientY >= rInit.bottom - HANDLE) return;
-
     e.preventDefault();
     dragEl = shot;
     // เก็บ inline styles เดิม เพื่อ restore หลัง drop (รักษาขนาดที่ผู้ใช้ย่อ/ขยาย)
