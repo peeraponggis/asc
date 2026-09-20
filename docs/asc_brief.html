@@ -36,6 +36,18 @@ header{background:var(--night);color:#fff;padding:20px 0 22px;position:relative;
 header::after{content:"";position:absolute;right:-120px;top:-160px;width:420px;height:420px;border-radius:50%;
   background:radial-gradient(circle,rgba(232,163,23,.35),transparent 65%);pointer-events:none}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+/* ── โหมด A4 : แสดงสไลด์ขนาดหน้ากระดาษ A4 landscape จริงบนจอ (WYSIWYG กับ PDF) ── */
+body.a4-view .wrap{max-width:none;padding:0;overflow-x:auto}
+body.a4-view #deck{padding:16px 20px 70px;display:flex;flex-direction:column;align-items:center;gap:16px;background:#e5e7eb;min-height:100vh}
+body.a4-view .slide{
+  width:297mm;height:210mm;box-sizing:border-box;
+  padding:12.7mm;margin:0;
+  background:#fff;box-shadow:0 6px 24px rgba(15,30,51,.18);
+  border:1px solid #cbd5e1;border-radius:0;overflow:hidden;
+  flex:none;position:relative}
+body.a4-view .slide::after{
+  content:'A4 · 297×210 mm';position:absolute;top:2px;right:6px;
+  font:11px/1 Kanit,sans-serif;color:#94a3b8;letter-spacing:.3px;pointer-events:none}
 header .wrap{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
 .eyebrow{font-family:'Kanit';font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--sun-2);margin-bottom:6px}
 header h1{font-size:clamp(20px,3vw,30px);font-weight:600;line-height:1.15}
@@ -262,6 +274,7 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
     </div>
     <div class="controls">
       <button class="btn primary" onclick="window.print()"><span>🖨</span> พิมพ์บรีฟ (PDF)</button>
+      <button class="btn" id="btn-a4" onclick="toggleA4View()">📄 มุมมอง A4</button>
       <button class="btn" id="btn-mobile" onclick="toggleMobile()">📱 โหมดหน้างาน</button>
       <button class="btn" onclick="exportBrief()">⬇ ส่งออก .json</button>
       <span id="photo-usage" style="font-size:12px;color:#B9C7D6"></span>
@@ -1571,6 +1584,27 @@ function toggleMobile(){
     if (on) showPage(PAGE); else closeLightbox();
     window.scrollTo({ top: 0 });
 }
+
+/* มุมมอง A4 : ให้กล่องสไลด์บนหน้าจอเท่ากับหน้ากระดาษ A4 landscape เป๊ะ */
+function updateA4Btn(){
+    const on = document.body.classList.contains('a4-view');
+    const b = document.getElementById('btn-a4');
+    if (!b) return;
+    b.classList.toggle('on', on);
+    b.innerText = on ? '📄 มุมมอง A4 ✓' : '📄 มุมมอง A4';
+}
+function toggleA4View(){
+    const on = document.body.classList.toggle('a4-view');
+    try { localStorage.setItem('asc-brief-a4view', on ? '1' : '0'); } catch(e) {}
+    updateA4Btn();
+    window.scrollTo({ top: 0 });
+}
+// เปิดโหมด A4 เป็นค่าเริ่มต้น (ยกเว้นผู้ใช้เคยเลือกปิดไว้) — ก่อน DOM render เสร็จ
+try {
+    const saved = localStorage.getItem('asc-brief-a4view');
+    if (saved !== '0') document.body.classList.add('a4-view');
+} catch(e) { document.body.classList.add('a4-view'); }
+document.addEventListener('DOMContentLoaded', updateA4Btn);
 
 function exportBrief(){
     if (!M) { alert('ยังไม่มีข้อมูลโครงการ'); return; }
