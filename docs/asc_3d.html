@@ -203,7 +203,10 @@ setTimeout(function () {
       </div>
 
       <div class="note" id="roofNote"></div>
-      <button class="btn mini" id="btnReset" style="width:100%;margin-top:8px">↺ คืนค่าจากไฟล์ design</button>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn mini" id="btnReset" style="flex:1">↺ หลังคานี้จาก design</button>
+        <button class="btn mini" id="btnClearAll" style="flex:1;background:#fef2f2;color:#991b1b;border-color:#fecaca" title="ลบค่าที่แก้ไว้ทุกหลังคาของโครงการนี้ กลับไปใช้ค่าจากไฟล์ design ล่าสุด">🗑 ล้างค่าที่แก้ทั้งหมด</button>
+      </div>
     </div>
 
     <!-- ═══ ดวงอาทิตย์ ═══ -->
@@ -652,17 +655,29 @@ function loadOverrides() {
   let all = {};
   try { all = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) { all = {}; }
   S.ov = all[ovKey()] || {};
+  let stale = 0;   // นับหลังคาที่ค่า override เก่าต่างจาก DB2 ใหม่มาก (>0.5 ม. หรือ >5°)
   S.roofs.forEach(r => {
     const o = S.ov[r.id] || {};
+    const dbSlope = r.db.ridgeFromFile ? Math.atan((r.db.ridge - r.db.eave) / r.run) / D2R : r.db.slope;
+    // เทียบ overrides กับ DB — ถ้าต่างมาก แปลว่าไฟล์ design เปลี่ยน (คนละงาน หรือ export ใหม่)
+    if (o.eave  !== undefined && Math.abs(o.eave  - r.db.eave)  > 0.5) stale++;
+    if (o.ridge !== undefined && Math.abs(o.ridge - r.db.ridge) > 0.5) stale++;
+    if (o.slope !== undefined && Math.abs(o.slope - dbSlope)    > 5)   stale++;
+    if (o.azi   !== undefined && Math.abs(((o.azi - r.db.azi + 540) % 360) - 180) > 5) stale++;
     r.eave  = num(o.eave,  r.db.eave);
     r.eaveB = num(o.eaveB, r.db.eaveB);
     r.ridge = num(o.ridge, r.db.ridge);
-    r.slope = num(o.slope, r.db.ridgeFromFile
-      ? Math.atan((r.db.ridge - r.db.eave) / r.run) / D2R
-      : r.db.slope);
+    r.slope = num(o.slope, dbSlope);
     r.azi   = num(o.azi,   r.db.azi);
     r.stand = num(o.stand, r.db.stand);
   });
+  // เตือนอัตโนมัติ — ให้ผู้ใช้เห็นในกล่อง note ถ้ามีค่า stale
+  if (stale > 0) {
+    S._staleWarn = 'ค่าที่คุณเคยแก้ไว้ ต่างจากไฟล์ design ใหม่มาก (' + stale + ' จุด) — ' +
+                   'ถ้าอยากใช้ค่าจากไฟล์ใหม่ กด 🗑 ล้างค่าที่แก้ทั้งหมด';
+  } else {
+    S._staleWarn = '';
+  }
 }
 
 function saveOverrides() {
@@ -1453,9 +1468,11 @@ function syncForm(flashEl) {
     msgs.push('ทิศนี้ได้จากการคำนวณอัตโนมัติของ asc_design ซึ่งมีโอกาสกลับด้าน 180° ควรเทียบกับภาพถ่ายจริง');
   msgs.push('พื้นที่ ' + r.area.toFixed(1) + ' ตร.ม. · ' + r.layout.length + ' แผง'
             + (r.mount ? ' · ' + r.mount : ''));
+  // เตือนถ้าค่า override เก่าค้างอยู่และต่างจาก DB2 ใหม่มาก
+  if (S._staleWarn) msgs.unshift('⚠ ' + S._staleWarn);
 
   const note = $('#roofNote');
-  note.className = 'note' + (msgs.length > 1 ? ' warn' : ' ok');
+  note.className = 'note' + (S._staleWarn ? ' warn' : (msgs.length > 1 ? ' warn' : ' ok'));
   note.innerHTML = msgs.join('<br>');
 }
 
@@ -1513,6 +1530,21 @@ function bindForm() {
   $('#btnReset').onclick = () => {
     const r = R(); if (!r) return;
     resetRoofToDB(r); syncForm(); rebuild();
+  };
+
+  /* ล้างค่าที่แก้ทั้งหมดของโครงการปัจจุบัน — กลับไปใช้ค่าตาม DB2 ล่าสุด */
+  $('#btnClearAll').onclick = () => {
+    if (!S.roofs.length) return;
+    if (!confirm('ล้างค่าที่แก้ไว้ทุกหลังคาของโครงการนี้?\n(ระบบจะกลับไปใช้ค่าจากไฟล์ design ล่าสุด — ค่าที่คุณเคยแก้ไว้จะหายทั้งหมด)')) return;
+    // ลบ overrides ของโครงการนี้จาก localStorage
+    let all = {};
+    try { all = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) {}
+    delete all[ovKey()];
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(all)); } catch (e) {}
+    S.ov = {};
+    // Reset ทุกหลังคา กลับไปใช้ค่า DB
+    S.roofs.forEach(r => resetRoofToDB(r));
+    syncForm(); buildScene();
   };
 
   $('#roofSel').onchange = e => {
