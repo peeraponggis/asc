@@ -1243,7 +1243,8 @@ function renderPhotos(){
         const slot = box.dataset.slot, cap = box.dataset.cap || '';
         const list = PHOTOS[slot] || [];
         if (!list.length) {
-            box.className = 'shot';
+            // เอา .filled ออก แต่คงคลาสอื่น (เช่น .ov สำหรับกริดหน้า 1) ไว้
+            box.classList.remove('filled', 'dragging', 'resizing', 'drop-target');
             box.innerHTML = '<div class="cap">' + cap + '</div>'
                 + (global_store()
                     ? '<div>ยังไม่มีรูป</div><button class="add no-print" onclick="pickPhoto(\'' + slot + '\')">+ เพิ่มรูป</button>'
@@ -1251,7 +1252,8 @@ function renderPhotos(){
             return;
         }
         // ช่องหนึ่งเก็บได้หลายรูป แต่บรีฟใช้รูปแรกเป็นหลัก ที่เหลือเรียงต่อลงมา
-        box.className = 'shot filled';
+        box.classList.remove('dragging', 'resizing', 'drop-target');
+        box.classList.add('filled');
         box.innerHTML = '';
         list.forEach(rec => {
             const wrap = document.createElement('div'); wrap.className = 'frame';
