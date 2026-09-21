@@ -36,18 +36,37 @@ header{background:var(--night);color:#fff;padding:20px 0 22px;position:relative;
 header::after{content:"";position:absolute;right:-120px;top:-160px;width:420px;height:420px;border-radius:50%;
   background:radial-gradient(circle,rgba(232,163,23,.35),transparent 65%);pointer-events:none}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
-/* ── โหมด A4 : แสดงสไลด์ขนาดหน้ากระดาษ A4 landscape จริงบนจอ (WYSIWYG กับ PDF) ── */
+/* ── โหมด A4 : แสดงสไลด์ขนาดหน้ากระดาษ A4 PORTRAIT จริงบนจอ (WYSIWYG กับ PDF) ── */
 body.a4-view .wrap{max-width:none;padding:0;overflow-x:auto}
 body.a4-view #deck{padding:16px 20px 70px;display:flex;flex-direction:column;align-items:center;gap:16px;background:#e5e7eb;min-height:100vh}
 body.a4-view .slide{
-  width:297mm;height:210mm;box-sizing:border-box;
+  width:210mm;height:297mm;box-sizing:border-box;
   padding:12.7mm;margin:0;
   background:#fff;box-shadow:0 6px 24px rgba(15,30,51,.18);
   border:1px solid #cbd5e1;border-radius:0;overflow:hidden;
   flex:none;position:relative}
 body.a4-view .slide::after{
-  content:'A4 · 297×210 mm';position:absolute;top:2px;right:6px;
+  content:'A4 · 210×297 mm';position:absolute;top:2px;right:6px;
   font:11px/1 Kanit,sans-serif;color:#94a3b8;letter-spacing:.3px;pointer-events:none}
+
+/* ── Page 1: 2 sub-sections + 6-shot grid ── */
+.sub-sec{margin-bottom:8px}
+.sub-h{font-family:'Kanit';font-size:14px;font-weight:700;color:var(--pv,#1d4ed8);
+  padding-bottom:4px;margin:0 0 6px;border-bottom:1.5px solid var(--line)}
+.shots-grid-6{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);
+  gap:8px;margin-top:8px}
+/* overview shot (in the 6-grid on page 1) — ไม่ให้ลาก/ย่อ, fit container */
+.shot.ov{min-height:120px}
+.shot.ov.filled{width:auto !important;height:auto !important;transform:none !important;cursor:auto}
+.shot.ov .resize-handle{display:none !important}
+.shot.ov.filled .frame{height:100%;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.shot.ov.filled .frame img{width:100%;height:100%;object-fit:cover}
+
+/* Big single-frame section (page 2/3 — under the table) — เต็มพื้นที่ที่เหลือแนวตั้ง */
+.shot-big{margin-top:10px}
+body.a4-view .shot-big{display:flex;flex:1;min-height:calc(297mm - 25.4mm - 100mm);height:auto}
+body.a4-view .shot-big .shot{width:100%;height:100%;min-height:0}
+body.a4-view #s3, body.a4-view #s4{display:flex;flex-direction:column}
 header .wrap{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
 .eyebrow{font-family:'Kanit';font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--sun-2);margin-bottom:6px}
 header h1{font-size:clamp(20px,3vw,30px);font-weight:600;line-height:1.15}
@@ -161,11 +180,21 @@ header h1 small{display:block;font-weight:300;font-size:.5em;color:#B9C7D6;margi
 .empty.drag{border-color:var(--sun);background:#FFF9EC}
 
 /* ── เช็กลิสต์ขั้นตอนและส่งมอบงาน ───────────────────────────────── */
+.ck-cols{display:grid;grid-template-columns:1fr;gap:6px}
+/* บน A4 portrait — เช็กลิสต์เป็นคอลัมน์เดียวยาวลง (มีที่ให้ list ยาวๆ) */
+body.a4-view #s7 .ck-cols{grid-template-columns:1fr}
+/* ถ้าจอกว้างและไม่ใช่โหมด A4 view — 2 คอลัมน์ */
+@media(min-width:900px){
+  body:not(.a4-view) .ck-cols{grid-template-columns:1fr 1fr;gap:20px}
+}
+.ck-section{break-inside:avoid;page-break-inside:avoid}
+.ck-h{font-family:'Kanit';font-size:14px;font-weight:700;color:var(--night);
+  margin:6px 0 3px;padding-bottom:3px;border-bottom:1.5px solid var(--line)}
 .ck{list-style:none;margin:0;padding:0}
-.ck li{display:flex;gap:10px;align-items:flex-start;padding:9px 4px;border-bottom:1px solid var(--line)}
+.ck li{display:flex;gap:8px;align-items:flex-start;padding:3px 4px;border-bottom:1px solid var(--line);line-height:1.3;font-size:12.5px}
 .ck li.done span:not(.ck-edit-txt){color:var(--mute);text-decoration:line-through}
-.ck input[type=checkbox]{width:19px;height:19px;flex:none;margin-top:2px}
-.ck li .n{font-family:'Kanit';font-size:12px;color:var(--mute);flex:none;min-width:20px}
+.ck input[type=checkbox]{width:15px;height:15px;flex:none;margin-top:2px}
+.ck li .n{font-family:'Kanit';font-size:11.5px;color:var(--mute);flex:none;min-width:20px}
 .ck .ck-view{display:none}
 .ck-edit-txt{flex:1;border:1px solid var(--line);border-radius:4px;padding:3px 6px;font:inherit;font-size:14px;line-height:1.45;resize:none;min-height:26px;background:#fff}
 .ck-edit-txt:focus{border-color:var(--pv);outline:none}
@@ -224,11 +253,11 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
   header .wrap{align-items:flex-start}
 }
 
-/* ── พิมพ์ : หนึ่งสไลด์ต่อหนึ่งหน้ากระดาษ ───────────────────────── */
+/* ── พิมพ์ : หนึ่งสไลด์ต่อหนึ่งหน้ากระดาษ A4 PORTRAIT ─────────── */
 @media print{
-  /* A4 landscape เต็มหน้า padding = 0 เพราะ .slide จัดการ padding เองเมื่ออยู่ในโหมด A4 view
+  /* A4 portrait เต็มหน้า padding = 0 เพราะ .slide จัดการ padding เองเมื่ออยู่ในโหมด A4 view
      (ทำให้ WYSIWYG จริง — dimensions บนจอ = dimensions บน PDF ทุกกรณี) */
-  @page{size:A4 landscape;margin:0}
+  @page{size:A4 portrait;margin:0}
   header,.no-print,.empty{display:none !important}
   html,body{background:#fff;font-size:12px;margin:0;padding:0}
   .wrap{max-width:none;padding:0;overflow:visible !important}
@@ -244,9 +273,9 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
   .edit-hint{display:none !important}
   #jobbar,#pager,#lightbox{display:none !important}
   body.mobile #deck .slide{display:block}
-  /* Fallback (non A4 view): slide เต็ม A4 landscape พร้อม padding ในตัว */
+  /* Fallback (non A4 view): slide เต็ม A4 portrait พร้อม padding ในตัว */
   .slide{border:0;border-radius:0;padding:12.7mm;margin:0;
-         width:297mm;height:210mm;box-sizing:border-box;overflow:hidden;
+         width:210mm;height:297mm;box-sizing:border-box;overflow:hidden;
          break-after:page;page-break-after:always;break-inside:avoid}
   .slide:last-child{break-after:auto;page-break-after:auto}
   .slide-head{margin-bottom:10px}
@@ -257,10 +286,10 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
   .shot.filled{resize:none;cursor:auto}
   .shot .resize-handle{display:none !important}
   .shot-placeholder{display:none}
-  /* A4 view: คงขนาดสไลด์ = A4 landscape (297×210mm พร้อม padding 12.7mm)
+  /* A4 view: คงขนาดสไลด์ = A4 portrait (210×297mm พร้อม padding 12.7mm)
      dimension เดียวกับหน้าจอ WYSIWYG แท้ */
   body.a4-view #deck{display:block !important;background:#fff !important;padding:0 !important;min-height:0 !important;align-items:stretch !important;gap:0 !important}
-  body.a4-view .slide{width:297mm !important;height:210mm !important;padding:12.7mm !important;margin:0 !important;
+  body.a4-view .slide{width:210mm !important;height:297mm !important;padding:12.7mm !important;margin:0 !important;
     box-shadow:none !important;border:0 !important;background:#fff !important;box-sizing:border-box !important;overflow:hidden !important}
   body.a4-view .slide::after{display:none !important}
   /* คงตำแหน่ง (transform) และขนาดที่ผู้ใช้ตั้งไว้บน PDF */
@@ -332,10 +361,12 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
           <div class="ct" id="lh-contact"></div>
         </div>
       </div>
-      <div class="slide-head"><span class="slide-no">1</span><h2>บรีฟช่างก่อนออกติดตั้งหน้างาน</h2>
+      <div class="slide-head"><span class="slide-no">1</span><h2>บรีฟช่างก่อนออกติดตั้งหน้างาน · แผนที่และการเดินทาง</h2>
         <span class="note" id="s1-proj">—</span></div>
-      <div class="cols wide-left">
-        <div>
+      <!-- 2 ตารางบน (บริฟช่าง + แผนที่) -->
+      <div class="cols">
+        <div class="sub-sec">
+          <h3 class="sub-h">บริฟช่าง</h3>
           <table class="kv">
             <tr><th>ผลิตภัณฑ์</th><td id="k-product">—</td></tr>
             <tr><th>INVERTER</th><td id="k-inv">—</td></tr>
@@ -347,23 +378,9 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
             <tr><th>TECHNICIAN</th><td><span class="ed" data-edit="tech" data-ph="ชื่อช่าง คั่นด้วยจุลภาค"></span></td></tr>
             <tr><th>ลูกค้า</th><td><span class="ed" data-edit="cust" data-ph="ชื่อลูกค้า"></span></td></tr>
           </table>
-          <div class="banner">🎯 TARGET ถึงจุดหมายเวลา
-            <span class="ed" data-edit="arrive" data-ph="เช่น 09.00"></span> น.</div>
-          <div class="banner calm">📌 หมายเหตุ:
-            <span class="ed" data-edit="note" data-ph="ข้อความเตือนช่างสำหรับงานนี้"></span></div>
-          <p class="edit-hint no-print"><i class="fa-solid fa-pen"></i>
-            ช่องที่มีเส้นประคลิกแล้วพิมพ์แก้ได้เลย ระบบจำไว้ให้เฉพาะใบสั่งงานนี้
-            ถ้าอยากให้ติดไปกับโครงการถาวร ให้กรอกที่การ์ดข้อมูลงานในเมนู 2</p>
         </div>
-        <div class="shot" data-slot="product" data-cap="รูปผลิตภัณฑ์"></div>
-      </div>
-    </section>
-
-    <!-- ══ 2 · แผนที่และการเดินทาง ══ -->
-    <section class="slide" id="s2">
-      <div class="slide-head"><span class="slide-no">2</span><h2>แผนที่และการเดินทาง</h2></div>
-      <div class="cols">
-        <div>
+        <div class="sub-sec">
+          <h3 class="sub-h">แผนที่และการเดินทาง</h3>
           <table class="kv">
             <tr><th>ชื่อลูกค้า</th><td><span class="ed" data-edit="cust" data-ph="ชื่อลูกค้า"></span></td></tr>
             <tr><th>เบอร์โทร</th><td><span class="ed" data-edit="phone" data-ph="08x-xxx-xxxx"></span>
@@ -372,101 +389,66 @@ body.mobile .shot.filled .frame{cursor:zoom-in}
             <tr><th>โลเคชัน</th><td id="m-coord">—</td></tr>
             <tr><th>ที่ตั้ง</th><td id="m-loc">—</td></tr>
           </table>
+          <div class="banner">🎯 TARGET ถึงจุดหมายเวลา
+            <span class="ed" data-edit="arrive" data-ph="เช่น 09.00"></span> น.</div>
+          <div class="banner calm">📌 หมายเหตุ:
+            <span class="ed" data-edit="note" data-ph="ข้อความเตือนช่างสำหรับงานนี้"></span></div>
+          <p class="edit-hint no-print"><i class="fa-solid fa-pen"></i>
+            ช่องที่มีเส้นประคลิกแล้วพิมพ์แก้ได้เลย ระบบจำไว้ให้เฉพาะใบสั่งงานนี้</p>
         </div>
-        <div class="shot-grid">
-          <div class="shot" data-slot="map" data-cap="แผนที่"></div>
-          <div class="shot" data-slot="site" data-cap="ตำแหน่งติดตั้งแผงโซลาร์เซลล์"></div>
-        </div>
+      </div>
+      <!-- 6 กรอบรูป 3×2 ครึ่งล่าง -->
+      <div class="shots-grid-6">
+        <div class="shot ov" data-slot="product" data-cap="รูปผลิตภัณฑ์"></div>
+        <div class="shot ov" data-slot="map"     data-cap="แผนที่"></div>
+        <div class="shot ov" data-slot="site"    data-cap="ตำแหน่งติดตั้งแผงโซลาร์เซลล์"></div>
+        <div class="shot ov" data-slot="panel"   data-cap="ผังการวางแผงและแนวเดินท่อบนหลังคา"></div>
+        <div class="shot ov" data-slot="inverter" data-cap="ตำแหน่งอินเวอร์เตอร์"></div>
+        <div class="shot ov" data-slot="ground"  data-cap="บริเวณติดตั้งระบบกราวด์"></div>
       </div>
     </section>
 
-    <!-- ══ 3 · ผังการวางแผงและการจัดสตริง ══ -->
+    <!-- ══ 3 · ผังการวางแผงและการจัดสตริง (ตารางบน + รูปใหญ่ล่าง) ══ -->
     <section class="slide" id="s3">
       <div class="slide-head"><span class="slide-no">3</span><h2>ผังการวางแผงและการจัดสตริง</h2></div>
-      <div class="cols">
-        <div>
-          <table class="kv">
-            <tr class="hi"><th>การจัดสตริง</th><td id="l-string">—</td></tr>
-            <tr><th>แผงโซลาร์เซลล์</th><td id="l-panels">—</td></tr>
-            <tr><th>ทิศและมุมเอียง</th><td id="l-orient">—</td></tr>
-            <tr><th>ราง / ตัวต่อราง</th><td id="l-rail">—</td></tr>
-            <tr><th>L-Feet / คลิปจับแผง</th><td id="l-clamp">—</td></tr>
-            <tr><th>สาย DC · ท่อ/ราง</th><td id="l-dc">—</td></tr>
-          </table>
-        </div>
-        <div class="shot" data-slot="panel" data-cap="ผังการวางแผงและแนวเดินท่อบนหลังคา"></div>
-      </div>
+      <table class="kv">
+        <tr class="hi"><th>การจัดสตริง</th><td id="l-string">—</td></tr>
+        <tr><th>แผงโซลาร์เซลล์</th><td id="l-panels">—</td></tr>
+        <tr><th>ทิศและมุมเอียง</th><td id="l-orient">—</td></tr>
+        <tr><th>ราง / ตัวต่อราง</th><td id="l-rail">—</td></tr>
+        <tr><th>L-Feet / คลิปจับแผง</th><td id="l-clamp">—</td></tr>
+        <tr><th>สาย DC · ท่อ/ราง</th><td id="l-dc">—</td></tr>
+      </table>
+      <div class="shot-big"><div class="shot" data-slot="panel" data-cap="ผังการวางแผงและแนวเดินท่อบนหลังคา"></div></div>
     </section>
 
-    <!-- ══ 4 · ผังติดตั้งอินเวอร์เตอร์และจุดขนานไฟ ══ -->
+    <!-- ══ 4 · ผังติดตั้งอินเวอร์เตอร์และจุดขนานไฟ (ตารางบน + รูปใหญ่ล่าง) ══ -->
     <section class="slide" id="s4">
       <div class="slide-head"><span class="slide-no">4</span><h2>ผังติดตั้งอินเวอร์เตอร์และจุดขนานไฟ</h2></div>
-      <div class="cols">
-        <div>
-          <table class="kv">
-            <tr><th>อินเวอร์เตอร์</th><td id="i-inv">—</td></tr>
-            <tr class="hi"><th>เบรกเกอร์ที่ต้องเพิ่ม</th><td id="i-cb">—</td></tr>
-            <tr><th>สาย AC</th><td id="i-ac">—</td></tr>
-            <tr><th>ระยะเดินท่อ</th><td id="i-dist">—</td></tr>
-            <tr><th>ท่อ / ราง</th><td id="i-conduit">—</td></tr>
-            <tr><th>MC4</th><td id="i-mc4">—</td></tr>
-          </table>
-          <div class="banner ac" id="i-existing" style="display:none"></div>
-        </div>
-        <div class="shot" data-slot="inverter" data-cap="ตำแหน่งอินเวอร์เตอร์ · แนวท่อ · จุดขนานไฟ"></div>
-      </div>
-    </section>
-
-    <!-- ══ 5 · ระบบกราวด์ ══ -->
-    <section class="slide" id="s5">
-      <div class="slide-head"><span class="slide-no">5</span><h2>ระบบกราวด์</h2></div>
-      <div class="cols">
-        <div>
-          <table class="kv">
-            <tr><th>สายกราวด์</th><td id="g-cable">—</td></tr>
-            <tr><th>ระยะเดินสายกราวด์</th><td id="g-dist">—</td></tr>
-            <tr><th>Ground Plate</th><td id="g-plate">—</td></tr>
-            <tr><th>Ground Lug</th><td id="g-lug">—</td></tr>
-          </table>
-        </div>
-        <div class="shot" data-slot="ground" data-cap="บริเวณติดตั้งระบบกราวด์"></div>
-      </div>
-    </section>
-
-    <!-- ══ 6 · วัสดุที่ต้องเตรียม ══ -->
-    <section class="slide" id="s6">
-      <div class="slide-head"><span class="slide-no">6</span><h2>วัสดุที่ต้องเตรียม</h2>
-        <span class="progress" id="mat-progress"></span></div>
-      <div id="mat-none" class="shot" style="min-height:110px">
-        <div class="cap">ยังไม่มีรายการวัสดุ</div>
-        <div>ไปที่แท็บ System Design แล้วกด “คำนวณตารางวัสดุอุปกรณ์ (Generate BOM)” แล้วส่งออก design ใหม่</div>
-      </div>
-      <div class="mat-tools no-print" id="mat-tools" style="display:none">
-        <span style="font-size:12.5px;color:var(--mute)">เลือกรายการที่จะให้ขึ้นในเอกสาร:</span>
-        <button onclick="showAllMat(true)">แสดงทั้งหมด</button>
-        <button onclick="showAllMat(false)">ไม่แสดงทั้งหมด</button>
-        <button onclick="showOnlyUnpicked()">แสดงเฉพาะที่ยังไม่เบิก</button>
-      </div>
-      <table class="mat" id="mat-table" style="display:none">
-        <thead><tr><th style="width:92px">หมวด</th><th>รายการ</th><th>สเปก</th>
-          <th class="q" style="width:110px">จำนวน</th>
-          <th class="c no-print">แสดง</th><th class="c no-print">เบิกแล้ว</th></tr></thead>
-        <tbody id="mat-body"></tbody>
+      <table class="kv">
+        <tr><th>อินเวอร์เตอร์</th><td id="i-inv">—</td></tr>
+        <tr class="hi"><th>เบรกเกอร์ที่ต้องเพิ่ม</th><td id="i-cb">—</td></tr>
+        <tr><th>สาย AC</th><td id="i-ac">—</td></tr>
+        <tr><th>ระยะเดินท่อ</th><td id="i-dist">—</td></tr>
+        <tr><th>ท่อ / ราง</th><td id="i-conduit">—</td></tr>
+        <tr><th>MC4</th><td id="i-mc4">—</td></tr>
       </table>
+      <div class="banner ac" id="i-existing" style="display:none"></div>
+      <div class="shot-big"><div class="shot" data-slot="inverter" data-cap="ตำแหน่งอินเวอร์เตอร์ · แนวท่อ · จุดขนานไฟ"></div></div>
     </section>
 
     <!-- ══ 7 · เช็กลิสต์หน้างาน ══ -->
     <section class="slide" id="s7">
-      <div class="slide-head"><span class="slide-no">7</span><h2>เช็กลิสต์หน้างาน</h2>
+      <div class="slide-head"><span class="slide-no">5</span><h2>เช็กลิสต์หน้างาน</h2>
         <span class="progress" id="ck-progress"></span></div>
-      <div class="cols">
-        <div>
-          <h3 style="font-family:Kanit;font-size:15px;margin:0 0 6px">ขั้นตอนติดตั้ง</h3>
+      <div class="ck-cols">
+        <div class="ck-section">
+          <h3 class="ck-h">ขั้นตอนติดตั้ง</h3>
           <ul class="ck" id="ck-steps"></ul>
           <button type="button" class="ck-add no-print" onclick="ckAddItem('steps')">＋ เพิ่มรายการ</button>
         </div>
-        <div>
-          <h3 style="font-family:Kanit;font-size:15px;margin:0 0 6px">ส่งมอบงาน</h3>
+        <div class="ck-section">
+          <h3 class="ck-h">ส่งมอบงาน</h3>
           <ul class="ck" id="ck-hand"></ul>
           <button type="button" class="ck-add no-print" onclick="ckAddItem('hand')">＋ เพิ่มรายการ</button>
         </div>
@@ -1336,6 +1318,12 @@ function saveShotSizes(sz){    try { localStorage.setItem(_sizeKey(), JSON.strin
 function applyShotOffsets(){
   const off = loadShotOffsets(), sz = loadShotSizes();
   document.querySelectorAll('.shot[data-slot]').forEach(s => {
+    // overview grid shot (.ov) — ให้ CSS fit เอง ไม่ apply offset/size
+    if (s.classList.contains('ov')) {
+      s.style.transform = ''; s.style.width = ''; s.style.height = '';
+      delete s.dataset.freePos;
+      return;
+    }
     const o = off[s.dataset.slot];
     if (o && (o.x || o.y)) {
       s.style.transform = 'translate(' + o.x + 'px,' + o.y + 'px)';
@@ -1373,9 +1361,12 @@ window.applyShotOffsets = applyShotOffsets;
   let target = null, sx, sy, sw, sh;
   function onStart(e){
     if (!e.target.classList || !e.target.classList.contains('resize-handle')) return;
+    // ข้าม overview grid shots
+    const shot = e.target.parentElement;
+    if (shot.classList.contains('ov')) return;
     e.preventDefault(); e.stopPropagation();
     const pt = e.touches ? e.touches[0] : e;
-    target = e.target.parentElement;
+    target = shot;
     const r = target.getBoundingClientRect();
     sx = pt.clientX; sy = pt.clientY; sw = r.width; sh = r.height;
     target.classList.add('resizing');
@@ -1420,6 +1411,8 @@ window.applyShotOffsets = applyShotOffsets;
   function onDown(e){
     const shot = nearest(e.target, '.shot.filled');
     if (!shot || e.target.closest('.tools') || e.target.closest('button') || e.target.closest('.cap-bar')) return;
+    // ข้าม overview grid shots (บนหน้าแรก) — ไม่ให้ลาก, fit ตัวเองเข้ากับ cell
+    if (shot.classList.contains('ov')) return;
     // อย่าเริ่มลากถ้าเป้าหมายคือปุ่มย่อขยาย (มันมี handler ของตัวเอง)
     if (e.target.classList && e.target.classList.contains('resize-handle')) return;
     const pt = e.touches ? e.touches[0] : e;
