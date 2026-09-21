@@ -3412,7 +3412,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
             }
         }
 
-        function exportDB3() {
+        async function exportDB3() {
             let data = sessionStorage.getItem('db3');
             if(!data) { alert('กรุณากดปุ่ม "▶ ประมวลผลและสร้างรายงาน (Run Simulation)" ในเมนูที่ 3 ก่อนทำการ Export '); return; }
             
@@ -3477,15 +3477,31 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
             // ชื่อไฟล์รูปแบบเดียวกันทั้งชุดโปรแกรม : ชื่อโครงการ_report_YYYYMMDD_HHMM
             let kwp = getVal('inp-pnom') || (typeof calcPnom === 'function' ? calcPnom() : 0);
             let fileName = `${ascFileStamp(projName, 'report', kwp)}.txt`;
-            /* application/octet-stream บังคับ Chrome ให้ save ไม่ใช่เปิดในแท็บ + ไม่โดน SafeBrowsing */
-            const blob = new Blob([JSON.stringify(db3Obj, null, 2)], { type: 'application/octet-stream' });
+            const content = JSON.stringify(db3Obj, null, 2);
+            /* 🌟 วิธีที่ 1: File System Access API — เปิด Save-As dialog (Chrome 86+)
+               บายพาส SafeBrowsing / AV / policy ที่ block blob URL download */
+            if (typeof window.showSaveFilePicker === 'function') {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: fileName,
+                        types: [{ description: 'Text file', accept: { 'text/plain': ['.txt'] } }]
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(content);
+                    await writable.close();
+                    return;
+                } catch (e) {
+                    if (e && e.name === 'AbortError') return;
+                    console.warn('showSaveFilePicker fail, ใช้ blob URL แทน:', e);
+                }
+            }
+            /* 🌟 วิธีที่ 2 (fallback): blob URL + download attribute */
+            const blob = new Blob([content], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url; a.download = fileName; a.rel = 'noopener'; a.style.display = 'none';
             document.body.appendChild(a);
             a.click();
-            /* ไฟล์ใหญ่ (>1MB) revokeObjectURL ทันทีทำให้ Chrome ดาวน์โหลดไม่ทัน = "Something went wrong"
-               รอ 60 วิให้ Chrome เขียนไฟล์เสร็จแน่นอนก่อน revoke */
             setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 60000);
         }
 

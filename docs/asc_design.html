@@ -8272,12 +8272,31 @@ function ascFileStamp(projectName, kind, kwp) {
     return `${kind}_${name}${kwpStr}_${stamp}`;
 }
 
- function downloadTXT(content, filename) {
+ async function downloadTXT(content, filename) {
+    const safeName = filename.normalize('NFC').replace(/[:\\/*?"<>|\x00-\x1f]/g, "_");
+    // 🌟 วิธีที่ 1: File System Access API (Chrome 86+) — เปิด Save-As dialog
+    //    ให้ผู้ใช้เลือกที่บันทึก + ชื่อไฟล์ตามต้องการ
+    //    วิธีนี้ RELIABLE ที่สุด ไม่โดน SafeBrowsing/AV block
+    if (typeof window.showSaveFilePicker === 'function') {
+        try {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: safeName,
+                types: [{ description: 'Text file', accept: { 'text/plain': ['.txt'] } }]
+            });
+            const writable = await handle.createWritable();
+            await writable.write(content);
+            await writable.close();
+            return;
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;   // ผู้ใช้กด Cancel
+            console.warn('showSaveFilePicker fail, ใช้ blob URL แทน:', e);
+            // fall through ไปวิธีที่ 2
+        }
+    }
     try {
-        // ลองสั่งดาวน์โหลดปกติก่อน (สำหรับคนที่รัน Local หรือ โฮสต์ปกติ)
+        // 🌟 วิธีที่ 2: blob URL + download attribute (fallback สำหรับ browser เก่า)
         const blob = new Blob([content], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
-        const safeName = filename.normalize('NFC').replace(/[:\\/*?"<>|\x00-\x1f]/g, "_");
         const a = document.createElement('a');
         a.href = url;
         a.download = safeName;
@@ -8285,7 +8304,6 @@ function ascFileStamp(projectName, kind, kwp) {
         a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
-        // ไฟล์ใหญ่ revoke ทันทีทำให้ Chrome ดาวน์โหลดไม่ทัน = "Something went wrong"
         setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 60000);
     } catch (e) {
         // หากถูก Google Sites บล็อก ให้เปิดหน้าต่างใหม่โชว์ Text แทน
@@ -8544,8 +8562,8 @@ function ascFileStamp(projectName, kind, kwp) {
         // ชื่อไฟล์รูปแบบเดียวกันทั้งชุดโปรแกรม : ชื่อโครงการ_design_YYYYMMDD_HHMM
         // การนำเข้าของทุกโปรแกรมดูจากคีย์ในเนื้อ JSON ไม่ได้ดูชื่อไฟล์ เปลี่ยนชื่อจึงไม่กระทบ
         const kwp = parseNumText(document.getElementById('outTotalKwp').innerText) || 0;
-        downloadTXT(JSON.stringify(db2Full, null, 2), `${ascFileStamp(pName, 'design', kwp)}.txt`);
-        
+        await downloadTXT(JSON.stringify(db2Full, null, 2), `${ascFileStamp(pName, 'design', kwp)}.txt`);
+
         // 🌟 เฟส 16: ยกเลิกการถ่ายภาพ PNG 2K อัตโนมัติตอนบันทึก — ใช้ปุ่ม "บันทึกรูป (Capture Proj.)" แทน
 
         // 🌟 ปิดหน้าจอ Loading เมื่อทุกอย่างเสร็จสิ้น 🌟
