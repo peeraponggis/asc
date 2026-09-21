@@ -2950,10 +2950,13 @@ async function exportBackup() {
 
     const blob = new Blob([JSON.stringify(db, null, 2)], { type:'application/json' });
     const a    = document.createElement('a');
-    a.href     = URL.createObjectURL(blob);
+    const url  = URL.createObjectURL(blob);
+    a.href     = url;
     a.download = `asc_backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.style.display = 'none'; document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(a.href);
+    // revoke ช้า — สำหรับไฟล์ backup ที่มักใหญ่ (มีรูปทั้งหมด base64)
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 60000);
 }
 
 /* สำรองข้อมูลจากคลาวด์ ต้องดึงทีละโครงการเพราะรายการรวมไม่ได้พ่วง data มาด้วย */

@@ -1040,10 +1040,12 @@
         let filename = `${ascFileStamp(custName, 'eBill', eKwp)}.txt`;
 
         let link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
+        let url = URL.createObjectURL(blob);
+        link.href = url; link.download = filename;
+        link.style.display = 'none'; document.body.appendChild(link);
         link.click();
-        URL.revokeObjectURL(link.href);
+        // revoke ช้า — Chrome ต้องมีเวลาเขียนไฟล์ (สำคัญกับไฟล์ใหญ่ ~MB)
+        setTimeout(() => { URL.revokeObjectURL(url); link.remove(); }, 60000);
     }
 
 

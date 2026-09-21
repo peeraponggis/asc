@@ -8272,9 +8272,12 @@ function ascFileStamp(projectName, kind, kwp) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = filename.replace(/[:\\/*?"<>|]/g, "_"); 
+        a.download = filename.replace(/[:\\/*?"<>|]/g, "_");
+        a.style.display = 'none';
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(url);
+        // ไฟล์ใหญ่ revoke ทันทีทำให้ Chrome ดาวน์โหลดไม่ทัน = "Something went wrong"
+        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 60000);
     } catch (e) {
         // หากถูก Google Sites บล็อก ให้เปิดหน้าต่างใหม่โชว์ Text แทน
         const newWindow = window.open('', '_blank');
