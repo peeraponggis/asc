@@ -1945,11 +1945,14 @@
            การเปลี่ยนชื่อจึงไม่กระทบการนำเข้าส่งออกใด ๆ */
         function ascFileStamp(projectName, kind, kwp) {
             let name = String(projectName || '').trim()
-                         .replace(/[\\/:*?"<>|]/g, '_')
+                         .normalize('NFC')                    /* รวม combining marks (ธิ์, รุ๊) → single codepoint */
+                         .replace(/[\\/:*?"<>|\x00-\x1f]/g, '_')
                          .replace(/\s+/g, '_')
                          .replace(/_+/g, '_')
                          .replace(/^_|_$/g, '');
             if (!name) name = 'Project';
+            /* ตัดที่ 40 ตัวอักษร กัน Chrome/Windows พังกับชื่อยาว */
+            if ([...name].length > 40) name = [...name].slice(0, 40).join('') + '_';
             const d = new Date();
             const p = (n) => String(n).padStart(2, '0');
             const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
@@ -3473,10 +3476,11 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
             // ชื่อไฟล์รูปแบบเดียวกันทั้งชุดโปรแกรม : ชื่อโครงการ_report_YYYYMMDD_HHMM
             let kwp = getVal('inp-pnom') || (typeof calcPnom === 'function' ? calcPnom() : 0);
             let fileName = `${ascFileStamp(projName, 'report', kwp)}.txt`;
-            const blob = new Blob([JSON.stringify(db3Obj, null, 2)], { type: 'text/plain;charset=utf-8' });
+            /* application/octet-stream บังคับ Chrome ให้ save ไม่ใช่เปิดในแท็บ + ไม่โดน SafeBrowsing */
+            const blob = new Blob([JSON.stringify(db3Obj, null, 2)], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url; a.download = fileName; a.style.display = 'none';
+            a.href = url; a.download = fileName; a.rel = 'noopener'; a.style.display = 'none';
             document.body.appendChild(a);
             a.click();
             /* ไฟล์ใหญ่ (>1MB) revokeObjectURL ทันทีทำให้ Chrome ดาวน์โหลดไม่ทัน = "Something went wrong"

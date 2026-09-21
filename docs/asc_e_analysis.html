@@ -2303,11 +2303,13 @@ function drawAMRDaily24hChart() {
        การเปลี่ยนชื่อจึงไม่กระทบการนำเข้าส่งออกใด ๆ */
     function ascFileStamp(projectName, kind, kwp) {
         let name = String(projectName || '').trim()
-                     .replace(/[\\/:*?"<>|]/g, '_')
+                     .normalize('NFC')
+                     .replace(/[\\/:*?"<>|\x00-\x1f]/g, '_')
                      .replace(/\s+/g, '_')
                      .replace(/_+/g, '_')
                      .replace(/^_|_$/g, '');
         if (!name) name = 'Project';
+        if ([...name].length > 40) name = [...name].slice(0, 40).join('') + '_';
         const d = new Date();
         const p = (n) => String(n).padStart(2, '0');
         const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
