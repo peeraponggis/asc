@@ -1944,15 +1944,16 @@
            (base_layout_db1 / simulation_params_db2 / is_asc_db3) ไม่ได้ดูชื่อไฟล์เลย
            การเปลี่ยนชื่อจึงไม่กระทบการนำเข้าส่งออกใด ๆ */
         function ascFileStamp(projectName, kind, kwp) {
+            /* ASCII เท่านั้น — Chrome/Windows บาง config พังกับ Thai */
             let name = String(projectName || '').trim()
-                         .normalize('NFC')                    /* รวม combining marks (ธิ์, รุ๊) → single codepoint */
-                         .replace(/[\\/:*?"<>|\x00-\x1f]/g, '_')
+                         .normalize('NFC')
+                         .replace(/[^\x20-\x7E]/g, '')
+                         .replace(/[\\/:*?"<>|]/g, '_')
                          .replace(/\s+/g, '_')
                          .replace(/_+/g, '_')
                          .replace(/^_|_$/g, '');
             if (!name) name = 'Project';
-            /* ตัดที่ 40 ตัวอักษร กัน Chrome/Windows พังกับชื่อยาว */
-            if ([...name].length > 40) name = [...name].slice(0, 40).join('') + '_';
+            if (name.length > 40) name = name.slice(0, 40).replace(/_$/, '');
             const d = new Date();
             const p = (n) => String(n).padStart(2, '0');
             const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
