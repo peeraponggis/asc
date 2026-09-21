@@ -772,23 +772,26 @@
                        ' · ฝั่งไฟสลับ ' + (p.ac_spd_class ? 'class ' + p.ac_spd_class : 'ไม่มี') +
                        (d.inv1.DC_SPD_Type ? ' · อินเวอร์เตอร์ระบุ DC ' + d.inv1.DC_SPD_Type : '');
 
+            /* ก่อนอื่นดูว่า LPS info ระบุแล้วหรือยัง — ถ้ายังไม่ระบุ นี่ไม่ใช่ error แต่เป็น warn
+               (SPD ถูก addRow ลง BOM แล้วโดยระบุ "ต้องระบุชนิด" หมายเหตุไว้)
+               ก่อนหน้านี้จะขึ้น error "ขาด SPD" ก่อน ทั้งที่ผู้ใช้แค่ยังไม่กรอก LPS */
+            const want = (global.AscEIT && global.AscEIT.spdClassFor) ? global.AscEIT.spdClassFor(d.lps) : null;
+            if (miss.length && !want) return { level: 'warn',
+                title: 'ยังตัดสินชนิด SPD ไม่ได้ เพราะยังไม่ได้ระบุระบบป้องกันฟ้าผ่าของอาคาร',
+                detail: 'ตาราง 3.2 ให้ class ของ SPD ตามระบบป้องกันฟ้าผ่า SPD ในรายการวัสดุถูกใส่แล้ว ' +
+                        'แต่ยังไม่ระบุชนิด (Type I / Type II) กรุณากรอก LPS เพื่อให้ระบบเลือกให้อัตโนมัติ',
+                evidence: ev,
+                fix: ['ไปที่ขั้นที่ 1 (Design) กรอกช่อง "ระบบป้องกันฟ้าผ่าของอาคาร" ให้ครบ',
+                      'แล้วกด Generate BOM ใหม่ — ระบบจะเลือกชนิด SPD ให้เอง'],
+                kb: 'eit-lps', eit: CL };
+
             if (miss.length) return { level: 'error', title: 'ขาดอุปกรณ์ป้องกันไฟกระชาก ' + miss.join(' และ '),
                 detail: 'มาตรฐานบังคับให้มี SPD ทั้งสองฝั่ง การขาดฝั่งใดฝั่งหนึ่งทำให้อุปกรณ์ปลายทาง ' +
                         'เสียหายได้จากฟ้าผ่าเหนี่ยวนำ ซึ่งเกิดบ่อยในไทย',
                 evidence: ev, fix: ['เพิ่ม SPD ' + miss.join(' และ ') + ' ลงในรายการวัสดุ'],
                 kb: 'eit-spd', eit: CL };
 
-            /* ถึงตรงนี้แปลว่ามีของครบทั้งสองฝั่ง เหลือแค่ตรวจว่า class ถูกตามตารางไหม */
-            const want = (global.AscEIT && global.AscEIT.spdClassFor) ? global.AscEIT.spdClassFor(d.lps) : null;
-
-            if (!want) return { level: 'warn', title: 'ยังตัดสินชนิด SPD ไม่ได้ เพราะไม่รู้ระบบป้องกันฟ้าผ่าของอาคาร',
-                detail: 'ตารางที่ 3.2 ให้ชนิดของ SPD ตามระบบป้องกันฟ้าผ่าของอาคาร ' +
-                        'ถ้าอาคารมีระบบป้องกันฟ้าผ่าภายนอกและรักษาระยะแยก S ไว้ไม่ได้ ต้องใช้ class I ทั้งสองฝั่ง ' +
-                        'ซึ่งเป็นคนละของกับ class II ทั้งราคาและพิกัด การเดาเป็น class II จึงผิดในสองในสามเคสของตาราง',
-                evidence: ev,
-                fix: ['ไปที่ขั้นที่ 1 กรอกช่อง "ระบบป้องกันฟ้าผ่าของอาคาร" ให้ครบ แล้วกด Generate BOM ใหม่',
-                      'ถ้ายังไม่รู้ ต้องไปดูหน้างานหรือถามเจ้าของอาคารก่อนสั่งของ'],
-                kb: 'eit-lps', eit: CL };
+            /* ถึงตรงนี้แปลว่ามีของครบทั้งสองฝั่ง (want ไม่ใช่ null เพราะเช็คไปแล้วด้านบน) */
 
             const wrong = [];
             if (String(p.dc_spd_class) !== want.dc) wrong.push('ฝั่งไฟตรงควรเป็น class ' + want.dc);
