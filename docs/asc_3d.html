@@ -651,19 +651,40 @@ function parseDB3(j) {
    ============================================================================ */
 function ovKey() { return S.projectName || 'default'; }
 
+/* คำนวณลายเซ็นสั้นของ DB2 เพื่อดูว่าไฟล์เปลี่ยนหรือไม่
+   ใช้ค่าเรขาคณิตของหลังคาทุกผืน + จำนวนแผง เป็นตัวชี้ */
+function dbSignature() {
+  const parts = S.roofs.map(r =>
+    [r.id, r.db.eave.toFixed(2), r.db.eaveB.toFixed(2), r.db.ridge.toFixed(2),
+     r.db.azi.toFixed(0), r.layout.length].join(':')
+  );
+  return parts.join('|');
+}
+
 function loadOverrides() {
   let all = {};
   try { all = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) { all = {}; }
-  S.ov = all[ovKey()] || {};
-  let stale = 0;   // นับหลังคาที่ค่า override เก่าต่างจาก DB2 ใหม่มาก (>0.5 ม. หรือ >5°)
+  const bucket = all[ovKey()] || {};
+  const curSig = dbSignature();
+  const savedSig = bucket.__dbSig || '';
+
+  // 🌟 ถ้าลายเซ็น DB2 เปลี่ยน (design ถูกคำนวณใหม่ หรือ import ไฟล์ใหม่)
+  //    → เคลียร์ overrides อัตโนมัติ ใช้ค่าจาก DB2 ล่าสุดเลย
+  //    ไม่ต้องกดปุ่มล้างเอง
+  if (savedSig && savedSig !== curSig) {
+    console.log('[asc_3d] DB2 signature changed — auto reset overrides');
+    delete all[ovKey()];
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(all)); } catch (e) {}
+    S.ov = {};
+    S._autoReset = true;   // เตือนใน UI ว่ารีเซ็ตอัตโนมัติ
+  } else {
+    S.ov = bucket;
+    S._autoReset = false;
+  }
+
   S.roofs.forEach(r => {
-    const o = S.ov[r.id] || {};
+    const o = (S.ov && S.ov[r.id]) || {};
     const dbSlope = r.db.ridgeFromFile ? Math.atan((r.db.ridge - r.db.eave) / r.run) / D2R : r.db.slope;
-    // เทียบ overrides กับ DB — ถ้าต่างมาก แปลว่าไฟล์ design เปลี่ยน (คนละงาน หรือ export ใหม่)
-    if (o.eave  !== undefined && Math.abs(o.eave  - r.db.eave)  > 0.5) stale++;
-    if (o.ridge !== undefined && Math.abs(o.ridge - r.db.ridge) > 0.5) stale++;
-    if (o.slope !== undefined && Math.abs(o.slope - dbSlope)    > 5)   stale++;
-    if (o.azi   !== undefined && Math.abs(((o.azi - r.db.azi + 540) % 360) - 180) > 5) stale++;
     r.eave  = num(o.eave,  r.db.eave);
     r.eaveB = num(o.eaveB, r.db.eaveB);
     r.ridge = num(o.ridge, r.db.ridge);
@@ -671,19 +692,15 @@ function loadOverrides() {
     r.azi   = num(o.azi,   r.db.azi);
     r.stand = num(o.stand, r.db.stand);
   });
-  // เตือนอัตโนมัติ — ให้ผู้ใช้เห็นในกล่อง note ถ้ามีค่า stale
-  if (stale > 0) {
-    S._staleWarn = 'ค่าที่คุณเคยแก้ไว้ ต่างจากไฟล์ design ใหม่มาก (' + stale + ' จุด) — ' +
-                   'ถ้าอยากใช้ค่าจากไฟล์ใหม่ กด 🗑 ล้างค่าที่แก้ทั้งหมด';
-  } else {
-    S._staleWarn = '';
-  }
+  S._staleWarn = S._autoReset
+    ? 'ตรวจพบ design ถูกอัปเดต — รีเซ็ตค่าที่แก้ไว้อัตโนมัติ ใช้ค่าจากไฟล์ล่าสุด'
+    : '';
 }
 
 function saveOverrides() {
   let all = {};
   try { all = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) { all = {}; }
-  const bag = {};
+  const bag = { __dbSig: dbSignature() };   // เก็บลายเซ็น DB2 ปัจจุบัน — ใช้ตรวจ auto-reset ตอนโหลดใหม่
   S.roofs.forEach(r => {
     bag[r.id] = { eave:r.eave, eaveB:r.eaveB, ridge:r.ridge, slope:r.slope, azi:r.azi, stand:r.stand };
   });
@@ -1437,12 +1454,20 @@ function flash(el) {
 
 function syncForm(flashEl) {
   const r = R(); if (!r) return;
-  $('#fEave').value  = r.eave.toFixed(2);
-  $('#fEaveB').value = (isFinite(r.eaveB) ? r.eaveB : r.eave).toFixed(2);
-  $('#fRidge').value = r.ridge.toFixed(2);
-  $('#fSlope').value = r.slope.toFixed(1);
-  $('#fAzi').value   = Math.round(r.azi);
-  $('#fStand').value = r.stand.toFixed(2);
+  /* 🌟 ห้ามเขียน .value ทับ input ที่ผู้ใช้กำลังพิมพ์อยู่
+     เพราะจะทำให้ caret กระโดดไปท้าย + พิมพ์ต่อผิดช่อง = "จิ๊บ 1 ค่าแล้วข้ามช่อง"
+     Skip เฉพาะช่องที่ document.activeElement ชี้อยู่ */
+  const active = document.activeElement;
+  const setIfNotActive = (sel, val) => {
+    const el = $(sel);
+    if (el && el !== active) el.value = val;
+  };
+  setIfNotActive('#fEave',  r.eave.toFixed(2));
+  setIfNotActive('#fEaveB', (isFinite(r.eaveB) ? r.eaveB : r.eave).toFixed(2));
+  setIfNotActive('#fRidge', r.ridge.toFixed(2));
+  setIfNotActive('#fSlope', r.slope.toFixed(1));
+  setIfNotActive('#fAzi',   Math.round(r.azi));
+  setIfNotActive('#fStand', r.stand.toFixed(2));
   const cross = (r.span > 0) ? Math.atan(((r.eaveB || r.eave) - r.eave) / r.span) / D2R : 0;
   $('#fRun').textContent = r.run.toFixed(2) + ' ม.'
     + (Math.abs(cross) > 0.005 ? '  · ขวาง ' + cross.toFixed(2) + '°' : '');
