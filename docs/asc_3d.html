@@ -659,13 +659,23 @@ function parseDB3(j) {
 function ovKey() { return S.projectName || 'default'; }
 
 /* คำนวณลายเซ็นสั้นของ DB2 เพื่อดูว่าไฟล์เปลี่ยนหรือไม่
-   ใช้ค่าเรขาคณิตของหลังคาทุกผืน + จำนวนแผง เป็นตัวชี้ */
+   ใช้ค่าเรขาคณิตของหลังคาทุกผืน + จำนวนแผง เป็นตัวชี้
+
+   ต้องรวม run กับ span ด้วย ไม่ใช่แค่ความสูงกับทิศ
+   เพราะค่าที่ผู้ใช้แก้บางตัว (เช่น slope) คำนวณมาจาก run
+   ถ้า run เปลี่ยนแต่ลายเซ็นไม่เปลี่ยน ค่าเก่าที่อิง run ผิดจะค้างอยู่
+
+   OV_SCHEMA ขยับเลขเมื่อสูตรเรขาคณิตเปลี่ยน เพื่อบังคับล้าง override
+   ที่บันทึกไว้ด้วยสูตรเดิมทั้งหมด ผู้ใช้ไม่ต้องกดล้างเอง
+   v2 = แก้บั๊กหมุน localBoundary ผิดทิศ (run/span เคยเพี้ยนไป 2 เท่า) */
+const OV_SCHEMA = 'v2';
 function dbSignature() {
   const parts = S.roofs.map(r =>
-    [r.id, r.db.eave.toFixed(2), r.db.eaveB.toFixed(2), r.db.ridge.toFixed(2),
+    [r.id, r.run.toFixed(3), r.span.toFixed(3),
+     r.db.eave.toFixed(2), r.db.eaveB.toFixed(2), r.db.ridge.toFixed(2),
      r.db.azi.toFixed(0), r.layout.length].join(':')
   );
-  return parts.join('|');
+  return OV_SCHEMA + '|' + parts.join('|');
 }
 
 function loadOverrides() {
@@ -675,15 +685,15 @@ function loadOverrides() {
   const curSig = dbSignature();
   const savedSig = bucket.__dbSig || '';
 
-  // 🌟 ถ้าลายเซ็น DB2 เปลี่ยน (design ถูกคำนวณใหม่ หรือ import ไฟล์ใหม่)
-  //    → เคลียร์ overrides อัตโนมัติ ใช้ค่าจาก DB2 ล่าสุดเลย
-  //    ไม่ต้องกดปุ่มล้างเอง
+  // 🌟 ถ้าลายเซ็น DB2 เปลี่ยน (design ถูกคำนวณใหม่ · import ไฟล์ใหม่ · สูตรโปรแกรมเปลี่ยน)
+  //    → เคลียร์ overrides อัตโนมัติ ใช้ค่าจาก DB2 ล่าสุดเลย ไม่ต้องกดปุ่มล้างเอง
+  const oldSchema = savedSig && savedSig.split('|')[0] !== OV_SCHEMA;
   if (savedSig && savedSig !== curSig) {
-    console.log('[asc_3d] DB2 signature changed — auto reset overrides');
+    console.log('[asc_3d] signature changed — auto reset overrides', { savedSig, curSig });
     delete all[ovKey()];
     try { localStorage.setItem(STORE_KEY, JSON.stringify(all)); } catch (e) {}
     S.ov = {};
-    S._autoReset = true;   // เตือนใน UI ว่ารีเซ็ตอัตโนมัติ
+    S._autoReset = oldSchema ? 'schema' : 'design';
   } else {
     S.ov = bucket;
     S._autoReset = false;
@@ -699,8 +709,11 @@ function loadOverrides() {
     r.azi   = num(o.azi,   r.db.azi);
     r.stand = num(o.stand, r.db.stand);
   });
-  S._staleWarn = S._autoReset
-    ? 'ตรวจพบ design ถูกอัปเดต — รีเซ็ตค่าที่แก้ไว้อัตโนมัติ ใช้ค่าจากไฟล์ล่าสุด'
+  S._staleWarn =
+    S._autoReset === 'schema'
+      ? 'โปรแกรมแก้สูตรเรขาคณิตแล้ว — ค่าที่เคยแก้ไว้อิงรูปทรงเดิมที่ผิด จึงรีเซ็ตให้อัตโนมัติ'
+    : S._autoReset === 'design'
+      ? 'ตรวจพบ design ถูกอัปเดต — รีเซ็ตค่าที่แก้ไว้อัตโนมัติ ใช้ค่าจากไฟล์ล่าสุด'
     : '';
 }
 
