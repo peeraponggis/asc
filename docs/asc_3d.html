@@ -510,10 +510,17 @@ function parseDB2(j) {
     }
 
     /* คำนวณ localBoundary จาก world + azimuth ทุกครั้ง
-       DB2 เก่าอาจเก็บ localBoundary ที่หมุนด้วยทิศอื่น ทำให้ centroid matching เพี้ยน */
+       DB2 เก่าอาจเก็บ localBoundary ที่หมุนด้วยทิศอื่น ทำให้ centroid matching เพี้ยน
+
+       ⚠ ทิศหมุนต้องเป็น +azimuth ไม่ใช่ -azimuth
+       asc_design แปลง world→local ด้วยการหมุน +azimuth แล้วพลิกแกน y
+       (ตรวจกับไฟล์จริงแล้ว ได้ localBoundary ตรงกับที่ DB2 เก็บทุกจุด ทั้งสองผืน)
+       และ roofBasis() ที่ใช้แปลงกลับ local→world ก็เป็นอินเวิร์สของ +azimuth อยู่แล้ว
+       ของเดิมใช้ -azimuth ขาไปแต่ +azimuth ขากลับ รูปทรงจึงบิดและแผงหลุดตำแหน่ง
+       (หลังคา azimuth 193° เคยได้ run 32 ม. ทั้งที่ไฟล์ระบุ 16.745 ม.) */
     let lb;
     if (world && world.length >= 3) {
-      const ar = -aziDB * D2R;
+      const ar = aziDB * D2R;
       const ca = Math.cos(ar), sa = Math.sin(ar);
       const cx = world.reduce(function(s, q) { return s + q[0]; }, 0) / world.length;
       const cy = world.reduce(function(s, q) { return s + q[1]; }, 0) / world.length;
