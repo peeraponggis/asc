@@ -8252,19 +8252,25 @@ function generateDB2() {
    (base_layout_db1 / simulation_params_db2 / is_asc_db3) ไม่ได้ดูชื่อไฟล์เลย
    การเปลี่ยนชื่อจึงไม่กระทบการนำเข้าส่งออกใด ๆ */
 function ascFileStamp(projectName, kind, kwp) {
-    /* Chrome + Windows Downloads บาง config พังกับชื่อไฟล์ Thai (Defender/AV/policy)
-       จึง strip ให้เหลือ ASCII เท่านั้น → บันทึกได้ 100% ทุก config
-       Thai chars → ตัดออก; keep ตัวเลข ตัวอักษร Latin - _
-       ถ้าไม่มีอะไรเหลือ → fallback = "Project" */
+    /* ชื่อไฟล์ใช้ชื่อโครงการตามที่ผู้ใช้ตั้งไว้ รวมภาษาไทย
+
+       เคย strip ภาษาไทยทิ้งตอนไล่บั๊กดาวน์โหลด ซึ่งวินิจฉัยผิด
+       ไฟล์ชื่อไทยบันทึกได้ปกติมาตลอด (ตัวอย่างจริงจาก ส.ค. 2569 ยืนยัน)
+       ตัวการจริงคือ revokeObjectURL เร็วเกินไป ซึ่งแก้แล้ว
+       และตอนนี้ใช้ showSaveFilePicker เป็นหลัก ผู้ใช้แก้ชื่อเองได้อีกชั้น
+
+       จึงตัดเฉพาะอักขระที่ Windows ห้ามจริง ๆ กับอักขระควบคุมเท่านั้น */
     let name = String(projectName || '').trim()
                  .normalize('NFC')
-                 .replace(/[^\x20-\x7E]/g, '')                    /* ตัด non-ASCII ทั้งหมด */
-                 .replace(/[\\/:*?"<>|]/g, '_')
+                 .replace(/[\x00-\x1f\x7f]/g, '')                 /* อักขระควบคุม */
+                 .replace(/[\\/:*?"<>|]/g, '_')                   /* Windows ห้าม */
                  .replace(/\s+/g, '_')
                  .replace(/_+/g, '_')
                  .replace(/^_|_$/g, '');
     if (!name) name = 'Project';
-    if (name.length > 40) name = name.slice(0, 40).replace(/_$/, '');
+    /* ตัดที่ 60 ตัวอักษร — ไทย 60 ตัว = 180 ไบต์ UTF-8 รวมส่วนอื่นแล้ว
+       ยังต่ำกว่าขีดจำกัดชื่อไฟล์ 255 ไบต์ของ NTFS */
+    if ([...name].length > 60) name = [...name].slice(0, 60).join('').replace(/_$/, '');
     const d = new Date();
     const p = (n) => String(n).padStart(2, '0');
     const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;

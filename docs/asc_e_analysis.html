@@ -931,7 +931,7 @@
     }
 
     // === 5. ระบบ Export DB0 (.txt) ===
-    function exportDB0(type) {
+    async function exportDB0(type) {
         let sum = parseFloat(document.getElementById(`load_sum_${type}`).innerText);
         if(sum < 95 || sum > 105) {
             alert("กรุณาปรับสัดส่วน 24h ให้รวมกันได้ 100% (±5%) ก่อนทำการ Export");
@@ -1039,6 +1039,24 @@
         let eKwp = parseFloat((document.getElementById('amr_solar_kwp') || {}).innerText) || 0;
         let filename = `${ascFileStamp(custName, 'eBill', eKwp)}.txt`;
 
+        // 🌟 วิธีที่ 1: File System Access API — เปิด Save-As dialog (Chrome 86+)
+        //    ผู้ใช้เห็นและแก้ชื่อไฟล์ได้เอง บายพาสกลไก download ที่บาง config บล็อก
+        if (typeof window.showSaveFilePicker === 'function') {
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: filename,
+                    types: [{ description: 'Text file', accept: { 'text/plain': ['.txt'] } }]
+                });
+                const writable = await handle.createWritable();
+                await writable.write(jsonStr);
+                await writable.close();
+                return;
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;   // ผู้ใช้กด Cancel
+                console.warn('showSaveFilePicker fail, ใช้ blob URL แทน:', e);
+            }
+        }
+        // 🌟 วิธีที่ 2 (fallback): blob URL + download attribute
         let link = document.createElement("a");
         let url = URL.createObjectURL(blob);
         link.href = url; link.download = filename;
@@ -2302,16 +2320,18 @@ function drawAMRDaily24hChart() {
        (base_layout_db1 / simulation_params_db2 / is_asc_db3) ไม่ได้ดูชื่อไฟล์เลย
        การเปลี่ยนชื่อจึงไม่กระทบการนำเข้าส่งออกใด ๆ */
     function ascFileStamp(projectName, kind, kwp) {
-        /* ASCII เท่านั้น — Chrome/Windows บาง config พังกับ Thai */
+        /* ชื่อไฟล์ใช้ชื่อโครงการตามที่ผู้ใช้ตั้งไว้ รวมภาษาไทย
+           ตัดเฉพาะอักขระที่ Windows ห้ามจริง ๆ กับอักขระควบคุม
+           (ดูคำอธิบายเต็มใน asc_design.html — เคย strip ไทยทิ้งเพราะวินิจฉัยผิด) */
         let name = String(projectName || '').trim()
                      .normalize('NFC')
-                     .replace(/[^\x20-\x7E]/g, '')
+                     .replace(/[\x00-\x1f\x7f]/g, '')
                      .replace(/[\\/:*?"<>|]/g, '_')
                      .replace(/\s+/g, '_')
                      .replace(/_+/g, '_')
                      .replace(/^_|_$/g, '');
         if (!name) name = 'Project';
-        if (name.length > 40) name = name.slice(0, 40).replace(/_$/, '');
+        if ([...name].length > 60) name = [...name].slice(0, 60).join('').replace(/_$/, '');
         const d = new Date();
         const p = (n) => String(n).padStart(2, '0');
         const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
@@ -2767,7 +2787,7 @@ function drawAMRDaily24hChart() {
 
     // 🌟 ดัดแปลงฟังก์ชัน exportDB0 เดิม ให้ส่งข้อมูลขึ้น Master Shell ด้วย
     const originalExportDB0 = exportDB0;
-    exportDB0 = function(type) {
+    exportDB0 = async function(type) {
         let sum = parseFloat(document.getElementById(`load_sum_${type}`).innerText);
         if(sum < 95 || sum > 105) {
             alert("กรุณาปรับสัดส่วน 24h ให้รวมกันได้ 100% (±5%) ก่อนทำการ Export");
@@ -2775,7 +2795,7 @@ function drawAMRDaily24hChart() {
         }
 
         // 1. เรียกใช้งานฟังก์ชัน Export เดิมเพื่อให้ประมวลผลข้อมูล
-        originalExportDB0(type);
+        await originalExportDB0(type);
 
         // 2. ดึงข้อมูลที่เพิ่งสร้างเสร็จ ส่งไปให้ Master Shell
         let dataToExport = {
