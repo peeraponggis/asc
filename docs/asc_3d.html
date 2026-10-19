@@ -280,6 +280,8 @@ setTimeout(function () {
         <button class="btn primary" id="btnShot">⬇ ส่งออกมุมนี้</button>
         <button class="btn" id="btnShot4">⬇ ชุด 4 มุม</button>
       </div>
+      <div class="note" id="shotNote">ชุด 4 มุมจะถามโฟลเดอร์ปลายทางเพียงครั้งเดียว
+        แล้วเขียนไฟล์ทั้งสี่ลงไปให้เอง</div>
     </div>
 
     <!-- ═══ ส่งออกโมเดลสามมิติ ═══ -->
@@ -1352,17 +1354,24 @@ function setCam(mode) {
 /* ============================================================================
    6. ส่งออกภาพ
    ============================================================================ */
-function shot(scale, alpha) {
+/* วาดฉากที่ความละเอียดที่เลือก แล้วคืนค่าเป็น Blob
+   ⚠ ห้ามกลับไปใช้ toDataURL() — ภาพ 4× กลายเป็นสตริง base64 สิบกว่าเมกะไบต์
+      ซึ่ง Chrome ดาวน์โหลดช้าและบางครั้งก็ทิ้งไปเฉยๆ ส่วน Blob เขียนลงดิสก์ตรงๆ */
+function shotBlob(scale, alpha) {
   const sz = new THREE.Vector2(); renderer.getSize(sz);
   const oldBg = scene.background, oldFog = scene.fog;
   if (alpha) { scene.background = null; scene.fog = null; }
   renderer.setSize(sz.x * scale, sz.y * scale, false);
   renderer.render(scene, camera);
-  const url = renderer.domElement.toDataURL('image/png');
-  renderer.setSize(sz.x, sz.y, false);
-  scene.background = oldBg; scene.fog = oldFog;
-  renderer.render(scene, camera);
-  return url;
+  const canvas = renderer.domElement;
+  return new Promise(resolve => {
+    canvas.toBlob(b => {
+      renderer.setSize(sz.x, sz.y, false);
+      scene.background = oldBg; scene.fog = oldFog;
+      renderer.render(scene, camera);
+      resolve(b);
+    }, 'image/png');
+  });
 }
 
 function fileStamp() {
@@ -1371,17 +1380,47 @@ function fileStamp() {
 }
 const safeName = () => (S.projectName || 'project').replace(/[:\\/*?"<>|]/g, '_');
 
-function showShot(url) {
+let lastShotURL = null;
+function showShot(blob) {
+  if (lastShotURL) URL.revokeObjectURL(lastShotURL);
+  lastShotURL = URL.createObjectURL(blob);
   const im = $('#modalImg');
   im.onload = () => {
     $('#modalSize').textContent =
-      im.naturalWidth + ' × ' + im.naturalHeight + ' พิกเซล  ·  ~'
-      + (Math.round(url.length * 0.75 / 1048576 * 10) / 10) + ' MB';
+      im.naturalWidth + ' × ' + im.naturalHeight + ' พิกเซล  ·  '
+      + (blob.size / 1048576).toFixed(2) + ' MB';
   };
-  im.src = url;
-  $('#mDl').href = url;
+  im.src = lastShotURL;
+  $('#mDl').href = lastShotURL;
   $('#mDl').download = 'ASC3D_' + safeName() + '_' + fileStamp() + '.png';
   $('#modal').style.display = 'flex';
+}
+
+/* ══ บันทึกภาพหลายไฟล์ในคราวเดียว ════════════════════════
+   เบราว์เซอร์ที่มี File System Access API จะถามโฟลเดอร์ครั้งเดียว
+   แล้วเขียนครบทุกไฟล์ ส่วนเบราว์เซอร์อื่นตกไปใช้ดาวน์โหลดทีละไฟล์
+   ซึ่ง Chrome จะเตือน "ดาวน์โหลดหลายไฟล์" และถ้าผู้ใช้เปิด
+   "ถามตำแหน่งที่จะบันทึกทุกครั้ง" ไว้ ก็จะได้กล่องบันทึกไฟล์ละกล่อง
+   ⚠ ต้องขอโฟลเดอร์ก่อนเริ่มเรนเดอร์ เพราะ showDirectoryPicker
+      ต้องการ user activation ซึ่งหมดอายุถ้ารอจนวาดภาพครบสี่มุม */
+async function pickShotDir() {
+  if (typeof window.showDirectoryPicker !== 'function') return null;
+  try {
+    return await window.showDirectoryPicker({ id: 'asc3d-shots', mode: 'readwrite', startIn: 'pictures' });
+  } catch (e) {
+    if (e && e.name === 'AbortError') return 'cancel';
+    console.warn('showDirectoryPicker ใช้ไม่ได้ ใช้ดาวน์โหลดแทน:', e);
+    return null;
+  }
+}
+
+async function writeShots(dir, items) {
+  for (const it of items) {
+    const fh = await dir.getFileHandle(it.name, { create: true });
+    const w  = await fh.createWritable();
+    await w.write(it.blob);
+    await w.close();
+  }
 }
 
 /* ══ ส่งออกโมเดลสามมิติเป็น .glb ═════════════════════════
@@ -1701,23 +1740,64 @@ function bindForm() {
     b.onclick = () => setCam(b.dataset.cam);
   });
 
-  $('#btnShot').onclick = () => {
-    showShot(shot(parseInt($('#expScale').value, 10), $('#cAlpha').checked));
+  $('#btnShot').onclick = async () => {
+    showShot(await shotBlob(parseInt($('#expScale').value, 10), $('#cAlpha').checked));
   };
 
   $('#btnGlb').onclick = exportGLB;
 
-  $('#btnShot4').onclick = () => {
+  $('#btnShot4').onclick = async () => {
+    const btn = $('#btnShot4'), note = $('#shotNote'), label = btn.textContent;
     const sc = parseInt($('#expScale').value, 10), al = $('#cAlpha').checked;
     const views = ['ne', 'se', 'sw', 'nw'];
     const stamp = fileStamp();
-    views.forEach((v, i) => {
-      setTimeout(() => {
+
+    /* ขอโฟลเดอร์ก่อน ขณะที่ยังมี user activation จากการกดปุ่ม */
+    const dir = await pickShotDir();
+    if (dir === 'cancel') { note.textContent = 'ยกเลิกแล้ว ยังไม่ได้บันทึกไฟล์'; return; }
+
+    btn.disabled = true;
+    /* จำมุมกล้องเดิมไว้ เพื่อคืนให้ผู้ใช้หลังถ่ายครบสี่มุม */
+    const posBefore = camera.position.clone(), tgtBefore = controls.target.clone();
+    const items = [];
+    try {
+      for (let i = 0; i < views.length; i++) {
+        const v = views[i];
+        btn.textContent = 'กำลังวาด ' + v.toUpperCase() + ' (' + (i + 1) + '/4)';
         setCam(v);
         controls.update();
-        dl(shot(sc, al), 'ASC3D_' + safeName() + '_' + v.toUpperCase() + '_' + stamp + '.png');
-      }, i * 320);
-    });
+        /* หน่วงด้วย setTimeout ไม่ใช่ requestAnimationFrame
+           เพราะ rAF หยุดเดินเมื่อหน้าต่างเบราว์เซอร์ไม่ได้อยู่หน้าสุด
+           จะทำให้การส่งออกค้างกลางคัน shotBlob สั่ง render เองอยู่แล้ว
+           การหน่วงนี้มีไว้ให้หน้าจออัปเดตข้อความบนปุ่มเท่านั้น */
+        await new Promise(r => setTimeout(r, 30));
+        const blob = await shotBlob(sc, al);
+        items.push({ name: 'ASC3D_' + safeName() + '_' + v.toUpperCase() + '_' + stamp + '.png', blob });
+      }
+      camera.position.copy(posBefore); controls.target.copy(tgtBefore); controls.update();
+
+      const mb = (items.reduce((t, it) => t + it.blob.size, 0) / 1048576).toFixed(2);
+      if (dir) {
+        btn.textContent = 'กำลังบันทึก...';
+        await writeShots(dir, items);
+        note.innerHTML = 'บันทึกครบ 4 ไฟล์แล้ว · รวม ' + mb + ' MB<br>'
+                       + items.map(it => it.name).join('<br>');
+      } else {
+        for (let i = 0; i < items.length; i++) {
+          const u = URL.createObjectURL(items[i].blob);
+          dl(u, items[i].name);
+          setTimeout(() => URL.revokeObjectURL(u), 60000);
+          await new Promise(r => setTimeout(r, 400));
+        }
+        note.innerHTML = 'สั่งดาวน์โหลด 4 ไฟล์แล้ว · รวม ' + mb + ' MB<br>'
+                       + 'ถ้าได้ไม่ครบ ให้กดอนุญาต "ดาวน์โหลดหลายไฟล์" ที่แถบที่อยู่ของเบราว์เซอร์';
+      }
+    } catch (e) {
+      console.error(e);
+      note.innerHTML = '<b>บันทึกไม่สำเร็จ</b> ' + (e && e.message ? e.message : '');
+    } finally {
+      btn.disabled = false; btn.textContent = label;
+    }
   };
 
   $('#mClose').onclick = () => { $('#modal').style.display = 'none'; };
