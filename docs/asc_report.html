@@ -1963,6 +1963,67 @@
             return `${kind}_${name}${kwpStr}_${stamp}`;
         }
 
+        /* ══════════════════════════════════════════════════════════════════════
+           พิกัดท้องถิ่นของหลังคาผืนหนึ่ง — ใช้ร่วมกันทุกผังในรายงาน
+
+           customLayout (ตำแหน่งแผง) ที่ asc_design เขียนมา อยู่ในกรอบเดียวกับ
+           localBoundary ที่เขียนมาคู่กัน ถ้าวาดสองอย่างนี้คนละกรอบ แผงจะหลุดหลังคา
+
+           ลำดับความน่าเชื่อถือ
+             1. localBoundary ที่ไฟล์เก็บไว้ ถ้าขนาดกรอบตรงกับ runM/spanM ที่ไฟล์ระบุ
+                asc_design เขียนด้วยความละเอียดเต็ม จึงตรงกับ customLayout ที่สุด
+             2. คำนวณใหม่จาก worldBoundary โดยหมุนด้วย +azimuth แล้วกลับแกน y
+                ใช้เมื่อไฟล์เก่าไม่มี localBoundary หรือเก็บไว้คนละกรอบกับแผง
+                ข้อควรรู้ azimuth ใน DB2 ปัดเป็นจำนวนเต็ม ผลจึงคลาดได้ราว 0.1-0.2 ม.
+                (วัดกับไฟล์จริง azimuth จริง 64.66° ถูกเก็บเป็น 65° คลาด 0.149 ม.)
+
+           ⚠ ทิศหมุนต้องเป็น +azimuth ไม่ใช่ -azimuth
+              ของเดิมใช้ -azimuth ขาไป แต่ ux/uy ที่ใช้แปลงกลับเป็นอินเวิร์สของ
+              +azimuth ขาไปกับขากลับจึงไม่ใช่คู่กัน ผังเลยบิดและแผงหลุดกรอบ
+              (หลังคา azimuth 65° เคยได้ run 29.8 ม. ทั้งที่ไฟล์ระบุ 16.485 ม.)
+           ══════════════════════════════════════════════════════════════════════ */
+        function ascRoofLocal(roof) {
+            const norm = (arr) => {
+                let a = (arr || []).map(q => ({
+                    x: Number(q.x !== undefined ? q.x : (q.X || 0)),
+                    y: Number(q.y !== undefined ? q.y : (q.Y || 0))
+                })).filter(q => isFinite(q.x) && isFinite(q.y));
+                if (a.length > 2) {
+                    const f = a[0], l = a[a.length - 1];
+                    if (Math.abs(f.x - l.x) < 1e-9 && Math.abs(f.y - l.y) < 1e-9) a = a.slice(0, -1);
+                }
+                return a;
+            };
+
+            const stored = norm(roof.localBoundary || roof.points || roof.vertices || roof.Points);
+            const runM = Number(roof.runM), spanM = Number(roof.spanM);
+            if (stored.length >= 3 && isFinite(runM) && isFinite(spanM) && runM > 0 && spanM > 0) {
+                const xs = stored.map(q => q.x), ys = stored.map(q => q.y);
+                const sp = Math.max.apply(null, xs) - Math.min.apply(null, xs);
+                const rn = Math.max.apply(null, ys) - Math.min.apply(null, ys);
+                if (Math.abs(sp - spanM) < 0.05 && Math.abs(rn - runM) < 0.05) return stored;
+            }
+
+            const wb = norm(roof.worldBoundary);
+            if (wb.length >= 3) {
+                const a  = (Number(roof.azimuth) || 0) * Math.PI / 180;   // +azimuth
+                const ca = Math.cos(a), sa = Math.sin(a);
+                const cx = wb.reduce((s, q) => s + q.x, 0) / wb.length;
+                const cy = wb.reduce((s, q) => s + q.y, 0) / wb.length;
+                const rot = wb.map(q => {
+                    const dx = q.x - cx, dy = q.y - cy;
+                    return { x: ca * dx - sa * dy, y: sa * dx + ca * dy };
+                });
+                const minX = Math.min.apply(null, rot.map(q => q.x));
+                const maxY = Math.max.apply(null, rot.map(q => q.y));
+                return rot.map(q => ({
+                    x: Number((q.x - minX).toFixed(3)),
+                    y: Number((maxY - q.y).toFixed(3))
+                }));
+            }
+            return stored;
+        }
+
         function ascSpec(v, unit) {
             if (v === null || v === undefined || v === '' || Number(v) === 0 || Number.isNaN(Number(v))) {
                 return (typeof v === 'string' && v.trim() !== '' && Number.isNaN(Number(v))) ? v : '-';
@@ -7582,26 +7643,9 @@ function renderOverallCADLayout() {
         const wb = dedupe(wbRaw);
         const wbFlip = wb.map(q => ({ x: q.x, y: -q.y }));
 
-        /* คำนวณ localBoundary จาก worldBoundary + azimuth ทุกครั้ง
-           DB2 เก่าอาจเก็บ localBoundary ที่หมุนด้วยทิศอื่น ทำให้ centroid matching เพี้ยน
-           คำนวณใหม่จาก worldBoundary (พิกัดจริง) จึงถูกเสมอไม่ว่า DB2 รุ่นไหน */
         const a = (roof.azimuth || 0) * Math.PI / 180;
-        let ptsLocal;
-        {
-            const ca = Math.cos(-a), sa = Math.sin(-a);
-            const cx = wb.reduce((s, p) => s + p.x, 0) / wb.length;
-            const cy = wb.reduce((s, p) => s + p.y, 0) / wb.length;
-            const rot = wb.map(p => {
-                const dx = p.x - cx, dy = p.y - cy;
-                return { x: ca * dx - sa * dy, y: sa * dx + ca * dy };
-            });
-            const minRX = Math.min(...rot.map(p => p.x));
-            const maxRY = Math.max(...rot.map(p => p.y));
-            ptsLocal = rot.map(p => ({
-                x: Number((p.x - minRX).toFixed(3)),
-                y: Number((maxRY - p.y).toFixed(3))
-            }));
-        }
+        const ptsLocal = ascRoofLocal(roof);
+        if (ptsLocal.length < 3) return;
 
         const modsRaw = roof.customLayout || roof.modules || roof.panels || [];
         totalPanelsAll += modsRaw.length;
@@ -7796,28 +7840,9 @@ function renderCADLayout() {
     polygons.forEach((roof, index) => {
         let modsRaw = roof.customLayout || roof.modules || roof.panels || roof.Modules || [];
 
-        /* คำนวณ localBoundary จาก worldBoundary + azimuth ทุกครั้ง
-           DB2 เก่าอาจเก็บ localBoundary ที่หมุนด้วยทิศอื่น ทำให้แผงเลื่อนจากหลังคา */
-        let ptsRaw;
-        const wbPerRoof = (roof.worldBoundary || []);
-        if (wbPerRoof.length >= 3) {
-            const aR = -(roof.azimuth || 0) * Math.PI / 180;
-            const caR = Math.cos(aR), saR = Math.sin(aR);
-            const cxR = wbPerRoof.reduce((s, p) => s + p.x, 0) / wbPerRoof.length;
-            const cyR = wbPerRoof.reduce((s, p) => s + p.y, 0) / wbPerRoof.length;
-            const rotR = wbPerRoof.map(p => {
-                const dx = p.x - cxR, dy = p.y - cyR;
-                return { x: caR * dx - saR * dy, y: saR * dx + caR * dy };
-            });
-            const minRXR = Math.min(...rotR.map(p => p.x));
-            const maxRYR = Math.max(...rotR.map(p => p.y));
-            ptsRaw = rotR.map(p => ({
-                x: Number((p.x - minRXR).toFixed(3)),
-                y: Number((maxRYR - p.y).toFixed(3))
-            }));
-        } else {
-            ptsRaw = roof.localBoundary || roof.points || roof.vertices || roof.Points || [];
-        }
+        /* พิกัดท้องถิ่นของหลังคา — ใช้ตัวช่วยกลาง ascRoofLocal()
+           เพื่อให้ผังในรายงานอยู่กรอบเดียวกับ customLayout เสมอ */
+        let ptsRaw = ascRoofLocal(roof);
 
         if (ptsRaw.length === 0 && modsRaw.length === 0) {
              dashWrapper.innerHTML += `<div class="p-4 bg-red-50 text-red-700 border border-red-200 rounded mb-4 text-sm font-bold">⚠️ ระนาบหลังคาที่ ${index + 1}: พบข้อมูลหลังคา แต่ไม่มีพิกัดขอบหลังคา (localBoundary) หรือ แผงโซลาร์เซลล์ (customLayout) ในไฟล์ design</div>`;
