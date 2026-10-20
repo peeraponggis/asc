@@ -1248,7 +1248,7 @@
                 .compact-p1 h2.pdf-heading { margin: 2px 0 2px 0 !important; padding: 2px 6px !important; font-size: 11.5px !important; }
                 .compact-p1 table { margin-bottom: 2px !important; font-size: 9.5px !important; }
                 .compact-p1 th, .compact-p1 td { padding: 1px 3px !important; }
-                #prt-tbl-aging td, #prt-tbl-aging th { padding: 1.5px 4px !important; font-size: 9.5px !important; line-height: 1.05 !important; }
+                #prt-tbl-aging td, #prt-tbl-aging th { padding: 0.5px 4px !important; font-size: 9px !important; line-height: 1.0 !important; }
                 
                 /* 🌟 ล้างบางกฎหน้าว่างแบบถอนรากถอนโคน และปล่อยให้ HTML คุมจุดขึ้นหน้าใหม่เอง */
                 .pdf-page { min-height: auto !important; line-height: 1.1 !important; display: block !important; } 
@@ -1266,13 +1266,27 @@
                     column-fill: balance !important;
                     /* คอลัมน์แคบลงครึ่งหนึ่งแล้ว ลดขนาดอักษรอีกนิดยังอ่านสบาย
                        และช่วยให้บทวิเคราะห์ยาว ๆ จบในหน้าเดียวพอดี */
-                    font-size: 9.5px !important;
+                    font-size: 9px !important;
                 }
                 .pdf-page div[id^="prt-desc-"] p,
                 .pdf-page div[id^="prt-desc-"] li,
                 .pdf-page div[id^="prt-desc-"] table { break-inside: avoid; }
                 /* อภิธานศัพท์ท้ายบทต้องไม่หลุดไปอยู่หน้าใหม่ตามลำพัง */
                 .pdf-page div[id^="prt-desc-"] > *:last-child { break-before: avoid; }
+
+                /* สามหน้านี้ยัดสองหัวข้อไว้ในแผ่นเดียว รวมแล้วเกินกระดาษนิดเดียว
+                   ผลคือท้ายหัวข้อที่สองหล่นไปหน้าใหม่เหลือแค่ไม่กี่บรรทัด
+                   แยกให้หัวข้อที่สองขึ้นหน้าใหม่ไปเลย จำนวนแผ่นเท่าเดิม
+                   แต่ได้หน้าที่มีเนื้อหาเต็มทั้งสองแผ่นแทนหน้าที่เกือบว่าง
+                   สั่ง break ที่ "ท้าย" หัวข้อแรก ไม่ใช่ "หน้า" หัวข้อที่สอง
+                   เพราะถ้าผู้ใช้ปิดหัวข้อแรกไว้ (display:none) กฎนี้จะไม่ทำงานเอง
+                   ไม่เกิดกระดาษเปล่าคั่น ซึ่งต่างจากการสั่ง break-before */
+                #prt-sec-daily,
+                #prt-sec-scatter,
+                #prt-sec-bell {
+                    page-break-after: always !important;
+                    break-after: page !important;
+                }
                 
                 table, .chart-img, .svg-container, #prt-sankey { page-break-inside: avoid !important; }
                 #prt-bom-table { page-break-inside: auto !important; }
