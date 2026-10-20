@@ -130,8 +130,11 @@
     }
     .pdf-page-landscape .svg-container {
         width: 100% !important;
-        flex: 1 !important; /* 🌟 สั่งให้กล่องกางออกรับพื้นที่ว่างทั้งหมดที่เหลืออยู่ */
-        margin: 10px 0 !important; /* เว้นระยะห่างบน-ล่างนิดหน่อยให้ดูสวยงาม */
+        /* flex-basis ต้องเป็น 0 และปลดล็อก min-height ไม่งั้นกล่องจะโตตามภาพ
+           แทนที่จะรับเฉพาะที่ว่างที่เหลือ หน้าจึงยาวเกินกระดาษแล้วโดนเฉือนท้าย */
+        flex: 1 1 0 !important;
+        min-height: 0 !important;
+        margin: 4px 0 !important;
         display: flex !important;
         justify-content: center !important; 
         align-items: center !important; 
@@ -139,12 +142,34 @@
     }
     .pdf-page-landscape .svg-container svg {
         width: 100% !important; /* 🌟 บังคับรูปกางออก 100% ของความกว้าง */
-        height: 100% !important; /* 🌟 บังคับรูปกางออก 100% ของความสูง */
+        /* ⚠ ห้ามใช้ height:100% ที่นี่
+           ถ้ากล่องแม่ยังไม่มีความสูงแน่นอน 100% จะตกไปใช้ขนาดตามสัดส่วน viewBox
+           SLD อัตราส่วน 4:3 กว้าง 247mm จึงสูง 185mm = เต็มหน้าพอดี
+           ไม่เหลือที่ให้หัวข้อกับคำอธิบาย ท้ายไดอะแกรมเลยถูกตัดหายทั้งแถบ
+           height:auto คู่กับ max-height:100% จะย่อภาพลงให้พอดีที่ว่างจริง */
+        height: auto !important;
         max-width: 100% !important;
-        max-height: 300mm !important; /* 🌟 ขีดจำกัดความสูงที่ใหญ่ที่สุดที่จะไม่ทำให้กระดาษล้นหน้า (เผื่อ Header 20mm + Footer 5mm) */
-        object-fit: contain !important; /* รักษาสัดส่วนภาพไม่ให้บิดเบี้ยว */
+        max-height: 100% !important;   /* = ความสูงที่เหลือจริงหลังหักหัวข้อ คำอธิบาย และท้ายหน้า */
         margin: 0 auto !important;
     }
+    /* เพดานความสูงของภาพตอนพิมพ์
+       กล่อง flex ไม่ได้ความสูงแน่นอนเสมอไปในบริบทการพิมพ์ จึงต้องมีเพดานเป็น mm
+       ไว้ด้วย ค่านี้มาจาก 185mm (ความสูงหน้า) ลบหัวข้อ 7.5 + ระยะห่าง 2 +
+       คำอธิบายสองคอลัมน์ 34 + ท้ายหน้า 7.5 แล้วเผื่อไว้อีกเล็กน้อย */
+    @media print {
+        .pdf-page-landscape .svg-container svg { max-height: 130mm !important; }
+    }
+    /* คำอธิบายใต้ไดอะแกรมกว้างเต็ม 277mm อ่านยากและกินความสูงถึง 50mm
+       จัดสองคอลัมน์เหลือราวครึ่งเดียว คืนพื้นที่ให้ภาพไดอะแกรม */
+    .pdf-page-landscape div[id^="prt-desc-"] {
+        column-count: 2;
+        column-gap: 8mm;
+        font-size: 9px !important;
+        line-height: 1.15 !important;
+    }
+    .pdf-page-landscape div[id^="prt-desc-"] p,
+    .pdf-page-landscape div[id^="prt-desc-"] li { break-inside: avoid; }
+    .pdf-page-landscape .mt-auto { padding-top: 2mm !important; padding-bottom: 1mm !important; }
 	/* 🌟 ป้องกันหน้าสุดท้ายเป็นกระดาษเปล่า 🌟 */
     #report-preview-area > div:last-child,
     .pdf-page:last-child, 
@@ -1230,7 +1255,24 @@
                 h2.pdf-heading { margin: 4px 0 2px 0 !important; padding: 3px 6px !important; page-break-after: avoid !important; } 
                 .chart-img { margin: 2px auto !important; max-height: 280px !important; }
                 .svg-container { margin: 2px 0 !important; }
-                div[id^="prt-desc-"] { margin-top: 2px !important; margin-bottom: 4px !important; padding: 4px 6px !important; line-height: 1.15 !important; page-break-inside: auto !important; }
+                div[id^="prt-desc-"] { margin-top: 2px !important; margin-bottom: 2px !important; padding: 3px 6px !important; line-height: 1.12 !important; page-break-inside: auto !important; }
+                /* บล็อก "Pee Analysis" เป็นข้อความยาวเต็มความกว้างหน้า (194mm)
+                   สูงจนดันหลายส่วนให้ล้นไปหน้าใหม่ เหลือหน้าถัดไปว่าง 55-88%
+                   จัดสองคอลัมน์ ความสูงลดราวครึ่งหนึ่ง ส่วนใหญ่จึงจบในหน้าเดียว
+                   และอ่านง่ายขึ้นด้วยเพราะบรรทัดสั้นลง */
+                .pdf-page div[id^="prt-desc-"] {
+                    column-count: 2 !important;
+                    column-gap: 7mm !important;
+                    column-fill: balance !important;
+                    /* คอลัมน์แคบลงครึ่งหนึ่งแล้ว ลดขนาดอักษรอีกนิดยังอ่านสบาย
+                       และช่วยให้บทวิเคราะห์ยาว ๆ จบในหน้าเดียวพอดี */
+                    font-size: 9.5px !important;
+                }
+                .pdf-page div[id^="prt-desc-"] p,
+                .pdf-page div[id^="prt-desc-"] li,
+                .pdf-page div[id^="prt-desc-"] table { break-inside: avoid; }
+                /* อภิธานศัพท์ท้ายบทต้องไม่หลุดไปอยู่หน้าใหม่ตามลำพัง */
+                .pdf-page div[id^="prt-desc-"] > *:last-child { break-before: avoid; }
                 
                 table, .chart-img, .svg-container, #prt-sankey { page-break-inside: avoid !important; }
                 #prt-bom-table { page-break-inside: auto !important; }
@@ -1351,7 +1393,7 @@
         <div class="pdf-page" style="page-break-before: always;">
             <div id="prt-sec-loss">
                 <h2 class="pdf-heading" style="margin-top: 0px !important;"><i class="fa-solid fa-chart-pie mr-2"></i>ASC PV System Loss Diagram</h2>
-                <div id="prt-sankey" style="width: 100%; height: 140mm; max-height: 140mm; display: flex; justify-content: center; align-items: center; overflow: hidden; margin-top: 10px; margin-bottom: 15px;"></div>
+                <div id="prt-sankey" style="width: 100%; height: 140mm; max-height: 140mm; display: flex; justify-content: center; align-items: center; overflow: hidden; margin-top: 4px; margin-bottom: 6px;"></div>
                 <div id="prt-desc-waterfall" class="text-[10px] text-gray-600 bg-gray-50 p-1.5 border-l-2 border-blue-500 mb-3 leading-tight"></div>        
             </div>
         </div>
