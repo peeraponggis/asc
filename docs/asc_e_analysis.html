@@ -2448,8 +2448,12 @@ function drawAMRDaily24hChart() {
             return;
         }
 
-        renderYearlySummary();
+        /* ⚠ ต้องเปิดกล่องผลลัพธ์ก่อนค่อยวาด
+           ถ้าวาดตอนที่ #yearlyResults ยัง display:none อยู่ Chart.js จะวัดขนาด
+           canvas ได้ 0x0 แล้วจำค่านั้นไว้ กราฟจึงไม่ขึ้นเลยทั้งที่ตารางถูกต้อง
+           และ resize event ก็กู้คืนไม่ได้เพราะกล่องแม่ขนาดไม่ได้เปลี่ยน */
         document.getElementById('yearlyResults').classList.remove('hidden');
+        renderYearlySummary();
     }
 
     const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
@@ -2678,6 +2682,12 @@ function drawAMRDaily24hChart() {
             totals.push(d.total);
         }
         let medA = median(rateAs), medB = median(rateBs), medC = median(rateCs);
+
+        /* กันเหนียว เผื่อกล่องเพิ่งถูกเปิดและผังหน้ายังไม่อัปเดตในจังหวะนี้
+           ตัวจับเวลาตัวนี้ทำงานหลังกราฟด้านล่างถูกสร้างเสร็จแล้ว
+           ใช้ setTimeout ไม่ใช่ requestAnimationFrame เพราะ rAF หยุดเดิน
+           เมื่อหน้าต่างเบราว์เซอร์ไม่ได้อยู่หน้าสุด */
+        setTimeout(() => { try { window.yearlyChart && window.yearlyChart.resize(); } catch (e) {} }, 60);
 
         window.yearlyChart = new Chart(canvas.getContext('2d'), {
             type: 'bar',
