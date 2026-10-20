@@ -1142,12 +1142,15 @@ async function parseAMRFiles(files, type) {
             if(type === 'csv') {
                 rows = await parseFileToRows(file);
             } else {
-                let data = new Uint8Array(await file.arrayBuffer());
-                let workbook = XLSX.read(data, { type: 'array' });
-                rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "" });
+                /* ไฟล์ที่ PEA ส่งมาเป็น .xls บ่อยครั้งเป็น HTML ไม่ใช่ไฟล์ Excel จริง
+                   ถ้าโยนเข้า XLSX.read ตรง ๆ จะอ่านไม่ได้ แต่ไม่ error ผลคือสรุปเป็น 0
+                   ทุกช่องโดยไม่มีอะไรเตือน readYearlyFileRows ดูลายเซ็นไฟล์ก่อน
+                   แล้วเลือกตัวอ่านให้ถูก ใช้ตัวเดียวกันทั้งรายปีและรายเดือน */
+                rows = await readYearlyFileRows(file);
             }
             
             if(!userExtracted) { extractAMRUserInfo(rows); userExtracted = true; }
+            if (!rows.length) console.warn('อ่านไฟล์ไม่ได้เลย:', file.name);
             
             let dataStartIdx = -1;
             for (let i = 0; i < Math.min(40, rows.length); i++) {
