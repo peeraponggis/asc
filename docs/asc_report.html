@@ -1289,6 +1289,9 @@
                 }
                 
                 table, .chart-img, .svg-container, #prt-sankey { page-break-inside: avoid !important; }
+                /* แผนภาพ Sankey ถูกยัดเข้ามาเป็น <img> ขนาดธรรมชาติ 950x750
+                   ถ้าไม่สั่งให้กางเต็มความกว้าง จะได้ภาพเล็กกว่าที่กระดาษรับได้ */
+                #prt-sankey img { width: 100% !important; height: auto !important; display: block; margin: 0 auto; }
                 #prt-bom-table { page-break-inside: auto !important; }
                 #prt-bom-table tr { page-break-inside: avoid !important; }
                 div[id^="prt-sec-"] { page-break-inside: auto !important; }
@@ -1404,11 +1407,21 @@
             </div>
         </div>
 
+        <!-- บทวิเคราะห์ของหัวข้อนี้ยาวที่สุดในรายงาน ถ้าวางรวมแผ่นเดียวกับ
+             แผนภาพจะเกินกระดาษไปไม่กี่บรรทัด เหลือหน้าถัดไปว่างเกือบทั้งใบ
+             จึงแยกเป็นสองแผ่นแบบเดียวกับ Shading Analysis Dashboard
+             แผ่นแรกได้แผนภาพใหญ่ขึ้น แผ่นที่สองได้บทวิเคราะห์เต็มหน้า -->
         <div class="pdf-page" style="page-break-before: always;">
             <div id="prt-sec-loss">
                 <h2 class="pdf-heading" style="margin-top: 0px !important;"><i class="fa-solid fa-chart-pie mr-2"></i>ASC PV System Loss Diagram</h2>
-                <div id="prt-sankey" style="width: 100%; height: 140mm; max-height: 140mm; display: flex; justify-content: center; align-items: center; overflow: hidden; margin-top: 4px; margin-bottom: 6px;"></div>
-                <div id="prt-desc-waterfall" class="text-[10px] text-gray-600 bg-gray-50 p-1.5 border-l-2 border-blue-500 mb-3 leading-tight"></div>        
+                <div id="prt-sankey" style="width: 100%; height: auto; max-height: 230mm; display: flex; justify-content: center; align-items: flex-start; overflow: hidden; margin-top: 4px; margin-bottom: 6px;"></div>
+            </div>
+        </div>
+
+        <div class="pdf-page" style="page-break-before: always;">
+            <div id="prt-sec-loss-notes">
+                <h2 class="pdf-heading" style="margin-top: 0px !important; page-break-after: avoid !important;" data-en="&lt;i class=&quot;fa-solid fa-book-open mr-2&quot;&gt;&lt;/i&gt;Notes: ASC PV System Loss Diagram"><i class="fa-solid fa-book-open mr-2"></i>คำอธิบายเพิ่มเติม: ASC PV System Loss Diagram</h2>
+                <div id="prt-desc-waterfall" class="text-[10px] text-gray-600 bg-gray-50 p-1.5 border-l-2 border-blue-500 mb-3 leading-tight"></div>
             </div>
         </div>
 
@@ -7353,7 +7366,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             // 🌟 แก้ไข: แมปปิ้งไปยัง "กล่องห่อหุ้มหลัก (Wrapper)" ของ PDF แทนการซ่อนแค่รูป
             const mapping = {
                 'chk-sec-env': { dash: ['#env-container'], pdf: ['#prt-sec-env'] }, 
-                'chk-sec-loss': { dash: ['#custom-loss-diagram'], pdf: ['#prt-sec-loss'] },
+                'chk-sec-loss': { dash: ['#custom-loss-diagram'], pdf: ['#prt-sec-loss', '#prt-sec-loss-notes'] },
                 'chk-sec-shading-dash': { dash: ['#shading-dash-container'], pdf: ['#prt-sec-shading-dash1', '#prt-sec-shading-dash2'] }, // 🌟 PHASE 3
                 'chk-sec-overview': { dash: ['#asc-overview-container'], pdf: ['#prt-sec-asc-overview'] }, // 🌟 PHASE 5
                 'chk-sec-powercurve': { dash: ['#asc-powercurve-container'], pdf: ['#prt-sec-asc-powercurve'] }, // 🌟 PHASE 5
