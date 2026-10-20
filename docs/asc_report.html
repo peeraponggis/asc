@@ -161,6 +161,28 @@
     }
     /* คำอธิบายใต้ไดอะแกรมกว้างเต็ม 277mm อ่านยากและกินความสูงถึง 50mm
        จัดสองคอลัมน์เหลือราวครึ่งเดียว คืนพื้นที่ให้ภาพไดอะแกรม */
+    /* หน้า Sankey ใช้กระดาษแนวนอน เพราะแผนภาพกว้างกว่าสูง (อัตราส่วน 1.27)
+       บนกระดาษแนวตั้งถูกจำกัดด้วยความกว้างจนเหลือที่ว่างใต้ภาพเกือบครึ่งหน้า
+       แนวนอนทำให้ภาพโตขึ้นราวหนึ่งในสี่และเต็มหน้าพอดี
+       แผนภาพถูกยัดเข้ามาเป็น <img> จึงต้องมีกฎของตัวเอง ใช้กฎของ svg ไม่ได้ */
+    .pdf-page-landscape #prt-sankey {
+        flex: 1 1 0 !important;
+        min-height: 0 !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        overflow: hidden;
+        margin: 4px 0 !important;
+    }
+    .pdf-page-landscape #prt-sankey img {
+        width: auto !important;
+        height: auto !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+    }
+    @media print {
+        .pdf-page-landscape #prt-sankey img { max-height: 166mm !important; }
+    }
     .pdf-page-landscape div[id^="prt-desc-"] {
         column-count: 2;
         column-gap: 8mm;
@@ -1411,10 +1433,11 @@
              แผนภาพจะเกินกระดาษไปไม่กี่บรรทัด เหลือหน้าถัดไปว่างเกือบทั้งใบ
              จึงแยกเป็นสองแผ่นแบบเดียวกับ Shading Analysis Dashboard
              แผ่นแรกได้แผนภาพใหญ่ขึ้น แผ่นที่สองได้บทวิเคราะห์เต็มหน้า -->
-        <div class="pdf-page" style="page-break-before: always;">
-            <div id="prt-sec-loss">
-                <h2 class="pdf-heading" style="margin-top: 0px !important;"><i class="fa-solid fa-chart-pie mr-2"></i>ASC PV System Loss Diagram</h2>
-                <div id="prt-sankey" style="width: 100%; height: auto; max-height: 230mm; display: flex; justify-content: center; align-items: flex-start; overflow: hidden; margin-top: 4px; margin-bottom: 6px;"></div>
+        <div class="pdf-page-landscape">
+            <div id="prt-sec-loss" class="h-full flex flex-col">
+                <h2 class="pdf-heading" style="margin-top: 0px !important; page-break-after: avoid !important;"><i class="fa-solid fa-chart-pie mr-2"></i>ASC PV System Loss Diagram</h2>
+                <div id="prt-sankey" class="w-full flex-1"></div>
+                <div class="mt-auto w-full text-center text-xs text-gray-400 font-medium">Assessed by Pro Inventive Co., Ltd</div>
             </div>
         </div>
 
