@@ -8140,6 +8140,23 @@ function renderCADLayout() {
         return;
     }
 
+    /* ══ ข้ามผืนหลังคาที่ไม่มีแผงเลย ══════════════════════════════
+       เดิมผืนที่วางแผงไม่ได้ (เช่น ติดเงา หรือกันไว้เป็นทางเดิน) ยังถูกพิมพ์
+       ออกมาเป็นผังเต็มหนึ่งหน้า เห็นแต่กรอบหลังคาเปล่า ๆ ทั้งบนจอและใน PDF
+       ลูกค้าเปิดอ่านแล้วเข้าใจว่าโปรแกรมวางแผงไม่ครบ
+       ผังรวมของโครงการ (§22) ยังวาดครบทุกผืนเหมือนเดิม เพราะเป็นผังไซต์
+       ที่ต้องเห็นรูปร่างอาคารทั้งหมด */
+    const ascPanelsOf = r => (r.customLayout || r.modules || r.panels || r.Modules || []).length;
+    const roofsSkipped = polygons.filter(r => ascPanelsOf(r) === 0).length;
+    polygons = polygons.filter(r => ascPanelsOf(r) > 0);
+
+    if (polygons.length === 0) {
+        const msg = RT('⚠️ ไม่มีหลังคาผืนใดที่มีแผงโซลาร์เซลล์ จึงไม่มีผังรายผืนให้แสดง',
+                       '⚠️ No roof plane carries any module, so there is no per-roof layout to show');
+        dashWrapper.innerHTML = '<div class="p-4 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded text-sm font-bold">' + msg + '</div>';
+        return;
+    }
+
     let eq = AppState.equipData || {};
     let pv = eq.pv || {};
     let inv1 = eq.inv1 || {};
@@ -8461,6 +8478,20 @@ function renderCADLayout() {
             </div>
         `;
     });
+
+    /* บอกให้รู้ว่ามีผืนที่ถูกข้าม จะได้ไม่มีใครนึกว่าผังหาย
+       ใส่ต่อท้ายผังใบสุดท้าย ไม่กินหน้ากระดาษเพิ่ม */
+    if (roofsSkipped > 0) {
+        const note = RT('หมายเหตุ: ไม่แสดงผังของหลังคาที่ไม่มีแผงโซลาร์เซลล์ จำนวน ' + roofsSkipped + ' ผืน (ดูรูปร่างได้ในผังรวมของโครงการ)',
+                        'Note: ' + roofsSkipped + ' roof plane(s) carrying no modules are omitted here — see the overall site plan for their outline');
+        dashWrapper.innerHTML += '<div class="w-full text-xs text-gray-500 italic mb-4">' + note + '</div>';
+        const lastPdf = pdfWrapper.lastElementChild;
+        if (lastPdf) {
+            const inner = lastPdf.firstElementChild || lastPdf;
+            inner.insertAdjacentHTML('beforeend',
+                '<div style="font-size:9px; color:#6b7280; font-style:italic; margin-top:2mm;">' + note + '</div>');
+        }
+    }
 }
     </script>
 	<!-- เริ่ม: โค้ดป้องกันการคลิกขวาและดู Source Code -->
