@@ -777,10 +777,26 @@
                         <div><label class="block text-sm text-gray-600">Degradation ปี 1 (%)</label><input type="number" id="fin-deg" value="0.5" step="0.1" class="w-full border rounded p-2 text-red-600 font-bold"></div>
                         <div><label class="block text-sm text-gray-600">Degradation ปี 2-30 (%)</label><input type="number" id="fin-deg-2" value="0.5" step="0.1" class="w-full border rounded p-2 text-red-600 font-bold"></div>
 						<div><label class="block text-sm text-gray-600">เปลี่ยน INV ปี 10 (บาท/วัตต์)</label><input type="number" id="fin-inv-rep" value="3.5" step="0.1" class="w-full border rounded p-2 text-purple-600 font-bold"></div>
-						<div><label class="block text-sm text-gray-600">O&M แบตฯ (%/ปี ของ CAPEX แบต)</label><input type="number" id="fin-om-bat" value="2.0" step="0.1" class="w-full border rounded p-2 text-green-700 font-bold" title="ค่าดูแลระบบกักเก็บพลังงานรายปี คิดเป็นสัดส่วนของราคาแบตเตอรี่ ช่วงตลาด 2-2.5%/ปี"></div>
-						<div><label class="block text-sm text-gray-600">อายุแบตฯ เปลี่ยนทุก (ปี)</label><input type="number" id="fin-bat-life" value="5" step="1" min="0" class="w-full border rounded p-2 text-green-700 font-bold" title="ใส่ 0 = ไม่คิดค่าเปลี่ยนแบตเลย · ใส่ 25 = เปลี่ยนครั้งเดียวตอนปลายอายุโครงการ"></div>
+						<div><label class="block text-sm text-gray-600">O&M แบตฯ (%/ปี ของ CAPEX แบต)</label><input type="number" id="fin-om-bat" value="2.5" step="0.1" class="w-full border rounded p-2 text-green-700 font-bold" title="NREL ATB 2024 ใช้ Fixed O&M = 2.5% ของเงินลงทุนแบตต่อปี · รายงานต้นทุนของ NREL อีกฉบับใช้ 4%"></div>
+						<div><label class="block text-sm text-gray-600">วิธีคิดค่าเปลี่ยนแบตฯ</label>
+							<select id="fin-bat-mode" class="w-full border rounded p-2 text-green-700 font-bold">
+								<option value="replace" selected>เปลี่ยนทั้งชุดตามอายุรับประกัน</option>
+								<option value="augment">เสริมความจุ (Augmentation) ปี 10 และ 20</option>
+								<option value="none">ไม่คิดค่าเปลี่ยน</option>
+							</select>
+						</div>
+						<div><label class="block text-sm text-gray-600">อายุแบตฯ เปลี่ยนทุก (ปี)</label><input type="number" id="fin-bat-life" value="10" step="1" min="0" class="w-full border rounded p-2 text-green-700 font-bold" title="อ้างอิงเงื่อนไขรับประกันที่พบบ่อยในตลาด: 10 ปี เหลือความจุ 70% · NREL ATB ใช้อายุระบบ 15 ปี · ใส่ 0 = ไม่คิดค่าเปลี่ยน"></div>
 						<div><label class="block text-sm text-gray-600">ราคาเปลี่ยนแบตฯ (% ของวันนี้)</label><input type="number" id="fin-bat-rep" value="60" step="5" class="w-full border rounded p-2 text-green-700 font-bold" title="ราคาแบตเตอรี่ลดลงต่อเนื่อง ตอนถึงรอบเปลี่ยนจึงถูกกว่าราคาวันนี้"></div>
+						<div><label class="block text-sm text-gray-600">เสริมความจุครั้งละ (% ของ CAPEX แบต)</label><input type="number" id="fin-bat-aug" value="20" step="5" class="w-full border rounded p-2 text-green-700 font-bold" title="วิธีของ NREL ATB: เติมเซลล์ราว 20% ของระบบ ในปีที่ 10 และ 20 เพื่อดึงความจุกลับเท่าป้าย แทนการรื้อเปลี่ยนทั้งชุด"></div>
 					
+					</div>
+					<div class="note text-xs text-gray-500 mt-3 border-l-2 border-green-500 pl-3">
+						<b>ที่มาของค่าเริ่มต้นฝั่งแบตเตอรี่</b><br>
+						• <b>อายุ 10 ปี</b> — เงื่อนไขรับประกันที่พบบ่อยในตลาดคือ 10 ปี เหลือความจุ 70% ของป้าย (บางรุ่น 12–15 ปี) และมักระบุ "ถึงอย่างใดอย่างหนึ่งก่อน" ระหว่างปีกับจำนวนรอบ<br>
+						• ไซต์เชิงพาณิชย์ที่ใช้วันละรอบ ครบ 10 ปีได้ราว 3,650 รอบ ยังไม่ถึงพิกัดรอบของ LFP (3,000–6,000 รอบ ที่ DoD 80%) <b>อายุปฏิทินจึงเป็นตัวกำหนด ไม่ใช่จำนวนรอบ</b><br>
+						• <b>Augmentation</b> — NREL ATB ใช้อายุระบบ 15 ปี โดยเติมเซลล์ราว 20% ในปีที่ 10 และ 20 เพื่อรักษาความจุไว้เท่าป้าย เป็นวิธีที่โครงการขนาดใหญ่ใช้จริงมากกว่าการรื้อเปลี่ยนทั้งชุด<br>
+						• เกณฑ์หมดอายุที่ใช้กันคือความจุเหลือ 70–80% ของเดิม งานฝั่งกริดบางสำนักยอมใช้ถึง 60%<br>
+						• ถ้าสัญญา O&M ของโครงการระบุรอบเปลี่ยนไว้ชัดเจน ให้กรอกตามสัญญาแทนค่าเริ่มต้นนี้
 					</div>
                     
                     <!-- ══════════════════════════════════════════════════════════════
@@ -2398,7 +2414,8 @@
             setVal('inp-bill-ft', 0.1); setVal('inp-bill-vat', 7); setVal('inp-bill-serv', 312.24);
             setVal('inp-tou-rate-on', 4.1839); setVal('inp-tou-rate-off', 2.6037);
             setVal('fin-capex', 22); setVal('fin-om', 0.12); setVal('fin-inf', 3.0); setVal('fin-dr', 6.5);
-            setVal('fin-om-bat', 2.0); setVal('fin-bat-life', 5); setVal('fin-bat-rep', 60);
+            setVal('fin-om-bat', 2.5); setVal('fin-bat-life', 10); setVal('fin-bat-rep', 60); setVal('fin-bat-aug', 20);
+            const selBat = document.getElementById('fin-bat-mode'); if (selBat) selBat.value = 'replace';
             setVal('fin-deg', 0.5); setVal('fin-deg-2', 0.5); setVal('fin-tariff-inf', 3.0); setVal('fin-inv-rep', 3.5);
             ascResetFinBasis();
             
@@ -3556,9 +3573,13 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                    ใช้ finBasis.rateBat เป็นฐานราคาแบต เพราะคิดจากอัตราต่อ kWh
                    ที่ผู้ใช้กรอก ใช้ได้ทั้งโหมดอัตราต่อหน่วยและโหมดราคาขายรวม */
                 const batCapex    = finBasis.rateBat || 0;
-                const omBatPct    = getVal('fin-om-bat', 2.0);
-                const batLife     = Math.round(getVal('fin-bat-life', 5));
+                const omBatPct    = getVal('fin-om-bat', 2.5);
+                const batLife     = Math.round(getVal('fin-bat-life', 10));
                 const batRepPct   = getVal('fin-bat-rep', 60);
+                const batAugPct   = getVal('fin-bat-aug', 20);
+                const batMode     = (document.getElementById('fin-bat-mode') || {}).value || 'replace';
+                /* ปีที่เสริมความจุตามวิธีของ NREL ATB — เติมเซลล์บางส่วนแทนรื้อทั้งชุด */
+                const BAT_AUG_YEARS = [10, 20];
                 
                 let initialInvestment = finBasis.investment;
                 let finTariff = finBasis.tariff;
@@ -3595,10 +3616,17 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                                 * Math.pow(1 + (infOM / 100), y - 1);
                     }
 
-                    /* ค่าเปลี่ยนแบตเตอรี่ตามรอบอายุ
-                       ไม่คิดในปีสุดท้าย เพราะเปลี่ยนแล้วไม่ได้ใช้ต่อ */
-                    if (batCapex > 0 && batLife > 0 && y % batLife === 0 && y < 25) {
-                        omCost += batCapex * (batRepPct / 100) * finBasis.rateFactor;
+                    /* ค่าใช้จ่ายปลายอายุแบตเตอรี่ สองวิธีให้เลือก
+                       replace = รื้อเปลี่ยนทั้งชุดทุกรอบอายุรับประกัน
+                                 ไม่คิดในปีที่ 25 เพราะเปลี่ยนแล้วไม่ได้ใช้ต่อ
+                       augment = เติมเซลล์บางส่วนในปีที่ 10 และ 20 ตามวิธี NREL ATB
+                                 ซึ่งเป็นแนวปฏิบัติของโครงการขนาดใหญ่ */
+                    if (batCapex > 0) {
+                        if (batMode === 'replace' && batLife > 0 && y % batLife === 0 && y < 25) {
+                            omCost += batCapex * (batRepPct / 100) * finBasis.rateFactor;
+                        } else if (batMode === 'augment' && BAT_AUG_YEARS.indexOf(y) >= 0) {
+                            omCost += batCapex * (batAugPct / 100) * finBasis.rateFactor;
+                        }
                     }
                     
                     // 🌟 แทรกค่าเปลี่ยน Inverter ในปีที่กำหนด
