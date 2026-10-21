@@ -60,6 +60,8 @@
             kNet25: 'ผลประหยัดสุทธิสะสม 25 ปี (หัก O&M ยังไม่คิดลด)',
             assume: 'สมมติฐาน: ค่าไฟปรับขึ้นเฉลี่ยปีละ 2.5% · แผงเสื่อมสภาพปีละ 0.5%',
             noData: 'ยังไม่มีข้อมูล กรุณานำเข้าไฟล์ DB2/DB3 และกดประมวลผลก่อน',
+            noUsage: 'ยังไม่ได้นำเข้าข้อมูลค่าไฟของอาคาร (eBill / DB0) จึงยังประเมินสัดส่วนที่ระบบโซลาร์ทดแทนได้ไม่ได้ '
+                   + 'เมื่อนำเข้าบิลค่าไฟแล้ว หน้านี้จะแสดงหน่วยที่ใช้ต่อปี ค่าไฟต่อปี ค่าไฟเฉลี่ยต่อหน่วย และสัดส่วนที่ทดแทนได้',
 
             p7: 'ASC Energy Overview (ภาพรวมพลังงานรายปี)',
             p7lede: 'สรุปสมดุลพลังงานทั้งปีระหว่างพลังงานที่ผลิตได้ ความต้องการใช้ไฟของอาคาร และสัดส่วนที่ใช้เองได้ทันทีโดยไม่ต้องขายคืนกริด',
@@ -125,6 +127,8 @@
             kNet25: 'Net cumulative savings, 25 years (after O&M, undiscounted)',
             assume: 'Assumptions: 2.5% annual tariff escalation · 0.5% annual module degradation',
             noData: 'No data yet. Please import a DB2/DB3 file and run the simulation first.',
+            noUsage: 'The building electricity bill (eBill / DB0) has not been imported, so the share of consumption offset by solar cannot be assessed yet. '
+                   + 'Once a bill is imported this page will show annual consumption, annual cost, the average unit rate and the offset share.',
 
             p7: 'ASC Energy Overview (Annual Energy Summary)',
             p7lede: "A whole-year energy balance between what the system generates, the building's demand, and the share consumed immediately without being exported to the grid.",
@@ -411,18 +415,23 @@
           ${foot(d, docNo)}
         </section>`);
 
-        /* ── หน้า 3 · การใช้ไฟปัจจุบัน ────────────────────────────────── */
+        /* ── หน้า 3 · การใช้ไฟปัจจุบัน ──────────────────────────────────
+           ไซต์ที่ยังไม่ได้นำเข้าบิลค่าไฟจะไม่มี usage เลย ถ้าปล่อยให้พิมพ์
+           "0 kWh · 0.00 ล้าน฿ · -%" ลูกค้าจะอ่านว่าระบบคำนวณพัง
+           บอกตรง ๆ ว่ายังไม่มีข้อมูลดีกว่าโชว์ศูนย์ */
+        const hasUsage = Number(d.usage) > 0;
         pages.push(`
         <section class="pp-sheet">
           <div class="pp-pad">
             ${head(t.p3, 3)}
+            ${!hasUsage ? `<div class="pp-body">${esc(t.noUsage)}</div>` : `
             <div class="pp-figs">
               ${fig(num(d.usage, 0), 'kWh', t.kUse)}
               ${fig(num(d.bill / 1e6, 2), LANG === 'th' ? 'ล้าน฿' : 'M THB', t.kBill)}
               ${fig(num(d.tariff, 2), '฿', t.kTariff)}
               ${fig(d.coverage != null ? num(d.coverage, 0) : '-', '%', t.kCover)}
             </div>
-            <div class="pp-body">${usageText(t, d)}</div>
+            <div class="pp-body">${usageText(t, d)}</div>`}
           </div>
           ${foot(d, docNo)}
         </section>`);
