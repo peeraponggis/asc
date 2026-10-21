@@ -1408,6 +1408,14 @@
                     <tr><th data-en="O&amp;M (THB/W/yr)">O&amp;M (บาท/วัตต์/ปี)</th><td id="prt-fin-om"></td><th data-en="Discount Rate (%/yr)">Discount Rate (%/ปี)</th><td id="prt-fin-dr"></td></tr>
                     <tr><th data-en="Average Electricity Tariff">อัตราค่าไฟฟ้าเฉลี่ย</th><td id="prt-fin-tariff"></td><th data-en="Degradation Year 1 (%)">Degradation ปี 1 (%)</th><td id="prt-fin-deg"></td></tr>
                     <tr><th data-en="Tariff Escalation (%/yr)">อัตราเพิ่มค่าไฟฟ้า (%/ปี)</th><td id="prt-fin-tariff-inf"></td><th data-en="Degradation Year 2-30 (%)">Degradation ปี 2-30 (%)</th><td id="prt-fin-deg2"></td></tr>
+                    <!-- ค่าเปลี่ยนอินเวอร์เตอร์เป็นก้อนใหญ่ในตาราง 25 ปี ต้องบอกลูกค้าว่าคิดปีไหน ราคาเท่าไร
+                         แถวนี้แสดงทุกโครงการ เพราะงานออนกริดล้วนก็มีค่านี้ -->
+                    <tr><th data-en="Inverter Replacement Year">ปีที่เปลี่ยนอินเวอร์เตอร์</th><td id="prt-fin-invyear"></td><th data-en="Inverter Replacement (THB/W)">ค่าเปลี่ยนอินเวอร์เตอร์ (บาท/วัตต์)</th><td id="prt-fin-invrep"></td></tr>
+                    <!-- สามแถวล่างนี้โผล่เฉพาะโครงการที่มีแบตเตอรี่ งานออนกริดล้วนจะถูกซ่อนไว้
+                         ไม่งั้นตารางจะรกด้วยค่าที่ไม่เกี่ยวกับงานนั้นเลย -->
+                    <tr class="prt-bat-row hidden"><th data-en="Battery Cost (THB/kWh)">ราคาแบตเตอรี่ (บาท/kWh)</th><td id="prt-fin-batcapex"></td><th data-en="Battery O&amp;M (%/yr of battery CAPEX)">O&amp;M แบตเตอรี่ (%/ปี ของราคาแบต)</th><td id="prt-fin-ombat"></td></tr>
+                    <tr class="prt-bat-row hidden"><th data-en="Battery End-of-Life Method">วิธีคิดค่าเปลี่ยนแบตเตอรี่</th><td id="prt-fin-batmode"></td><th data-en="Battery Life (years)">อายุแบตเตอรี่ (ปี)</th><td id="prt-fin-batlife"></td></tr>
+                    <tr class="prt-bat-row hidden"><th data-en="Replacement Price (% of today)">ราคาเปลี่ยนแบตเตอรี่ (% ของวันนี้)</th><td id="prt-fin-batrep"></td><th data-en="Augmentation (% of battery CAPEX)">เสริมความจุครั้งละ (% ของราคาแบต)</th><td id="prt-fin-bataug"></td></tr>
                 </table>
 
                 <div id="prt-sec-env">
@@ -7496,6 +7504,29 @@ if (typeof module !== 'undefined' && module.exports) module.exports = ShadingEng
             let sumNight = 0; for(let i=22; i<=23; i++) sumNight+=getVal(`ld24-${i}`); for(let i=0; i<=5; i++) sumNight+=getVal(`ld24-${i}`);
             document.getElementById('prt-ld-1').innerText = getSum(6, 9) + u; document.getElementById('prt-ld-2').innerText = getSum(9, 15) + u; document.getElementById('prt-ld-3').innerText = getSum(15, 22) + u; document.getElementById('prt-ld-4').innerText = sumNight.toFixed(1) + u;
             document.getElementById('prt-fin-capex').innerText = getStr('fin-capex'); document.getElementById('prt-fin-om').innerText = getStr('fin-om'); document.getElementById('prt-fin-tariff').innerText = getStr('fin-tariff') + RT(' บาท', ' THB'); document.getElementById('prt-fin-tariff-inf').innerText = getStr('fin-tariff-inf'); document.getElementById('prt-fin-inf').innerText = getStr('fin-inf'); document.getElementById('prt-fin-dr').innerText = getStr('fin-dr'); document.getElementById('prt-fin-deg').innerText = getStr('fin-deg'); document.getElementById('prt-fin-deg2').innerText = getStr('fin-deg-2');
+
+            /* สมมติฐานค่าเปลี่ยนอุปกรณ์ ต้องปรากฏในเอกสารที่ส่งลูกค้า
+               ไม่งั้นพอเห็นค่าบำรุงรักษาพุ่งในบางปีจะไม่มีอะไรอธิบายได้ */
+            const setPrt = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
+            setPrt('prt-fin-invyear', getStr('fin-inv-rep-year'));
+            setPrt('prt-fin-invrep',  getStr('fin-inv-rep'));
+
+            const batQtyP = getVal('inp-bat-qty', 0), batKwhP = getVal('inp-bat-kwh', 0);
+            const hasBat  = batQtyP > 0 && batKwhP > 0;
+            document.querySelectorAll('.prt-bat-row').forEach(tr => tr.classList.toggle('hidden', !hasBat));
+            if (hasBat) {
+                const modeEl = document.getElementById('fin-bat-mode');
+                const modeTxt = { replace: RT('เปลี่ยนทั้งชุดตามอายุรับประกัน', 'Full replacement at warranty life'),
+                                  augment: RT('เสริมความจุ ปีที่ 10 และ 20 (NREL ATB)', 'Augmentation in years 10 and 20 (NREL ATB)'),
+                                  none:    RT('ไม่คิดค่าเปลี่ยน', 'No replacement cost') };
+                const mode = modeEl ? modeEl.value : 'replace';
+                setPrt('prt-fin-batcapex', getStr('fin-capex-bat'));
+                setPrt('prt-fin-ombat',    getStr('fin-om-bat'));
+                setPrt('prt-fin-batmode',  modeTxt[mode] || mode);
+                setPrt('prt-fin-batlife',  mode === 'replace' ? getStr('fin-bat-life') : '-');
+                setPrt('prt-fin-batrep',   mode === 'replace' ? getStr('fin-bat-rep')  : '-');
+                setPrt('prt-fin-bataug',   mode === 'augment' ? getStr('fin-bat-aug')  : '-');
+            }
             /* ฐานราคาและ VAT ต้องอยู่ในรายงานด้วย ลูกค้าจะได้รู้ว่าตัวเลขคิดบนฐานไหน */
             (function(){
                 const b = ascFinBasis();
