@@ -776,7 +776,7 @@
                         <div><label class="block text-sm text-gray-600">อัตราคิดลด (Discount Rate: r)(%/ปี)</label><input type="number" id="fin-dr" value="6.5" step="0.1" class="w-full border rounded p-2"></div>
                         <div><label class="block text-sm text-gray-600">Degradation ปี 1 (%)</label><input type="number" id="fin-deg" value="0.5" step="0.1" class="w-full border rounded p-2 text-red-600 font-bold"></div>
                         <div><label class="block text-sm text-gray-600">Degradation ปี 2-30 (%)</label><input type="number" id="fin-deg-2" value="0.5" step="0.1" class="w-full border rounded p-2 text-red-600 font-bold"></div>
-						<div><label class="block text-sm text-gray-600">เปลี่ยน INV ปี 15 (บาท/วัตต์)</label><input type="number" id="fin-inv-rep" value="3.5" step="0.1" class="w-full border rounded p-2 text-purple-600 font-bold"></div>
+						<div><label class="block text-sm text-gray-600">เปลี่ยน INV ปี 10 (บาท/วัตต์)</label><input type="number" id="fin-inv-rep" value="3.5" step="0.1" class="w-full border rounded p-2 text-purple-600 font-bold"></div>
 					
 					</div>
                     
@@ -3533,7 +3533,11 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 // อัตราต่อวัตต์และต้นทุนแบตเตอรี่ อ่านผ่าน ascFinBasis() แล้ว ไม่ต้องอ่านซ้ำที่นี่
                 
                 // 🌟 ดึงค่าใช้จ่ายเปลี่ยน Inverter
-                let invRepRate = getVal('fin-inv-rep', 3.5); 
+                let invRepRate = getVal('fin-inv-rep', 3.5);
+                /* ปีที่เปลี่ยนอินเวอร์เตอร์ — ผู้ใช้กำหนดให้ใช้ปีที่ 10
+                   (เดิมตั้งไว้ปีที่ 15) ประกาศเป็นค่าคงที่ชื่อเดียว
+                   จะได้แก้ที่เดียวแล้วเปลี่ยนทั้งการคำนวณและข้อความอธิบาย */
+                const INV_REPLACE_YEAR = 10;
                 
                 let initialInvestment = finBasis.investment;
                 let finTariff = finBasis.tariff;
@@ -3564,8 +3568,8 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                     // 🌟 คำนวณค่า O&M ปกติ
                     let omCost = (pnom * 1000 * om * finBasis.rateFactor) * Math.pow(1 + (infOM/100), y-1); 
                     
-                    // 🌟 แทรกค่าเปลี่ยน Inverter ในปีที่ 15
-                    if (y === 15) {
+                    // 🌟 แทรกค่าเปลี่ยน Inverter ในปีที่กำหนด
+                    if (y === INV_REPLACE_YEAR) {
                         omCost += (pnom * 1000 * invRepRate * finBasis.rateFactor);
                     }
                     
