@@ -764,6 +764,8 @@
             </div>
 
             <div id="menu-finance" class="tab-content space-y-6 max-w-4xl mx-auto">
+                <!-- แถบแจ้งเตือนตอนเปิดไฟล์ที่บันทึกด้วยโมเดลการเงินรุ่นก่อน -->
+                <div id="fin-migrate-box" class="hidden bg-amber-50 border-l-4 border-amber-500 rounded p-4"></div>
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                     <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">พารามิเตอร์การเงิน (Financial Parameters)</h3>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -776,7 +778,7 @@
                         <div><label class="block text-sm text-gray-600">อัตราคิดลด (Discount Rate: r)(%/ปี)</label><input type="number" id="fin-dr" value="6.5" step="0.1" class="w-full border rounded p-2"></div>
                         <div><label class="block text-sm text-gray-600">Degradation ปี 1 (%)</label><input type="number" id="fin-deg" value="0.5" step="0.1" class="w-full border rounded p-2 text-red-600 font-bold"></div>
                         <div><label class="block text-sm text-gray-600">Degradation ปี 2-30 (%)</label><input type="number" id="fin-deg-2" value="0.5" step="0.1" class="w-full border rounded p-2 text-red-600 font-bold"></div>
-						<div><label class="block text-sm text-gray-600">เปลี่ยน INV ปี 10 (บาท/วัตต์)</label><input type="number" id="fin-inv-rep" value="3.5" step="0.1" class="w-full border rounded p-2 text-purple-600 font-bold"></div>
+						<div><label class="block text-sm text-gray-600">เปลี่ยน INV (บาท/วัตต์)</label><input type="number" id="fin-inv-rep" value="3.5" step="0.1" class="w-full border rounded p-2 text-purple-600 font-bold"></div><div><label class="block text-sm text-gray-600">ปีที่เปลี่ยน INV</label><input type="number" id="fin-inv-rep-year" value="10" step="1" min="0" class="w-full border rounded p-2 text-purple-600 font-bold" title="ใส่ 0 = ไม่คิดค่าเปลี่ยนอินเวอร์เตอร์ · ไฟล์ที่บันทึกก่อนรุ่นนี้ใช้ปีที่ 15"></div>
 						<div><label class="block text-sm text-gray-600">O&M แบตฯ (%/ปี ของ CAPEX แบต)</label><input type="number" id="fin-om-bat" value="2.5" step="0.1" class="w-full border rounded p-2 text-green-700 font-bold" title="NREL ATB 2024 ใช้ Fixed O&M = 2.5% ของเงินลงทุนแบตต่อปี · รายงานต้นทุนของ NREL อีกฉบับใช้ 4%"></div>
 						<div><label class="block text-sm text-gray-600">วิธีคิดค่าเปลี่ยนแบตฯ</label>
 							<select id="fin-bat-mode" class="w-full border rounded p-2 text-green-700 font-bold">
@@ -2415,6 +2417,7 @@
             setVal('inp-tou-rate-on', 4.1839); setVal('inp-tou-rate-off', 2.6037);
             setVal('fin-capex', 22); setVal('fin-om', 0.12); setVal('fin-inf', 3.0); setVal('fin-dr', 6.5);
             setVal('fin-om-bat', 2.5); setVal('fin-bat-life', 10); setVal('fin-bat-rep', 60); setVal('fin-bat-aug', 20);
+            setVal('fin-inv-rep-year', 10);
             const selBat = document.getElementById('fin-bat-mode'); if (selBat) selBat.value = 'replace';
             setVal('fin-deg', 0.5); setVal('fin-deg-2', 0.5); setVal('fin-tariff-inf', 3.0); setVal('fin-inv-rep', 3.5);
             ascResetFinBasis();
@@ -2522,6 +2525,96 @@
 		}
 
         /* แสดงกล่องแจ้งข้อผิดพลาดการนำเข้า แยกออกมาเพื่อให้ทั้งสายไฟล์และสายท่อใช้ร่วมกัน */
+        /* ══ รุ่นของโมเดลการเงิน ══════════════════════════════════════
+           เพิ่มเลขนี้ทุกครั้งที่สูตรหรือค่าเริ่มต้นเปลี่ยนจนไฟล์เก่าคำนวณออกมาไม่เท่าเดิม
+           รุ่น 1 = ก่อน 21 ต.ค. 2569 — เปลี่ยนอินเวอร์เตอร์ปีที่ 15 · ไม่มีค่าใด ๆ
+                   ของแบตเตอรี่ · O&M เริ่มต้น 0.06 · ฐาน VAT เริ่มต้น "ไม่ปรับ"
+           รุ่น 2 = เปลี่ยนอินเวอร์เตอร์ปีที่ 10 · มีค่าดูแลและค่าเปลี่ยนแบตเตอรี่ ·
+                   O&M เริ่มต้น 0.12 · ฐาน VAT เริ่มต้น "ขอคืนภาษีซื้อได้"
+           ไฟล์ที่ไม่มีเลขนี้ถือเป็นรุ่น 1 */
+        const ASC_FIN_MODEL = 2;
+
+        /* อ่านไฟล์เก่าแล้วจำผลลัพธ์เดิมไว้ เพื่อเอามาเทียบให้ผู้ใช้เห็นหลังคำนวณใหม่
+           ไม่ย้อนค่ากลับให้เอง เพราะโมเดลใหม่ถูกต้องกว่า แต่ต้องบอกให้รู้ว่าอะไรขยับ
+           และต้องกดปุ่มเดียวย้อนกลับไปฐานเดิมได้ ถ้าต้องยันกับใบเสนอราคาที่ส่งไปแล้ว */
+        function ascNoteFinMigration(jsonData) {
+            const fileModel = Number(jsonData.asc_fin_model || 1);
+            if (fileModel >= ASC_FIN_MODEL) { AppState.finMigration = null; return; }
+
+            const u   = jsonData.ui_inputs || {};
+            const old = (jsonData.app_state && jsonData.app_state.financials) || [];
+            let oldPay = null;
+            for (let i = 1; i < old.length; i++) {
+                if (Number(old[i].cum) >= 0) { oldPay = old[i].y; break; }
+            }
+            const numOf = v => { const n = parseFloat(String(v == null ? '' : v).replace(/,/g, '')); return isFinite(n) ? n : 0; };
+            AppState.finMigration = {
+                รุ่นไฟล์ : fileModel,
+                npvเดิม  : old.length ? Number(old[old.length - 1].cum) : null,
+                คืนทุนเดิม: oldPay,
+                omเดิม   : u['fin-om'] != null ? numOf(u['fin-om']) : null,
+                vatเดิม  : u['fin-vat-mode'] || 'off',
+                มีแบต    : numOf(u['inp-bat-qty']) > 0 && numOf(u['inp-bat-kwh']) > 0
+            };
+        }
+
+        /* ย้อนทุกอย่างกลับไปเป็นฐานที่ไฟล์นั้นเคยใช้ แล้วคำนวณใหม่
+           ใช้เมื่อต้องการตัวเลขให้ตรงกับเอกสารที่เสนอลูกค้าไปแล้วเป๊ะ ๆ */
+        function ascUseLegacyFinBasis() {
+            const m = AppState.finMigration; if (!m) return;
+            setVal('fin-inv-rep-year', 15);          /* รุ่น 1 เปลี่ยนอินเวอร์เตอร์ปีที่ 15 */
+            const selBat = document.getElementById('fin-bat-mode');
+            if (selBat) selBat.value = 'none';       /* รุ่น 1 ไม่คิดค่าเปลี่ยนแบตเลย */
+            setVal('fin-om-bat', 0);                 /* รุ่น 1 ไม่คิดค่าดูแลแบตเลย */
+            if (m.omเดิม != null) setVal('fin-om', m.omเดิม);
+            const selVat = document.getElementById('fin-vat-mode');
+            if (selVat) { selVat.value = m.vatเดิม; ascUpdateFinBasis(); }
+            AppState.finMigration = null;
+            const box = document.getElementById('fin-migrate-box');
+            if (box) box.classList.add('hidden');
+            const btn = [...document.querySelectorAll('button')].find(x => /Run Simulation/.test(x.textContent));
+            if (btn) btn.click();
+        }
+
+        /* แถบแจ้งเตือนบนหน้าการเงิน ขึ้นเฉพาะตอนเปิดไฟล์ที่บันทึกด้วยโมเดลรุ่นก่อน */
+        function ascRenderFinMigration() {
+            const box = document.getElementById('fin-migrate-box');
+            if (!box) return;
+            const m = AppState.finMigration;
+            if (!m) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+
+            const f = AppState.financials || [];
+            if (!f.length) return;
+            let newPay = null;
+            for (let i = 1; i < f.length; i++) if (f[i].cum >= 0) { newPay = f[i].y; break; }
+            const newNpv = f[f.length - 1].cum;
+            const money = v => (v == null || !isFinite(v)) ? '-' : formatNum(v, 0) + ' บาท';
+            const yr    = v => (v == null) ? '-' : v + ' ปี';
+
+            const changes = ['เปลี่ยนอินเวอร์เตอร์จากปีที่ 15 มาเป็นปีที่ ' + Math.round(getVal('fin-inv-rep-year', 10))];
+            if (m.มีแบต) changes.push('เพิ่มค่าดูแลแบตเตอรี่รายปีและค่าเปลี่ยนแบตตามรอบอายุ ซึ่งรุ่นก่อนไม่เคยคิดเลย');
+            const vatNow = (document.getElementById('fin-vat-mode') || {}).value;
+            if (vatNow && vatNow !== m.vatเดิม) changes.push('ฐานภาษีเปลี่ยนจาก "' + m.vatเดิม + '" เป็น "' + vatNow + '"');
+
+            box.innerHTML =
+                '<div class="font-bold text-amber-900 mb-1">ไฟล์นี้บันทึกด้วยโมเดลการเงินรุ่นก่อน — คำนวณใหม่ด้วยโมเดลปัจจุบันให้แล้ว</div>' +
+                '<div class="text-xs text-gray-600 mb-1">ซ้าย = ตัวเลขที่บันทึกอยู่ในไฟล์ · ขวา = คำนวณใหม่ด้วยโมเดลปัจจุบัน</div>' +
+                '<table class="text-sm mb-2"><tr><td class="pr-4">NPV</td><td class="pr-3 text-right">' + money(m.npvเดิม) +
+                '</td><td class="pr-3">&rarr;</td><td class="text-right font-bold">' + money(newNpv) + '</td></tr>' +
+                '<tr><td class="pr-4">ระยะเวลาคืนทุน</td><td class="pr-3 text-right">' + yr(m.คืนทุนเดิม) +
+                '</td><td class="pr-3">&rarr;</td><td class="text-right font-bold">' + yr(newPay) + '</td></tr></table>' +
+                '<div class="text-xs mb-2">สิ่งที่ต่างจากไฟล์เดิม<ul class="list-disc list-inside">' +
+                changes.map(c => '<li>' + c + '</li>').join('') + '</ul></div>' +
+                '<div class="text-xs text-gray-600 mb-2">ตัวเลขชุดใหม่สะท้อนต้นทุนตลอดอายุโครงการได้ครบกว่า ' +
+                'ถ้าต้องใช้ตัวเลขให้ตรงกับเอกสารที่เสนอลูกค้าไปแล้ว กดปุ่มด้านล่าง ระบบจะตั้งเปลี่ยนอินเวอร์เตอร์กลับเป็นปีที่ 15 ' +
+                'ปิดค่าดูแลและค่าเปลี่ยนแบตเตอรี่ และใช้ฐานภาษีตามที่ไฟล์บันทึกไว้<br>' +
+                '<b>ข้อควรทราบ</b> ไฟล์ที่บันทึกจากโปรแกรมรุ่นเก่ากว่านี้มาก อาจยังได้ตัวเลขไม่ตรงกับที่พิมพ์ไว้ในไฟล์เป๊ะ ' +
+                'เพราะสูตรส่วนอื่นถูกแก้ไปตั้งแต่ก่อนหน้านั้นแล้ว</div>' +
+                '<button onclick="ascUseLegacyFinBasis()" class="text-xs bg-amber-600 hover:bg-amber-700 text-white py-1.5 px-3 rounded font-bold">' +
+                'ย้อนกลับไปใช้ฐานเดิมของไฟล์</button>';
+            box.classList.remove('hidden');
+        }
+
         function ascShowImportError(err) {
             console.error("Error parsing JSON:", err);
             let errList = document.getElementById('error-list');
@@ -2537,6 +2630,9 @@
                     
                     // 🌟 1. ดักจับการนำเข้า DB3 (กู้คืนข้อมูลเดิม)
                     if (jsonData.is_asc_db3) {
+                        /* จำผลลัพธ์เดิมของไฟล์ไว้ก่อน ก่อนที่ ui_inputs จะถูกหยอดทับ
+                           ไว้เทียบให้ผู้ใช้เห็นหลังคำนวณใหม่ด้วยโมเดลปัจจุบัน */
+                        ascNoteFinMigration(jsonData);
                         // 🌟 อัปเกรดการหยอดข้อมูล: ตรวจจับ Checkbox, Radio, Select และ Input ทุกชนิด
                         if (jsonData.ui_inputs) {
                             window.db3_ui_inputs_cache = jsonData.ui_inputs; // 🌟 [แก้บั๊ก DB3] จำค่าไว้สำหรับ Checkbox กราฟที่จะถูกวาดขึ้นมาทีหลัง
@@ -3562,7 +3658,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 /* ปีที่เปลี่ยนอินเวอร์เตอร์ — ผู้ใช้กำหนดให้ใช้ปีที่ 10
                    (เดิมตั้งไว้ปีที่ 15) ประกาศเป็นค่าคงที่ชื่อเดียว
                    จะได้แก้ที่เดียวแล้วเปลี่ยนทั้งการคำนวณและข้อความอธิบาย */
-                const INV_REPLACE_YEAR = 10;
+                const INV_REPLACE_YEAR = Math.round(getVal('fin-inv-rep-year', 10));
 
                 /* ══ ค่าใช้จ่ายฝั่งแบตเตอรี่ ══════════════════════════════
                    เดิมโมเดล 25 ปีไม่มีค่าอะไรของแบตเลย มีแต่ราคาซื้อใน CAPEX
@@ -3643,6 +3739,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
 
                 // 🌟 วาดกราฟทันทีแบบเดียวกับไฟล์ AMR (ไม่ต้องรอ ไม่ต้องเช็คเงื่อนไข)
                 renderDashboard();
+                try { ascRenderFinMigration(); } catch (e) { console.warn('แถบเทียบโมเดลการเงินแสดงไม่ได้', e); }
                 
                 renderDashboard();
                 let btnMenuDash = document.getElementById('btn-menu-dashboard');
@@ -3662,6 +3759,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
             // 🌟 แทรก State หน้าจอลงไปในไฟล์ DB3 เพื่อให้สามารถนำเข้ากลับมาได้เต็มรูปแบบ
             let db3Obj = JSON.parse(data);
             db3Obj.is_asc_db3 = true;
+            db3Obj.asc_fin_model = ASC_FIN_MODEL;   /* รุ่นของโมเดลการเงินที่ใช้ตอนบันทึก */
             db3Obj.ui_inputs = {};
             // 🌟 กวาด Input ทุกประเภทลง DB3 แบบ 100% (text, number, hidden, checkbox, radio, select)
             document.querySelectorAll('input, select, textarea').forEach(el => {
