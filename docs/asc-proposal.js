@@ -56,7 +56,8 @@
 
             p6: 'ผลตอบแทนการลงทุน',
             kCapex: 'เงินลงทุนเริ่มต้น', kSave1: 'ประหยัดค่าไฟปีแรก',
-            kNet25: 'ประหยัดสะสมตลอด 25 ปี',
+            kSave25: 'ประหยัดค่าไฟสะสม 25 ปี',
+            kNet25: 'ผลประหยัดสุทธิสะสม 25 ปี (หัก O&M ยังไม่คิดลด)',
             assume: 'สมมติฐาน: ค่าไฟปรับขึ้นเฉลี่ยปีละ 2.5% · แผงเสื่อมสภาพปีละ 0.5%',
             noData: 'ยังไม่มีข้อมูล กรุณานำเข้าไฟล์ DB2/DB3 และกดประมวลผลก่อน',
 
@@ -120,7 +121,8 @@
 
             p6: 'Investment Return',
             kCapex: 'Initial investment', kSave1: 'First-year savings',
-            kNet25: 'Cumulative savings over 25 years',
+            kSave25: 'Cumulative electricity savings, 25 years',
+            kNet25: 'Net cumulative savings, 25 years (after O&M, undiscounted)',
             assume: 'Assumptions: 2.5% annual tariff escalation · 0.5% annual module degradation',
             noData: 'No data yet. Please import a DB2/DB3 file and run the simulation first.',
 
@@ -201,29 +203,55 @@
         const kwp    = Number(r.pnom) || 0;
         const yieldY = Number(r.totalEGrid) || 0;
         const tariff = gv('fin-tariff', 4.5);
-        const capex  = gv('fin-capex', 0) + gv('fin-capex-bat', 0);
-        const save1  = yieldY * tariff;
 
-        // ดึงจากตารางการเงินที่รายงานคำนวณไว้แล้ว ถ้าไม่มีค่อยประมาณเอง
-        let payback = null, irr = null, net25 = null;
+        /* เงินลงทุนเริ่มต้น
+           ⚠ ห้ามบวก fin-capex (บาท/วัตต์) กับ fin-capex-bat (บาท/kWh) ตรง ๆ
+              คนละหน่วยกัน ผลที่ได้คือ 22 + 10,000 = 10,022 บาท ทั้งที่ของจริง
+              หลักล้าน เอกสารข้อเสนอจึงเคยแสดงเงินลงทุนผิดไปร้อยเท่า
+           ใช้ฐานเดียวกับหน้ารายงาน (ascFinBasis) ซึ่งคิดโหมดราคาขายรวม
+           และฐาน VAT ไว้ครบแล้ว ถ้าเรียกไม่ได้ค่อยถอยไปอ่านจากตารางการเงิน */
+        const capex = (function () {
+            try {
+                if (typeof ascFinBasis === 'function') {
+                    const v = Number(ascFinBasis().investment);
+                    if (isFinite(v) && v > 0) return v;
+                }
+            } catch (e) { /* ใช้ทางสำรองด้านล่าง */ }
+            if (fin.length) {
+                const c = Number(fin[0].cum ?? fin[0].cumulative ?? fin[0].cumulativeCashFlow);
+                if (isFinite(c) && c !== 0) return Math.abs(c);
+            }
+            return kwp * 1000 * gv('fin-capex', 0)
+                 + gv('inp-bat-qty', 0) * gv('inp-bat-kwh', 0) * gv('fin-capex-bat', 0);
+        })();
+
+        /* ดึงจากตารางการเงินที่รายงานคำนวณไว้แล้ว ถ้าไม่มีค่อยประมาณเอง
+           save25 = ค่าไฟที่ประหยัดได้สะสม ไม่คิดลด ไม่หักเงินลงทุน
+           net25  = กำไรสุทธิสะสมหลังหัก O&M ไม่คิดลด
+           ทั้งสองค่าคนละตัวกับ NPV ซึ่งคิดลดแล้วและหักเงินลงทุนแล้ว */
+        let payback = null, irr = null, net25 = null, save25 = null;
         if (fin.length) {
-            const last = fin[fin.length - 1];
-            net25 = Number(last.cumulative ?? last.cum ?? last.cumulativeCashFlow);
+            const cumOf = row => Number(row.cumulative ?? row.cum ?? row.cumulativeCashFlow);
+            save25 = fin.reduce((s, row) => s + (Number(row.savings) || 0), 0);
+            net25  = fin.reduce((s, row) => s + (Number(row.net) || 0), 0);
             for (let i = 0; i < fin.length; i++) {
-                const cum = Number(fin[i].cumulative ?? fin[i].cum ?? fin[i].cumulativeCashFlow);
-                if (isFinite(cum) && cum >= 0) { payback = fin[i].year ?? (i + 1); break; }
+                if (isFinite(cumOf(fin[i])) && cumOf(fin[i]) >= 0) {
+                    /* แถวของตารางใช้คีย์ y ไม่ใช่ year — ของเดิมอ่าน row.year ได้
+                       undefined แล้วตกไปใช้ i + 1 ซึ่งเกินจริงหนึ่งปีเสมอ
+                       เพราะแถวแรกของตารางคือปีที่ 0 (ปีที่ลงเงิน) */
+                    const y = Number(fin[i].y ?? fin[i].year ?? i);
+                    payback = isFinite(y) ? y : i;
+                    break;
+                }
             }
         }
+        const save1 = (fin.length > 1 && isFinite(Number(fin[1].savings)))
+                    ? Number(fin[1].savings)      /* ใช้ค่าประหยัดปีแรกจากตารางของรายงาน */
+                    : yieldY * tariff;            /* เผื่อยังไม่ได้รันซิมูเลชัน */
         if (payback == null && save1 > 0 && capex > 0) payback = capex / save1;
 
         const txtIrr = document.getElementById('txt-irr');
         if (txtIrr) { const v = parseFloat(txtIrr.innerText); if (isFinite(v)) irr = v; }
-
-        // ค่าไฟทั้งปีของอาคาร จากข้อมูล DB0 ถ้ามี
-        const db0 = A.db0Data || {};
-        let usage = Number(db0.annualUsage_kWh) || Number(db0.totalKwhPerYear) || 0;
-        if (!usage && yieldY && r.pctSelfConsumption) usage = yieldY / (r.pctSelfConsumption / 100);
-        const bill = usage * tariff;
 
         // ── ข้อมูลสำหรับ 7 กราฟใหม่ที่เพิ่มเข้ามาในข้อเสนอ ──────────────────
         // ใช้สูตร/ฟังก์ชันเดียวกับที่หน้ารายงานคำนวณไว้แล้ว (ascComputeEnergyBalance,
@@ -231,6 +259,22 @@
         // จึงอยู่ใน global lexical scope เรียกตรงชื่อได้ ไม่ต้องผ่าน window)
         let eb = null;
         try { eb = (typeof ascComputeEnergyBalance === 'function') ? ascComputeEnergyBalance() : null; } catch (e) { eb = null; }
+
+        /* ค่าไฟทั้งปีของอาคาร สำหรับหน้า "สภาพการใช้ไฟฟ้าปัจจุบัน"
+           ⚠ DB0 เก็บยอด "รายเดือน" ในคีย์ totalUnitsMonth / totalBahtMonth
+              ของเดิมไปอ่าน annualUsage_kWh และ totalKwhPerYear ซึ่งไม่มีอยู่จริง
+              ทั้งคู่ usage จึงเป็น 0 เสมอ หน้านี้เลยว่างทุกครั้งแม้นำเข้า eBill แล้ว
+           ตัวสำรองใช้สัดส่วนใช้เองจาก ascComputeEnergyBalance ไม่ใช่ r.pctSelfConsumption
+           ซึ่งไม่เคยมีใน AppState.results */
+        const db0 = A.db0Data || {};
+        let usage = 0, bill = 0;
+        if (db0.hasData) {
+            usage = (Number(db0.totalUnitsMonth) || 0) * 12;
+            bill  = (Number(db0.totalBahtMonth)  || 0) * 12;
+        }
+        const selfPct = Number(eb && eb.pctSelfConsumption) || 0;
+        if (!usage && yieldY && selfPct > 0) usage = yieldY / (selfPct / 100);
+        if (!bill && usage) bill = usage * tariff;
 
         const finRows = (fin || []).map(row => ({
             y: Number(row.y),
@@ -259,6 +303,7 @@
             loc     : gs('inp-loc', '-'),
             kwp, yieldY, tariff, capex, save1, payback, irr,
             net25   : isFinite(net25) ? net25 : null,
+            save25  : isFinite(save25) ? save25 : null,
             usage, bill,
             coverage: (usage > 0) ? (yieldY / usage * 100) : null,
             specific: kwp > 0 ? yieldY / kwp : 0,
@@ -434,6 +479,7 @@
                 <tr><td class="it">${esc(t.kSave1)}</td><td class="n">${num(d.save1, 0)} ${esc(t.baht)}</td></tr>
                 <tr><td class="it">${esc(t.kPayback)}</td><td class="n">${d.payback ? num(d.payback, 1) : '-'} ${esc(t.yrs)}</td></tr>
                 ${d.irr != null ? `<tr><td class="it">${esc(t.kIrr)}</td><td class="n">${num(d.irr, 1)} %</td></tr>` : ''}
+                ${d.save25 != null ? `<tr><td class="it">${esc(t.kSave25)}</td><td class="n">${num(d.save25, 0)} ${esc(t.baht)}</td></tr>` : ''}
                 ${d.net25 != null ? `<tr><td class="it hi">${esc(t.kNet25)}</td><td class="n hi">${num(d.net25, 0)} ${esc(t.baht)}</td></tr>` : ''}
               </tbody>
             </table>
@@ -601,7 +647,7 @@
                     โดยคำนวณผลกระทบจากอุณหภูมิ ฝุ่น และเงาบังไว้แล้ว</p>
                     <p>เงินลงทุนรวม <strong>${num(d.capex, 0)} บาท</strong>
                     ${d.payback ? `คืนทุนภายใน ${num(d.payback, 1)} ปี` : ''}
-                    ${d.net25 != null ? ` และประหยัดค่าไฟสะสมตลอดอายุโครงการ 25 ปี ราว <strong>${num(d.net25 / 1e6, 1)} ล้านบาท</strong>` : ''}</p>`;
+                    ${d.save25 != null ? ` และประหยัดค่าไฟสะสมตลอดอายุโครงการ 25 ปี ราว <strong>${num(d.save25 / 1e6, 1)} ล้านบาท</strong>` : ''}</p>`;
         }
         return `<p>The proposed system has an installed capacity of <strong>${num(d.kwp, 2)} kWp</strong>,
                 comprising ${num(d.nPv, 0)} modules, with expected generation of
@@ -613,7 +659,7 @@
                 with temperature, soiling and shading losses already accounted for.</p>
                 <p>Total investment is <strong>THB ${num(d.capex, 0)}</strong>
                 ${d.payback ? `, recovered within ${num(d.payback, 1)} years` : ''}
-                ${d.net25 != null ? `, with cumulative savings of approximately <strong>THB ${num(d.net25 / 1e6, 1)} million</strong> over the 25-year life` : ''}.</p>`;
+                ${d.save25 != null ? `, with cumulative electricity savings of approximately <strong>THB ${num(d.save25 / 1e6, 1)} million</strong> over the 25-year life` : ''}.</p>`;
     }
 
     function usageText(t, d) {

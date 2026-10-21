@@ -1948,7 +1948,7 @@
             }
         })();
         
-        const AppState = { monthlyBalances: [], daily8760: [], financials: [], results: {}, charts: {}, bomData: null, equipData: null, hourlyMeteo: [],
+        const AppState = { monthlyBalances: [], daily8760: [], dailyYear: [], powerBins: null, financials: [], results: {}, charts: {}, bomData: null, equipData: null, hourlyMeteo: [],
                            /* ระบบออนกริดเดิมสำหรับงาน AC coupling — ปิดไว้จนกว่าไฟล์ DB2 จะบอกว่าเปิด
                               ไฟล์รุ่นก่อนไม่มีก้อนนี้ ทุกอย่างจึงทำงานเหมือนเดิมทุกประการ */
                            existing: null };
@@ -2397,7 +2397,7 @@
             // 🌟 แก้ไขบั๊กตัวแปรภาพที่เคยสะกดผิด
             if (typeof projectImagesBase64 !== 'undefined') { projectImagesBase64 = []; }
             
-            AppState.monthlyBalances = []; AppState.daily8760 = []; AppState.financials = []; AppState.results = {}; AppState.bomData = null; AppState.equipData = null; AppState.hourlyMeteo = [];
+            AppState.monthlyBalances = []; AppState.daily8760 = []; AppState.dailyYear = []; AppState.powerBins = null; AppState.financials = []; AppState.results = {}; AppState.bomData = null; AppState.equipData = null; AppState.hourlyMeteo = [];
             
             ['display-pnom', 'display-total-bill', 'display-daily-kwh'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerText = '0.00'; });
             document.getElementById('tbl-balances').innerHTML = ''; document.getElementById('tbl-finance').innerHTML = ''; document.getElementById('custom-loss-diagram').innerHTML = '';
@@ -2557,6 +2557,8 @@
                             if(jsonData.app_state.simulationParams) AppState.simulationParams = jsonData.app_state.simulationParams;
                             if(jsonData.app_state.monthlyBalances) AppState.monthlyBalances = jsonData.app_state.monthlyBalances;
                             if(jsonData.app_state.daily8760) AppState.daily8760 = jsonData.app_state.daily8760;
+                            if(jsonData.app_state.dailyYear) AppState.dailyYear = jsonData.app_state.dailyYear;
+                            if(jsonData.app_state.powerBins) AppState.powerBins = jsonData.app_state.powerBins;
                             if(jsonData.app_state.financials) AppState.financials = jsonData.app_state.financials;
                             if(jsonData.app_state.results) AppState.results = jsonData.app_state.results;
                             if(jsonData.app_state.existing !== undefined) AppState.existing = jsonData.app_state.existing;
@@ -3248,6 +3250,15 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                    กราฟรายวันต้องเห็นทั้งสองเส้น ไม่งั้นจะดูเหมือนแบตเตอรี่ชาร์จได้เองทั้งที่
                    เส้น PV ยังต่ำกว่าโหลด เพราะไฟจริงมาจากระบบเดิมที่ไม่ได้ถูกวาด */
                 let aggregatedDaily = Array(24).fill().map((_, i) => ({h: i, pv: 0, load: 0, bat: 0, ex: 0}));
+                /* ชุดข้อมูลจริงรายวันและการแจกแจงกำลังผลิตรายชั่วโมง
+                   กราฟ Scatter กับ Histogram เคยสร้างตัวเลขขึ้นมาเองด้วย Math.random()
+                   ทั้งที่ลูปนี้คำนวณของจริงอยู่แล้ว เก็บไว้ตรงนี้เลยจะได้ใช้ของจริง
+                   เก็บเป็น 365 คู่ค่า + 40 ช่องการแจกแจง ไม่เก็บ 8,760 ค่าดิบ
+                   เพราะไฟล์ DB3 จะบวมขึ้นเท่าตัวโดยไม่จำเป็น */
+                let dailyYear = Array(365).fill().map((_, i) => ({ d: i, poa: 0, ac: 0 }));
+                const PWR_BINS = 40;
+                let powerBins = new Array(PWR_BINS).fill(0);
+                const pwrBinW = pnom > 0 ? pnom / PWR_BINS : 1;
                 let monthlyData = Array(12).fill().map((_, i) => ({ month: months[i], globHor: 0, globInc: 0, T_amb: 0, eArray: 0, eGrid: 0, targetGrid: 0, pr: 0, count: 0 }));
                 let Tamb_dist = [26, 27, 29, 31, 30, 29, 28, 28, 27, 27, 27, 26];
 
@@ -3346,6 +3357,16 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                         if(hourAC > invKw) hourAC = invKw; 
                         db3.acSum += hourAC;
 
+                        /* hourAC เป็นพลังงานของชั่วโมงนั้น (kWh) = กำลังเฉลี่ยทั้งชั่วโมง (kW)
+                           จึงใช้เป็นทั้งพลังงานรายวันและค่ากำลังสำหรับการแจกแจงได้ */
+                        dailyYear[d].poa += hourGlobInc / 1000;
+                        dailyYear[d].ac  += hourAC;
+                        if (hourAC > 0) {
+                            let bi = Math.floor(hourAC / pwrBinW);
+                            if (bi >= PWR_BINS) bi = PWR_BINS - 1;
+                            powerBins[bi] += hourAC / 1000;      /* สะสมเป็น MWh ต่อช่อง */
+                        }
+
                         let hourLoad = loadProfile24h[h];
                         let surplus = hourAC - hourLoad;
                         if(surplus > 0) db3.surplusSum += surplus;
@@ -3439,6 +3460,8 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
 
                 AppState.daily8760 = aggregatedDaily;
                 AppState.monthlyBalances = monthlyData;
+                AppState.dailyYear = dailyYear;
+                AppState.powerBins = { binW: pwrBinW, bins: powerBins };
                 let averagePR = totalEGrid / (globInc_annual * pnom);
                 AppState.results = { pnom, effPR: averagePR, totalEGrid, totalTarget: globInc_annual*pnom, globInc_annual,
                     existing: AppState.existing ? {
@@ -3610,6 +3633,8 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 simulationParams: AppState.simulationParams || null,
                 monthlyBalances: AppState.monthlyBalances || [],
                 daily8760: AppState.daily8760 || [],
+                dailyYear: AppState.dailyYear || [],      /* 365 คู่ค่า POA/AC สำหรับกราฟกระจาย */
+                powerBins: AppState.powerBins || null,    /* การแจกแจงกำลังผลิตจริง 40 ช่อง */
                 financials: AppState.financials || [],
                 results: AppState.results || {},
                 existing: AppState.existing || null,   // ระบบออนกริดเดิม ส่งต่อให้หน้าบทสรุปอ่าน
@@ -4271,7 +4296,7 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
                 สมการระยะเวลาคืนทุน (Payback Period):<br>
                 $$Payback = I_0 / CF_{avg}$$</p>
                 <p><b>4) สรุปเชิงผลลัพธ์จากข้อมูลที่ปรากฏ</b><br>
-                โครงการใช้เวลาคืนทุนแบบง่ายไม่คิดลดอยู่ที่ <b>${cf_paybackYr} ปี</b> ถือว่าอยู่ในเกณฑ์ที่ดีสำหรับโครงการพลังงาน หลังจากจุดนี้เป็นต้นไป โครงการจะเริ่มสร้างกำไรสะสมอย่างต่อเนื่องจนสิ้นสุดโครงการที่ <b>${formatNum(cf_npvTotal, 2)} บาท</b></p>`;
+                โครงการใช้เวลาคืนทุนแบบคิดลด (Discounted Payback) อยู่ที่ <b>${cf_paybackYr} ปี</b> ถือว่าอยู่ในเกณฑ์ที่ดีสำหรับโครงการพลังงาน หลังจากจุดนี้เป็นต้นไป โครงการจะเริ่มสร้างกำไรสะสมอย่างต่อเนื่องจนสิ้นสุดโครงการที่ <b>${formatNum(cf_npvTotal, 2)} บาท</b></p>`;
             if (descCashflow) descCashflow.innerHTML = getDescHtml("cashflow", "Cumulative Cash Flow", RT("เงินลงทุนเริ่มต้น (CAPEX) และการสะสมผลกำไรที่เติบโตขึ้นทุกปี", "Initial investment (CAPEX) and the profit accumulating year on year"), RT(`ให้เห็นจุดคุ้มทุน (Payback Period) ที่ชัดเจน`, `Shows the payback point clearly`), RT("<li><b>CAPEX:</b> เงินลงทุนเริ่มต้นโครงการ</li><li><b>DCF:</b> กระแสเงินสดคิดลด ปรับมูลค่าเงินตามกาลเวลา</li>", "<li><b>CAPEX:</b> the up front project investment</li><li><b>DCF:</b> discounted cash flow, adjusting money for the time value</li>"), dtlCF);
 
             let descTblFinance = document.getElementById('desc-tbl-finance');
@@ -4721,13 +4746,28 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
         function renderChartjsScatter(r) {
             if(!r || !r.pnom) return;
             if(window.myChartjsScatter) window.myChartjsScatter.destroy();
-            let scatterData = []; let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0; let n = 365;
-            for(let i=0; i<n; i++) {
-                let x = 2.5 + (Math.random() * 4); let y = x * r.pnom * r.effPR * (0.9 + Math.random()*0.2); 
-                scatterData.push({x: x, y: y}); sumX += x; sumY += y; sumXY += x*y; sumXX += x*x;
+            /* ⚠ ห้ามสุ่มค่าขึ้นมาเอง
+               เดิมฟังก์ชันนี้สร้างจุด 365 จุดด้วย Math.random() แล้ววาดเส้นแนวโน้ม
+               ทับ ผลคือกราฟในรายงานลูกค้าเป็นตัวเลขที่ไม่เกี่ยวกับไซต์งานเลย
+               ตอนนี้การจำลองเก็บค่าจริงรายวันไว้ใน AppState.dailyYear แล้ว */
+            const dy = (AppState.dailyYear || []).filter(p => p && p.poa > 0 && p.ac > 0);
+            if (!dy.length) {
+                const box = document.getElementById('chart-scatter-chartjs');
+                if (box && box.parentElement) box.parentElement.insertAdjacentHTML('beforeend',
+                    '<p class="text-xs text-gray-500 text-center mt-2">' +
+                    RT('ยังไม่มีข้อมูลรายวัน กรุณากด Run Simulation ก่อน',
+                       'No daily data yet — run the simulation first') + '</p>');
+                return;
+            }
+            let scatterData = []; let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0; let n = dy.length;
+            for (const p of dy) {
+                const x = p.poa, y = p.ac;
+                scatterData.push({ x, y }); sumX += x; sumY += y; sumXY += x*y; sumXX += x*x;
             }
             let mLine = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-            let cLine = (sumY - mLine * sumX) / n; let minX = 2.5, maxX = 6.5;
+            let cLine = (sumY - mLine * sumX) / n;
+            let minX = Math.min.apply(null, scatterData.map(p => p.x));
+            let maxX = Math.max.apply(null, scatterData.map(p => p.x));
             const ctx = document.getElementById('chart-scatter-chartjs').getContext('2d');
             window.myChartjsScatter = new Chart(ctx, {
                 type: 'scatter',
@@ -4748,26 +4788,22 @@ async function fetchMeteoData(lat, lon, fallbackGHI = 1850.00) {
         function renderChartjsHistogram(r) {
             if(!r || !r.pnom) return;
             if(window.myChartjsHist) window.myChartjsHist.destroy();
-            let bins = 40; let maxP = r.pnom || 100; let binSize = maxP / bins;
-            let energyBins = new Array(bins).fill(0); let labels = [];
-            for(let i=0; i<bins; i++) { labels.push(`${formatNum(i*binSize, 1)}-${formatNum((i+1)*binSize, 1)}`); }
-
-            let simTotalEnergy = 0;
-            for(let i=0; i<8760; i++) {
-                let h = i % 24;
-                if(h > 6 && h < 18) {
-                    let clearSky = Math.sin((h - 6) * Math.PI / 12); let cloudFactor = Math.pow(Math.random(), 0.4); 
-                    let power = clearSky * cloudFactor * maxP * (r.effPR || 0.8);
-                    if (power > maxP) power = maxP;
-                    if (power > 0) {
-                        let idx = Math.floor(power / binSize); if(idx >= bins) idx = bins - 1;
-                        energyBins[idx] += (power / 1000); simTotalEnergy += power;
-                    }
-                }
+            /* ⚠ ห้ามจำลองเมฆด้วย Math.random()
+               เดิมฟังก์ชันนี้สุ่มสภาพท้องฟ้า 8,760 ชั่วโมงแล้วค่อยปรับสเกลให้ผลรวม
+               เท่ากับของจริง รูปร่างการแจกแจงที่ลูกค้าเห็นจึงเป็นของปลอมทั้งแผง
+               การจำลองเก็บการแจกแจงจริงไว้ใน AppState.powerBins แล้ว */
+            const pb = AppState.powerBins;
+            if (!pb || !pb.bins || !pb.bins.length) {
+                const box = document.getElementById('chart-hist-chartjs');
+                if (box && box.parentElement) box.parentElement.insertAdjacentHTML('beforeend',
+                    '<p class="text-xs text-gray-500 text-center mt-2">' +
+                    RT('ยังไม่มีข้อมูลการแจกแจงกำลังผลิต กรุณากด Run Simulation ก่อน',
+                       'No power distribution data yet — run the simulation first') + '</p>');
+                return;
             }
-            let actualTotalEGrid_MWh = (r.totalEGrid || 0) / 1000;
-            let scaleFactor = simTotalEnergy > 0 ? (actualTotalEGrid_MWh / (simTotalEnergy / 1000)) : 1;
-            for(let i=0; i<bins; i++) { energyBins[i] *= scaleFactor; }
+            let bins = pb.bins.length; let binSize = pb.binW; let labels = [];
+            for(let i=0; i<bins; i++) { labels.push(`${formatNum(i*binSize, 1)}-${formatNum((i+1)*binSize, 1)}`); }
+            let energyBins = pb.bins.slice();
 
             const ctx = document.getElementById('chart-hist-chartjs').getContext('2d');
             window.myChartjsHist = new Chart(ctx, {
