@@ -102,11 +102,11 @@ if (KEY.length < 40) {
 }
 
 /* ── อ่านรายชื่อจาก user.js ─────────────────────────────────────────────── */
-/* user.js ย้ายไปอยู่ใน docs/ แล้วเช่นกัน */
-const userJsPath = [join(HERE, '..', 'docs', 'user.js'),
-                    join(HERE, '..', 'user.js')].find(p => existsSync(p));
+/* user.js ย้ายจาก docs/ มาเป็น supabase/legacy-user.js แล้ว (29 ต.ค. 2569)
+   docs/ คือเว็บสาธารณะ ไฟล์นี้มีอีเมลและแฮชรหัสผ่าน จึงห้ามกลับไปอยู่ที่นั่น */
+const userJsPath = [join(HERE, 'legacy-user.js')].find(p => existsSync(p));
 if (!userJsPath) {
-    console.error('✗ หาไฟล์ user.js ไม่เจอ ทั้งใน docs/ และที่ราก');
+    console.error('✗ หาไฟล์ supabase/legacy-user.js ไม่เจอ');
     process.exit(1);
 }
 const src = readFileSync(userJsPath, 'utf8');
