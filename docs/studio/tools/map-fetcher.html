@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<!-- พอร์ตจาก ASC ENTERPRISES public/tools/map-fetcher.html (19 ต.ค. 2569 · โดย ลุงพี) — แก้เฉพาะการส่งภาพให้ใช้ window.opener ได้ด้วย -->
+<html lang="th" translate="no" class="notranslate">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Map Fetcher — จับภาพแผนที่ + world file · Auto Solar Co-pilot Studio</title>
+<link rel="icon" href="/favicon.ico">
+<style>
+:root{
+  --paper:#f6f5f1; --panel:#fff; --panel-2:#eeece5; --line:#d9d5c9;
+  --ink:#1d2220; --ink-2:#5b635f; --ink-3:#98a09b;
+  --accent:#146b4a; --accent-2:#1b8a5f;
+  --ok:#187a4b; --ok-soft:#dff0e5; --warn:#a8760a; --warn-soft:#fbf0d5; --fail:#b3261e; --fail-soft:#fbe3e1;
+  --radius:10px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.6 'Sarabun','Segoe UI',Tahoma,sans-serif}
+header{background:var(--accent);color:var(--accent-ink);padding:12px 18px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+header b{font-size:18px}
+header span{opacity:.85;font-size:13px}
+main{max-width:1180px;margin:16px auto 60px;padding:0 14px;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:14px;align-items:start}
+@media(max-width:980px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px}
+.card>h2{margin:0 0 8px;font-size:15px;display:flex;align-items:center;gap:8px}
+.card>h2 i{background:var(--accent);color:var(--accent-ink);font-style:normal;font-size:12px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;flex:none}
+.btn{font:inherit;padding:6px 12px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);border-radius:7px;cursor:pointer}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.sm{padding:3px 8px;font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
+label{font-size:13px;color:var(--ink-2)}
+input[type=text],input[type=number]{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);min-width:0}
+.small{font-size:12.5px;color:var(--ink-2)}
+.hint{font-size:12.5px;color:var(--ink-2);background:var(--panel-2);border-radius:7px;padding:7px 10px;margin:6px 0}
+.msg{border-radius:7px;padding:7px 10px;margin:6px 0;font-size:13px}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}.msg.warn{background:var(--warn-soft);color:var(--warn)}.msg.err{background:var(--fail-soft);color:var(--fail)}
+#stage{position:relative;background:#22262a;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;min-height:320px;display:grid;place-items:center}
+#cv{display:block;max-width:100%;cursor:crosshair;touch-action:none}
+#empty{color:#9aa3a8;font-size:14px;text-align:center;padding:60px 20px}
+/* #stage เป็นพื้นเข้มคงที่ทั้งสองธีม — .small ข้างในจึงห้ามใช้ var(--ink-2)
+   ไม่งั้นธีมสว่างจะได้ตัวหนังสือเทาเข้มบนพื้นเข้ม (วัดได้ 2.1:1 อ่านไม่ออก) */
+#empty .small{color:inherit;opacity:.8}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.tools .btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+table.kv{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+table.kv td{padding:3px 0;vertical-align:top}
+table.kv td:first-child{color:var(--ink-2);white-space:nowrap;padding-right:10px}
+table.kv td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:0;margin-bottom:8px;border-bottom:2px solid var(--line)}
+.tabs button{font:inherit;padding:6px 12px;border:0;background:none;color:var(--ink-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px}
+.tabs button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.gcp{display:grid;grid-template-columns:22px 1fr auto;gap:6px;align-items:center;margin:4px 0;font-size:13px}
+.gcp b{background:var(--accent);color:var(--accent-ink);border-radius:50%;width:20px;height:20px;display:grid;place-items:center;font-size:11px}
+ol,ul{margin:6px 0;padding-left:20px;font-size:13px;color:var(--ink-2)}
+li{margin:2px 0}
+code{background:var(--panel-2);padding:1px 5px;border-radius:4px;font-size:12.5px}
+footer{max-width:1180px;margin:0 auto;padding:0 14px 30px;font-size:12px;color:var(--ink-3)}
+.cropbox { display: flex; gap: 10px; align-items: center; margin-top: 8px; padding: 8px 10px; border: 1px solid #3ddc97; border-radius: 8px; background: rgba(61,220,151,.08); }
+.cropbox canvas { max-width: 160px; max-height: 110px; border: 1px solid var(--line); border-radius: 4px; background: #000; }
+.cropbox #cropMsg { font-size: 13px; line-height: 1.5; }
+</style>
+
+<!-- ธีม ASC ENTERPRISES — ต้องมาหลัง <style> ข้างบนเพื่อให้ค่าโทเคนที่นี่ชนะ
+     หน้าแม่ส่งธีมมาทาง ?theme=dark|light · ไม่ส่ง = ตามการตั้งค่าของเครื่อง -->
+<link rel="stylesheet" href="./asc-tokens.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<script>
+  (function () {
+    try {
+      var t = new URLSearchParams(location.search).get('theme');
+      if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+    } catch (e) { /* ไม่ระบุมา = ใช้ prefers-color-scheme */ }
+  })();
+</script>
+</head>
+<body>
+<header>
+  <b>🗺️ Map Fetcher</b>
+  <span>จับภาพแผนที่ที่เห็นบนจอ → สร้างภาพ + world file ให้นำเข้า ASC ENTERPRISES ได้ทันที</span>
+</header>
+
+<main>
+<div>
+  <div class="card">
+    <h2><i>1</i> รับภาพ</h2>
+    <div class="row">
+      <button class="btn primary" id="bCap">📸 จับภาพแท็บเบราว์เซอร์</button>
+      <button class="btn" id="bPaste">📋 วางจากคลิปบอร์ด (Ctrl+V)</button>
+      <label class="btn" style="display:inline-block">📁 เลือกไฟล์ภาพ
+        <input type="file" id="fPick" accept="image/*" style="display:none"></label>
+    </div>
+    <div class="hint">
+      <b>Google Maps</b> — เปิดแท็บ Maps · กดเข็มทิศให้ทิศเหนือขึ้นบน (หรือกด <code>r</code>) · ปิดแผงข้าง ·
+      แล้วกด "จับภาพแท็บ" และ<b>เลือกเป็น "แท็บ Chrome"</b> ไม่ใช่หน้าต่างหรือทั้งหน้าจอ<br>
+      <b>Google Earth Pro</b> — กด <code>u</code> (มองตรงลงล่าง) แล้ว <code>n</code> (ทิศเหนือขึ้นบน) →
+      <code>Win+Shift+S</code> คัดลอกภาพ → กลับมากด "วางจากคลิปบอร์ด"
+    </div>
+    <div id="capMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2><i>2</i> ภาพ / ครอบตัด</h2>
+    <div class="tools" id="toolbar">
+      <button class="btn sm on" data-tool="crop" title="ลากกรอบรอบบ้าน/พื้นที่ที่ต้องการ — ภาพที่ส่งเข้าผังหลังคาหรือบันทึกจะเหลือเฉพาะในกรอบ (ไม่ครอบ = ใช้ทั้งภาพ)">✂️ ลากกรอบครอบตัด</button>
+      <button class="btn sm" data-tool="scale" title="ลากเส้นทับแถบสเกลของ Google Maps (มุมขวาล่าง เช่น 20 m) จากปลายซ้ายถึงปลายขวา แล้วใส่ค่าบนแถบในขั้น 3 — ใช้หาขนาดจริง (เมตร/พิกเซล) เฉพาะเมื่อ URL ลงท้าย z">📏 ลากทาบสเกลบาร์</button>
+      <button class="btn sm" data-tool="gcp" title="คลิกจุดบนภาพที่รู้พิกัดจริง (เช่น มุมรั้ว เสาไฟ) แล้วใส่ lat,lng ในขั้น 3 โหมด B — ใช้กับภาพที่ไม่มี URL (Google Earth / ภาพถ่ายโดรน)">📍 ปักจุดอ้างอิง</button>
+      <button class="btn sm" id="bResetCrop" title="ยกเลิกกรอบครอบตัด ใช้ภาพทั้งหมด">↺ ใช้ทั้งภาพ</button>
+      <button class="btn sm" id="bZoomFit">⤢ พอดีจอ</button>
+    </div>
+    <div id="stage"><div id="empty">ยังไม่มีภาพ — เลือกวิธีรับภาพในขั้น 1<br><span class="small">หน้านี้รับการวาง Ctrl+V ได้ตลอดเวลา</span></div><canvas id="cv" hidden></canvas></div>
+    <div class="small" id="toolHelp" style="margin-top:6px"></div>
+    <div id="cropBox" class="cropbox" hidden><canvas id="cropPrev"></canvas><div id="cropMsg"></div></div>
+    <div class="small" id="cropInfo" style="margin-top:6px"></div>
+  </div>
+</div>
+
+<div>
+  <div class="card">
+    <h2><i>3</i> กำหนดพิกัด</h2>
+    <div class="tabs">
+      <button data-mode="A" class="on">A · URL + สเกลบาร์</button>
+      <button data-mode="B">B · จุดอ้างอิง</button>
+    </div>
+
+    <div id="paneA">
+      <label>วาง URL ของ Google Maps</label>
+      <input type="text" id="mUrl" style="width:100%;margin:4px 0" placeholder="https://www.google.com/maps/@19.5513,99.4942,19z/...">
+      <div id="urlMsg"></div>
+
+      <div class="row" style="margin-top:8px">
+        <span class="small">📏 สเกลบาร์ — <b>จำเป็นเฉพาะเมื่อ URL เป็นแบบ <code>…z</code></b> (มุมมองแผนที่)<br>
+        มุมมองดาวเทียม URL จะเป็นแบบ <code>…m</code> ซึ่งบอกสเกลมาตรง ๆ ไม่ต้องลาก · ลากไว้ก็ได้ ระบบจะใช้ตรวจไขว้ให้</span>
+      </div>
+      <div class="row">
+        <label>ค่าที่เขียนบนแถบ</label>
+        <input type="number" id="sbVal" value="20" step="any" style="width:80px">
+        <select id="sbUnit" style="font:inherit;padding:5px;border:1px solid var(--line);border-radius:6px">
+          <option value="1">ม.</option><option value="1000">กม.</option>
+          <option value="0.3048">ft</option><option value="1609.344">mi</option>
+        </select>
+      </div>
+      <div id="sbMsg"></div>
+
+      <div class="row" style="margin-top:8px">
+        <label style="flex:1">🎯 จุดกึ่งกลางภาพ <span style="color:var(--ink-3)">— เติมให้อัตโนมัติจากลิงก์ที่วางด้านบน ไม่ต้องกรอกเอง</span><br>
+          <span style="color:var(--ink-3)"><b>อยากตรวจความแม่นจริง:</b> เลือกเครื่องมือ 📍 ปักจุดอ้างอิง → คลิกมุมอาคาร/จุดสังเกตในภาพ →
+          คลิกขวาจุดเดียวกันใน Maps คัดลอกพิกัดมาวางในช่องของหมุดนั้น → ได้ความคลาดจริงเป็นเมตร<br>
+          (หรือวางพิกัดจุดกึ่งกลางจริงทับในช่องล่างนี้ ระบบจะเทียบให้)</span></label>
+      </div>
+      <input type="text" id="auditLL" style="width:100%" placeholder="19.5513, 99.4942">
+      <div id="auditMsg"></div>
+    </div>
+
+    <div id="paneB" hidden>
+      <div class="small">เลือกเครื่องมือ <b>📍 ปักจุดอ้างอิง</b> แล้วคลิกบนภาพ จากนั้นวางพิกัดของจุดนั้น<br>
+        Maps: คลิกขวาที่จุดนั้น → คลิกบรรทัดพิกัดเพื่อคัดลอก · Earth Pro: อ่านแถบสถานะด้านล่าง</div>
+      <div id="gcpList"></div>
+      <div class="row"><button class="btn sm" id="bClearGcp">ล้างจุดทั้งหมด</button></div>
+      <div id="gcpMsg"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><i>4</i> ผลลัพธ์ &amp; บันทึก</h2>
+    <div id="resMsg"></div>
+    <table class="kv" id="resTable"></table>
+    <div class="row" style="margin-top:8px">
+      <label>ชื่อไฟล์</label>
+      <input type="text" id="fname" value="map" style="flex:1">
+      <select id="fmt" style="font:inherit;padding:5px;border:1px solid var(--line);border-radius:6px">
+        <option value="png">PNG (แนะนำ)</option><option value="jpg">JPEG</option>
+      </select>
+    </div>
+    <div class="row">
+      <button class="btn primary" id="bSend" hidden>📤 ส่งเข้าผังหลังคา</button>
+      <button class="btn" id="bSave" disabled>💾 บันทึกลงโฟลเดอร์…</button>
+      <button class="btn" id="bDl" disabled>⬇ ดาวน์โหลด 3 ไฟล์</button>
+      <button class="btn sm" id="bSelfTest" title="ตรวจสูตรคณิตภายใน">🧪 ตรวจสูตร</button>
+    </div>
+    <div id="saveMsg"></div>
+    <div class="small" id="cornerOut"></div>
+  </div>
+</div>
+</main>
+
+<footer>
+  ภาพจาก Google Maps / Google Earth อยู่ใต้ข้อกำหนดของ Google ซึ่งจำกัดการนำไปใช้ซ้ำ —
+  ให้คงแถบเครดิต Google ไว้ในภาพเสมอ · ถ้าจะใช้ในเอกสารยื่นขออนุญาตหรืองานขาย
+  ควรใช้ภาพที่มีสิทธิ์ (Esri / MapTiler / Maxar) หรือภาพโดรนของโครงการเอง
+</footer>
+
+<script>
+'use strict';
+/* =====================================================================
+   Map Fetcher — จับภาพแผนที่บนจอ แล้วเขียน world file (หน่วยองศา WGS84)
+
+   ทำไมเขียนเป็น HTML ไม่ใช่ .bat: .bat จับภาพหน้าจอได้ แต่ไม่มีทางรู้ว่า
+   บนจอกำลังแสดงพิกัดอะไร (อ่าน address bar ต้องพึ่ง UI Automation ที่พัง
+   ทุกครั้งที่ Chrome อัปเดต · Earth Pro ไม่มี URL เลย) → เขียน world file
+   ที่ถูกต้องไม่ได้ ซึ่งคือหัวใจของงานนี้
+
+   หน่วยที่ใช้ภายใน: "normalized Mercator" [0,1]² ทั้งโลก
+   ความกว้างของจัตุรัสนี้เป็นพิกเซลของภาพที่จับได้ = S
+   ===================================================================== */
+
+const A_EARTH = 6378137, C_EARTH = 2 * Math.PI * A_EARTH;   // 40075016.6856 m (ระนาบ Mercator)
+const MPP0 = 156543.03392804;                                // เมตรพื้นดิน/CSS px ที่ z=0, lat=0
+const D2R = Math.PI / 180, R2D = 180 / Math.PI;
+
+const xnOf  = (lng) => (lng + 180) / 360;
+const ynOf  = (lat) => (1 - Math.asinh(Math.tan(lat * D2R)) / Math.PI) / 2;
+const lngOf = (xn)  => xn * 360 - 180;
+const latOf = (yn)  => Math.atan(Math.sinh(Math.PI * (1 - 2 * yn))) * R2D;
+
+/* ระยะพื้นดิน — ต้องใช้สูตรระนาบสัมผัส "ทรงรี" ตัวเดียวกับ engine/geo/crs.ts wgs84ToEnu
+   ห้ามใช้ haversine ทรงกลม: ที่ 19.5° รัศมีเมริเดียน M = 6,342,535 ม. ต่างจากรัศมีศูนย์สูตร
+   6,378,137 ม. ถึง 0.56% → ตัวเลขที่เครื่องมือแสดงจะไม่ตรงกับที่แอปอ่านได้ (ผู้ใช้จะนึกว่าพัง) */
+const FLAT = 1 / 298.257223563, E2 = FLAT * (2 - FLAT);
+function radii(latDeg) {
+  const s = Math.sin(latDeg * D2R), q = 1 - E2 * s * s;
+  return { rn: A_EARTH / Math.sqrt(q), rm: A_EARTH * (1 - E2) / q ** 1.5 };
+}
+function distM(a, b) {
+  const { rn, rm } = radii((a.lat + b.lat) / 2);
+  const dE = (b.lng - a.lng) * D2R * rn * Math.cos((a.lat + b.lat) / 2 * D2R);
+  const dN = (b.lat - a.lat) * D2R * rm;
+  return Math.hypot(dE, dN);
+}
+
+/* อ่านพิกัด "lat, lng" โดย **เก็บทศนิยมครบ** (ห้ามปัด — Google ให้ 7 ตำแหน่ง
+   ปัดเหลือ 6 = คลาด 11 ซม./จุด ซึ่งขยายเป็นครึ่งเมตรเมื่อฐานจุดอ้างอิงสั้น) */
+function parseLL(s) {
+  const m = String(s || '').match(/(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)/);
+  if (!m) return null;
+  let lat = +m[1], lng = +m[2];
+  if (Math.abs(lat) > 90 && Math.abs(lng) <= 90) { const t = lat; lat = lng; lng = t; }
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat, lng };
+}
+
+/* อ่าน URL Google Maps แบบเข้มงวด — รับ 2 รูปแบบที่เป็นภาพมองตรงลงล่างเท่านั้น
+     @lat,lng,<ทศนิยม>z  = โหมดแผนที่ (zoom level · ต้องหา dpr เพิ่มจากสเกลบาร์)
+     @lat,lng,<ทศนิยม>m  = โหมดดาวเทียม · m คือ **ความสูงของหน้าต่างแผนที่เป็นเมตร**
+        (พิสูจน์แล้ว: viewport 500 css px ที่ z18 ละติจูด 19.55 → 281m ซึ่ง 281/500 = 0.562
+         = 156543.03·cos φ/2^18 พอดี) → ได้สเกลตรง ๆ โดยไม่ต้องรู้ dpr หรือ zoom เลย
+   ปฏิเสธ 150a,35y,0h,45t (กล้อง 3 มิติ/เอียง)
+   และห้าม fallback ไป !3d/!4d เด็ดขาด — นั่นคือพิกัดของ "สถานที่" ไม่ใช่จุดกึ่งกลางกล้อง */
+function parseMapsUrl(u) {
+  let s = String(u || '').trim().replace(/\s+/g, '');
+  if (!s) return { err: '', empty: true };
+  try { if (/%40|%2C/i.test(s)) s = decodeURIComponent(s); } catch { /* ใช้ข้อความเดิม */ }
+  const at = s.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?),([^/?]+)/);
+  if (!at) return { err: /goo\.gl|maps\.app/.test(s)
+    ? 'ลิงก์ย่อ (maps.app.goo.gl) ไม่มีพิกัด — เปิดลิงก์นั้นในเบราว์เซอร์ก่อน แล้วคัดลอก URL เต็มจากช่องที่อยู่ (มี @ละติจูด,ลองจิจูด,…)'
+    : 'อ่าน URL ไม่ได้ — ต้องมีส่วน @ละติจูด,ลองจิจูด,... เช่น @19.5513,99.4942,19z' };
+  const lat = +at[1], lng = +at[2], tail = at[3];
+  const tilt = tail.match(/(\d+(?:\.\d+)?)t/);
+  if (tilt && +tilt[1] !== 0)
+    return { err: `URL บอกว่ากล้องเอียงอยู่ ${tilt[1]}° — กดเข็มทิศหรือปุ่ม 3D ให้มองตรงลงล่างก่อน แล้วคัดลอก URL ใหม่` };
+  const head = tail.match(/(\d+(?:\.\d+)?)(z|m|a)/);
+  if (!head) return { err: 'อ่านซูมจาก URL ไม่ได้ — ต้องลงท้ายด้วย z (แผนที่) หรือ m (ดาวเทียม)' };
+  if (head[2] === 'a')
+    return { err: 'URL นี้เป็นกล้องโลก 3 มิติ (ลงท้าย a) — ปิด 3D แล้วคัดลอก URL ใหม่' };
+  // /maps/place/ · /maps/search/ · /maps/dir/ = แผงข้างเปิดอยู่ → Maps เลื่อนจุดกึ่งกลางแผนที่
+  // ไปทางขวาให้พ้นแผง จุดกึ่งกลางเฟรมจึงไม่ใช่ @lat,lng อีกต่อไป (คลาดได้หลายสิบเมตร)
+  const panel = /\/maps\/(place|search|dir)\//.test(s);
+  if (head[2] === 'm') return { lat, lng, mH: +head[1], panel };
+  return { lat, lng, z: +head[1], panel };
+}
+
+/* ---------------- สถานะ ---------------- */
+const st = {
+  bmp: null, W: 0, H: 0,
+  tabCapture: false,          // true เท่านั้นจึงเปิดโหมด A ได้
+  crop: null,                 // {u0,v0,w,h} จำนวนเต็ม พิกัดเฟรมเต็ม
+  mode: 'A', tool: 'crop',
+  url: null,                  // {lat,lng,z}
+  sb: null,                   // {x1,y1,x2,y2} พิกัดเฟรมเต็ม
+  audit: null, auditAuto: true,   // auditAuto = ค่าในช่องตรวจถูกเติมจากลิงก์ (ยังไม่ได้ตรวจจริง)
+  gcps: [],                   // [{u,v,lat,lng}]
+  view: { s: 1, ox: 0, oy: 0 },
+  drag: null,
+};
+const $ = (id) => document.getElementById(id);
+const setMsg = (el, kind, html) => { $(el).innerHTML = html ? `<div class="msg ${kind}">${html}</div>` : ''; };
+
+/* ---------------- ขั้น 1 · รับภาพ ---------------- */
+async function useBitmap(bmp, fromTab) {
+  st.bmp = bmp; st.W = bmp.width; st.H = bmp.height;
+  st.tabCapture = !!fromTab;
+  st.crop = { u0: 0, v0: 0, w: st.W, h: st.H };
+  st.sb = null; st.audit = null; st.gcps = [];
+  $('empty').hidden = true; $('cv').hidden = false;
+  fitView(); draw(); recompute();
+  if (!fromTab) {
+    setMode('B');
+    setMsg('capMsg', 'warn', 'ภาพนี้ไม่ได้มาจากการจับแท็บ → ใช้ได้เฉพาะ <b>โหมด B (จุดอ้างอิง)</b> ' +
+      'เพราะจุดกึ่งกลางของภาพที่ตัดมาแล้วไม่ใช่จุดกึ่งกลางของแผนที่');
+  }
+}
+
+/* รอแบบมีเพดานเวลาเสมอ — ทุกจุดที่รอเหตุการณ์จากเบราว์เซอร์ต้องหลุดออกมาได้
+   ไม่งั้นหน้าจะค้างที่ "กำลังขอสิทธิ์…" โดยผู้ใช้ไม่รู้ว่าเกิดอะไรขึ้น */
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT')), ms))]);
+
+$('bCap').onclick = async () => {
+  setMsg('capMsg', 'ok', 'กำลังขอสิทธิ์จับภาพ… <b>Chrome จะเด้งกล่องให้เลือกแท็บ</b><br>' +
+    'ถ้าไม่เห็นกล่อง ลองดูหน้าต่างอื่น/ทาสก์บาร์ · ถ้าไม่มีเลย แปลว่าเบราว์เซอร์บล็อกการแชร์หน้าจอไว้');
+  let stream = null, watchdog = 0;
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia)
+      throw new Error('เบราว์เซอร์นี้ไม่มีฟังก์ชันจับภาพหน้าจอ — ต้องเปิดด้วย Chrome หรือ Edge บนคอมพิวเตอร์ (หน้าที่ฝังอยู่ในแอปอื่นมักถูกปิดไว้)');
+    // หมายเหตุ: ฝังใน iframe จับภาพได้ถ้า iframe ประกาศ allow="display-capture" (เมนูในแอปทำไว้แล้ว)
+    // ถ้าไม่ได้ประกาศ เบราว์เซอร์จะโยน NotAllowedError ซึ่งจับไว้ข้างล่างพร้อมบอกให้เปิดเป็นแท็บ
+    // ถ้ากล่องของ Chrome ไม่เด้ง ผู้ใช้จะเห็นแค่ข้อความค้าง — ตั้งนาฬิกาเตือนไว้บอกให้รู้ว่าต้องทำอะไร
+    watchdog = setTimeout(() => setMsg('capMsg', 'warn',
+      'รอคุณเลือกแท็บในกล่องของ Chrome อยู่ (เกิน 20 วินาทีแล้ว)<br>' +
+      '· ถ้ากล่องซ่อนอยู่หลังหน้าต่างอื่น ให้สลับไปหาแล้วเลือก <b>"แท็บ Chrome"</b> → แท็บ Google Maps → <b>แชร์</b><br>' +
+      '· ถ้าไม่มีกล่องเลย แปลว่าการแชร์หน้าจอถูกบล็อก — กดไอคอนซ้ายของช่อง URL → สิทธิ์ของเว็บไซต์ แล้วอนุญาต'), 20000);
+    // ห้ามใส่ constraint width/height — Chrome จะย่อ+ใส่แถบดำ ทำให้จุดกึ่งกลางเฟรมเพี้ยน
+    stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'browser' }, audio: false });
+    clearTimeout(watchdog); watchdog = 0;
+    const track = stream.getVideoTracks()[0];
+    const surface = (track.getSettings() || {}).displaySurface;
+    setMsg('capMsg', 'ok', `ได้สิทธิ์แล้ว (${surface || 'ไม่ทราบชนิด'}) — กำลังรอเฟรมภาพจากแท็บ…`);
+    const v = document.createElement('video');
+    v.srcObject = stream; v.muted = true; v.playsInline = true;
+    try { await withTimeout(new Promise((r) => { v.onloadedmetadata = r; }), 5000); } catch { /* ใช้ videoWidth ที่มีอยู่ต่อไป */ }
+    try { await withTimeout(v.play(), 3000); } catch { /* บางเบราว์เซอร์ resolve ช้า แต่เฟรมมาแล้ว */ }
+
+    // เฟรมแรก ๆ ของการจับแท็บมักยังไม่ทันวาด (ได้ภาพดำล้วน) — ต้องรอจนกว่าจะมีเนื้อภาพจริง
+    // ห้ามเหมาว่า "ดำ = letterbox" แล้วล้มเลย นั่นคือสาเหตุที่ผู้ใช้เจอ error ทั้งที่ไม่มีอะไรผิด
+    const nextFrame = (ms) => new Promise((r) => {
+      let done = false; const fin = () => { if (!done) { done = true; r(); } };
+      if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(fin); else requestAnimationFrame(fin);
+      setTimeout(fin, ms);                                   // กันกรณี callback ไม่ยิงเลย
+    });
+    let c = null, bars = null;
+    const t0 = Date.now();
+    for (let i = 0; Date.now() - t0 < 8000; i++) {
+      await nextFrame(250);
+      if (i < 2) continue;
+      if (!v.videoWidth || !v.videoHeight) continue;
+      c = document.createElement('canvas');
+      c.width = v.videoWidth; c.height = v.videoHeight;       // ขนาดเนทีฟ ไม่ใช่ getSettings ที่ตามหลัง
+      c.getContext('2d').drawImage(v, 0, 0);
+      bars = blackBars(c);
+      setMsg('capMsg', 'ok', `กำลังรอเฟรมภาพ… (${((Date.now() - t0) / 1000).toFixed(1)} วิ · ${c.width}×${c.height})`);
+      if (!bars.allBlack) break;
+    }
+    track.stop(); stream.getTracks().forEach((t) => t.stop()); stream = null;
+    if (!c) throw new Error('ไม่ได้เฟรมภาพเลยภายใน 8 วินาที — แท็บที่แชร์อาจถูกย่อเก็บไว้ · เปิดแท็บ Maps ค้างไว้ให้เห็นแล้วลองใหม่');
+    if (bars.allBlack) throw new Error('ภาพที่ได้ดำทั้งแผ่น — แท็บที่แชร์อาจถูกย่อเก็บไว้ (minimize) หรือยังไม่ทันวาด · เปิดแท็บ Maps ค้างไว้ให้เห็นแล้วลองใหม่');
+
+    const isTab = surface === 'browser';
+    let trimNote = '', modeA = isTab;
+    if (bars.top || bars.bottom || bars.left || bars.right) {
+      // มีแถบดำจริง = Chrome ย่อภาพลงกรอบอื่น · ตัดแถบทิ้งแล้วใช้เฉพาะพื้นที่ภาพจริง
+      // (สเกลของโหมด A คิดจากความสูงพื้นที่แผนที่ จึงต้องตัดก่อน ไม่งั้นสเกลผิดตามสัดส่วนแถบ)
+      const off = Math.abs(bars.top - bars.bottom) > 2 || Math.abs(bars.left - bars.right) > 2;
+      const iw = c.width - bars.left - bars.right, ih = c.height - bars.top - bars.bottom;
+      if (iw < 50 || ih < 50) throw new Error('พื้นที่ภาพที่ไม่ใช่แถบดำเล็กเกินไป — ลองจับใหม่');
+      const c2 = document.createElement('canvas'); c2.width = iw; c2.height = ih;
+      c2.getContext('2d').drawImage(c, bars.left, bars.top, iw, ih, 0, 0, iw, ih);
+      c = c2;
+      trimNote = ` · ตัดแถบดำออก ${bars.top}/${bars.bottom}/${bars.left}/${bars.right} px`;
+      if (off) { modeA = false; trimNote += ' ⚠️ แถบดำไม่สมมาตร จุดกึ่งกลางภาพจึงเชื่อไม่ได้ → ใช้โหมด B'; }
+    }
+
+    const bmp = await createImageBitmap(c);
+    await useBitmap(bmp, modeA);
+    if (modeA) setMsg('capMsg', 'ok', `จับภาพแท็บสำเร็จ ${bmp.width}×${bmp.height} px${trimNote} — ใช้ได้ทั้งโหมด A และ B`);
+    else if (isTab) setMsg('capMsg', 'warn', `จับภาพได้ ${bmp.width}×${bmp.height} px${trimNote}`);
+    else setMsg('capMsg', 'warn', `คุณแชร์เป็น "${surface || 'ไม่ทราบ'}" ไม่ใช่แท็บ → ภาพมีขอบเบราว์เซอร์/ระบบปนมา ` +
+      'จุดกึ่งกลางเฟรมจึงไม่ใช่จุดกึ่งกลางแผนที่ → <b>ใช้ได้เฉพาะโหมด B</b> (จับใหม่แล้วเลือก "แท็บ Chrome" ถ้าต้องการโหมด A)');
+  } catch (e) {
+    if (watchdog) clearTimeout(watchdog);
+    if (stream) stream.getTracks().forEach((t) => t.stop());
+    const name = e && e.name;
+    const m = name === 'NotAllowedError' ? ('ไม่ได้รับอนุญาต — กดยกเลิกในกล่องเลือกแท็บ หรือการแชร์หน้าจอถูกบล็อกไว้'
+        + (window.self !== window.top ? ' · หน้านี้ฝังอยู่ในแอป ลองกด "↗ เปิดในแท็บใหม่" ด้านบนแล้วจับภาพจากที่นั่น' : ''))
+      : name === 'NotFoundError' ? 'ไม่พบแหล่งภาพให้แชร์'
+      : name === 'NotReadableError' ? 'ระบบปฏิบัติการไม่ยอมให้อ่านภาพหน้าจอ (Windows: ตั้งค่า → ความเป็นส่วนตัว → การบันทึกหน้าจอ)'
+      : (e && e.message ? e.message : String(e));
+    setMsg('capMsg', 'err', 'จับภาพไม่สำเร็จ: ' + m +
+      '<br><span style="color:var(--ink-2)">ใช้ทางอื่นแทนได้: กด <code>Win+Shift+S</code> คร่อมพื้นที่แผนที่ แล้วกด <b>📋 วางจากคลิปบอร์ด</b> — ' +
+      'ภาพแบบนี้ใช้ <b>โหมด B (จุดอ้างอิง)</b> ซึ่งแม่นกว่าโหมด A ด้วยซ้ำ</span>');
+  }
+};
+
+/* นับแถบดำที่ขอบแต่ละด้าน (letterbox) — แยกกรณี "ดำทั้งแผ่น" ออกจาก "มีแถบดำ" ให้ชัด
+   เพราะเฟรมดำล้วนคือเฟรมที่ยังไม่ทันวาด ไม่ใช่ letterbox */
+function blackBars(c) {
+  const g = c.getContext('2d');
+  const dark = (d) => { for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 24) return false; return true; };
+  const row = (y) => dark(g.getImageData(0, y, c.width, 1).data);
+  const col = (x) => dark(g.getImageData(x, 0, 1, c.height).data);
+  let top = 0; while (top < c.height && row(top)) top++;
+  if (top >= c.height) return { allBlack: true };
+  let bottom = 0; while (bottom < c.height - top - 1 && row(c.height - 1 - bottom)) bottom++;
+  let left = 0; while (left < c.width && col(left)) left++;
+  let right = 0; while (right < c.width - left - 1 && col(c.width - 1 - right)) right++;
+  return { allBlack: false, top, bottom, left, right };
+}
+
+$('bPaste').onclick = async () => {
+  try {
+    const items = await navigator.clipboard.read();
+    for (const it of items) {
+      const type = it.types.find((t) => t.startsWith('image/'));
+      if (type) { await useBitmap(await createImageBitmap(await it.getType(type)), false); return; }
+    }
+    setMsg('capMsg', 'warn', 'ไม่พบภาพในคลิปบอร์ด — คัดลอกภาพก่อน (Win+Shift+S) แล้วลองใหม่ หรือกด Ctrl+V บนหน้านี้');
+  } catch (e) { setMsg('capMsg', 'warn', 'อ่านคลิปบอร์ดไม่ได้ — กด Ctrl+V บนหน้านี้แทน (' + e.name + ')'); }
+};
+window.addEventListener('paste', async (e) => {
+  const f = [...(e.clipboardData ? e.clipboardData.files : [])][0];
+  if (f && f.type.startsWith('image/')) { e.preventDefault(); await useBitmap(await createImageBitmap(f), false); }
+});
+$('fPick').onchange = async (e) => {
+  const f = e.target.files[0]; if (f) await useBitmap(await createImageBitmap(f), false); e.target.value = '';
+};
+
+/* ---------------- วาดภาพ + เครื่องมือบนภาพ ---------------- */
+const cv = $('cv'), ctx = cv.getContext('2d');
+function fitView() {
+  const maxW = Math.min(820, ($('stage').clientWidth || 820) - 2), maxH = 560;
+  st.view.s = Math.min(maxW / st.W, maxH / st.H, 1);
+  cv.width = Math.round(st.W * st.view.s); cv.height = Math.round(st.H * st.view.s);
+}
+const toDisp = (u, v) => ({ x: u * st.view.s, y: v * st.view.s });
+const toImg = (ev) => {
+  const r = cv.getBoundingClientRect();
+  return { u: (ev.clientX - r.left) * (cv.width / r.width) / st.view.s,
+           v: (ev.clientY - r.top) * (cv.height / r.height) / st.view.s };
+};
+
+function draw() {
+  if (!st.bmp) return;
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.drawImage(st.bmp, 0, 0, cv.width, cv.height);
+  const c = st.crop;
+  if (c && (c.u0 || c.v0 || c.w !== st.W || c.h !== st.H)) {
+    const p = toDisp(c.u0, c.v0), q = toDisp(c.u0 + c.w, c.v0 + c.h);
+    ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.62)';
+    ctx.beginPath(); ctx.rect(0, 0, cv.width, cv.height);
+    ctx.rect(p.x, p.y, q.x - p.x, q.y - p.y); ctx.fill('evenodd'); ctx.restore();
+    ctx.strokeStyle = '#3ddc97'; ctx.lineWidth = 2.5; ctx.strokeRect(p.x, p.y, q.x - p.x, q.y - p.y);
+  }
+  if (st.tabCapture && st.mode === 'A') {           // กากบาทจุดกึ่งกลางเฟรม = จุดกึ่งกลางแผนที่
+    const m = toDisp(st.W / 2, st.H / 2);
+    ctx.strokeStyle = '#ff5d5d'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(m.x - 14, m.y); ctx.lineTo(m.x + 14, m.y);
+    ctx.moveTo(m.x, m.y - 14); ctx.lineTo(m.x, m.y + 14); ctx.stroke();
+    ctx.beginPath(); ctx.arc(m.x, m.y, 7, 0, 7); ctx.stroke();
+  }
+  if (st.sb) {
+    const a = toDisp(st.sb.x1, st.sb.y1), b = toDisp(st.sb.x2, st.sb.y2);
+    ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3; ctx.beginPath();
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  st.gcps.forEach((g, i) => {
+    const p = toDisp(g.u, g.v);
+    ctx.fillStyle = g.lat == null ? '#ff9f43' : '#3ddc97';
+    ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#000'; ctx.font = 'bold 11px sans-serif';
+    ctx.fillText(String(i + 1), p.x + 8, p.y - 6);
+    ctx.fillStyle = '#fff'; ctx.fillText(String(i + 1), p.x + 9, p.y - 7);
+  });
+}
+
+cv.addEventListener('pointerdown', (e) => {
+  if (!st.bmp) return;
+  const p = toImg(e);
+  if (st.tool === 'gcp') {
+    st.gcps.push({ u: Math.round(p.u), v: Math.round(p.v), lat: null, lng: null });
+    renderGcps(); draw(); recompute(); return;
+  }
+  cv.setPointerCapture(e.pointerId);
+  st.drag = { x1: p.u, y1: p.v, x2: p.u, y2: p.v };
+});
+cv.addEventListener('pointermove', (e) => {
+  if (!st.drag) return;
+  const p = toImg(e); st.drag.x2 = p.u; st.drag.y2 = p.v;
+  if (st.tool === 'crop') st.crop = rectOf(st.drag);
+  else st.sb = { x1: st.drag.x1, y1: st.drag.y1, x2: st.drag.x2, y2: st.drag.y2 };
+  draw();
+});
+cv.addEventListener('pointerup', () => {
+  if (!st.drag) return;
+  if (st.tool === 'crop') {
+    const r = rectOf(st.drag);
+    st.crop = (r.w >= 20 && r.h >= 20) ? r : { u0: 0, v0: 0, w: st.W, h: st.H };
+  }
+  st.drag = null; draw(); recompute();
+});
+/* ปัดกรอบเป็นจำนวนเต็มเสมอ — กรอบเศษส่วนทำให้ drawImage รีแซมเปิลจนกริดพิกเซลไม่ตรงกับ affine */
+function rectOf(d) {
+  const u0 = Math.max(0, Math.round(Math.min(d.x1, d.x2))), v0 = Math.max(0, Math.round(Math.min(d.y1, d.y2)));
+  const u1 = Math.min(st.W, Math.round(Math.max(d.x1, d.x2))), v1 = Math.min(st.H, Math.round(Math.max(d.y1, d.y2)));
+  return { u0, v0, w: Math.max(1, u1 - u0), h: Math.max(1, v1 - v0) };
+}
+$('bResetCrop').onclick = () => { if (st.bmp) { st.crop = { u0: 0, v0: 0, w: st.W, h: st.H }; draw(); recompute(); } };
+$('bZoomFit').onclick = () => { if (st.bmp) { fitView(); draw(); } };
+const TOOL_HELP = {
+  crop: '✂️ <b>ครอบตัด</b>: ลากกรอบรอบบ้านที่จะออกแบบ (ให้เผื่อรอบ ๆ เล็กน้อย) — ภาพที่ <b>ส่งเข้าผังหลังคา/บันทึก</b> จะเหลือเฉพาะในกรอบเขียว ภาพเล็กลง โหลดเร็ว · ไม่ลาก = ใช้ทั้งภาพ · ↺ ใช้ทั้งภาพ = ยกเลิกกรอบ',
+  scale: '📏 <b>สเกลบาร์</b> = แถบวัดระยะที่มุมขวาล่างของ Google Maps (เช่น ━━ 20 m) · ลากเส้นทับแถบจาก <b>ปลายซ้ายถึงปลายขวาพอดี</b> แล้วใส่ตัวเลขที่เขียนบนแถบในขั้น 3 → โปรแกรมรู้ว่า 1 พิกเซล = กี่เมตร (ใช้ให้ขนาดบ้านบนผังถูกต้อง) · <b>จำเป็นเฉพาะ URL ที่ลงท้าย z</b> (มุมมองแผนที่) · มุมมองดาวเทียม URL ลงท้าย m ไม่ต้องลาก (ลากไว้ = ใช้ตรวจไขว้)',
+  gcp: '📍 <b>จุดอ้างอิง</b>: คลิกจุดบนภาพที่รู้พิกัดจริงอย่างน้อย 2–3 จุดให้ห่างกัน (มุมรั้ว เสาไฟ หัวมุมถนน) แล้วใส่ lat,lng ในขั้น 3 โหมด B — ใช้กับภาพที่ไม่มี URL เช่น Google Earth หรือโดรน',
+};
+function showToolHelp() { $('toolHelp').innerHTML = TOOL_HELP[st.tool] ?? ''; }
+$('toolbar').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-tool]'); if (!b) return;
+  st.tool = b.dataset.tool;
+  [...document.querySelectorAll('#toolbar button[data-tool]')].forEach((x) => x.classList.toggle('on', x === b));
+  showToolHelp();
+});
+showToolHelp();
+/* ยืนยันการครอบตัดให้เห็นชัด: ภาพตัวอย่างเฉพาะในกรอบ + ขนาด (พิกเซล · เมตรถ้ารู้สเกลแล้ว) */
+function showCrop(groundWH) {
+  const c = st.crop, box = $('cropBox');
+  const full = !c || (!c.u0 && !c.v0 && c.w === st.W && c.h === st.H);
+  if (!st.bmp || full) { box.hidden = true; return; }
+  box.hidden = false;
+  const pv = $('cropPrev'), k = Math.min(160 / c.w, 110 / c.h, 1);
+  pv.width = Math.max(1, Math.round(c.w * k)); pv.height = Math.max(1, Math.round(c.h * k));
+  pv.getContext('2d').drawImage(st.bmp, c.u0, c.v0, c.w, c.h, 0, 0, pv.width, pv.height);
+  $('cropMsg').innerHTML = `✂️ <b>ครอบตัดแล้ว</b> — ภาพที่ส่งเข้าผังหลังคา/บันทึกจะเป็นเฉพาะส่วนนี้ (${c.w}×${c.h} px${groundWH ? ` ≈ <b>${groundWH[0].toFixed(1)} × ${groundWH[1].toFixed(1)} ม.</b>` : ''})<br>` +
+    (RESULT ? 'ขั้นต่อไป: กด <b>📤 ส่งเข้าผังหลังคา</b> ด้านล่าง' : 'ขั้นต่อไป: กำหนดพิกัดในขั้น 3 (วาง URL ของ Google Maps) แล้วกด 📤 ส่งเข้าผังหลังคา');
+}
+
+/* ---------------- สลับโหมด ---------------- */
+function setMode(m) {
+  st.mode = m;
+  [...document.querySelectorAll('.tabs button')].forEach((b) => b.classList.toggle('on', b.dataset.mode === m));
+  $('paneA').hidden = m !== 'A'; $('paneB').hidden = m !== 'B';
+  draw(); recompute();
+}
+document.querySelector('.tabs').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-mode]'); if (b) setMode(b.dataset.mode);
+});
+
+['sbVal', 'sbUnit'].forEach((id) => $(id).addEventListener('input', recompute));
+
+/* วาง URL ครั้งเดียวจบ — สกัดพิกัดจาก @lat,lng ในลิงก์มาเติมช่องตรวจให้เลย
+   ผู้ใช้ไม่ต้องกลับไปคลิกขวาใน Maps อีกรอบ
+   แต่ต้องพูดตรง ๆ ว่าค่าที่เติมให้มาจากลิงก์เดียวกัน การเทียบจึงเป็นการเทียบกับตัวเอง
+   = ไม่ได้ตรวจอะไรเลย · การตรวจจริงคือปักหมุด 📍 (ดูในขั้น 3) */
+function showUrlMsg() {
+  const u = parseMapsUrl($('mUrl').value);
+  if (u.empty) setMsg('urlMsg', '', '');
+  else if (u.err) setMsg('urlMsg', 'err', u.err);
+  else setMsg('urlMsg', u.panel ? 'warn' : 'ok', u.mH != null ? `อ่านได้ ✓ กึ่งกลาง ${u.lat}, ${u.lng} · ความสูงหน้าต่างแผนที่ ${u.mH} ม. (โหมดดาวเทียม)` : `อ่านได้ ✓ กึ่งกลาง ${u.lat}, ${u.lng} · ซูม ${u.z} (โหมดแผนที่)`);
+  return u;
+}
+$('mUrl').addEventListener('input', () => {
+  const u = showUrlMsg();
+  if (!u.err && !u.empty) { $('auditLL').value = `${u.lat}, ${u.lng}`; st.auditAuto = true; }
+  recompute();
+});
+$('auditLL').addEventListener('input', () => { st.auditAuto = false; recompute(); });
+
+/* ---------------- จุดอ้างอิง (โหมด B) ---------------- */
+function renderGcps() {
+  $('gcpList').innerHTML = st.gcps.map((g, i) =>
+    `<div class="gcp"><b>${i + 1}</b>` +
+    `<input type="text" data-i="${i}" value="${g.lat == null ? '' : g.lat + ', ' + g.lng}" placeholder="วางพิกัดของจุดที่ ${i + 1}">` +
+    `<button class="btn sm" data-del="${i}">✕</button></div>`).join('') ||
+    '<div class="small">ยังไม่มีจุด — เลือกเครื่องมือ 📍 แล้วคลิกบนภาพ</div>';
+}
+$('gcpList').addEventListener('input', (e) => {
+  const i = e.target.dataset.i; if (i == null) return;
+  const ll = parseLL(e.target.value);
+  st.gcps[+i].lat = ll ? ll.lat : null; st.gcps[+i].lng = ll ? ll.lng : null;
+  draw(); recompute();
+});
+$('gcpList').addEventListener('click', (e) => {
+  const i = e.target.dataset.del; if (i == null) return;
+  st.gcps.splice(+i, 1); renderGcps(); draw(); recompute();
+});
+$('bClearGcp').onclick = () => { st.gcps = []; renderGcps(); draw(); recompute(); };
+renderGcps();
+
+/* =====================================================================
+   แก้สมการ pixel → normalized Mercator
+   ทำในกรอบเมตริก (Mercator เป็น conformal) ไม่ใช่หน่วยองศาโดยตรง
+   เพราะองศาไม่ isotropic — similarity บนพื้นดินไม่ใช่ similarity ในองศา
+   กติกาความแม่น: จำนวนจุดพอดีคำตอบ = ห้ามรายงานค่าความคลาดใด ๆ
+   (ศูนย์โดยโครงสร้าง ไม่ใช่เพราะแม่น — ตรงกับ engine/geo/gcp-transform.ts)
+   ===================================================================== */
+function solveFromGcps(pts) {
+  const n = pts.length;
+  const src = pts.map((p) => ({ x: p.u, y: p.v }));
+  const dst = pts.map((p) => ({ x: xnOf(p.lng), y: ynOf(p.lat) }));
+  let fn, method, assessable;
+  if (n === 2) {
+    method = 'Helmert (เลื่อน+หมุน+ย่อขยาย)'; assessable = false;
+    const vs = { x: src[1].x - src[0].x, y: src[1].y - src[0].y };
+    const vt = { x: dst[1].x - dst[0].x, y: dst[1].y - dst[0].y };
+    const L = vs.x * vs.x + vs.y * vs.y;
+    if (L < 1e-9) throw new Error('จุดอ้างอิงสองจุดอยู่ตำแหน่งเดียวกันบนภาพ');
+    const a = (vs.x * vt.x + vs.y * vt.y) / L, b = (vs.x * vt.y - vs.y * vt.x) / L;
+    const tx = dst[0].x - (a * src[0].x - b * src[0].y), ty = dst[0].y - (b * src[0].x + a * src[0].y);
+    fn = (p) => ({ x: a * p.x - b * p.y + tx, y: b * p.x + a * p.y + ty });
+  } else {
+    method = n === 3 ? 'Affine (3 จุด)' : `Affine กำลังสองน้อยสุด (${n} จุด)`;
+    assessable = n > 3;
+    const S = normalEq(src, dst);
+    fn = (p) => ({ x: S.ax * p.x + S.bx * p.y + S.cx, y: S.ay * p.x + S.by * p.y + S.cy });
+  }
+  let rmse = null, residuals = null;
+  if (assessable) {
+    residuals = pts.map((p, i) => {
+      const f = fn(src[i]);
+      // normalized → เมตรพื้นดิน: หน่วย 1 = C_EARTH เมตรระนาบ · คูณ cos(lat) เป็นพื้นดิน
+      const k = C_EARTH * Math.cos(p.lat * D2R);
+      return Math.hypot(f.x - dst[i].x, f.y - dst[i].y) * k;
+    });
+    rmse = Math.sqrt(residuals.reduce((s, r) => s + r * r, 0) / n);
+  }
+  return { fn, method, rmse, residuals };
+}
+/* affine 6 พารามิเตอร์ด้วยสมการปกติ (3×3 สองชุด ใช้ normal equations) */
+function normalEq(src, dst) {
+  let Sxx = 0, Sxy = 0, Sx = 0, Syy = 0, Sy = 0, S1 = src.length;
+  let Tx = 0, Ty = 0, Txx = 0, Txy = 0, Tyx = 0, Tyy = 0;
+  for (let i = 0; i < src.length; i++) {
+    const p = src[i], q = dst[i];
+    Sxx += p.x * p.x; Sxy += p.x * p.y; Syy += p.y * p.y; Sx += p.x; Sy += p.y;
+    Txx += p.x * q.x; Txy += p.y * q.x; Tx += q.x;
+    Tyx += p.x * q.y; Tyy += p.y * q.y; Ty += q.y;
+  }
+  const M = [[Sxx, Sxy, Sx], [Sxy, Syy, Sy], [Sx, Sy, S1]];
+  const sx = solve3(M, [Txx, Txy, Tx]), sy = solve3(M, [Tyx, Tyy, Ty]);
+  return { ax: sx[0], bx: sx[1], cx: sx[2], ay: sy[0], by: sy[1], cy: sy[2] };
+}
+function solve3(Min, v) {
+  const M = Min.map((r, i) => [...r, v[i]]);
+  for (let c = 0; c < 3; c++) {
+    let p = c; for (let r = c + 1; r < 3; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    if (Math.abs(M[p][c]) < 1e-14) throw new Error('จุดอ้างอิงเรียงเป็นเส้นตรง — กระจายจุดให้ครอบคลุมภาพ');
+    [M[c], M[p]] = [M[p], M[c]];
+    for (let r = 0; r < 3; r++) if (r !== c) {
+      const f = M[r][c] / M[c][c];
+      for (let k = c; k < 4; k++) M[r][k] -= f * M[c][k];
+    }
+  }
+  return [M[0][3] / M[0][0], M[1][3] / M[1][1], M[2][3] / M[2][2]];
+}
+
+/* =====================================================================
+   คำนวณผล — ได้ฟังก์ชัน pixel(เฟรมเต็ม) → {lat,lng} แล้วออกเป็น world file
+   ===================================================================== */
+let RESULT = null;
+
+function recompute() {
+  st.cropGround = null;
+  try { recomputeInner(); } finally { showCrop(st.cropGround); }
+}
+function recomputeInner() {
+  RESULT = null; $('bSave').disabled = true; $('bDl').disabled = true; $('bSend').disabled = true;
+  $('resTable').innerHTML = ''; $('cornerOut').textContent = '';
+  if (!st.bmp) { setMsg('resMsg', 'warn', 'ยังไม่มีภาพ'); return; }
+  const c = st.crop;
+  $('cropInfo').textContent = `ภาพ ${st.W}×${st.H} px · ครอบตัด ${c.w}×${c.h} px ที่มุม (${c.u0}, ${c.v0})`;
+
+  let toLL = null, note = '', extra = [];
+  try {
+    if (st.mode === 'A') {
+      if (!st.tabCapture) throw new Error('โหมด A ใช้ได้เฉพาะภาพที่จับจาก "แท็บเบราว์เซอร์" เท่านั้น — สลับไปโหมด B');
+      const u = parseMapsUrl($('mUrl').value);
+      if (u.empty) { setMsg('urlMsg', 'warn', 'วาง URL ของ Google Maps จากช่องที่อยู่ของแท็บที่จับภาพ (มี @ละติจูด,ลองจิจูด,…)'); throw new Error('ยังไม่ได้วาง URL'); }
+      if (u.err) { setMsg('urlMsg', 'err', u.err); throw new Error('ยังอ่าน URL ไม่ได้'); }
+      st.url = u;
+      const head1 = u.mH != null
+        ? `กึ่งกลาง ${u.lat}, ${u.lng} · ความสูงหน้าต่างแผนที่ ${u.mH} ม. (โหมดดาวเทียม)`
+        : `กึ่งกลาง ${u.lat}, ${u.lng} · ซูม ${u.z} (โหมดแผนที่)`;
+      setMsg('urlMsg', u.panel ? 'warn' : 'ok', u.panel
+        ? `${head1}<br>⚠️ URL เป็นแบบ <code>/maps/place/</code> = <b>แผงข้างซ้ายเปิดอยู่</b> — Maps จะเลื่อนจุดกึ่งกลางแผนที่ไปทางขวาให้พ้นแผง ` +
+          'ทำให้จุดกึ่งกลางภาพไม่ตรงกับพิกัดใน URL (คลาดได้หลายสิบเมตร)<br>' +
+          '<b>วิธีแก้:</b> กด ✕ ปิดแผงข้างใน Maps · ลากแผนที่นิดหนึ่ง · รอ 2 วิให้ URL เปลี่ยนเป็นแบบ <code>/maps/@…</code> แล้วคัดลอกใหม่ · จับภาพใหม่ด้วย'
+        : head1);
+
+      // สเกลบาร์ (ถ้าลากไว้) — เมตรพื้นดินต่อพิกเซลของภาพที่จับได้
+      let sBar = null, barPx = 0;
+      if (st.sb) {
+        barPx = Math.hypot(st.sb.x2 - st.sb.x1, st.sb.y2 - st.sb.y1);
+        const barM = (+$('sbVal').value) * (+$('sbUnit').value);
+        if (barPx > 4 && barM > 0) sBar = barM / barPx;
+      }
+
+      let sGround, snapNote = '';
+      if (u.mH != null) {
+        // ---- ทางที่ตรงที่สุด: URL บอกความสูงหน้าต่างเป็นเมตรอยู่แล้ว ----
+        // ไม่ต้องรู้ dpr ไม่ต้องรู้ zoom ไม่ต้องลากสเกลบาร์
+        sGround = u.mH / st.H;
+        const rel = 0.5 / u.mH;                       // m ถูกปัดเป็นจำนวนเต็ม
+        snapNote = `${u.mH} ม. ÷ ${st.H} px`;
+        let kind = 'ok', txt = `สเกลจาก URL โดยตรง: ${snapNote} = <b>${(sGround * 100).toFixed(3)} ซม./px</b> · ความคลาดจากการปัดเลขใน URL ±${(rel * 100).toFixed(2)}%`;
+        if (sBar) {
+          const d = Math.abs(sBar - sGround) / sGround;
+          txt += ` · สเกลบาร์ที่ลากต่างจากนี้ ${(d * 100).toFixed(1)}%`;
+          if (d > 0.05) { kind = 'warn'; txt += ' ⚠️ ต่างเกิน 5% — ตรวจว่าภาพกับ URL มาจากการซูมเดียวกัน'; }
+        }
+        setMsg('sbMsg', kind, txt);
+        extra.push(['ความคลาดของสเกล', `±${(rel * 100).toFixed(2)}%`]);
+      } else {
+        // ---- โหมดแผนที่ (z): ต้องหา dpr จากสเกลบาร์ ----
+        // ป้ายสเกลบาร์ถูก quantize เป็น 1/2/5×10ⁿ และแถบสั้นได้ถึง ~60px
+        // ลากคลาด ±2px = สเกลผิด ±3.3% → สแนป dpr เข้าค่าที่เป็นไปได้เพื่อให้กลับมาเป๊ะ
+        if (!sBar) { setMsg('sbMsg', 'warn', 'URL เป็นแบบ zoom (z) จึงต้องลากทาบสเกลบาร์เพื่อหา dpr — หรือสลับ Maps เป็นมุมมองดาวเทียมแล้ว URL จะเปลี่ยนเป็นแบบ m ซึ่งไม่ต้องลากเลย'); throw new Error('ยังไม่มีสเกลบาร์'); }
+        // metersPerPixel(lat,z) = MPP0·cos(lat)/2^z **เป็นเมตรพื้นดินต่อ CSS px อยู่แล้ว**
+        // สเกลบาร์ของ Google ก็เป็นเมตรพื้นดิน → เทียบตรง ๆ ห้ามคูณ cos ซ้ำ (ที่ 19.5° ต่างกัน 6.1%)
+        const dprRaw = MPP0 * Math.cos(u.lat * D2R) / (Math.pow(2, u.z) * sBar);
+        const LADDER = [1, 1.25, 1.5, 1.75, 1.875, 2, 2.25, 2.5, 2.625, 3];
+        let dpr = LADDER.reduce((a, b) => Math.abs(b - dprRaw) < Math.abs(a - dprRaw) ? b : a);
+        const off = Math.abs(dpr - dprRaw) / dprRaw;
+        if (barPx < 100) { dpr = dprRaw; setMsg('sbMsg', 'warn', `แถบสเกลยาวแค่ ${barPx.toFixed(0)} px — สั้นเกินไปที่จะสแนป dpr ได้อย่างมั่นใจ (ใช้ค่าดิบ ${dprRaw.toFixed(3)})`); }
+        else if (off > 0.02) { dpr = dprRaw; setMsg('sbMsg', 'warn', `dpr ที่วัดได้ ${dprRaw.toFixed(3)} ห่างจากค่ามาตรฐานที่ใกล้สุด ${(off * 100).toFixed(1)}% (เกิน 2%) — ตรวจว่าลากทาบแถบตรงหัวท้ายและพิมพ์ตัวเลขบนแถบถูกต้อง`); }
+        else setMsg('sbMsg', 'ok', `วัดได้ dpr ${dprRaw.toFixed(3)} → สแนปเป็น <b>${dpr}</b> (ต่าง ${(off * 100).toFixed(2)}%) · แถบยาว ${barPx.toFixed(0)} px`);
+        sGround = MPP0 * Math.cos(u.lat * D2R) / (Math.pow(2, u.z) * dpr);
+        snapNote = `ซูม ${u.z} · dpr ${dpr.toFixed(3)}`;
+      }
+
+      // S = ความกว้างจัตุรัส Mercator ทั้งใบ หน่วยพิกเซลภาพ
+      // (ระนาบ Mercator = พื้นดิน / cos φ → C_EARTH·cos φ / sGround)
+      const S = C_EARTH * Math.cos(u.lat * D2R) / sGround;
+      const xc = xnOf(u.lng), yc = ynOf(u.lat);
+      toLL = (uu, vv) => ({ lng: lngOf(xc + (uu - st.W / 2) / S), lat: latOf(yc + (vv - st.H / 2) / S) });
+
+      // ---- ตรวจจุดกึ่งกลางบังคับ ----
+      // ปิดความเสี่ยงทั้งหมดของสมมติฐาน "กึ่งกลางเฟรม = @lat,lng":
+      // URL ค้าง (Google debounce 1–2 วิ) · แผงข้างเปิด · หน้าต่างแคบกว่า ~700px (Maps สลับเป็น layout มือถือ)
+      // วิธีตรวจที่ "แม่นจริง": ถ้าผู้ใช้ปักหมุดบนภาพแล้ววางพิกัดของจุดนั้นไว้ (เครื่องมือ 📍)
+      // เราเทียบพิกัดที่ระบบคำนวณได้ ณ พิกเซลนั้น กับพิกัดจริง → เป็นความคลาดของการอ้างพิกัดล้วน ๆ
+      // ไม่ปนความคลาดจากการกะจุดกึ่งกลางด้วยสายตา จึงตั้งเกณฑ์ตึงได้
+      const pin = st.gcps.find((g) => g.lat != null);
+      if (pin) {
+        const got = toLL(pin.u, pin.v);
+        const d = distM(got, { lat: pin.lat, lng: pin.lng });
+        if (d > 5) { setMsg('auditMsg', 'err', `จุดอ้างอิงที่ปักไว้คลาด <b>${d.toFixed(1)} ม.</b> (เกิน 5 ม.) — ภาพกับ URL น่าจะคนละช่วงเวลา (ขยับแผนที่แล้วยังไม่ได้จับภาพใหม่) หรือแผงข้างเปิดอยู่ · ถ้าแก้ไม่ได้ให้ปักครบ 4 จุดแล้วใช้โหมด B`); throw new Error('ตรวจด้วยจุดอ้างอิงไม่ผ่าน'); }
+        setMsg('auditMsg', d > 2 ? 'warn' : 'ok', `ตรวจด้วยจุดอ้างอิงที่ปักไว้ — คลาด <b>${d.toFixed(2)} ม.</b>${d > 2 ? ' (เกิน 2 ม. · ยอมรับได้แต่ควรตรวจว่าปักตรงจุดจริง)' : ' ✓ นี่คือความแม่นจริงของการอ้างพิกัด'}`);
+        extra.push(['คลาดที่จุดอ้างอิง', d.toFixed(2) + ' ม.']);
+      } else if (st.auditAuto) {
+        // ค่าในช่องมาจากลิงก์เดียวกัน → เทียบกับตัวเองได้ 0.00 เสมอ ซึ่งไม่ได้พิสูจน์อะไร
+        // จึงไม่แสดงว่า "ตรวจผ่าน" และไม่บล็อกการบันทึก แต่บอกให้รู้ว่ายังไม่ได้ตรวจ
+        setMsg('auditMsg', 'warn', `ใช้จุดกึ่งกลางจากลิงก์ (${u.lat}, ${u.lng}) — <b>ยังไม่ได้ตรวจสอบ</b> เพราะเป็นค่าจากลิงก์เดียวกัน<br>` +
+          'อยากได้ความแม่นจริง: เลือกเครื่องมือ 📍 ปักจุดอ้างอิง คลิกมุมอาคารในภาพ แล้ววางพิกัดของจุดนั้นจาก Maps (คลิกขวา → คัดลอกพิกัด)');
+        extra.push(['จุดกึ่งกลาง', 'จากลิงก์ (ไม่ได้ตรวจ)']);
+      } else {
+        const a = parseLL($('auditLL').value);
+        if (!a) { setMsg('auditMsg', 'warn', 'อ่านพิกัดในช่องตรวจไม่ได้ — วางแบบ "19.5513, 99.4942" หรือลบให้ว่างเพื่อใช้ค่าจากลิงก์'); throw new Error('อ่านพิกัดตรวจไม่ได้'); }
+        const d = distM(a, { lat: u.lat, lng: u.lng });
+        // เกณฑ์ต้องกว้างพอรับ "ความคลาดจากสายตา" — คนกดขวาตรงกึ่งกลางภาพพลาดได้ 50-80 px ตามปกติ
+        // ด่านนี้จึงมีไว้จับเฉพาะความผิดพลาดใหญ่: แผงข้างเปิด (~เลื่อนครึ่งความกว้างแผง ≈ 100 ม.)
+        // · URL ค้างหลังเลื่อนแผนที่ · คนละที่กันเลย — ทั้งหมดคลาดเป็นหลายสิบถึงหลายร้อยเมตร
+        const tol = Math.max(10, 0.09 * Math.min(st.W, st.H) * sGround);
+        if (d > tol) { setMsg('auditMsg', 'err', `จุดกึ่งกลางต่างจาก URL <b>${d.toFixed(1)} ม.</b> (เกินเกณฑ์ ${tol.toFixed(0)} ม.) — แผงข้าง Maps เปิดอยู่ หรือ URL ค้าง · ปิดแผงข้าง ลากแผนที่นิดหนึ่ง รอ 2 วิ คัดลอก URL ใหม่ แล้วจับภาพใหม่`); throw new Error('ตรวจจุดกึ่งกลางไม่ผ่าน'); }
+        setMsg('auditMsg', 'ok', `ผ่านการตรวจหยาบ — ต่างจาก URL ${d.toFixed(1)} ม. (เกณฑ์ ${tol.toFixed(0)} ม.)<br>` +
+          '<b>อยากรู้ความแม่นจริง?</b> เลือกเครื่องมือ 📍 ปักจุดอ้างอิง คลิกที่มุมอาคารหรือจุดสังเกตในภาพ แล้ววางพิกัดของจุดนั้นจาก Maps — ระบบจะวัดความคลาดจริงให้');
+        extra.push(['ตรวจหยาบที่กึ่งกลาง', d.toFixed(1) + ' ม.']);
+      }
+      note = `โหมด A · ${snapNote}`;
+    } else {
+      const pts = st.gcps.filter((g) => g.lat != null);
+      if (pts.length < 2) { setMsg('gcpMsg', 'warn', `ต้องมีจุดที่วางพิกัดแล้วอย่างน้อย 2 จุด — ตอนนี้ ${pts.length} จุด (4 จุดจะได้ค่าความคลาด RMSE)`); throw new Error('จุดอ้างอิงไม่พอ'); }
+      const diag = Math.hypot(st.W, st.H);
+      let maxSep = 0;
+      for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++)
+        maxSep = Math.max(maxSep, Math.hypot(pts[i].u - pts[j].u, pts[i].v - pts[j].v));
+      const sol = solveFromGcps(pts);
+      toLL = (uu, vv) => { const p = sol.fn({ x: uu, y: vv }); return { lng: lngOf(p.x), lat: latOf(p.y) }; };
+      const acc = sol.rmse != null
+        ? `RMSE <b>${sol.rmse.toFixed(2)} ม.</b> (${sol.residuals.map((r, i) => `#${i + 1} ${r.toFixed(2)}`).join(' · ')})`
+        : 'ตรวจความแม่นไม่ได้ — จำนวนจุดพอดีกับคำตอบ ความคลาดเป็นศูนย์โดยโครงสร้าง ไม่ใช่เพราะแม่น · เพิ่มเป็น 4 จุดจะได้ RMSE';
+      const sepWarn = maxSep < 0.6 * diag
+        ? `<br>⚠️ จุดที่ห่างกันมากสุดยาวแค่ ${(maxSep / diag * 100).toFixed(0)}% ของเส้นทแยงมุมภาพ — ควร ≥ 60% ไม่งั้นความคลาดของพิกัดจะถูกขยายเป็นสเกลที่ผิด` : '';
+      setMsg('gcpMsg', sol.rmse != null && sol.rmse > 1 ? 'warn' : 'ok', `${sol.method} · ${acc}${sepWarn}`);
+      note = `โหมด B · ${sol.method}`;
+      if (sol.rmse != null) extra.push(['RMSE', sol.rmse.toFixed(2) + ' ม.']);
+    }
+  } catch (e) {
+    setMsg('resMsg', 'warn', 'ยังคำนวณไม่ได้: ' + (e && e.message ? e.message : e));
+    return;
+  }
+
+  /* ---- world file (หน่วยองศา WGS84) ----
+     A,D,B,E,C,F ผ่านจุดกึ่งกลางพิกเซล 3 จุดที่กินทั้งภาพ = เส้นตัดที่พอดีที่สุด
+     (ไม่ใช่อนุพันธ์ที่จุดเดียว) · รองรับการหมุนของโหมด B ด้วย
+     ความคลาดจากการเขียน lat เป็นเชิงเส้น = H²·tan φ/(8·M) → ที่ 19.5°N ภาพสูง 200 ม. = 0.28 มม.
+     ส่วน UTM จะแย่กว่ามาก: grid convergence ห่าง CM 1° = หมุนผิด 1.17 ม./200 ม. */
+  const c2 = st.crop;
+  const w1 = Math.max(1, c2.w - 1), h1 = Math.max(1, c2.h - 1);
+  const p00 = toLL(c2.u0 + 0.5, c2.v0 + 0.5);                    // กึ่งกลางพิกเซล (0,0) = มาตรฐาน world file
+  const pW0 = toLL(c2.u0 + c2.w - 0.5, c2.v0 + 0.5);
+  const p0H = toLL(c2.u0 + 0.5, c2.v0 + c2.h - 0.5);
+  const A = (pW0.lng - p00.lng) / w1, D = (pW0.lat - p00.lat) / w1;
+  const B = (p0H.lng - p00.lng) / h1, E = (p0H.lat - p00.lat) / h1;
+  const C = p00.lng, F = p00.lat;
+  if (!(Math.abs(A * E - B * D) > 0)) { setMsg('resMsg', 'err', 'affine เสื่อม — ตรวจข้อมูลนำเข้า'); return; }
+
+  const cor = {
+    nw: toLL(c2.u0, c2.v0), ne: toLL(c2.u0 + c2.w, c2.v0),
+    se: toLL(c2.u0 + c2.w, c2.v0 + c2.h), sw: toLL(c2.u0, c2.v0 + c2.h),
+  };
+  const gW = distM(cor.nw, cor.ne), gH = distM(cor.nw, cor.sw);
+  st.cropGround = [gW, gH];
+  // เฉลี่ยสองแกน: ภาพ Web Mercator สเกลเท่ากันทุกทิศในแบบจำลองทรงกลม
+  // ส่วนต่าง ~0.56% ที่เห็นเป็นผลของการวัดระยะบนทรงรี (M ≠ N) ไม่ใช่ภาพบิด
+  const mpp = (gW / c2.w + gH / c2.h) / 2;
+  const latMid = (cor.nw.lat + cor.sw.lat) / 2;
+  const ratio = Math.abs(A) / Math.abs(E), expect = 1 / Math.cos(latMid * D2R);
+  // เกณฑ์ |A|/|E| ใช้ได้เฉพาะภาพที่ไม่หมุน (B=D=0) — ภาพที่หมุนสเกลกระจายอยู่ในทั้ง 4 ค่า
+  const isNorthUp = Math.abs(B) < 1e-12 && Math.abs(D) < 1e-12;
+  const rot = Math.atan2(D, A) * R2D;
+
+  RESULT = { A, D, B, E, C, F, cor, mpp, gW, gH, note };
+
+  $('resTable').innerHTML = [
+    ['วิธี', note],
+    ['ขนาดพื้นดิน', `${gW.toFixed(1)} × ${gH.toFixed(1)} ม.`],
+    ['ความละเอียด', `${(mpp * 100).toFixed(2)} ซม./px`],
+    ...extra,
+    isNorthUp
+      ? ['|A|/|E| (ต้อง = 1/cos φ)', `${ratio.toFixed(4)} / ${expect.toFixed(4)}`]
+      : ['การหมุนของภาพ', `${rot.toFixed(3)}°`],
+  ].map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+
+  // ภาพมองตรงทิศเหนือขึ้น A/E ต้องเท่ากับ 1/cos φ · ได้ ~1.000 แปลว่าสลับ lat/lng ที่ไหนสักแห่ง
+  if (isNorthUp && Math.abs(ratio - expect) > 0.002)
+    setMsg('resMsg', 'err', `|A|/|E| = ${ratio.toFixed(4)} แต่ควรเป็น ${expect.toFixed(4)} (= 1/cos φ) — น่าจะสลับ lat/lng ที่ไหนสักแห่ง`);
+  else
+    setMsg('resMsg', 'ok', `พร้อมบันทึก — ${gW.toFixed(1)}×${gH.toFixed(1)} ม. ที่ ${(mpp * 100).toFixed(1)} ซม./px`);
+
+  const f7 = (p) => `${p.lat.toFixed(7)}, ${p.lng.toFixed(7)}`;
+  $('cornerOut').innerHTML = `<b>พิกัด 4 มุม</b> (ใช้กับช่อง "ภาพ + พิกัดมุม" ได้)<br>` +
+    `NW ${f7(cor.nw)}<br>NE ${f7(cor.ne)}<br>SW ${f7(cor.sw)}<br>SE ${f7(cor.se)}`;
+  $('bSave').disabled = false; $('bDl').disabled = false; $('bSend').disabled = false;
+}
+
+/* ---------------- เขียนไฟล์ ---------------- */
+const PRJ = 'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]';
+
+/* 6 บรรทัดเป๊ะ ห้ามมีอย่างอื่น (ตัวอ่านเช็ก Number.isFinite ทุกบรรทัด)
+   toFixed(12) เพราะ 1 ซม. ≈ 9.5e-8° ต้องการ ≥8 ตำแหน่ง · และห้าม String(x) ที่ออกมาเป็น 6.7e-7
+   ซึ่งตัวอ่าน world file หลายตัวไม่รับ */
+function wfNum(v) {
+  if (!v) return '0.000000000000';
+  // ตำแหน่งทศนิยมแปรตามขนาดค่า เพื่อให้เหลือ ~12 นัยสำคัญเสมอ
+  // (ถ้าใช้ toFixed(12) ตายตัว ค่าสเกล 1.34e-6 จะเหลือแค่ 6 นัยสำคัญ)
+  const dec = Math.min(20, Math.max(12, 12 - Math.floor(Math.log10(Math.abs(v)))));
+  return v.toFixed(dec);
+}
+function worldFileText(r) {
+  return [r.A, r.D, r.B, r.E, r.C, r.F].map(wfNum).join('\n');
+}
+async function cropBlob() {
+  const c = st.crop;
+  const cn = document.createElement('canvas'); cn.width = c.w; cn.height = c.h;
+  cn.getContext('2d').drawImage(st.bmp, c.u0, c.v0, c.w, c.h, 0, 0, c.w, c.h);
+  const jpg = $('fmt').value === 'jpg';
+  return new Promise((res) => cn.toBlob(res, jpg ? 'image/jpeg' : 'image/png', jpg ? 0.92 : undefined));
+}
+function names() {
+  const base = ($('fname').value || 'map').trim().replace(/[\\/:*?"<>|]/g, '_').replace(/\.(png|jpe?g)$/i, '');
+  const jpg = $('fmt').value === 'jpg';
+  return { img: base + (jpg ? '.jpg' : '.png'), wld: base + (jpg ? '.jgw' : '.pgw'), prj: base + '.prj' };
+}
+
+$('bSave').onclick = async () => {
+  if (!RESULT) return;
+  try {
+    if (!window.showDirectoryPicker) throw new Error('เบราว์เซอร์นี้ไม่รองรับการเลือกโฟลเดอร์ — ใช้ปุ่มดาวน์โหลดแทน');
+    const dir = await window.showDirectoryPicker({ mode: 'readwrite' });
+    if (dir.queryPermission && (await dir.queryPermission({ mode: 'readwrite' })) !== 'granted') {
+      if ((await dir.requestPermission({ mode: 'readwrite' })) !== 'granted') throw new Error('ไม่ได้รับสิทธิ์เขียนในโฟลเดอร์นี้');
+    }
+    const n = names();
+    const write = async (fname, data) => {
+      const fh = await dir.getFileHandle(fname, { create: true });
+      const w = await fh.createWritable(); await w.write(data); await w.close();
+    };
+    await write(n.img, await cropBlob());
+    await write(n.wld, worldFileText(RESULT));
+    await write(n.prj, PRJ);
+    setMsg('saveMsg', 'ok', `บันทึกแล้วใน <b>${dir.name}</b>: ${n.img} · ${n.wld} · ${n.prj}<br>` +
+      'นำเข้าที่ ASC ENTERPRISES → ผังหลังคา → นำเข้า → <b>ภาพถ่ายทางอากาศ (orthophoto)</b> เลือกทั้ง 3 ไฟล์');
+  } catch (e) {
+    if (e && e.name === 'AbortError') { setMsg('saveMsg', 'warn', 'ยกเลิกการบันทึก'); return; }
+    setMsg('saveMsg', 'err', 'บันทึกไม่สำเร็จ: ' + (e && e.message ? e.message : e) + ' — ลองปุ่มดาวน์โหลดแทน');
+  }
+};
+$('bDl').onclick = async () => {
+  if (!RESULT) return;
+  const n = names();
+  const dl = (blob, fname) => {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  };
+  dl(await cropBlob(), n.img);
+  dl(new Blob([worldFileText(RESULT)], { type: 'text/plain' }), n.wld);
+  dl(new Blob([PRJ], { type: 'text/plain' }), n.prj);
+  setMsg('saveMsg', 'ok', `ดาวน์โหลด 3 ไฟล์แล้ว (Chrome อาจถามว่าอนุญาตดาวน์โหลดหลายไฟล์หรือไม่) — ${n.img} · ${n.wld} · ${n.prj}`);
+};
+
+/* ---------------- ส่งตรงเข้าแอป (เมื่อฝังเป็นเมนูในแอป) ---------------- */
+// ฝังอยู่ใน iframe ของแอป → ส่งภาพ + world file ให้หน้าผังหลังคาเลย ไม่ต้องบันทึกไฟล์แล้วนำเข้าซ้ำ
+// ส่งเป็น dataURL + ข้อความ world file (ไม่ใช่ affine ที่คำนวณแล้ว) เพื่อให้ฝั่งแอปแปลงด้วยโค้ดเดิม
+// ตัวเดียวกับการนำเข้าไฟล์ — จะได้ไม่มีสูตรสองชุดที่หลุดจากกันภายหลัง
+// Design Auto: ส่งได้ทั้งตอนฝังใน iframe (parent) และตอนเปิดเป็นแท็บแยกจากแอป (opener) — origin เดียวกันเท่านั้น
+const TARGET = window.self !== window.top ? window.parent
+  : (window.opener && !window.opener.closed ? window.opener : null);
+const EMBEDDED = !!TARGET;
+if (EMBEDDED) $('bSend').hidden = false;
+
+$('bSend').onclick = async () => {
+  if (!RESULT) return;
+  try {
+    const blob = await cropBlob();
+    const dataUrl = await new Promise((res, rej) => {
+      const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(new Error('อ่านภาพไม่ได้')); fr.readAsDataURL(blob);
+    });
+    TARGET.postMessage({ kind: 'asc.mapfetch.backdrop', name: names().img, wfText: worldFileText(RESULT), dataUrl }, location.origin);
+    setMsg('saveMsg', 'ok', 'ส่งเข้าผังหลังคาแล้ว — กำลังสลับหน้าให้');
+  } catch (e) { setMsg('saveMsg', 'err', 'ส่งเข้าแอปไม่สำเร็จ: ' + (e && e.message ? e.message : e)); }
+};
+
+/* ---------------- ตรวจสูตร ---------------- */
+$('bSelfTest').onclick = () => {
+  const out = [];
+  const ok = (name, got, want, tol) => {
+    const pass = Math.abs(got - want) <= tol;
+    out.push(`${pass ? '✅' : '❌'} ${name}: ${got} (คาด ${want} ±${tol})`);
+    return pass;
+  };
+  // ไป-กลับ Mercator
+  const lat = 19.5513, lng = 99.4942;
+  ok('unproject(project(lat))', latOf(ynOf(lat)), lat, 1e-9);
+  ok('unproject(project(lng))', lngOf(xnOf(lng)), lng, 1e-9);
+  // A = 360/S ที่ z19 dpr2
+  const S = 256 * Math.pow(2, 19) * 2;
+  ok('A = 360/S', 360 / S, 360 / 268435456, 1e-15);
+  // |A|/|E| ต้อง = 1/cos φ สำหรับภาพเหนือขึ้นบน
+  const v0 = ynOf(lat), h = 400;
+  const E = (latOf(v0 + h / S) - latOf(v0)) / h;
+  ok('|A|/|E| = 1/cos φ', (360 / S) / Math.abs(E), 1 / Math.cos(lat * D2R), 2e-3);
+  // เมตรพื้นดิน/px จาก z ต้องตรงกับ A·(เส้นรอบวงตามละติจูด)/360
+  const mppZ = MPP0 * Math.cos(lat * D2R) / Math.pow(2, 19) / 2;
+  const mppA = (360 / S) * (C_EARTH * Math.cos(lat * D2R)) / 360;
+  ok('m/px จาก z เทียบจาก A', mppA, mppZ, 1e-9);
+  // ความคลาดของ lat เชิงเส้น (ควร < 1 มม. สำหรับภาพสูง 200 ม.)
+  const M = 6342535, Hm = 200;
+  ok('ความคลาด lat เชิงเส้น 200 ม. (มม.)', Hm * Hm * Math.tan(lat * D2R) / (8 * M) * 1000, 0.279, 0.02);
+  // parse URL
+  const u1 = parseMapsUrl('https://www.google.com/maps/@19.5513,99.4942,17.5z/data=!3m1');
+  out.push(u1 && u1.z === 17.5 ? '✅ อ่าน URL ซูมทศนิยม 17.5z' : '❌ อ่าน URL ซูมทศนิยมไม่ได้');
+  const u2 = parseMapsUrl('https://www.google.com/maps/@19.5513,99.4942,281m/data=!3m1!1e3?entry=ttu');
+  out.push(u2 && u2.mH === 281 ? '✅ อ่าน URL ดาวเทียม 281m (ความสูงหน้าต่าง)' : '❌ อ่าน URL แบบ m ไม่ได้');
+  // ของจริงที่วัดมา: viewport 500 css px · z18 · lat 19.5513 → 281m
+  const zBack = Math.log2(MPP0 * Math.cos(19.5513 * D2R) / (281 / 500));
+  ok('281m ÷ 500 css px ย้อนกลับเป็นซูม', zBack, 18, 0.01);
+  const u4 = parseMapsUrl(' https://www.google.com/maps/@16.4628994,102.8242508,45m/data=!3m1!1e3?entry=ttu&g_ep=EgoyMDI2MTAxOC4wIKXMDSoASAFQAw%3D%3D ');
+  out.push(u4 && u4.mH === 45 && u4.lat === 16.4628994 ? '✅ อ่าน URL ดาวเทียม 45m (มีช่องว่าง/%3D)' : '❌ อ่าน URL 45m ไม่ได้');
+  const u3 = parseMapsUrl('https://www.google.com/maps/@19.5513,99.4942,150a,35y,0h,45t/data=!3m1');
+  out.push(u3 && u3.err ? '✅ ปฏิเสธ URL กล้องโลก 3 มิติ/เอียง' : '❌ ไม่ได้ปฏิเสธ URL กล้อง 3 มิติ');
+  // world file ต้องเป็นทศนิยมล้วน 6 บรรทัด
+  const wf = worldFileText({ A: 1.34e-6, D: 0, B: 0, E: -1.26e-6, C: 99.4, F: 19.5 });
+  const lines = wf.split('\n');
+  out.push(lines.length === 6 && lines.every((l) => /^-?\d+\.\d+$/.test(l) && Number.isFinite(+l))
+    ? '✅ world file 6 บรรทัด ทศนิยมล้วน ไม่มีรูป exponential' : '❌ รูปแบบ world file ผิด: ' + wf);
+  setMsg('saveMsg', out.some((s) => s[0] === '❌') ? 'err' : 'ok', out.join('<br>'));
+};
+
+setMsg('resMsg', 'warn', 'ยังไม่มีภาพ');
+</script>
+</body>
+</html>

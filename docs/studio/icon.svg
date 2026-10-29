@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Auto Solar Co-pilot Studio · บ้านหลังคาแผงโซลาร์ + ดวงอาทิตย์ · โดย ลุงพี -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b8a5f"/><stop offset="1" stop-color="#0e5238"/>
+    </linearGradient>
+    <linearGradient id="pv" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f5fa8"/><stop offset="1" stop-color="#1a3566"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#sky)"/>
+  <g stroke="#f6c343" stroke-width="2.4" stroke-linecap="round">
+    <line x1="49" y1="3.5" x2="49" y2="7"/><line x1="49" y1="23" x2="49" y2="26.5"/>
+    <line x1="37.5" y1="15" x2="41" y2="15"/><line x1="57" y1="15" x2="60.5" y2="15"/>
+    <line x1="40.9" y1="6.9" x2="43.3" y2="9.3"/><line x1="54.7" y1="20.7" x2="57.1" y2="23.1"/>
+    <line x1="57.1" y1="6.9" x2="54.7" y2="9.3"/><line x1="43.3" y1="20.7" x2="40.9" y2="23.1"/>
+  </g>
+  <circle cx="49" cy="15" r="6" fill="#f6c343"/>
+  <rect x="13" y="37" width="38" height="20" fill="#f4efe2"/>
+  <rect x="28" y="44" width="8" height="13" rx="1" fill="#b5654a"/>
+  <rect x="16.5" y="42" width="7" height="6" fill="#7fb3d5"/>
+  <rect x="40.5" y="42" width="7" height="6" fill="#7fb3d5"/>
+  <polygon points="6,38 17,21 47,21 58,38" fill="url(#pv)" stroke="#e8edf5" stroke-width="1.6" stroke-linejoin="round"/>
+  <g stroke="#9fc0ec" stroke-width="1">
+    <line x1="9.7" y1="32.3" x2="54.3" y2="32.3"/><line x1="13.3" y1="26.7" x2="50.7" y2="26.7"/>
+    <line x1="24.5" y1="21" x2="21.3" y2="38"/><line x1="32" y1="21" x2="32" y2="38"/><line x1="39.5" y1="21" x2="42.7" y2="38"/>
+  </g>
+</svg>

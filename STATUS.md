@@ -8,7 +8,27 @@
 ไฟล์นี้ตอบว่า "เซิร์ฟเวอร์มีอะไรและตั้งค่าอย่างไร" ส่วนแผนงานตอบว่า
 "โปรแกรมทำอะไรไปแล้วบ้างและเหลืออะไร"
 
-อัปเดตล่าสุด : 6 ก.ย. 2569 (ปิดภารกิจรอบนี้)
+อัปเดตล่าสุด : 29 ต.ค. 2569 (ASC Studio ใต้ studio/ · รอลุงพีรัน SQL)
+
+---
+
+## ASC Studio (ascs) ใต้ ASC Cloud · 29 ต.ค. 2569
+
+"เปลือกเดิม ไส้ใหม่": หน้าเข้าสู่ระบบ · Dashboard · สิทธิ์ · การแชร์ เป็นของเดิม — เปิด/สร้างงานด้วย ascs ที่ `docs/studio/`
+แผนเต็มและการตัดสินใจอยู่ที่ repo design-auto › `docs/asc-cloud-merge-plan.md`
+
+| | |
+|---|---|
+| เก็บงาน | ตาราง `projects` เดิม · `data.format = 'ascs'` · แบบอยู่ที่ `data.ascs` · kWp เขียนลง `db1.step4_validation_results` → Dashboard นับรวมงานเดิมได้เลย ไม่แก้ SQL |
+| แยกงาน | Dashboard ถาม `projects.select('id,format:data->>format')` → งาน ascs เปิดที่ `studio/` · งานเดิมเปิด `master_shell.html` + ปุ่ม "เปิดใน ASCS" (สร้างสำเนา ไม่แตะงานเดิม) |
+| สวิตช์ | `docs/studio-config.js` · `rollout: 'admin'` (ตอนนี้) → `'all'` เมื่อลองงานจริงผ่านแล้ว |
+| ตาราง วสท. | `public.standards_tables` อ่านได้เฉพาะผู้ที่ล็อกอิน · สร้างด้วย `supabase/ascs-studio.sql` · ข้อมูลจาก `npm run standards:sql` ใน design-auto (ไฟล์อยู่นอก git) |
+
+### ค้าง (ลุงพีต้องทำเอง · ต้องใช้สิทธิ์แอดมิน)
+1. SQL Editor: รัน `supabase/ascs-studio.sql`
+2. SQL Editor: รันไฟล์ `out/cloud/standards-data.sql` (บนเครื่อง home: `C:\LocalAI\aiSolar\design-auto\out\cloud\`) → ต้องได้ 21 แถว
+3. ตรวจรายชื่อแล้วรัน `supabase/cleanup-allowlist.sql` (ลบรายชื่อที่ค้างไม่ได้สมัคร)
+4. ลองเปิดงานเดิม 2–3 งานด้วย "เปิดใน ASCS" แล้วตั้ง `rollout: 'all'`
 
 ---
 

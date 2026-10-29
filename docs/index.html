@@ -16,6 +16,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
     <script src="supabase-config.js"></script>
     <script src="asc-cloud.js"></script>
+    <!-- ASC Studio (ascs) ใต้ studio/ — สวิตช์เปิดใช้และกลุ่มผู้ใช้อยู่ใน studio-config.js -->
+    <script src="studio-config.js"></script>
     <!-- คลังสเปกอุปกรณ์ ใช้ในการ์ดผู้ดูแลระบบที่หน้า Settings
          asc-datasheet-parse.js เป็นตัวแยกไฟล์ตัวเดียวกับที่หน้าออกแบบใช้
          จึงมั่นใจได้ว่าไฟล์ที่นำเข้าคลังจะให้ค่าเหมือนกับตอนอัปโหลดตรง ๆ -->
@@ -1332,6 +1334,7 @@ function showCloudBadge() {
 async function refreshCloudProjects() {
     try {
         CLOUD_PROJECTS = await AscCloud.listProjects();
+        await loadProjectFormats(CLOUD_PROJECTS);
         return true;
     } catch (err) {
         CLOUD_PROJECTS = [];
@@ -1407,6 +1410,42 @@ function visibleProjects() {
             return (p.meta.owner || SESSION.username) === SESSION.username;
         })
         .map(id => ({ id, ...db.projects[id] }));
+}
+
+/* ─── ASC Studio (ascs) ─────────────────────────────────────────────────
+   งานที่ทำใน ascs เก็บในตาราง projects เดิม แต่ data.format = 'ascs' (แบบอยู่ที่ data.ascs)
+   ascs เขียน kWp ลง db1.step4_validation_results ด้วย ตัวเลขรวมบนหน้านี้จึงนับงานเก่า + งาน ascs ได้เลย
+   รู้ format ได้โดยถามเฉพาะคอลัมน์ที่ต้องใช้ (data->>format) ไม่ต้องดึง data ทั้งก้อน และไม่ต้องแก้มุมมอง project_list
+   ดู docs/asc-cloud-merge-plan.md ใน repo design-auto */
+async function loadProjectFormats(list) {
+    if (!list.length || !AscCloud.client) return;
+    try {
+        const { data, error } = await AscCloud.client.from('projects').select('id,format:data->>format');
+        if (error) throw error;
+        const fmt = new Map((data || []).map(r => [r.id, r.format]));
+        list.forEach(p => { p.format = fmt.get(p.id) || ''; });
+    } catch (e) {
+        // อ่านไม่ได้ = ถือเป็นงานเดิมทั้งหมด (เปิดด้วยหน้าออกแบบเดิมได้เหมือนเคย)
+        console.warn('อ่านชนิดโครงการไม่สำเร็จ', e);
+    }
+}
+function isStudioProject(p) { return !!p && p.format === 'ascs'; }
+/* ใครใช้ ascs ได้ : rollout 'admin' = เฉพาะผู้ดูแลระบบ (ช่วงทดลอง) · 'all' = ทุกคน
+   งานที่เป็น ascs อยู่แล้วเปิดใน ascs เสมอ ไม่ว่า rollout เป็นอะไร (ไม่มีทางอื่นเปิดได้) */
+function studioAllowed() {
+    const c = window.ASCS_STUDIO;
+    return !!(CLOUD && c && c.enabled && (c.rollout === 'all' || (SESSION && SESSION.isAdmin)));
+}
+/* เปิดในแท็บเดิมเสมอ : เซสชันที่ไม่ได้ติ๊ก "จำการเข้าสู่ระบบ" อยู่ใน sessionStorage ของแท็บนี้เท่านั้น */
+function studioUrl(id, convert) {
+    const base = (window.ASCS_STUDIO && window.ASCS_STUDIO.path) || 'studio/';
+    return base + 'index.html?project=' + encodeURIComponent(id) + (convert ? '&convert=1' : '');
+}
+function openInStudio(id) {
+    const p = CLOUD_PROJECTS.find(x => x.id === id);
+    const name = p ? p.meta.name : '';
+    if (!confirm(`เปิด "${name}" ใน ASC Studio ?\n\nระบบจะสร้างโครงการใหม่ชื่อ "${name} (ASCS)" จากข้อมูลเดิมเท่าที่แปลงได้\nโครงการเดิมไม่ถูกแก้ไข ยังเปิดด้วยหน้าเดิมได้ตามปกติ`)) return;
+    window.location.href = studioUrl(id, true);
 }
 
 function kwpOf(proj) {
@@ -1501,6 +1540,11 @@ function renderDashboard() {
             ? `<button onclick="event.stopPropagation(); openShareModal('${p.id}')" class="text-slate-300 hover:text-emerald-600 transition mr-2" title="แชร์โครงการนี้ให้เพื่อนร่วมงาน"><i class="fa-solid fa-user-plus"></i></button>`
             : '';
 
+        // งานเดิมที่มีข้อมูลแล้ว : เปิดเป็นสำเนาใน ASC Studio ได้ (งานเดิมไม่ถูกแก้)
+        const studioBtn = (studioAllowed() && !isStudioProject(p) && stage.key !== 'new')
+            ? `<button onclick="event.stopPropagation(); openInStudio('${p.id}')" class="text-emerald-700 font-bold hover:text-emerald-900 transition mr-4" title="สร้างสำเนาของงานนี้ใน ASC Studio">เปิดใน ASCS <i class="fa-solid fa-cube ml-1"></i></button>`
+            : '';
+
         return `
         <div class="project-card bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
             <div class="card-accent h-2 w-full ${hasRep ? 'bg-green-500' : 'bg-blue-500'}"></div>
@@ -1528,7 +1572,7 @@ function renderDashboard() {
             </div>
             <div class="bg-slate-50 px-5 py-3 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
                 <span><i class="fa-regular fa-clock mr-1"></i> ${lastMod}</span>
-                <button onclick="openProject('${p.id}')" class="text-blue-600 font-bold hover:text-blue-800 transition">เปิด <i class="fa-solid fa-arrow-right ml-1"></i></button>
+                <span>${studioBtn}<button onclick="openProject('${p.id}')" class="text-blue-600 font-bold hover:text-blue-800 transition">เปิด <i class="fa-solid fa-arrow-right ml-1"></i></button></span>
             </div>
         </div>`;
     }).join('');
@@ -1545,6 +1589,7 @@ function refreshOwnerFilter(list) {
 
 /* จัดสถานะตามขั้นตอนที่ทำไปแล้ว */
 function stageOf(p) {
+    if (isStudioProject(p)) return { key:'ascs', label:'ASC Studio', cls:'bg-emerald-100 text-emerald-700' };
     const d = p.data || {};
     if (d.db3) return { key:'report',  label:'Completed', cls:'bg-green-100 text-green-700' };
     if (d.db2) return { key:'param',   label:'Simulated', cls:'bg-indigo-100 text-indigo-700' };
@@ -1605,7 +1650,8 @@ async function createNewProject() {
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> กำลังสร้าง...'; }
         try {
             const id = await AscCloud.createProject(name, loc, note);
-            window.location.href = `master_shell.html?id=${id}`;
+            // โครงการใหม่เปิดด้วย ASC Studio เมื่อเปิดใช้ให้ผู้ใช้คนนี้แล้ว (studio-config.js) · ไม่งั้นหน้าออกแบบเดิม
+            window.location.href = studioAllowed() ? studioUrl(id) : `master_shell.html?id=${id}`;
         } catch (e2) {
             err.innerText = 'สร้างโครงการไม่สำเร็จ : ' + e2.message;
             err.classList.remove('hidden');
@@ -1636,7 +1682,11 @@ async function createNewProject() {
     window.location.href = `master_shell.html?id=${newId}`;
 }
 
-function openProject(id) { window.location.href = `master_shell.html?id=${id}`; }
+/* งาน ascs เปิดใน studio/ · งานเดิมเปิดด้วยหน้าออกแบบเดิม */
+function openProject(id) {
+    const p = CLOUD ? CLOUD_PROJECTS.find(x => x.id === id) : null;
+    window.location.href = isStudioProject(p) ? studioUrl(id) : `master_shell.html?id=${id}`;
+}
 
 /* ─────────────────────────────────────────────
    6.5 แชร์โครงการ (เฉพาะโหมดคลาวด์)

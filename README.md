@@ -43,6 +43,8 @@
 | `device_location.html` | วางผังอุปกรณ์บนแผนที่ |
 | `asc-cloud.js` | ชั้นเชื่อมต่อคลาวด์ทั้งหมด หน้าอื่นเรียกผ่าน `window.AscCloud` |
 | `supabase-config.js` | ค่าเชื่อมต่อ Supabase (คีย์ anon เปิดเผยได้) |
+| `studio-config.js` | สวิตช์เปิด ASC Studio (ascs) และกลุ่มผู้ใช้ (`rollout: 'admin' \| 'all'`) |
+| `studio/` | **ASC Studio รุ่นคลาวด์ — ห้ามแก้มือ** build จาก repo design-auto ด้วย `node scripts/build-cloud.mjs --to <ที่นี่>` (ไม่ฝังตาราง วสท. · ตรวจด้วย check:public) |
 
 รายชื่อผู้ใช้เดิม 41 บัญชี (`user.js`) ย้ายออกจากเว็บไปเป็น `supabase/legacy-user.js` แล้ว (29 ต.ค. 2569)
 เพราะในไฟล์มีอีเมลและแฮชรหัสผ่าน **ห้ามวางไฟล์ที่มีข้อมูลผู้ใช้ไว้ใน `docs/`** ทุกอย่างในนั้นเปิดอ่านได้จากเว็บสาธารณะ

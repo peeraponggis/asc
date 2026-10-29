@@ -1,0 +1,85 @@
+/* asc-tokens.css — โทเคนสีของ ASC ENTERPRISES สำหรับหน้า HTML เดี่ยว ๆ ใน public/
+ *
+ * ใช้ร่วมกันโดย: tools/asc_e_analysis.html · tools/map-fetcher.html · site-survey.html
+ * หน้าเหล่านี้เป็นเอกสารแยกจากแอป (เปิดเองได้ / ฝังผ่าน iframe) จึงไม่ได้รับ
+ * ตัวแปรจาก design/tokens.css ของแอป ต้องมีชุดของตัวเอง
+ *
+ * ค่าทั้งหมดคัดลอกจาก design/tokens.css — ถ้าแก้สีแบรนด์ที่นั่น ต้องมาแก้ที่นี่ด้วย
+ * (ลิงก์ตรงไม่ได้เพราะ design/ อยู่นอก public/ จึงไม่ถูก serve)
+ *
+ * ลิงก์ไฟล์นี้ **หลัง** <style> ของหน้านั้น เพื่อให้ค่าที่นี่ชนะ
+ * รับธีมจากหน้าแม่ผ่าน ?theme=dark|light (ดูสคริปต์ท้ายไฟล์ HTML แต่ละหน้า)
+ */
+
+:root {
+  --accent: #146b4a;
+  --accent-soft: #e2efe7;
+  --accent-ink: #ffffff;
+  --accent-2: #1b8a5f;
+  --brand-gold: #96690f;
+
+  --paper: #faf9f5; --panel: #ffffff; --panel-2: #f1f2ec;
+  --ink: #1c2420; --ink-2: #4c5a56; --ink-3: #7c8a85;
+  --line: #ccd3cc; --line-strong: #1c2420;
+
+  --fail: #9c2b23; --fail-soft: #f7e6e4;
+  --warn: #8a6d1a; --warn-soft: #f6efdb;
+  --ok: #146b4a;   --ok-soft: #e2efe7;
+  --info: #55605c; --info-soft: #e9eae5;
+  --sel: #0e5c8a;
+
+  --radius: 7px;
+  --font: 'Sarabun', 'TH Sarabun New', system-ui, sans-serif;
+  --font-disp: 'Bai Jamjuree', 'Sarabun', sans-serif;
+  --font-mono: 'IBM Plex Mono', Consolas, monospace;
+}
+
+/* ธีมมืดตามเครื่อง — เว้นแต่หน้าแม่สั่งสว่างมา
+   ใช้ :root:not([data-theme="light"]) ให้ specificity สูงกว่า :root ธรรมดา
+   จะได้ชนะบล็อกมืดเดิมของหน้านั้นโดยไม่ต้องสนลำดับ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #141816; --panel: #1c2320; --panel-2: #232b27;
+    --ink: #e6eae6; --ink-2: #a8b4ae; --ink-3: #75817b;
+    --line: #37423c; --line-strong: #cfd8d2;
+    --fail: #e0776d; --fail-soft: #43221f;
+    --warn: #d3ac4a; --warn-soft: #3a311a;
+    --ok: #57b487;   --ok-soft: #1d3a2c;
+    --info: #9aa6a0; --info-soft: #2a322d;
+    --sel: #5aa4d0;
+    --accent: #2f9169; --accent-soft: #1d3a2c; --accent-ink: #0f1a15;
+    --accent-2: #3ba97a;
+    --brand-gold: #d8ab4a;
+  }
+}
+
+/* หน้าแม่สั่งมืดมาโดยตรง — ต้องชนะทั้งค่าปริยายและ media query ข้างบน */
+:root[data-theme="dark"] {
+  --paper: #141816; --panel: #1c2320; --panel-2: #232b27;
+  --ink: #e6eae6; --ink-2: #a8b4ae; --ink-3: #75817b;
+  --line: #37423c; --line-strong: #cfd8d2;
+  --fail: #e0776d; --fail-soft: #43221f;
+  --warn: #d3ac4a; --warn-soft: #3a311a;
+  --ok: #57b487;   --ok-soft: #1d3a2c;
+  --info: #9aa6a0; --info-soft: #2a322d;
+  --sel: #5aa4d0;
+  --accent: #2f9169; --accent-soft: #1d3a2c; --accent-ink: #0f1a15;
+  --accent-2: #3ba97a;
+  --brand-gold: #d8ab4a;
+}
+
+/* ตัวอักษร/พื้นฐานที่ควรเหมือนกันทุกหน้า */
+body { font-family: var(--font); background: var(--paper); color: var(--ink); }
+h1, h2, h3 { font-family: var(--font-disp); }
+
+/* ช่องกรอกในธีมมืด — จุดที่พังบ่อยสุดถ้าหน้านั้นฝังพื้นขาวไว้ */
+input, select, textarea, button {
+  font-family: inherit;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+select, textarea {
+  background: var(--panel);
+  color: var(--ink);
+  border-color: var(--line);
+}
+::placeholder { color: var(--ink-3); }
