@@ -30,7 +30,7 @@
 1. ~~SQL Editor: รัน `supabase/ascs-studio.sql`~~ (รันแล้ว 30 ต.ค. 2569)
 2. ~~SQL Editor: รันไฟล์ `out/cloud/standards-data.sql`~~ (รันแล้ว 21 แถว)
 3. ~~`supabase/allow-domains.sql`~~ (รันแล้ว 30 ต.ค. 2569) · `cleanup-allowlist.sql` ไม่บังคับ
-4. SQL Editor: รัน `supabase/ai-install.sql` (รหัสติดตั้งผู้ช่วย AI + จำกัด 2 เครื่อง) — ยังไม่รัน = ascs บอก "ระบบติดตั้งยังไม่พร้อม"
+4. ~~SQL Editor: รัน `supabase/ai-install.sql`~~ (รันแล้ว 30 ต.ค. 2569 — รหัสติดตั้งผู้ช่วย AI + จำกัด 2 เครื่อง)
 5. ลองเปิดงานเดิม 2–3 งานด้วย "เปิดใน ASCS" แล้วตั้ง `rollout: 'all'`
 
 ---
