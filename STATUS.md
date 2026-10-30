@@ -23,12 +23,15 @@
 | แยกงาน | Dashboard ถาม `projects.select('id,format:data->>format')` → งาน ascs เปิดที่ `studio/` · งานเดิมเปิด `master_shell.html` + ปุ่ม "เปิดใน ASCS" (สร้างสำเนา ไม่แตะงานเดิม) |
 | สวิตช์ | `docs/studio-config.js` · `rollout: 'admin'` (ตอนนี้) → `'all'` เมื่อลองงานจริงผ่านแล้ว |
 | ตาราง วสท. | `public.standards_tables` อ่านได้เฉพาะผู้ที่ล็อกอิน · สร้างด้วย `supabase/ascs-studio.sql` · ข้อมูลจาก `npm run standards:sql` ใน design-auto (ไฟล์อยู่นอก git) |
+| ทีมพัฒนา | `supabase/allow-domains.sql` (โดเมนทั้งโดเมนสมัครได้) · `studio-config.js` `teamDomains` ใช้ ascs ได้ |
+| ผู้ช่วย AI ในเครื่อง | ascs ปุ่ม 🤖 ผู้ช่วย AI → รหัสติดตั้งจากบัญชี (ใช้ครั้งเดียว · 30 นาที) → `studio/ai/ASC-AI-Setup.zip` · บัญชีละ 2 เครื่อง · SQL `supabase/ai-install.sql` · แผน design-auto `docs/ai-knowledge-plan.md` (K2a) |
 
 ### ค้าง (ลุงพีต้องทำเอง · ต้องใช้สิทธิ์แอดมิน)
-1. SQL Editor: รัน `supabase/ascs-studio.sql`
-2. SQL Editor: รันไฟล์ `out/cloud/standards-data.sql` (บนเครื่อง home: `C:\LocalAI\aiSolar\design-auto\out\cloud\`) → ต้องได้ 21 แถว
-3. ตรวจรายชื่อแล้วรัน `supabase/cleanup-allowlist.sql` (ลบรายชื่อที่ค้างไม่ได้สมัคร)
-4. ลองเปิดงานเดิม 2–3 งานด้วย "เปิดใน ASCS" แล้วตั้ง `rollout: 'all'`
+1. ~~SQL Editor: รัน `supabase/ascs-studio.sql`~~ (รันแล้ว 30 ต.ค. 2569)
+2. ~~SQL Editor: รันไฟล์ `out/cloud/standards-data.sql`~~ (รันแล้ว 21 แถว)
+3. ~~`supabase/allow-domains.sql`~~ (รันแล้ว 30 ต.ค. 2569) · `cleanup-allowlist.sql` ไม่บังคับ
+4. SQL Editor: รัน `supabase/ai-install.sql` (รหัสติดตั้งผู้ช่วย AI + จำกัด 2 เครื่อง) — ยังไม่รัน = ascs บอก "ระบบติดตั้งยังไม่พร้อม"
+5. ลองเปิดงานเดิม 2–3 งานด้วย "เปิดใน ASCS" แล้วตั้ง `rollout: 'all'`
 
 ---
 
