@@ -355,12 +355,27 @@ create table if not exists public.allowed_emails (
 );
 alter table public.allowed_emails enable row level security;
 
+-- อนุญาตทั้งโดเมน (เช่น proinventive.co.th = ทีมพัฒนา) — รายละเอียด/การย้ายของเดิม: allow-domains.sql
+create table if not exists public.allowed_domains (
+    domain     text primary key,
+    note       text        not null default '',
+    created_at timestamptz not null default now()
+);
+alter table public.allowed_domains enable row level security;
+drop policy if exists allowed_domains_select on public.allowed_domains;
+create policy allowed_domains_select on public.allowed_domains
+    for select to authenticated using (public.is_admin());
+drop policy if exists allowed_domains_write on public.allowed_domains;
+create policy allowed_domains_write on public.allowed_domains
+    for all to authenticated
+    using (public.is_admin()) with check (public.is_admin());
+
 -- ตอบแค่ใช่หรือไม่ใช่สำหรับอีเมลที่ถามมาหนึ่งอีเมล ไม่เปิดให้ดึงรายชื่อทั้งหมด
 -- คนที่ยังไม่ล็อกอินก็เรียกได้ เพราะต้องใช้ตอนกรอกฟอร์มสมัคร
 create or replace function public.is_email_allowed(p_email text)
 returns boolean language sql stable security definer set search_path = public as $$
-    select exists (select 1 from public.allowed_emails
-                    where email = lower(trim(p_email)));
+    select exists (select 1 from public.allowed_emails  where email  = lower(trim(p_email)))
+        or exists (select 1 from public.allowed_domains where domain = split_part(lower(trim(p_email)), '@', 2));
 $$;
 
 grant execute on function public.is_email_allowed(text) to anon, authenticated;
@@ -379,9 +394,7 @@ create policy allowed_emails_write on public.allowed_emails
 create or replace function public.enforce_invite_only()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
-    if new.email is null
-       or not exists (select 1 from public.allowed_emails a
-                      where a.email = lower(trim(new.email))) then
+    if new.email is null or not public.is_email_allowed(new.email) then
         raise exception 'อีเมลนี้ไม่อยู่ในรายชื่อที่ได้รับเชิญ ติดต่อผู้ดูแลระบบ (%)', new.email
             using errcode = 'check_violation';
     end if;

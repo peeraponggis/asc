@@ -1435,11 +1435,14 @@ async function loadProjectFormats(list) {
     }
 }
 function isStudioProject(p) { return !!p && p.format === 'ascs'; }
-/* ใครใช้ ascs ได้ : rollout 'admin' = เฉพาะผู้ดูแลระบบ (ช่วงทดลอง) · 'all' = ทุกคน
+/* ใครใช้ ascs ได้ : rollout 'admin' = เฉพาะผู้ดูแลระบบ + ทีมพัฒนา (โดเมนใน teamDomains) ช่วงทดลอง · 'all' = ทุกคน
    งานที่เป็น ascs อยู่แล้วเปิดใน ascs เสมอ ไม่ว่า rollout เป็นอะไร (ไม่มีทางอื่นเปิดได้) */
 function studioAllowed() {
     const c = window.ASCS_STUDIO;
-    return !!(CLOUD && c && c.enabled && (c.rollout === 'all' || (SESSION && SESSION.isAdmin)));
+    if (!(CLOUD && c && c.enabled)) return false;
+    if (c.rollout === 'all' || (SESSION && SESSION.isAdmin)) return true;
+    const domain = String((SESSION && (SESSION.email || SESSION.username)) || '').toLowerCase().split('@')[1] || '';
+    return !!domain && (c.teamDomains || []).includes(domain);
 }
 /* เปิดในแท็บเดิมเสมอ : เซสชันที่ไม่ได้ติ๊ก "จำการเข้าสู่ระบบ" อยู่ใน sessionStorage ของแท็บนี้เท่านั้น */
 function studioUrl(id, convert) {
