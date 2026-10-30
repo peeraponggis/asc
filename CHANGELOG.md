@@ -1,0 +1,27 @@
+# Changelog — Auto Solar Co-pilot Studio (ASC Studio)
+โดย ลุงพี (Peerapong) · ProInventive
+
+---
+
+## [4.2.0] — 2569-10-30
+### ✨ Security & IP Protection Release
+โดย ลุงพี
+
+#### เพิ่มใหม่
+- **PDPA Modal (3 ภาษา)** — `asc-pdpa.js`: แสดง modal ขอความยินยอม PDPA ทุก session ก่อนเข้าสู่ระบบ รองรับ ไทย / English / ລາວ
+- **Copyright Headers** — เพิ่ม copyright notice ในไฟล์ JS ทุกไฟล์ (27 ไฟล์) ระบุเป็น proprietary/confidential
+- **Security Headers** — `_headers`: Cloudflare Pages CSP + X-Frame-Options + HSTS + Permissions-Policy
+- **PDPA Section ในคู่มือ** — `manual.html`: เพิ่มหัวข้อ "นโยบาย PDPA & ลิขสิทธิ์" พร้อม TOC entry
+- **Obfuscation Build Script** — `build-protect.ps1`: สร้าง dist/ ที่ obfuscate JS ก่อน deploy
+- **Copyright Batch Script** — `add-copyright-headers.ps1`: เพิ่ม header ในไฟล์ JS อัตโนมัติ
+
+#### ความปลอดภัย
+- เพิ่ม Content-Security-Policy ป้องกัน XSS
+- เพิ่ม X-Frame-Options: DENY ป้องกัน clickjacking
+- เพิ่ม Strict-Transport-Security (HSTS)
+- PDPA consent บันทึกใน sessionStorage (ต้อง accept ทุกครั้งที่เปิด browser ใหม่)
+
+---
+
+## [4.1.0] และก่อนหน้า
+รายละเอียดอยู่ใน git log: `git log --oneline`

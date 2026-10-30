@@ -1,3 +1,15 @@
+﻿/* ============================================================================
+ *  Auto Solar Co-pilot Studio (ASC Studio / ASCS)
+ *  Copyright (C) 2024-2569 ProInventive. All rights reserved.
+ *
+ *  PROPRIETARY AND CONFIDENTIAL
+ *  This software is the exclusive property of ProInventive.
+ *  Unauthorized copying, reverse engineering, decompilation, or distribution
+ *  of this file, in whole or in part, is strictly prohibited.
+ *
+ *  License : Proprietary -- see EULA at https://proinventive.co.th/asc-eula
+ *  Author  : Peerapong (Lungpee) -- ProInventive -- giskku@gmail.com
+ * ========================================================================== */
 /* ============================================================================
  *  ASC · เครื่องมือวาดสันหลังคา (Ridge Tool)
  *
