@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="16" height="50" hotspot_x="9" hotspot_y="25">
+  <uuid uuid="{c1756a25-37f3-5c20-9061-e48237cdf82e}"/>
+  <names>
+    <name lang="en">Circuit breaker (IEC 60617)</name>
+    <name lang="th">MCB (IEC 60617)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 7 · โดย ลุงพี</informations>
+  <description>
+    <line x1="0.0" y1="-20.0" x2="0.0" y2="-5.76" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="5.76" x2="0.0" y2="20.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="5.76" x2="-4.61" y2="-4.9" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-1.44" y1="-4.32" x2="1.44" y2="-7.2" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-1.44" y1="-7.2" x2="1.44" y2="-4.32" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-20.0" orientation="n" uuid="{c5f1903d-999d-5079-a4f3-2390b78412b8}" name="" type="Generic"/>
+    <terminal x="0.0" y="20.0" orientation="s" uuid="{72a7535a-e4f6-5066-91c2-a3ac236ba0d3}" name="" type="Generic"/>
+  </description>
+</definition>

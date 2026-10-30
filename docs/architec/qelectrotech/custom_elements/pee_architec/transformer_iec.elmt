@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="26" height="50" hotspot_x="13" hotspot_y="25">
+  <uuid uuid="{4be669fc-59e3-5a25-b5d0-ae93ae3e9aac}"/>
+  <names>
+    <name lang="en">Transformer</name>
+    <name lang="th">หม้อแปลงไฟฟ้า</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 1 · โดย ลุงพี</informations>
+  <description>
+    <circle x="-8.0" y="-13.2" diameter="16.0" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <circle x="-8.0" y="-2.8" diameter="16.0" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="-20.0" x2="0.0" y2="-13.2" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="13.2" x2="0.0" y2="20.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-20.0" orientation="n" uuid="{89643246-96fb-5b93-a5cd-c6bec48230f8}" name="" type="Generic"/>
+    <terminal x="0.0" y="20.0" orientation="s" uuid="{1ac8a35b-3f12-56dc-bffa-db386e506afc}" name="" type="Generic"/>
+  </description>
+</definition>

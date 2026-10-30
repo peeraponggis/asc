@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="18" height="50" hotspot_x="9" hotspot_y="25">
+  <uuid uuid="{71aa1359-6fd1-56f3-9ef7-f4eb857dcdd3}"/>
+  <names>
+    <name lang="en">Current transformer</name>
+    <name lang="th">หม้อแปลงกระแส (CT)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 6 · โดย ลุงพี</informations>
+  <description>
+    <line x1="0.0" y1="-20.0" x2="0.0" y2="20.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <arc x="-4.0" y="-8.0" width="8.0" height="8.0" start="-90" angle="180" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <arc x="-4.0" y="0.0" width="8.0" height="8.0" start="-90" angle="180" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-20.0" orientation="n" uuid="{eaecbd4c-d316-5bb3-bb80-136c385d18ca}" name="" type="Generic"/>
+    <terminal x="0.0" y="20.0" orientation="s" uuid="{91d9f08f-87c9-5f96-bb39-bd8efaba7403}" name="" type="Generic"/>
+  </description>
+</definition>

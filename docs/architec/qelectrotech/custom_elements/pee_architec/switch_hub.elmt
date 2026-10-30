@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="50" height="38" hotspot_x="25" hotspot_y="19">
+  <uuid uuid="{ac43ad2e-552a-534e-a9c1-d5002201c1e4}"/>
+  <names>
+    <name lang="en">Switch hub</name>
+    <name lang="th">สวิตช์ฮับ</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 27 · โดย ลุงพี</informations>
+  <description>
+    <polygon x1="-20.0" y1="8.0" x2="20.0" y2="8.0" x3="20.0" y3="-8.0" x4="-20.0" y4="-8.0" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:red"/>
+    <text x="-15.0" y="2.0" size="5" text="SWITCH HUB" color="#000000" rotation="0"/>
+    <line x1="0.0" y1="-8.0" x2="0.0" y2="-14.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:red"/>
+    <line x1="0.0" y1="8.0" x2="0.0" y2="14.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:red"/>
+    <terminal x="0.0" y="-14.0" orientation="n" uuid="{ae4d2544-6cbb-5e12-a287-524703149699}" name="" type="Generic"/>
+    <terminal x="0.0" y="14.0" orientation="s" uuid="{af610639-005c-5b71-9ab2-fe121071efa6}" name="" type="Generic"/>
+  </description>
+</definition>

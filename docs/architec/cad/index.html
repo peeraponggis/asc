@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CAD 2D · pee_architec</title>
+<link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="cad.css?v=0.9.0">
+<script src="../mode.js?v=0.9.0"></script>
+</head>
+<body>
+<header class="bar">
+  <a href="../" class="home" title="กลับหน้าหลัก"><img src="../logo.png" alt="" width="26" height="26"></a>
+  <b id="docname" class="docname">CAD 2D</b>
+  <div class="grp">
+    <button data-cmd="NEW" title="แบบใหม่">ใหม่</button>
+    <button data-cmd="OPEN" title="เปิด DWG / DXF (Ctrl+O)">เปิด</button>
+    <button data-cmd="SAVE" title="บันทึก (Ctrl+S)">บันทึก</button>
+    <button data-cmd="SAVEAS" title="บันทึกเป็น DWG / DXF">บันทึกเป็น…</button>
+    <button data-cmd="PLOT" title="Plot เป็น PDF: กระดาษ A4–A0 + กรอบชื่อ + มาตราส่วน (Ctrl+P)">🖨 Plot PDF</button>
+  </div>
+  <div class="grp">
+    <button data-cmd="U" title="ย้อน (Ctrl+Z)">↶</button>
+    <button data-cmd="REDO" title="ทำซ้ำ (Ctrl+Y)">↷</button>
+    <button data-cmd="ZE" title="ดูทั้งหมด (Z E)">⤢</button>
+  </div>
+  <span id="saved" class="muted"></span>
+</header>
+<div class="main">
+  <nav class="tools" id="tools">
+    <div class="tl">วาด</div>
+    <button data-cmd="LINE" title="LINE (L)">╱<span>เส้น</span></button>
+    <button data-cmd="PLINE" title="PLINE (PL)">⌇<span>โพลีไลน์</span></button>
+    <button data-cmd="RECTANG" title="RECTANG (REC)">▭<span>สี่เหลี่ยม</span></button>
+    <button data-cmd="CIRCLE" title="CIRCLE (C)">◯<span>วงกลม</span></button>
+    <button data-cmd="ARC" title="ARC (A) 3 จุด">◜<span>โค้ง</span></button>
+    <button data-cmd="TEXT" title="TEXT (T)">T<span>ข้อความ</span></button>
+    <div class="tl">แก้</div>
+    <button data-cmd="MOVE" title="MOVE (M)">✥<span>ย้าย</span></button>
+    <button data-cmd="COPY" title="COPY (CO)">⧉<span>คัดลอก</span></button>
+    <button data-cmd="ROTATE" title="ROTATE (RO)">⟳<span>หมุน</span></button>
+    <button data-cmd="SCALE" title="SCALE (SC)">⤡<span>ย่อขยาย</span></button>
+    <button data-cmd="MIRROR" title="MIRROR (MI)">⇋<span>สะท้อน</span></button>
+    <button data-cmd="ERASE" title="ERASE (E / Delete)">✕<span>ลบ</span></button>
+    <button data-cmd="OFFSET" title="OFFSET (O)">⫴<span>offset</span></button>
+    <button data-cmd="TRIM" title="TRIM (TR)">✂<span>ตัด</span></button>
+    <button data-cmd="EXTEND" title="EXTEND (EX)">⟼<span>ยืด</span></button>
+    <button data-cmd="FILLET" title="FILLET (F)">◟<span>fillet</span></button>
+    <button data-cmd="ARRAY" title="ARRAY (AR)">⣿<span>array</span></button>
+    <button data-cmd="EXPLODE" title="EXPLODE (X)">✸<span>แตก</span></button>
+    <div class="tl">ใส่</div>
+    <button data-cmd="DIMLINEAR" title="DIMLINEAR (DLI)">↔<span>มิติ</span></button>
+    <button data-cmd="DIMALIGNED" title="DIMALIGNED (DAL)">⤢<span>มิติเอียง</span></button>
+    <button data-cmd="HATCH" title="HATCH (H)">▨<span>hatch</span></button>
+    <button data-cmd="BLOCK" title="BLOCK (B)">▣<span>block</span></button>
+    <button data-cmd="INSERT" title="INSERT (I)">⊕<span>insert</span></button>
+    <div class="tl">วัด</div>
+    <button data-cmd="DIST" title="DIST (DI)">📏<span>ระยะ</span></button>
+    <button data-cmd="AREA" title="AREA (AA)">⬠<span>พื้นที่</span></button>
+    <button data-cmd="MATCHPROP" title="MATCHPROP (MA)">🖌<span>match</span></button>
+  </nav>
+  <section class="canvaswrap" id="wrap">
+    <canvas id="cv"></canvas>
+    <div class="ucs">Y↑ X→</div>
+  </section>
+  <aside class="side">
+    <details open><summary>คุณสมบัติ</summary><div id="props" class="props"></div></details>
+    <details open><summary>Layer <button class="mini" id="layer-add" title="เพิ่ม layer">＋</button></summary>
+      <input id="layer-q" class="q" placeholder="ค้นหา layer">
+      <div id="layers" class="layers"></div></details>
+    <details><summary>ข้อมูลไฟล์</summary><div id="info" class="muted small"></div></details>
+  </aside>
+</div>
+<footer class="cmdline">
+  <div id="history" class="history"></div>
+  <div class="cmdrow"><span id="prompt" class="prompt">คำสั่ง:</span><input id="cmd" autocomplete="off" spellcheck="false" placeholder="พิมพ์คำสั่ง (L, PL, C, M, CO, RO…) หรือพิกัด x,y · @dx,dy · @ยาว<มุม"></div>
+  <div class="status"><span id="coords">0, 0</span>
+    <button class="tog on" id="t-osnap" title="OSNAP (F3)">OSNAP</button><button class="tog" id="t-ortho" title="ORTHO (F8)">ORTHO</button>
+    <span id="units" class="muted"></span><span id="count" class="muted"></span></div>
+</footer>
+<div id="dlg" class="dlg" hidden><div class="dlg-box">
+  <h3 id="dlg-title">เปิดไฟล์ CAD</h3>
+  <p id="dlg-note" class="muted small"></p>
+  <div id="dlg-body"></div>
+  <div class="dlg-foot"><span id="dlg-msg" class="muted small"></span><button id="dlg-close">ปิด</button></div>
+</div></div>
+<div id="toast" class="toast" hidden></div>
+<script type="module" src="app.js?v=0.9.0"></script>
+</body>
+</html>

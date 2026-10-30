@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="17" height="18" hotspot_x="8" hotspot_y="9">
+  <uuid uuid="{abf6ef1a-3627-5628-9bf6-56de14373e5e}"/>
+  <names>
+    <name lang="en">Terminal G</name>
+    <name lang="th">ขั้วต่อ G</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 24 · โดย ลุงพี</informations>
+  <description>
+    <polygon x1="-3.6" y1="3.6" x2="3.6" y2="3.6" x3="3.6" y3="-3.6" x4="-3.6" y4="-3.6" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <text x="-1.5" y="2.0" size="5" text="G" color="#000000" rotation="0"/>
+    <terminal x="0.0" y="-3.6" orientation="n" uuid="{525465cc-2293-5318-a4a1-45933ce4ccce}" name="" type="Generic"/>
+    <terminal x="0.0" y="3.6" orientation="s" uuid="{65b3bd8e-174b-5c85-afa8-4450934c91df}" name="" type="Generic"/>
+  </description>
+</definition>

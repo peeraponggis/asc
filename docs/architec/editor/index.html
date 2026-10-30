@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>เขียนแบบ · pee_architec</title>
+<link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="editor.css?v=0.9.0">
+<script src="../mode.js?v=0.9.0"></script>
+<script type="importmap">
+{ "imports": { "three": "../vendor/three/build/three.module.min.js", "three/addons/": "../vendor/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<header class="bar">
+  <a href="../" class="home" title="กลับหน้าหลัก"><img src="../logo.png" alt="" width="28" height="28"></a>
+  <input id="doc-name" class="docname" value="แบบใหม่" aria-label="ชื่อแบบ">
+  <div class="grp">
+    <button data-act="new" title="แบบใหม่">ใหม่</button>
+    <label class="btn" title="เปิดไฟล์แบบ (.json)">เปิด<input type="file" id="open-file" accept=".json,application/json" hidden></label>
+    <button data-act="save" title="บันทึก (Ctrl+S)">บันทึก</button>
+    <button data-act="cad" title="นำเข้าไฟล์ CAD (DXF / DWG)">📂 CAD</button>
+  </div>
+  <div class="grp">
+    <button data-act="undo" title="ย้อน (Ctrl+Z)">↶</button>
+    <button data-act="redo" title="ทำซ้ำ (Ctrl+Y)">↷</button>
+  </div>
+  <div class="grp seg" id="views">
+    <button data-view="2d">2D</button>
+    <button data-view="split" class="on">2D | 3D</button>
+    <button data-view="3d">3D</button>
+  </div>
+  <div class="grp">
+    <button data-act="render" class="accent" title="render ภาพนิ่ง 1920×1080">📷 Render</button>
+    <button data-act="plot" title="Plot ผัง 2D เป็น PDF: กระดาษ A4–A0 + กรอบชื่อ + มาตราส่วน">🖨 Plot</button>
+    <button data-act="dxf" title="ส่งออกผัง 2D เป็น DXF">DXF</button>
+    <button data-act="glb" title="ส่งออกโมเดล 3D (เปิดใน Blender ได้)">GLB</button>
+    <button data-act="yield" title="ส่ง kWp + มุม + ทิศของแผงไปคำนวณผลผลิต">⚡ ผลผลิต</button>
+  </div>
+  <span id="saved" class="muted"></span>
+</header>
+
+<div class="main">
+  <nav class="tools" id="tools">
+    <button data-tool="select" class="on" title="เลือก/ย้าย (V)">⬚<span>เลือก</span></button>
+    <button data-tool="pan" title="เลื่อนจอ (H)">✋<span>เลื่อน</span></button>
+    <button data-tool="wall" title="ผนัง (W)">▭<span>ผนัง</span></button>
+    <button data-tool="room" title="ห้องสี่เหลี่ยม (R)">⊡<span>ห้อง</span></button>
+    <button data-tool="door" title="ประตู (D)">🚪<span>ประตู</span></button>
+    <button data-tool="window" title="หน้าต่าง (N)">▤<span>หน้าต่าง</span></button>
+    <button data-tool="box" title="กล่อง push-pull (B)">⬛<span>กล่อง</span></button>
+    <button data-tool="line" title="เส้น (L)">╱<span>เส้น</span></button>
+    <button data-tool="dim" title="มิติ (M)">↔<span>มิติ</span></button>
+    <button data-tool="text" title="ข้อความ (T)">T<span>ข้อความ</span></button>
+    <button data-tool="symbol" title="สัญลักษณ์ (S)">◈<span>สัญลักษณ์</span></button>
+    <button data-tool="erase" title="ลบ (E)">✕<span>ลบ</span></button>
+  </nav>
+
+  <section class="views split" id="viewarea">
+    <div class="pane" id="pane2d"><svg id="plan" aria-label="ผัง 2D"></svg>
+      <div class="corner"><button data-act="fit2d" title="ดูทั้งหมด">⤢</button>
+        <label><input type="checkbox" id="ortho" checked> ล็อกมุม</label>
+        <label><input type="checkbox" id="snap" checked> จับจุด</label>
+        <select id="grid" title="กริด"><option value="10">กริด 10</option><option value="50">50</option><option value="100" selected>100</option><option value="500">500</option><option value="0">ไม่จับกริด</option></select></div>
+    </div>
+    <div class="pane" id="pane3d"><canvas id="c3d" aria-label="มุมมอง 3D"></canvas>
+      <div class="corner c3d">
+        <div class="tools3d" id="tools3d">
+          <button data-t3="orbit" class="on" title="หมุนมุมมอง (O)">🔄</button><button data-t3="select" title="เลือก (Space)">⬚</button>
+          <button data-t3="pushpull" title="push-pull (P)">⇕</button><button data-t3="rect" title="สี่เหลี่ยมบนพื้น/บนหน้า (R)">▭</button>
+          <button data-t3="move" title="ย้าย · Ctrl = คัดลอก (M)">✥</button><button data-t3="rotate" title="หมุน 15° (Q)">⟳</button>
+          <button data-t3="paint" title="ทาสี (B)">🪣</button><button data-t3="tape" title="ตลับเมตร (T)">📏</button>
+          <select id="mat3d" title="วัสดุ"></select>
+          <button data-act="group3d" title="รวมกลุ่มที่เลือก">⧉</button><button data-act="ungroup3d" title="แยกกลุ่ม">⧈</button><button data-act="del3d" title="ลบกล่องที่เลือก">🗑</button>
+          <button data-act="fit3d" title="ดูทั้งหมด">⤢</button>
+        </div>
+        <div class="sun3d">
+          <label title="วันที่และเวลา → ตำแหน่งดวงอาทิตย์จริงตามพิกัดโครงการ">☀ <input type="date" id="sun-date"> <input type="time" id="sun-time" value="10:00" step="900"></label>
+          <label title="ตัดหน้าแนวนอน">ตัดหน้า <input type="range" id="section" min="0" max="12000" step="100" value="12000"></label>
+          <select id="scenes" title="มุมกล้องที่บันทึกไว้"><option value="">มุมกล้อง…</option></select><button data-act="scene-add" title="บันทึกมุมกล้องนี้">＋</button>
+        </div></div>
+    </div>
+  </section>
+
+  <aside class="props" id="props">
+    <div id="sel-box"></div>
+    <details open><summary>ค่าเริ่มต้นเครื่องมือ</summary>
+      <div class="form">
+        <label>ผนังหนา (มม.)<input type="number" id="d-thick" value="200" min="50" step="any"></label>
+        <label>ผนังสูง (มม.)<input type="number" id="d-height" value="3000" min="100" step="any"></label>
+        <label>ประตูกว้าง<input type="number" id="d-door" value="900" min="300" step="any"></label>
+        <label>หน้าต่างกว้าง<input type="number" id="d-win" value="1200" min="300" step="any"></label>
+        <label>กล่องสูง<input type="number" id="d-mass" value="3000" min="100" step="any"></label>
+      </div>
+    </details>
+    <details open><summary>หลังคา + แผงโซลาร์</summary>
+      <div class="form">
+        <label>ทรงหลังคา<select id="roof-type"><option value="none">ไม่มี</option><option value="flat">เรียบ</option><option value="shed">เพิง (ลาดลงใต้)</option><option value="gable" selected>จั่ว</option><option value="hip">ปั้นหยา</option><option value="curved">โค้ง</option></select></label>
+        <label>หลังคาโค้ง: สูงจากชายคา (มม.)<input type="number" id="roof-rise" value="0" min="0" step="any" title="0 = คิดจากความชัน"></label>
+        <label>หลังคาโค้ง: จำนวนช่วง<input type="number" id="roof-facets" value="6" min="2" max="24" step="1"></label>
+        <label>ความชัน (°)<input type="number" id="roof-pitch" value="20" min="0" max="60" step="any"></label>
+        <label>ชายคายื่น (มม.)<input type="number" id="roof-over" value="600" min="0" step="any"></label>
+        <label>แนวสัน<select id="roof-ridge"><option value="auto">ตามด้านยาวของอาคาร</option><option value="short">ตามด้านสั้นของอาคาร</option></select></label>
+        <label class="chk"><input type="checkbox" id="pv-on" checked> วางแผงโซลาร์อัตโนมัติ</label>
+        <label>แผง W<input type="number" id="pv-watt" value="550" min="100" step="any"></label>
+        <label>ระยะห่างขอบ (มม.)<input type="number" id="pv-edge" value="400" min="0" step="any"></label>
+        <label>ทิศเหนือของแบบ (°)<input type="number" id="north" value="0" step="any" title="0 = ด้านบนของกระดาษคือทิศเหนือ"></label>
+      </div>
+    </details>
+    <details open id="cad-box" hidden><summary>ไฟล์ CAD</summary><div id="cad-list"></div></details>
+    <details><summary>สัญลักษณ์</summary>
+      <input id="sym-q" placeholder="ค้นหา ประตู WC รถ ต้นไม้">
+      <div id="sym-list" class="symlist"></div>
+    </details>
+    <div id="summary" class="summary"></div>
+  </aside>
+</div>
+<footer class="status">
+  <span id="status">พร้อม</span>
+  <label class="vcb">ระยะ <input id="vcb" autocomplete="off" placeholder="พิมพ์แล้ว Enter"></label>
+</footer>
+<div id="plot-dlg" class="dlg" hidden>
+  <div class="dlg-box">
+    <h3>🖨 Plot ผัง 2D เป็น PDF</h3>
+    <p class="muted">กระดาษแนวนอน + กรอบแบบ/กรอบชื่อ กฟน./กฟภ. · PDF เวกเตอร์เก็บที่ out\plots</p>
+    <div id="plot-form"></div>
+    <div class="dlg-foot"><span id="plot-msg" class="muted"></span><span><button data-act="plot-go" class="accent">🖨 สร้าง PDF</button> <button data-act="plot-close">ปิด</button></span></div>
+  </div>
+</div>
+<div id="cad-dlg" class="dlg" hidden>
+  <div class="dlg-box">
+    <h3>นำเข้าไฟล์ CAD</h3>
+    <p class="muted" id="cad-conv"></p>
+    <label class="btn">เลือกไฟล์จากเครื่อง (.dxf / .dwg)<input type="file" id="cad-upload" accept=".dxf,.dwg" hidden></label>
+    <label class="chk"><input type="checkbox" id="cad-showlib"> แสดงแม่แบบ/คลังที่โปรแกรมสร้างเอง</label>
+    <div id="cad-files" class="cadfiles"></div>
+    <div class="dlg-foot"><span id="cad-msg" class="muted"></span><button data-act="cad-close">ปิด</button></div>
+  </div>
+</div>
+<div id="toast" class="toast" hidden></div>
+<script type="module" src="main.js?v=0.9.0"></script>
+</body>
+</html>

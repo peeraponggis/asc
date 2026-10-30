@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="20" height="34" hotspot_x="10" hotspot_y="25">
+  <uuid uuid="{ee30d656-3b8d-551a-83f3-8bfff711593c}"/>
+  <names>
+    <name lang="en">Existing load</name>
+    <name lang="th">โหลด/อาคารเดิม (เส้นเทา)</name>
+  </names>
+  <informations>pee_architec · หมวด 3 ข้อ 1 · หมวด 6 ข้อ 10 · โดย ลุงพี</informations>
+  <description>
+    <line x1="0.0" y1="-20.0" x2="0.0" y2="-4.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:gray"/>
+    <polygon x1="-5.0" y1="-4.0" x2="5.0" y2="-4.0" x3="0.0" y3="4.0" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:gray"/>
+    <terminal x="0.0" y="-20.0" orientation="n" uuid="{e683e03c-9c69-50d8-abdf-d65f1bb8d742}" name="" type="Generic"/>
+  </description>
+</definition>

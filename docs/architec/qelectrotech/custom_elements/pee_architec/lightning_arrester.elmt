@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="22" height="51" hotspot_x="11" hotspot_y="25">
+  <uuid uuid="{b9593cf6-9f49-5768-8d02-5897ac8ae5ea}"/>
+  <names>
+    <name lang="en">Lightning arrester</name>
+    <name lang="th">กับดักฟ้าผ่า (LA)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 3 · โดย ลุงพี</informations>
+  <description>
+    <line x1="0.0" y1="-20.0" x2="0.0" y2="-8.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <polygon x1="-4.0" y1="8.0" x2="4.0" y2="8.0" x3="4.0" y3="-8.0" x4="-4.0" y4="-8.0" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="-6.0" x2="0.0" y2="5.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <polygon x1="0.0" y1="5.0" x2="1.09" y2="2.42" x3="-1.09" y3="2.42" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:black;color:black"/>
+    <line x1="0.0" y1="8.0" x2="0.0" y2="12.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="12.0" x2="0.0" y2="17.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-6.0" y1="17.0" x2="6.0" y2="17.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-4.0" y1="19.0" x2="4.0" y2="19.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-2.0" y1="21.0" x2="2.0" y2="21.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-20.0" orientation="n" uuid="{e21441f5-a7e1-53d4-a768-52b5b6c53620}" name="" type="Generic"/>
+  </description>
+</definition>

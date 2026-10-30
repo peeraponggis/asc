@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="42" height="36" hotspot_x="21" hotspot_y="21">
+  <uuid uuid="{c6a9d525-fbd1-51c6-bb38-87ea1907d386}"/>
+  <names>
+    <name lang="en">Battery</name>
+    <name lang="th">แบตเตอรี่ (กล่องชื่อรุ่น + PORT)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 18 · โดย ลุงพี</informations>
+  <description>
+    <polygon x1="-16.0" y1="10.0" x2="16.0" y2="10.0" x3="16.0" y3="-10.0" x4="-16.0" y4="-10.0" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <text x="-10.5" y="-1.0" size="5" text="BATTERY" color="#000000" rotation="0"/>
+    <text x="-6.0" y="6.4" size="5" text="PORT" color="#000000" rotation="0"/>
+    <line x1="0.0" y1="-10.0" x2="0.0" y2="-16.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-16.0" orientation="n" uuid="{7bfdaa49-570e-551b-a678-85c98a22f122}" name="" type="Generic"/>
+  </description>
+</definition>

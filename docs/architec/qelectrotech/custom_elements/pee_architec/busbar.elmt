@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="130" height="10" hotspot_x="65" hotspot_y="5">
+  <uuid uuid="{d7320c1f-0f0b-5e88-a029-4a443bfda40a}"/>
+  <names>
+    <name lang="en">Busbar</name>
+    <name lang="th">บัสบาร์ (เส้นหนาสีแดง)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 19 · โดย ลุงพี</informations>
+  <description>
+    <polygon x1="-60.0" y1="0.0" x2="60.0" y2="0.0" closed="false" antialias="true" style="line-style:normal;line-weight:thick;filling:none;color:red"/>
+    <terminal x="-60.0" y="0.0" orientation="w" uuid="{7bff224a-d4af-587a-ac22-e8226770a6ed}" name="" type="Generic"/>
+    <terminal x="60.0" y="0.0" orientation="e" uuid="{59c55ce4-c4cf-5787-851d-c962bfb5fd82}" name="" type="Generic"/>
+  </description>
+</definition>

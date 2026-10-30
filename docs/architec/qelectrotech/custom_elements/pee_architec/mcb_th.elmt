@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="24" height="50" hotspot_x="16" hotspot_y="25">
+  <uuid uuid="{49488c30-7c02-559e-9929-952b95cc3e42}"/>
+  <names>
+    <name lang="en">Circuit breaker (Thai house style)</name>
+    <name lang="th">MCB (แบบไทย เล็กกว่า CB)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 7 · โดย ลุงพี</informations>
+  <description>
+    <line x1="0.0" y1="-20.0" x2="0.0" y2="-5.76" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="5.76" x2="0.0" y2="20.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <circle x="-0.86" y="-6.62" diameter="1.73" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <circle x="-0.86" y="4.9" diameter="1.73" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <arc x="-11.52" y="-7.2" width="14.4" height="14.4" start="-53" angle="106" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-20.0" orientation="n" uuid="{b1b531d9-28fa-595f-801f-0222091df6db}" name="" type="Generic"/>
+    <terminal x="0.0" y="20.0" orientation="s" uuid="{3b8eac16-a991-511d-81a2-93b7365c67eb}" name="" type="Generic"/>
+  </description>
+</definition>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="18" height="50" hotspot_x="11" hotspot_y="25">
+  <uuid uuid="{69000388-cfc7-572a-8371-c1afa1d78bdf}"/>
+  <names>
+    <name lang="en">Contactor</name>
+    <name lang="th">คอนแทคเตอร์ / สวิตช์บายพาส (KM)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 23 · โดย ลุงพี</informations>
+  <description>
+    <line x1="0.0" y1="-20.0" x2="0.0" y2="-8.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="8.0" x2="0.0" y2="20.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="8.0" x2="-6.4" y2="-6.8" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <arc x="-2.0" y="-12.0" width="4.0" height="4.0" start="180" angle="180" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-20.0" orientation="n" uuid="{b54bf0b3-483b-5f4d-8f68-b18e1f157bbb}" name="" type="Generic"/>
+    <terminal x="0.0" y="20.0" orientation="s" uuid="{95465a0c-0175-573e-831c-e0631642f356}" name="" type="Generic"/>
+  </description>
+</definition>

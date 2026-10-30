@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="45" height="27" hotspot_x="23" hotspot_y="16">
+  <uuid uuid="{0526d13c-8680-57c0-9b7c-f0d5a5d7eafe}"/>
+  <names>
+    <name lang="en">Cloud server</name>
+    <name lang="th">เมฆ SERVER (ระบบสื่อสาร)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 27 · โดย ลุงพี</informations>
+  <description>
+    <arc x="-18.0" y="-6.0" width="12.0" height="12.0" start="90" angle="180" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:red"/>
+    <arc x="-11.4" y="-11.4" width="12.8" height="12.8" start="20" angle="155" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:red"/>
+    <arc x="0.0" y="-10.4" width="12.0" height="12.0" start="0" angle="160" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:red"/>
+    <arc x="6.8" y="-4.2" width="10.4" height="10.4" start="-90" angle="180" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:red"/>
+    <line x1="-12.0" y1="6.0" x2="12.0" y2="6.2" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:red"/>
+    <text x="-9.0" y="2.0" size="5" text="SERVER" color="#000000" rotation="0"/>
+    <terminal x="0.0" y="6.2" orientation="s" uuid="{bb5ca516-ff14-54d0-b830-04d23ca23555}" name="" type="Generic"/>
+  </description>
+</definition>

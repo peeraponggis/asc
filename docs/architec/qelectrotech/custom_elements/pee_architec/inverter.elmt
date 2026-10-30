@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="50" height="50" hotspot_x="25" hotspot_y="25">
+  <uuid uuid="{0f76ca87-6215-52dd-b815-69da85697109}"/>
+  <names>
+    <name lang="en">Inverter</name>
+    <name lang="th">อินเวอร์เตอร์ (สี่เหลี่ยม + เส้นทแยง ~ / =)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 14 · โดย ลุงพี</informations>
+  <description>
+    <polygon x1="-20.0" y1="14.0" x2="20.0" y2="14.0" x3="20.0" y3="-14.0" x4="-20.0" y4="-14.0" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-20.0" y1="14.0" x2="20.0" y2="-14.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <text x="-16.4" y="-5.3999999999999995" size="8" text="~" color="#000000" rotation="0"/>
+    <text x="11.6" y="11.8" size="8" text="=" color="#000000" rotation="0"/>
+    <line x1="0.0" y1="-14.0" x2="0.0" y2="-20.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-10.0" y1="14.0" x2="-10.0" y2="20.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="10.0" y1="14.0" x2="10.0" y2="20.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-20.0" orientation="n" uuid="{afef303b-c2c1-5275-8926-f218f97267e4}" name="" type="Generic"/>
+    <terminal x="-10.0" y="20.0" orientation="s" uuid="{e9bf1a38-a335-50b4-a54d-8f7ddd44d0e9}" name="" type="Generic"/>
+    <terminal x="10.0" y="20.0" orientation="s" uuid="{1a67d0a7-703b-56a7-b6b7-003521470e2e}" name="" type="Generic"/>
+  </description>
+</definition>

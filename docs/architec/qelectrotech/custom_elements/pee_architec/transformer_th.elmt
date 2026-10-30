@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="26" height="50" hotspot_x="13" hotspot_y="25">
+  <uuid uuid="{31692b07-5eaa-5da3-a1d7-ef645e5003a3}"/>
+  <names>
+    <name lang="en">Transformer</name>
+    <name lang="th">หม้อแปลงไฟฟ้า</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 1 · โดย ลุงพี</informations>
+  <description>
+    <circle x="-8.0" y="-13.2" diameter="16.0" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <circle x="-8.0" y="-2.8" diameter="16.0" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="-20.0" x2="0.0" y2="-13.2" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="13.2" x2="0.0" y2="20.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <polygon x1="-2.8" y1="-4.0" x2="2.8" y2="-4.0" x3="0.0" y3="-8.8" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="5.2" x2="0.0" y2="8.8" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="5.2" x2="-2.6" y2="2.8" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="5.2" x2="2.6" y2="2.8" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-20.0" orientation="n" uuid="{b1ab4aaa-3790-59e6-9c93-d0e5f727f36b}" name="" type="Generic"/>
+    <terminal x="0.0" y="20.0" orientation="s" uuid="{7ad66780-9765-5462-a714-04038998774a}" name="" type="Generic"/>
+  </description>
+</definition>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="20" height="19" hotspot_x="10" hotspot_y="11">
+  <uuid uuid="{af796a1b-9458-50f2-a757-327fbe0b57ed}"/>
+  <names>
+    <name lang="en">Note marker</name>
+    <name lang="th">⚠ หมายเลข 1 (อ้างตาราง MCB FOR SOLAR)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 29 · โดย ลุงพี</informations>
+  <description>
+    <polygon x1="-5.2" y1="3.2" x2="5.2" y2="3.2" x3="0.0" y3="-6.0" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+  </description>
+</definition>

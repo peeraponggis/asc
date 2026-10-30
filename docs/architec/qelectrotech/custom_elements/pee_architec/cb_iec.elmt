@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="18" height="50" hotspot_x="11" hotspot_y="25">
+  <uuid uuid="{4958be48-3203-568d-965e-3a5ba53bf7da}"/>
+  <names>
+    <name lang="en">Circuit breaker (IEC 60617)</name>
+    <name lang="th">เซอร์กิตเบรกเกอร์ (IEC 60617 S00287)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 7 · โดย ลุงพี</informations>
+  <description>
+    <line x1="0.0" y1="-20.0" x2="0.0" y2="-8.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="8.0" x2="0.0" y2="20.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="8.0" x2="-6.4" y2="-6.8" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-2.0" y1="-6.0" x2="2.0" y2="-10.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-2.0" y1="-10.0" x2="2.0" y2="-6.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-20.0" orientation="n" uuid="{5b2065de-c5c8-575c-ab6a-13d21eb78262}" name="" type="Generic"/>
+    <terminal x="0.0" y="20.0" orientation="s" uuid="{456f949f-a95c-5b6b-9bc8-f174ebb764d0}" name="" type="Generic"/>
+  </description>
+</definition>

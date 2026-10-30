@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="29" height="50" hotspot_x="16" hotspot_y="25">
+  <uuid uuid="{13c9945b-1203-519d-b020-e912f41b6bfe}"/>
+  <names>
+    <name lang="en">DC switch-disconnector</name>
+    <name lang="th">DC MCB / DC isolator (IEC S00290)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 13 · โดย ลุงพี</informations>
+  <description>
+    <line x1="0.0" y1="-20.0" x2="0.0" y2="-8.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="8.0" x2="0.0" y2="20.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="8.0" x2="-6.4" y2="-6.8" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-2.4" y1="-8.0" x2="2.4" y2="-8.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-6.0" y1="-1.0" x2="-11.0" y2="-1.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-11.0" y1="1.0" x2="-11.0" y2="-3.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <text x="4.0" y="15.0" size="5" text="DC" color="#000000" rotation="0"/>
+    <terminal x="0.0" y="-20.0" orientation="n" uuid="{9623cdf8-faae-5297-baab-3d7f8efaeb79}" name="" type="Generic"/>
+    <terminal x="0.0" y="20.0" orientation="s" uuid="{6bfb3a0e-b7e2-5ae3-9c7f-6a47cccdb334}" name="" type="Generic"/>
+  </description>
+</definition>

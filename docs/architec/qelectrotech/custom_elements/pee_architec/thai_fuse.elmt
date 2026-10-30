@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="16" height="50" hotspot_x="8" hotspot_y="25">
+  <uuid uuid="{bdb493f2-4998-52b2-ab53-b0b465227e5c}"/>
+  <names>
+    <name lang="en">Fuse</name>
+    <name lang="th">ฟิวส์ HRC (สี่เหลี่ยมแรเงาเฉียง)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 10–11 · โดย ลุงพี</informations>
+  <description>
+    <line x1="0.0" y1="-20.0" x2="0.0" y2="-8.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="8.0" x2="0.0" y2="20.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <polygon x1="-3.0" y1="8.0" x2="3.0" y2="8.0" x3="3.0" y3="-8.0" x4="-3.0" y4="-8.0" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-3.0" y1="-5.6" x2="-0.6" y2="-8.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-3.0" y1="-3.2" x2="1.8" y2="-8.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-3.0" y1="-0.8" x2="3.0" y2="-6.8" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-3.0" y1="1.6" x2="3.0" y2="-4.4" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-3.0" y1="4.0" x2="3.0" y2="-2.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-3.0" y1="6.4" x2="3.0" y2="0.4" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-2.2" y1="8.0" x2="3.0" y2="2.8" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.2" y1="8.0" x2="3.0" y2="5.2" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="2.6" y1="8.0" x2="3.0" y2="7.6" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-20.0" orientation="n" uuid="{a7805060-5a19-5ae6-8951-8e5bdc936c18}" name="" type="Generic"/>
+    <terminal x="0.0" y="20.0" orientation="s" uuid="{907e08e0-d830-56c9-bbe7-58a69e96de05}" name="" type="Generic"/>
+  </description>
+</definition>

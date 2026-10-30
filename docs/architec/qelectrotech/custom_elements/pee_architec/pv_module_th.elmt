@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="20" height="34" hotspot_x="10" hotspot_y="17">
+  <uuid uuid="{3682e470-87c7-5a03-853c-63f81d5c0f10}"/>
+  <names>
+    <name lang="en">PV module</name>
+    <name lang="th">แผงโซลาร์ (ในแบบ SLD)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 16 · โดย ลุงพี</informations>
+  <description>
+    <polygon x1="-5.0" y1="8.0" x2="5.0" y2="8.0" x3="5.0" y3="-8.0" x4="-5.0" y4="-8.0" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-5.0" y1="8.0" x2="5.0" y2="-8.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <polygon x1="-3.2" y1="-6.4" x2="0.8" y2="-6.4" x3="-3.2" y3="-1.2" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="-8.0" x2="0.0" y2="-12.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="8.0" x2="0.0" y2="12.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-12.0" orientation="n" uuid="{70feb62c-d425-5265-bbdb-a846deddaf08}" name="" type="Generic"/>
+    <terminal x="0.0" y="12.0" orientation="s" uuid="{63c2eada-459a-5e4a-a996-bc5bc9f5f2e4}" name="" type="Generic"/>
+  </description>
+</definition>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="14" height="50" hotspot_x="7" hotspot_y="25">
+  <uuid uuid="{9be78aa2-d6ef-5357-9d3d-67da05109dc9}"/>
+  <names>
+    <name lang="en">Fuse</name>
+    <name lang="th">ฟิวส์ DC สตริง</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 10–11 · โดย ลุงพี</informations>
+  <description>
+    <line x1="0.0" y1="-20.0" x2="0.0" y2="-6.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="6.0" x2="0.0" y2="20.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <polygon x1="-2.25" y1="6.0" x2="2.25" y2="6.0" x3="2.25" y3="-6.0" x4="-2.25" y4="-6.0" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-2.25" y1="-4.2" x2="-0.45" y2="-6.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-2.25" y1="-2.4" x2="1.35" y2="-6.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-2.25" y1="-0.6" x2="2.25" y2="-5.1" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-2.25" y1="1.2" x2="2.25" y2="-3.3" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-2.25" y1="3.0" x2="2.25" y2="-1.5" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-2.25" y1="4.8" x2="2.25" y2="0.3" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-1.65" y1="6.0" x2="2.25" y2="2.1" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.15" y1="6.0" x2="2.25" y2="3.9" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="1.95" y1="6.0" x2="2.25" y2="5.7" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-20.0" orientation="n" uuid="{fb44a021-c9af-5da2-86d3-84dc8a630c6e}" name="" type="Generic"/>
+    <terminal x="0.0" y="20.0" orientation="s" uuid="{6a5c1398-6ac2-5a90-8474-db3101b7897a}" name="" type="Generic"/>
+  </description>
+</definition>

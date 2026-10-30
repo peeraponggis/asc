@@ -1,0 +1,1534 @@
+{
+ "symbols": [
+  {
+   "name": "TRANSFORMER_TH",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "หม้อแปลงไฟฟ้า",
+   "en": "Transformer",
+   "note": "หมวด 4 ข้อ 1",
+   "attributes": [
+    "TAG",
+    "KVA",
+    "HV",
+    "LV",
+    "Z",
+    "VECTOR"
+   ],
+   "svg": "library/svg/TRANSFORMER_TH.svg"
+  },
+  {
+   "name": "TRANSFORMER_IEC",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "หม้อแปลงไฟฟ้า",
+   "en": "Transformer",
+   "note": "หมวด 4 ข้อ 1",
+   "attributes": [
+    "TAG",
+    "KVA",
+    "HV",
+    "LV",
+    "Z",
+    "VECTOR"
+   ],
+   "svg": "library/svg/TRANSFORMER_IEC.svg"
+  },
+  {
+   "name": "DROPOUT_FUSE",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "ดรอปเอาต์ฟิวส์ (FUSE DISCONNECTING SWITCH)",
+   "en": "Drop-out fuse",
+   "note": "หมวด 4 ข้อ 2",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/DROPOUT_FUSE.svg"
+  },
+  {
+   "name": "LIGHTNING_ARRESTER",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "กับดักฟ้าผ่า (LA)",
+   "en": "Lightning arrester",
+   "note": "หมวด 4 ข้อ 3",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/LIGHTNING_ARRESTER.svg"
+  },
+  {
+   "name": "UTILITY_SOURCE",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "สายจากการไฟฟ้า (TO PEA / TO EDL)",
+   "en": "Utility supply",
+   "note": "หมวด 4 ข้อ 4",
+   "attributes": [
+    "UTILITY",
+    "LINE",
+    "CABLE"
+   ],
+   "svg": "library/svg/UTILITY_SOURCE.svg"
+  },
+  {
+   "name": "KWH_METER",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "มิเตอร์การไฟฟ้า (kWh / AMI)",
+   "en": "Energy meter",
+   "note": "หมวด 4 ข้อ 5",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/KWH_METER.svg"
+  },
+  {
+   "name": "CT",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "หม้อแปลงกระแส (CT)",
+   "en": "Current transformer",
+   "note": "หมวด 4 ข้อ 6",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/CT.svg"
+  },
+  {
+   "name": "CB_TH",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "เซอร์กิตเบรกเกอร์ / MCCB (แบบไทย: โค้ง ')')",
+   "en": "Circuit breaker (Thai house style)",
+   "note": "หมวด 4 ข้อ 7",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/CB_TH.svg"
+  },
+  {
+   "name": "CB_IEC",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "เซอร์กิตเบรกเกอร์ (IEC 60617 S00287)",
+   "en": "Circuit breaker (IEC 60617)",
+   "note": "หมวด 4 ข้อ 7",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/CB_IEC.svg"
+  },
+  {
+   "name": "MCB_TH",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "MCB (แบบไทย เล็กกว่า CB)",
+   "en": "Circuit breaker (Thai house style)",
+   "note": "หมวด 4 ข้อ 7",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/MCB_TH.svg"
+  },
+  {
+   "name": "MCB_IEC",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "MCB (IEC 60617)",
+   "en": "Circuit breaker (IEC 60617)",
+   "note": "หมวด 4 ข้อ 7",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/MCB_IEC.svg"
+  },
+  {
+   "name": "RCBO_TH",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "RCBO / RCCB (แบบไทย)",
+   "en": "Residual current breaker",
+   "note": "หมวด 4 ข้อ 9",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/RCBO_TH.svg"
+  },
+  {
+   "name": "RCBO_IEC",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "RCBO / RCCB (IEC 60617 S00294)",
+   "en": "Residual current breaker",
+   "note": "หมวด 4 ข้อ 9",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/RCBO_IEC.svg"
+  },
+  {
+   "name": "HRC_FUSE_TH",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "ฟิวส์ HRC (สี่เหลี่ยมแรเงาเฉียง)",
+   "en": "Fuse",
+   "note": "หมวด 4 ข้อ 10–11",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/HRC_FUSE_TH.svg"
+  },
+  {
+   "name": "FUSE_IEC",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "ฟิวส์ (IEC 60617 S00362)",
+   "en": "Fuse",
+   "note": "หมวด 4 ข้อ 10–11",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/FUSE_IEC.svg"
+  },
+  {
+   "name": "DC_FUSE",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "ฟิวส์ DC สตริง",
+   "en": "Fuse",
+   "note": "หมวด 4 ข้อ 10–11",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/DC_FUSE.svg"
+  },
+  {
+   "name": "SPD",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "อุปกรณ์ป้องกันฟ้าผ่า/แรงดันเกิน SPD (สีแดง)",
+   "en": "Surge protective device",
+   "note": "หมวด 4 ข้อ 12",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/SPD.svg"
+  },
+  {
+   "name": "DC_SPD",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "SPD ฝั่ง DC (สีแดง)",
+   "en": "Surge protective device",
+   "note": "หมวด 4 ข้อ 12",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/DC_SPD.svg"
+  },
+  {
+   "name": "DC_ISOLATOR",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "DC MCB / DC isolator (IEC S00290)",
+   "en": "DC switch-disconnector",
+   "note": "หมวด 4 ข้อ 13",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/DC_ISOLATOR.svg"
+  },
+  {
+   "name": "INVERTER",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "อินเวอร์เตอร์ (สี่เหลี่ยม + เส้นทแยง ~ / =)",
+   "en": "Inverter",
+   "note": "หมวด 4 ข้อ 14",
+   "attributes": [
+    "TAG",
+    "PHASE",
+    "MODEL",
+    "SN"
+   ],
+   "svg": "library/svg/INVERTER.svg"
+  },
+  {
+   "name": "MPPT_INPUT",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "ช่อง MPPT (ขั้ว + สวิตช์ + DC SPD ภายใน)",
+   "en": "MPPT input",
+   "note": "หมวด 4 ข้อ 15",
+   "attributes": [
+    "TAG"
+   ],
+   "svg": "library/svg/MPPT_INPUT.svg"
+  },
+  {
+   "name": "PV_MODULE_TH",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "แผงโซลาร์ (ในแบบ SLD)",
+   "en": "PV module",
+   "note": "หมวด 4 ข้อ 16",
+   "attributes": [
+    "NO"
+   ],
+   "svg": "library/svg/PV_MODULE_TH.svg"
+  },
+  {
+   "name": "PV_MODULE_IEC",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "PV generator (IEC 60617 S00908)",
+   "en": "PV module",
+   "note": "หมวด 4 ข้อ 16",
+   "attributes": [
+    "NO"
+   ],
+   "svg": "library/svg/PV_MODULE_IEC.svg"
+  },
+  {
+   "name": "OPTIMIZER",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "ออปติไมเซอร์ (ติดข้างแผง)",
+   "en": "PV optimizer",
+   "note": "หมวด 4 ข้อ 17",
+   "attributes": [
+    "MODEL"
+   ],
+   "svg": "library/svg/OPTIMIZER.svg"
+  },
+  {
+   "name": "BATTERY_TH",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "แบตเตอรี่ (กล่องชื่อรุ่น + PORT)",
+   "en": "Battery",
+   "note": "หมวด 4 ข้อ 18",
+   "attributes": [
+    "MODEL"
+   ],
+   "svg": "library/svg/BATTERY_TH.svg"
+  },
+  {
+   "name": "BATTERY_IEC",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "แบตเตอรี่ (IEC S00898)",
+   "en": "Battery",
+   "note": "หมวด 4 ข้อ 18",
+   "attributes": [
+    "MODEL"
+   ],
+   "svg": "library/svg/BATTERY_IEC.svg"
+  },
+  {
+   "name": "BUSBAR",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "บัสบาร์ (เส้นหนาสีแดง)",
+   "en": "Busbar",
+   "note": "หมวด 4 ข้อ 19",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/BUSBAR.svg"
+  },
+  {
+   "name": "PILOT_LAMP",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "หลอดสัญญาณ (วงกลม ×)",
+   "en": "Pilot lamp",
+   "note": "หมวด 4 ข้อ 20",
+   "attributes": [
+    "TAG"
+   ],
+   "svg": "library/svg/PILOT_LAMP.svg"
+  },
+  {
+   "name": "DPM",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "มิเตอร์ดิจิทัล DPM",
+   "en": "DPM",
+   "note": "หมวด 4 ข้อ 21",
+   "attributes": [
+    "MODEL"
+   ],
+   "svg": "library/svg/DPM.svg"
+  },
+  {
+   "name": "SMART_METER",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "สมาร์ทมิเตอร์ (zero export)",
+   "en": "SM",
+   "note": "หมวด 4 ข้อ 21",
+   "attributes": [
+    "MODEL"
+   ],
+   "svg": "library/svg/SMART_METER.svg"
+  },
+  {
+   "name": "RELAY_TH",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "รีเลย์ป้องกัน (วงกลมเลข ANSI + เส้นประ trip)",
+   "en": "Protection relay",
+   "note": "หมวด 4 ข้อ 22",
+   "attributes": [
+    "ANSI",
+    "MODEL"
+   ],
+   "svg": "library/svg/RELAY_TH.svg"
+  },
+  {
+   "name": "RELAY_IEC",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "รีเลย์ป้องกัน (ข้อความ IEC + ANSI)",
+   "en": "Protection relay",
+   "note": "หมวด 4 ข้อ 22",
+   "attributes": [
+    "FUNC",
+    "ANSI",
+    "MODEL"
+   ],
+   "svg": "library/svg/RELAY_IEC.svg"
+  },
+  {
+   "name": "CONTACTOR_KM",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "คอนแทคเตอร์ / สวิตช์บายพาส (KM)",
+   "en": "Contactor",
+   "note": "หมวด 4 ข้อ 23",
+   "attributes": [
+    "TAG"
+   ],
+   "svg": "library/svg/CONTACTOR_KM.svg"
+  },
+  {
+   "name": "TERMINAL_N",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "ขั้วต่อ N",
+   "en": "Terminal N",
+   "note": "หมวด 4 ข้อ 24",
+   "attributes": [],
+   "svg": "library/svg/TERMINAL_N.svg"
+  },
+  {
+   "name": "TERMINAL_G",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "ขั้วต่อ G",
+   "en": "Terminal G",
+   "note": "หมวด 4 ข้อ 24",
+   "attributes": [],
+   "svg": "library/svg/TERMINAL_G.svg"
+  },
+  {
+   "name": "EARTH",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "ดิน (เส้นนอน 3 เส้นสั้นลง)",
+   "en": "Earth",
+   "note": "หมวด 4 ข้อ 25",
+   "attributes": [
+    "CABLE"
+   ],
+   "svg": "library/svg/EARTH.svg"
+  },
+  {
+   "name": "GROUND_BOX",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "กล่องดิน (GROUND BOX)",
+   "en": "Ground box",
+   "note": "หมวด 4 ข้อ 26",
+   "attributes": [],
+   "svg": "library/svg/GROUND_BOX.svg"
+  },
+  {
+   "name": "GROUND_TEST_BOX",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "กล่องทดสอบดิน",
+   "en": "Ground test box",
+   "note": "หมวด 4 ข้อ 26",
+   "attributes": [],
+   "svg": "library/svg/GROUND_TEST_BOX.svg"
+  },
+  {
+   "name": "ROUTER_4G",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "เราเตอร์ 4G (กล่องแดง)",
+   "en": "4G router",
+   "note": "หมวด 4 ข้อ 27",
+   "attributes": [],
+   "svg": "library/svg/ROUTER_4G.svg"
+  },
+  {
+   "name": "SWITCH_HUB",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "สวิตช์ฮับ",
+   "en": "Switch hub",
+   "note": "หมวด 4 ข้อ 27",
+   "attributes": [],
+   "svg": "library/svg/SWITCH_HUB.svg"
+  },
+  {
+   "name": "SMART_LOGGER",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "สมาร์ทล็อกเกอร์",
+   "en": "Smart logger",
+   "note": "หมวด 4 ข้อ 27",
+   "attributes": [],
+   "svg": "library/svg/SMART_LOGGER.svg"
+  },
+  {
+   "name": "UPS",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "เครื่องสำรองไฟ UPS",
+   "en": "UPS",
+   "note": "หมวด 4 ข้อ 27",
+   "attributes": [],
+   "svg": "library/svg/UPS.svg"
+  },
+  {
+   "name": "CLOUD_SERVER",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "เมฆ SERVER (ระบบสื่อสาร)",
+   "en": "Cloud server",
+   "note": "หมวด 4 ข้อ 27",
+   "attributes": [],
+   "svg": "library/svg/CLOUD_SERVER.svg"
+  },
+  {
+   "name": "CABLE_TAG",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "ป้ายสาย: ครึ่งวงกลมคร่อมเส้น + เส้นนำ + 2 บรรทัด",
+   "en": "Cable tag",
+   "note": "หมวด 4 ข้อ 28 · หมวด 5",
+   "attributes": [
+    "CABLE",
+    "ROUTE"
+   ],
+   "svg": "library/svg/CABLE_TAG.svg"
+  },
+  {
+   "name": "WARNING_1",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "⚠ หมายเลข 1 (อ้างตาราง MCB FOR SOLAR)",
+   "en": "Note marker",
+   "note": "หมวด 4 ข้อ 29",
+   "attributes": [
+    "NO"
+   ],
+   "svg": "library/svg/WARNING_1.svg"
+  },
+  {
+   "name": "SHEET_ARROW",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "ลูกศรต่อแผ่น ▽ + FROM …",
+   "en": "Off-sheet connector",
+   "note": "หมวด 4 ข้อ 30",
+   "attributes": [
+    "FROM"
+   ],
+   "svg": "library/svg/SHEET_ARROW.svg"
+  },
+  {
+   "name": "LOAD_EXISTING",
+   "library": "electrical_IEC.dxf",
+   "group": "ไฟฟ้า SLD",
+   "th": "โหลด/อาคารเดิม (เส้นเทา)",
+   "en": "Existing load",
+   "note": "หมวด 3 ข้อ 1 · หมวด 6 ข้อ 10",
+   "attributes": [
+    "NAME"
+   ],
+   "svg": "library/svg/LOAD_EXISTING.svg"
+  },
+  {
+   "name": "PV_1722x1134",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "แผงโซลาร์ 430 W (108 เซลล์) (มองบน · แนวตั้ง · ขนาดจริง)",
+   "en": "PV module 430 W (108 เซลล์)",
+   "note": "",
+   "attributes": [
+    "NO"
+   ],
+   "svg": "library/svg/PV_1722x1134.svg"
+  },
+  {
+   "name": "PV_2278x1134",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "แผงโซลาร์ 550 W (144 เซลล์) (มองบน · แนวตั้ง · ขนาดจริง)",
+   "en": "PV module 550 W (144 เซลล์)",
+   "note": "",
+   "attributes": [
+    "NO"
+   ],
+   "svg": "library/svg/PV_2278x1134.svg"
+  },
+  {
+   "name": "PV_2382x1134",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "แผงโซลาร์ 650 W (156 เซลล์) (มองบน · แนวตั้ง · ขนาดจริง)",
+   "en": "PV module 650 W (156 เซลล์)",
+   "note": "",
+   "attributes": [
+    "NO"
+   ],
+   "svg": "library/svg/PV_2382x1134.svg"
+  },
+  {
+   "name": "PV_2384x1303",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "แผงโซลาร์ 700 W (G12 132 เซลล์) (มองบน · แนวตั้ง · ขนาดจริง)",
+   "en": "PV module 700 W (G12 132 เซลล์)",
+   "note": "",
+   "attributes": [
+    "NO"
+   ],
+   "svg": "library/svg/PV_2384x1303.svg"
+  },
+  {
+   "name": "STRING_TAG",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "ป้ายเลขสตริง (วงกลม · ขนาด 1:100)",
+   "en": "String tag",
+   "note": "",
+   "attributes": [
+    "NO"
+   ],
+   "svg": "library/svg/STRING_TAG.svg"
+  },
+  {
+   "name": "INVERTER_TOP",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "อินเวอร์เตอร์ (มองบน)",
+   "en": "Inverter Top",
+   "note": "",
+   "attributes": [
+    "TAG"
+   ],
+   "svg": "library/svg/INVERTER_TOP.svg"
+  },
+  {
+   "name": "COMBINER_TOP",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "กล่องรวมสาย DC / FUSE BOX (มองบน)",
+   "en": "Combiner Top",
+   "note": "",
+   "attributes": [
+    "TAG"
+   ],
+   "svg": "library/svg/COMBINER_TOP.svg"
+  },
+  {
+   "name": "MDB_TOP",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "ตู้ MDB / SMDB (มองบน)",
+   "en": "Mdb Top",
+   "note": "",
+   "attributes": [
+    "TAG"
+   ],
+   "svg": "library/svg/MDB_TOP.svg"
+  },
+  {
+   "name": "METER_TOP",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "ตู้มิเตอร์ / zero export (มองบน)",
+   "en": "Meter Top",
+   "note": "",
+   "attributes": [
+    "TAG"
+   ],
+   "svg": "library/svg/METER_TOP.svg"
+  },
+  {
+   "name": "RAIL_4200",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "รางอลูมิเนียม 4.2 ม. (มองบน)",
+   "en": "Mounting rail 4.2 m",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/RAIL_4200.svg"
+  },
+  {
+   "name": "CLAMP_MARK",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "จุดยึด L-Feet / แคลมป์ (มองบน)",
+   "en": "Clamp / L-foot mark",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/CLAMP_MARK.svg"
+  },
+  {
+   "name": "WALKWAY_1000",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "ทางเดินบนหลังคา 0.4 × 1.0 ม.",
+   "en": "Roof walkway",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/WALKWAY_1000.svg"
+  },
+  {
+   "name": "CABLE_TRAY_1000",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "รางเดินสาย 100 มม. ยาว 1 ม. (มองบน)",
+   "en": "Cable tray",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/CABLE_TRAY_1000.svg"
+  },
+  {
+   "name": "LADDER",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "บันไดขึ้นหลังคา (มองบน)",
+   "en": "Access ladder",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/LADDER.svg"
+  },
+  {
+   "name": "WATER_TAP",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "ก๊อกน้ำล้างแผง",
+   "en": "Cleaning water tap",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/WATER_TAP.svg"
+  },
+  {
+   "name": "LIGHTNING_ROD",
+   "library": "solar_pv.dxf",
+   "group": "โซลาร์",
+   "th": "หลักล่อฟ้า (มองบน)",
+   "en": "Lightning rod",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/LIGHTNING_ROD.svg"
+  },
+  {
+   "name": "RIDGE_LINE",
+   "library": "roof_symbols.dxf",
+   "group": "หลังคา",
+   "th": "สันหลังคา (เส้น 2 ม. · ยืดได้)",
+   "en": "Ridge Line",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/RIDGE_LINE.svg"
+  },
+  {
+   "name": "HIP_LINE",
+   "library": "roof_symbols.dxf",
+   "group": "หลังคา",
+   "th": "ตะเข้สัน (เส้น 2 ม. · ยืดได้)",
+   "en": "Hip Line",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/HIP_LINE.svg"
+  },
+  {
+   "name": "VALLEY_LINE",
+   "library": "roof_symbols.dxf",
+   "group": "หลังคา",
+   "th": "ตะเข้ราง (รางน้ำหลังคา) (เส้น 2 ม. · ยืดได้)",
+   "en": "Valley Line",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/VALLEY_LINE.svg"
+  },
+  {
+   "name": "EAVE_LINE",
+   "library": "roof_symbols.dxf",
+   "group": "หลังคา",
+   "th": "ชายคา (เส้น 2 ม. · ยืดได้)",
+   "en": "Eave Line",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/EAVE_LINE.svg"
+  },
+  {
+   "name": "SLOPE_ARROW",
+   "library": "roof_symbols.dxf",
+   "group": "หลังคา",
+   "th": "ลูกศรทิศทางน้ำ + ความลาด",
+   "en": "Slope arrow",
+   "note": "",
+   "attributes": [
+    "SLOPE"
+   ],
+   "svg": "library/svg/SLOPE_ARROW.svg"
+  },
+  {
+   "name": "GUTTER",
+   "library": "roof_symbols.dxf",
+   "group": "หลังคา",
+   "th": "รางน้ำ (มองบน)",
+   "en": "Gutter",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/GUTTER.svg"
+  },
+  {
+   "name": "DOWNPIPE",
+   "library": "roof_symbols.dxf",
+   "group": "หลังคา",
+   "th": "ท่อน้ำลง",
+   "en": "Downpipe",
+   "note": "",
+   "attributes": [
+    "SIZE"
+   ],
+   "svg": "library/svg/DOWNPIPE.svg"
+  },
+  {
+   "name": "SOLAR_PANEL",
+   "library": "roof_symbols.dxf",
+   "group": "หลังคา",
+   "th": "แผง PV (มองบน)",
+   "en": "PV module 550 W",
+   "note": "",
+   "attributes": [
+    "NO"
+   ],
+   "svg": "library/svg/SOLAR_PANEL.svg"
+  },
+  {
+   "name": "SOLAR_ROW",
+   "library": "roof_symbols.dxf",
+   "group": "หลังคา",
+   "th": "แถวแผง PV 5 แผงแนวตั้ง (ระยะ 20 มม.)",
+   "en": "Solar row",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/SOLAR_ROW.svg"
+  },
+  {
+   "name": "SKYLIGHT",
+   "library": "roof_symbols.dxf",
+   "group": "หลังคา",
+   "th": "แผ่นโปร่งแสง/สกายไลท์ (ห้ามวางแผง)",
+   "en": "Skylight",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/SKYLIGHT.svg"
+  },
+  {
+   "name": "ROOF_VENT",
+   "library": "roof_symbols.dxf",
+   "group": "หลังคา",
+   "th": "ช่องระบายอากาศหลังคา",
+   "en": "Roof vent",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/ROOF_VENT.svg"
+  },
+  {
+   "name": "H_150x75",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "เหล็กรูปพรรณ H/I 150×75×5×7 (หน้าตัด)",
+   "en": "H-beam 150x75",
+   "note": "",
+   "attributes": [
+    "SIZE"
+   ],
+   "svg": "library/svg/H_150x75.svg"
+  },
+  {
+   "name": "H_200x100",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "เหล็กรูปพรรณ H/I 200×100×5.5×8 (หน้าตัด)",
+   "en": "H-beam 200x100",
+   "note": "",
+   "attributes": [
+    "SIZE"
+   ],
+   "svg": "library/svg/H_200x100.svg"
+  },
+  {
+   "name": "H_250x125",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "เหล็กรูปพรรณ H/I 250×125×6×9 (หน้าตัด)",
+   "en": "H-beam 250x125",
+   "note": "",
+   "attributes": [
+    "SIZE"
+   ],
+   "svg": "library/svg/H_250x125.svg"
+  },
+  {
+   "name": "H_300x150",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "เหล็กรูปพรรณ H/I 300×150×6.5×9 (หน้าตัด)",
+   "en": "H-beam 300x150",
+   "note": "",
+   "attributes": [
+    "SIZE"
+   ],
+   "svg": "library/svg/H_300x150.svg"
+  },
+  {
+   "name": "C_100x50x20x2_3",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "เหล็กตัวซี (แป) C-100×50×20×2.3 (หน้าตัด)",
+   "en": "Lipped channel C-100",
+   "note": "",
+   "attributes": [
+    "SIZE"
+   ],
+   "svg": "library/svg/C_100x50x20x2_3.svg"
+  },
+  {
+   "name": "C_125x50x20x2_3",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "เหล็กตัวซี (แป) C-125×50×20×2.3 (หน้าตัด)",
+   "en": "Lipped channel C-125",
+   "note": "",
+   "attributes": [
+    "SIZE"
+   ],
+   "svg": "library/svg/C_125x50x20x2_3.svg"
+  },
+  {
+   "name": "C_150x50x20x2_3",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "เหล็กตัวซี (แป) C-150×50×20×2.3 (หน้าตัด)",
+   "en": "Lipped channel C-150",
+   "note": "",
+   "attributes": [
+    "SIZE"
+   ],
+   "svg": "library/svg/C_150x50x20x2_3.svg"
+  },
+  {
+   "name": "C_150x65x20x3_2",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "เหล็กตัวซี (แป) C-150×65×20×3.2 (หน้าตัด)",
+   "en": "Lipped channel C-150",
+   "note": "",
+   "attributes": [
+    "SIZE"
+   ],
+   "svg": "library/svg/C_150x65x20x3_2.svg"
+  },
+  {
+   "name": "L_50x50x5",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "เหล็กฉาก L-50×50×5 (หน้าตัด)",
+   "en": "Angle L-50",
+   "note": "",
+   "attributes": [
+    "SIZE"
+   ],
+   "svg": "library/svg/L_50x50x5.svg"
+  },
+  {
+   "name": "L_65x65x6",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "เหล็กฉาก L-65×65×6 (หน้าตัด)",
+   "en": "Angle L-65",
+   "note": "",
+   "attributes": [
+    "SIZE"
+   ],
+   "svg": "library/svg/L_65x65x6.svg"
+  },
+  {
+   "name": "BOX_50x50x2_3",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "เหล็กกล่อง 50×50×2.3 (หน้าตัด)",
+   "en": "Box tube 50",
+   "note": "",
+   "attributes": [
+    "SIZE"
+   ],
+   "svg": "library/svg/BOX_50x50x2_3.svg"
+  },
+  {
+   "name": "BOX_100x100x3_2",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "เหล็กกล่อง 100×100×3.2 (หน้าตัด)",
+   "en": "Box tube 100",
+   "note": "",
+   "attributes": [
+    "SIZE"
+   ],
+   "svg": "library/svg/BOX_100x100x3_2.svg"
+  },
+  {
+   "name": "PIPE_60_5",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "ท่อเหล็ก Ø60.5×2.3 (2\")",
+   "en": "Steel pipe 2in",
+   "note": "",
+   "attributes": [
+    "SIZE"
+   ],
+   "svg": "library/svg/PIPE_60_5.svg"
+  },
+  {
+   "name": "BASE_PLATE_250",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "เพลทฐานเสา 250×250 + พุก 4 ตัว (มองบน)",
+   "en": "Base plate 250",
+   "note": "",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/BASE_PLATE_250.svg"
+  },
+  {
+   "name": "BOLT_M12",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "สลักเกลียว M12 (มองบน)",
+   "en": "Bolt M12",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/BOLT_M12.svg"
+  },
+  {
+   "name": "ANCHOR_BOLT",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "พุกเหล็กฝังคอนกรีต (รูปด้าน)",
+   "en": "Anchor bolt",
+   "note": "",
+   "attributes": [
+    "SPEC"
+   ],
+   "svg": "library/svg/ANCHOR_BOLT.svg"
+  },
+  {
+   "name": "WELD_FILLET",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "สัญลักษณ์งานเชื่อมมุม (fillet) · ขนาด 1:100",
+   "en": "Fillet weld symbol",
+   "note": "",
+   "attributes": [
+    "SIZE"
+   ],
+   "svg": "library/svg/WELD_FILLET.svg"
+  },
+  {
+   "name": "GRID_BUBBLE",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "ฟองเส้นกริด (1:100)",
+   "en": "Grid bubble",
+   "note": "",
+   "attributes": [
+    "ID"
+   ],
+   "svg": "library/svg/GRID_BUBBLE.svg"
+  },
+  {
+   "name": "GRID_LINE",
+   "library": "structural_steel.dxf",
+   "group": "โครงสร้าง",
+   "th": "เส้นกริดเสา (เส้นศูนย์กลาง 10 ม.)",
+   "en": "Grid line",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/GRID_LINE.svg"
+  },
+  {
+   "name": "DOOR_800",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "ประตูบานเปิดเดี่ยว 800 มม.",
+   "en": "Single door 800",
+   "note": "",
+   "attributes": [
+    "TAG"
+   ],
+   "svg": "library/svg/DOOR_800.svg"
+  },
+  {
+   "name": "DOOR_900",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "ประตูบานเปิดเดี่ยว 900 มม.",
+   "en": "Single door 900",
+   "note": "",
+   "attributes": [
+    "TAG"
+   ],
+   "svg": "library/svg/DOOR_900.svg"
+  },
+  {
+   "name": "DOOR_DOUBLE_1600",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "ประตูบานเปิดคู่ 1600 มม.",
+   "en": "Double door 1600",
+   "note": "",
+   "attributes": [
+    "TAG"
+   ],
+   "svg": "library/svg/DOOR_DOUBLE_1600.svg"
+  },
+  {
+   "name": "DOOR_SLIDING_1800",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "ประตูบานเลื่อน 1800 มม.",
+   "en": "Sliding door 1800",
+   "note": "",
+   "attributes": [
+    "TAG"
+   ],
+   "svg": "library/svg/DOOR_SLIDING_1800.svg"
+  },
+  {
+   "name": "DOOR_ROLLING_3000",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "ประตูม้วน 3000 มม.",
+   "en": "Rolling shutter 3000",
+   "note": "",
+   "attributes": [
+    "TAG"
+   ],
+   "svg": "library/svg/DOOR_ROLLING_3000.svg"
+  },
+  {
+   "name": "WINDOW_1200",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "หน้าต่าง 1200 มม. (ผนัง 200)",
+   "en": "Window 1200",
+   "note": "",
+   "attributes": [
+    "TAG"
+   ],
+   "svg": "library/svg/WINDOW_1200.svg"
+  },
+  {
+   "name": "WINDOW_1500",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "หน้าต่าง 1500 มม. (ผนัง 200)",
+   "en": "Window 1500",
+   "note": "",
+   "attributes": [
+    "TAG"
+   ],
+   "svg": "library/svg/WINDOW_1500.svg"
+  },
+  {
+   "name": "WINDOW_SLIDING_1800",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "หน้าต่างบานเลื่อน 1800 มม. (ผนัง 200)",
+   "en": "Window 1800",
+   "note": "",
+   "attributes": [
+    "TAG"
+   ],
+   "svg": "library/svg/WINDOW_SLIDING_1800.svg"
+  },
+  {
+   "name": "STAIR_1200x3000",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "บันได กว้าง 1.2 ม. 12 ลูกตั้ง (มองบน)",
+   "en": "Stair",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/STAIR_1200x3000.svg"
+  },
+  {
+   "name": "COLUMN_200",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "เสา คสล. 200×200",
+   "en": "RC column 200",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/COLUMN_200.svg"
+  },
+  {
+   "name": "COLUMN_300",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "เสา คสล. 300×300",
+   "en": "RC column 300",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/COLUMN_300.svg"
+  },
+  {
+   "name": "WC",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "โถส้วม (มองบน)",
+   "en": "Toilet",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/WC.svg"
+  },
+  {
+   "name": "LAVATORY",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "อ่างล้างหน้า (มองบน)",
+   "en": "Lavatory",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/LAVATORY.svg"
+  },
+  {
+   "name": "SINK",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "อ่างล้างจาน (มองบน)",
+   "en": "Kitchen sink",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/SINK.svg"
+  },
+  {
+   "name": "CAR",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "รถยนต์ 1.8×4.6 ม. (มองบน)",
+   "en": "Car",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/CAR.svg"
+  },
+  {
+   "name": "PARKING_2500x5000",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "ช่องจอดรถ 2.5×5.0 ม.",
+   "en": "Parking stall",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/PARKING_2500x5000.svg"
+  },
+  {
+   "name": "TREE_PLAN",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "ต้นไม้ (มองบน · ทรงพุ่ม Ø3 ม.)",
+   "en": "Tree",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/TREE_PLAN.svg"
+  },
+  {
+   "name": "NORTH_ARROW",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "ลูกศรทิศเหนือ (1:100)",
+   "en": "North arrow",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/NORTH_ARROW.svg"
+  },
+  {
+   "name": "SCALE_BAR_100",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "สเกลบาร์ 0–5 ม. (1:100)",
+   "en": "Scale bar 1:100",
+   "note": "",
+   "attributes": [],
+   "svg": "library/svg/SCALE_BAR_100.svg"
+  },
+  {
+   "name": "LEVEL_MARK",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "เครื่องหมายระดับ (1:100)",
+   "en": "Level mark",
+   "note": "",
+   "attributes": [
+    "LEVEL"
+   ],
+   "svg": "library/svg/LEVEL_MARK.svg"
+  },
+  {
+   "name": "SECTION_MARK",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "เครื่องหมายรูปตัด (1:100)",
+   "en": "Section mark",
+   "note": "",
+   "attributes": [
+    "ID",
+    "SHEET"
+   ],
+   "svg": "library/svg/SECTION_MARK.svg"
+  },
+  {
+   "name": "ELEVATION_MARK",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "เครื่องหมายรูปด้าน (1:100)",
+   "en": "Elevation mark",
+   "note": "",
+   "attributes": [
+    "ID"
+   ],
+   "svg": "library/svg/ELEVATION_MARK.svg"
+  },
+  {
+   "name": "DETAIL_BUBBLE",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "เครื่องหมายแบบขยาย (1:100)",
+   "en": "Detail bubble",
+   "note": "",
+   "attributes": [
+    "ID",
+    "SHEET"
+   ],
+   "svg": "library/svg/DETAIL_BUBBLE.svg"
+  },
+  {
+   "name": "ROOM_TAG",
+   "library": "architectural.dxf",
+   "group": "สถาปัตย์",
+   "th": "ป้ายชื่อห้อง + พื้นที่ (1:100)",
+   "en": "Room tag",
+   "note": "",
+   "attributes": [
+    "NAME",
+    "AREA"
+   ],
+   "svg": "library/svg/ROOM_TAG.svg"
+  },
+  {
+   "name": "FRAME_A3_TH",
+   "library": "thai_title_block.dxf",
+   "group": "กรอบแบบ",
+   "th": "กรอบแบบ A3 แนวนอน + กรอบชื่อคอลัมน์ขวา (กฟน./กฟภ.)",
+   "en": "A3 frame (Thai)",
+   "note": "สเปก SLD หมวด 2.1–2.3",
+   "attributes": [
+    "PROJECT1",
+    "PROJECT2",
+    "PROJECT3",
+    "LOCATION",
+    "CUSTOMER1",
+    "CUSTOMER2",
+    "SITE",
+    "DEVELOPER",
+    "DESIGNER1",
+    "DESIGNER2",
+    "ST1",
+    "ST2",
+    "ST3",
+    "ST4",
+    "ENG_NAME",
+    "ENG_LICENSE",
+    "ENG_SIGN",
+    "ENG_DATE",
+    "STR_SIGN",
+    "STR_DATE",
+    "REV1",
+    "REV1_DATE",
+    "REV1_NOTE",
+    "REV2",
+    "REV2_DATE",
+    "REV2_NOTE",
+    "REV3",
+    "REV3_DATE",
+    "REV3_NOTE",
+    "DWG_TITLE",
+    "DWG_NO",
+    "NOTE",
+    "DATE",
+    "SCALE",
+    "PAPER",
+    "PAGE"
+   ],
+   "svg": "library/svg/FRAME_A3_TH.svg"
+  },
+  {
+   "name": "FRAME_A3_IEC",
+   "library": "thai_title_block.dxf",
+   "group": "กรอบแบบ",
+   "th": "กรอบแบบ A3 แนวนอน ISO 7200 (EDL/สากล)",
+   "en": "A3 frame (ISO 7200)",
+   "note": "สเปก SLD หมวด 8",
+   "attributes": [
+    "OWNER",
+    "TITLE",
+    "PROJECT",
+    "LOCATION",
+    "COMPANY",
+    "DRAWN",
+    "CHECKED",
+    "APPROVED",
+    "DWG_NO",
+    "REV",
+    "DATE",
+    "SCALE",
+    "SHEET",
+    "PAPER",
+    "NOTE"
+   ],
+   "svg": "library/svg/FRAME_A3_IEC.svg"
+  },
+  {
+   "name": "FRAME_A4_TH",
+   "library": "thai_title_block.dxf",
+   "group": "กรอบแบบ",
+   "th": "กรอบแบบ A4 แนวนอน + กรอบชื่อคอลัมน์ขวา (กฟน./กฟภ.)",
+   "en": "A4 frame (Thai)",
+   "note": "สเปก SLD หมวด 2.1–2.3",
+   "attributes": [
+    "PROJECT1",
+    "PROJECT2",
+    "PROJECT3",
+    "LOCATION",
+    "CUSTOMER1",
+    "CUSTOMER2",
+    "SITE",
+    "DEVELOPER",
+    "DESIGNER1",
+    "DESIGNER2",
+    "ST1",
+    "ST2",
+    "ST3",
+    "ST4",
+    "ENG_NAME",
+    "ENG_LICENSE",
+    "ENG_SIGN",
+    "ENG_DATE",
+    "STR_SIGN",
+    "STR_DATE",
+    "REV1",
+    "REV1_DATE",
+    "REV1_NOTE",
+    "REV2",
+    "REV2_DATE",
+    "REV2_NOTE",
+    "REV3",
+    "REV3_DATE",
+    "REV3_NOTE",
+    "DWG_TITLE",
+    "DWG_NO",
+    "NOTE",
+    "DATE",
+    "SCALE",
+    "PAPER",
+    "PAGE"
+   ],
+   "svg": "library/svg/FRAME_A4_TH.svg"
+  }
+ ],
+ "libraries": [
+  {
+   "file": "cadcraft/symbols/electrical_IEC.dxf",
+   "th": "สัญลักษณ์ไฟฟ้า SLD — TH (กฟน./กฟภ.) + IEC 60617",
+   "count": 47
+  },
+  {
+   "file": "cadcraft/symbols/solar_pv.dxf",
+   "th": "อุปกรณ์โซลาร์ (มองบน · ขนาดจริง มม.)",
+   "count": 16
+  },
+  {
+   "file": "cadcraft/symbols/roof_symbols.dxf",
+   "th": "สัญลักษณ์แบบหลังคา (ขนาด 1:100)",
+   "count": 11
+  },
+  {
+   "file": "cadcraft/symbols/structural_steel.dxf",
+   "th": "โครงสร้างเหล็ก (หน้าตัดขนาดจริง มม.)",
+   "count": 19
+  },
+  {
+   "file": "cadcraft/symbols/architectural.dxf",
+   "th": "สถาปัตย์ (ขนาดจริง · เครื่องหมาย 1:100)",
+   "count": 24
+  },
+  {
+   "file": "cadcraft/symbols/thai_title_block.dxf",
+   "th": "กรอบแบบ + กรอบชื่อ (TH / ISO 7200)",
+   "count": 3
+  }
+ ],
+ "templates": [
+  {
+   "file": "cadcraft/templates/SLD_template.dxf",
+   "th": "แม่แบบ SLD A3 (สเปกหมวด 3.1) + block ไฟฟ้าครบชุด"
+  },
+  {
+   "file": "cadcraft/templates/floor_plan_A3.dxf",
+   "th": "ผังพื้น A3 1:100 + กริดเสาตัวอย่าง"
+  },
+  {
+   "file": "cadcraft/templates/elevation_A3.dxf",
+   "th": "รูปด้าน A3 1:100 + ระดับ"
+  },
+  {
+   "file": "cadcraft/templates/section_A3.dxf",
+   "th": "รูปตัด A3 1:100 + ระดับ"
+  },
+  {
+   "file": "cadcraft/templates/site_plan_A3.dxf",
+   "th": "ผังบริเวณ A3 1:200 + แนวเขต"
+  },
+  {
+   "file": "cadcraft/templates/roof_plan_A3.dxf",
+   "th": "ผังหลังคา A3 1:100 + กริด + ลูกศรลาด"
+  }
+ ]
+}

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>pee_architec</title>
+<link rel="icon" href="favicon.ico">
+<link rel="stylesheet" href="style.css?v=0.9.0">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
+<script src="../supabase-config.js" onerror="void 0"></script>
+<script src="../asc-cloud.js" onerror="void 0"></script>
+<script src="mode.js?v=0.9.0"></script>
+</head>
+<body>
+<header class="top">
+  <img src="logo.png" alt="" class="logo" width="36" height="36">
+  <div class="brand"><b>pee_architec</b><span>เขียนแบบ AEC · โซลาร์ · ProInventive</span></div>
+  <span id="mode" class="badge">…</span>
+  <span id="ver" class="ver"></span>
+  <span id="user" class="ver"></span>
+</header>
+<nav class="tabs" id="tabs">
+  <button data-tab="home" class="on">หน้าแรก</button>
+  <a class="tablink" href="editor/">✏️ เขียนแบบ 2D/3D</a>
+  <a class="tablink" href="cad/">📐 CAD 2D (DWG)</a>
+  <button data-tab="projects">โครงการ</button>
+  <button data-tab="yield">ผลผลิตไฟฟ้า</button>
+  <button data-tab="strings">จัดสตริง</button>
+  <button data-tab="library">คลังสัญลักษณ์</button>
+  <button data-tab="templates">แม่แบบ &amp; โปรแกรม</button>
+</nav>
+<main id="main">
+
+<section id="tab-home" class="tab on">
+  <h1>ภาพรวม</h1>
+  <p class="muted" id="home-intro">ชุดเครื่องมือเขียนแบบฟรีแทน AutoCAD + SketchUp — ต่อกับ ASC Studio และ ASC Cloud</p>
+  <p><a class="primary bigbtn" href="editor/">✏️ เปิดตัวเขียนแบบ — วาดผัง 2D → 3D → Render</a>
+     <a class="primary bigbtn" href="cad/">📐 CAD 2D — เปิด/แก้/บันทึก DWG · DXF</a></p>
+  <div class="cards" id="home-cards"></div>
+  <h2>ขั้นตอนงานโซลาร์รูฟท็อป</h2>
+  <ol class="steps">
+    <li><b>ASC Studio</b> วางแผง → <i>ส่งออกทั้งหมด</i> (ได้ 3d.glb · roof_*.dxf · SLD ร่าง)</li>
+    <li><b>โครงการ</b> → นำเข้างาน ASC Studio มาเป็นโครงการ (ไฟล์ทั้งหมดอยู่ในโฟลเดอร์เดียว)</li>
+    <li><b>ผลผลิตไฟฟ้า</b> → คำนวณด้วย pvlib จากแคช PVGIS เดียวกับ ASC Studio → ได้ไฟล์ส่ง ASC</li>
+    <li><b>แม่แบบ &amp; โปรแกรม</b> → เปิด DXF ใน CadCraft · render ภาพด้วย Blender · วาด SLD ใน QElectroTech</li>
+  </ol>
+</section>
+
+<section id="tab-projects" class="tab">
+  <h1>โครงการ</h1>
+  <div class="local-only">
+    <div class="row">
+      <div class="panel grow">
+        <h2>ASC Studio — ทุกโฟลเดอร์</h2>
+        <p class="muted small" id="da-path"></p>
+        <div class="row asc-tools"><input id="asc-q" type="search" placeholder="ค้นชื่องาน / ไฟล์…">
+          <select id="asc-type"><option value="">ทุกชนิด</option><option value="design">งานออกแบบ</option><option value="cad">DXF / DWG</option>
+            <option value="json">JSON</option><option value="sld">SLD</option><option value="doc">เอกสาร / ภาพ</option></select>
+          <button class="btn small" id="asc-reload" type="button">โหลดใหม่</button></div>
+        <p class="muted small">งานออกแบบ → <b>นำเข้า</b> เป็นโครงการ (3D · ผัง · ภาพดาวเทียม · หลังคา · SLD · เอกสาร) ·
+          DXF/DWG → <b>CAD 2D</b> เปิดดู/แก้ (บันทึกเป็นสำเนา ไม่แก้ไฟล์ของ ASC Studio) · ไฟล์อื่น → <b>ดู</b></p>
+        <div id="da-list" class="list asc-list"></div>
+      </div>
+      <div class="panel" style="min-width:280px">
+        <h2>สร้างโครงการเปล่า</h2>
+        <form id="new-project" class="form">
+          <label>ชื่อโครงการ<input name="name" required></label>
+          <label>ละติจูด<input name="lat" type="number" step="any"></label>
+          <label>ลองจิจูด<input name="lon" type="number" step="any"></label>
+          <label>ขนาด kWp<input name="kwp" type="number" step="any" min="0"></label>
+          <button class="primary">สร้าง</button>
+        </form>
+      </div>
+    </div>
+    <h2>โครงการทั้งหมด</h2>
+    <div id="project-list" class="list"></div>
+  </div>
+  <div class="cloud-only panel">
+    <p>รุ่นออนไลน์เก็บโครงการเป็นไฟล์ JSON — กด <b>บันทึกไฟล์โครงการ</b> ในแท็บผลผลิตไฟฟ้า แล้วนำไปเปิดในรุ่นในเครื่องได้</p>
+    <label class="filebtn">เปิดไฟล์โครงการ (.json)<input type="file" id="open-json" accept=".json,application/json"></label>
+  </div>
+</section>
+
+<section id="tab-yield" class="tab">
+  <h1>ประมาณการผลิตไฟฟ้า</h1>
+  <div class="cloud-only panel warn">รุ่นออนไลน์คำนวณ pvlib ไม่ได้ (ต้องใช้ Python ในเครื่อง) — ใช้ผลผลิตไฟฟ้าใน ASC Studio รุ่นคลาวด์ หรือเปิด pee_architec ในเครื่อง</div>
+  <div class="row">
+    <form id="yield-form" class="panel form" style="min-width:300px;max-width:360px">
+      <label>โครงการ<select name="project"><option value="">— ไม่ผูกโครงการ —</option></select></label>
+      <label>ชื่อ<input name="name"></label>
+      <label>จุดอ้างอิงด่วน<select name="preset"><option value="">—</option></select></label>
+      <div class="two"><label>ละติจูด<input name="lat" type="number" step="any" required></label>
+        <label>ลองจิจูด<input name="lon" type="number" step="any" required></label></div>
+      <div class="two"><label>kWp<input name="kwp" type="number" step="any" min="0" required></label>
+        <label>DC/AC<input name="dc_ac_ratio" type="number" step="any" min="0.5" max="2" placeholder="1.2"></label></div>
+      <div class="two"><label>มุมเอียง °<input name="tilt" type="number" step="any" min="0" max="90" placeholder="15"></label>
+        <label>ทิศ ° (180=ใต้)<input name="azimuth" type="number" step="any" min="0" max="360" placeholder="180"></label></div>
+      <div class="two"><label>การติดตั้ง<select name="mount"><option value="roof">ชิดหลังคา</option><option value="rack">ขาตั้งโล่ง</option></select></label>
+        <label>ข้อมูลอากาศ<select name="source"><option value="auto">อัตโนมัติ</option><option value="pvgis">PVGIS</option><option value="nasa">NASA</option></select></label></div>
+      <label class="check"><input type="checkbox" name="online"> ไม่มีแคช → ดึง PVGIS TMY จากเน็ต</label>
+      <button class="primary local-only">คำนวณ</button>
+      <p class="small muted" id="yield-meteo"></p>
+    </form>
+    <div class="panel grow" id="yield-result"><p class="muted">กรอกข้อมูลแล้วกดคำนวณ</p></div>
+  </div>
+</section>
+
+<section id="tab-strings" class="tab">
+  <h1>จัดสตริง</h1>
+  <p class="muted small">ตรวจทานผลของ ASC Studio ด้วยหลักฟิสิกส์ (Voc เย็น · Vmp ร้อน · กระแส MPPT) — ไม่ใช่ตัวแทนการออกแบบตาม วสท.</p>
+  <div class="row">
+    <form id="str-form" class="panel form" style="min-width:300px;max-width:380px">
+      <div class="two"><label>จำนวนแผง<input name="modules" type="number" min="1" value="96" required></label>
+        <label>อินเวอร์เตอร์ (เครื่อง)<input name="inverters" type="number" min="1" value="1"></label></div>
+      <fieldset><legend>แผง</legend>
+        <div class="two"><label>Pmax W<input name="m_pmax" type="number" step="any"></label><label>Voc V<input name="m_voc" type="number" step="any"></label></div>
+        <div class="two"><label>Isc A<input name="m_isc" type="number" step="any"></label><label>Vmp V<input name="m_vmp" type="number" step="any"></label></div>
+        <div class="two"><label>Imp A<input name="m_imp" type="number" step="any"></label><label>β Voc %/°C<input name="m_beta_voc" type="number" step="any"></label></div>
+        <div class="two"><label>γ Pmax %/°C<input name="m_gamma_pmax" type="number" step="any"></label><label>Vระบบสูงสุดของแผง<input name="m_v_sys_max" type="number" step="any" placeholder="1500"></label></div>
+      </fieldset>
+      <fieldset><legend>อินเวอร์เตอร์</legend>
+        <div class="two"><label>AC W<input name="i_pac" type="number" step="any"></label><label>Vdc สูงสุด<input name="i_vdc_max" type="number" step="any"></label></div>
+        <div class="two"><label>MPPT ต่ำสุด V<input name="i_vmppt_min" type="number" step="any"></label><label>MPPT สูงสุด V<input name="i_vmppt_max" type="number" step="any"></label></div>
+        <div class="two"><label>จำนวน MPPT<input name="i_mppt" type="number" step="1"></label><label>สตริง/MPPT<input name="i_strings_per_mppt" type="number" step="1"></label></div>
+        <div class="two"><label>I ใช้งาน/MPPT<input name="i_imax_mppt" type="number" step="any"></label><label>Isc สูงสุด/MPPT<input name="i_isc_max_mppt" type="number" step="any"></label></div>
+      </fieldset>
+      <div class="two"><label>T ต่ำสุด °C<input name="t_min" type="number" step="any"></label><label>T เซลล์สูงสุด °C<input name="t_cell_max" type="number" step="any"></label></div>
+      <button class="primary">หาแบบจัดสตริง</button>
+    </form>
+    <div class="panel grow" id="str-result"><p class="muted">ค่าว่าง = ใช้ค่าเริ่มต้น (แผง 550 W · อินเวอร์เตอร์ 10 kW 2 MPPT)</p></div>
+  </div>
+</section>
+
+<section id="tab-library" class="tab">
+  <h1>คลังสัญลักษณ์ CAD</h1>
+  <div class="row tight">
+    <input id="lib-q" placeholder="ค้นหา เช่น CB, SPD, ประตู, H-beam" class="grow">
+    <select id="lib-group"><option value="">ทุกหมวด</option></select>
+  </div>
+  <div id="lib-files" class="chips"></div>
+  <div id="lib-grid" class="grid"></div>
+</section>
+
+<section id="tab-templates" class="tab">
+  <h1>แม่แบบ &amp; โปรแกรม</h1>
+  <h2>แม่แบบแบบ (DXF A3)</h2>
+  <div id="tpl-list" class="list"></div>
+  <h2>QElectroTech</h2>
+  <div class="panel">
+    <p>สัญลักษณ์ SLD แบบไทย 47 ตัวเป็น element ของ QElectroTech: โฟลเดอร์ <code>qelectrotech\custom_elements\pee_architec\</code></p>
+    <p class="small muted">วิธีใช้: QElectroTech › Settings › Configure › Paths → ชี้ "custom elements" มาที่โฟลเดอร์ <code>qelectrotech\custom_elements</code></p>
+  </div>
+  <h2>Blender</h2>
+  <div class="panel">
+    <p>สคริปต์ <a href="blender/setup_scene.py" download>setup_scene.py</a> — สร้างฉาก render จาก 3d.glb ของ ASC Studio (ท้องฟ้า · ดวงอาทิตย์ · กล้อง · พื้น) หรือสร้างแม่แบบบ้าน/โรงงาน</p>
+    <pre>blender -b -P blender\setup_scene.py -- --template house --save 3d_models\templates\house_template.blend</pre>
+  </div>
+  <h2 class="local-only">โปรแกรมในเครื่อง</h2>
+  <div id="app-list" class="cards local-only"></div>
+</section>
+</main>
+<div id="toast" class="toast" hidden></div>
+<script src="strings.js?v=0.9.0"></script>
+<script src="app.js?v=0.9.0"></script>
+</body>
+</html>

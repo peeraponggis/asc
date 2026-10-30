@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="20" height="30" hotspot_x="10" hotspot_y="15">
+  <uuid uuid="{489405ff-4bff-5f31-88d4-b799efa61e0e}"/>
+  <names>
+    <name lang="en">PV optimizer</name>
+    <name lang="th">ออปติไมเซอร์ (ติดข้างแผง)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 17 · โดย ลุงพี</informations>
+  <description>
+    <polygon x1="-5.0" y1="5.0" x2="5.0" y2="5.0" x3="5.0" y3="-5.0" x4="-5.0" y4="-5.0" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="-5.0" y1="5.0" x2="5.0" y2="-5.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <text x="-4.3" y="-0.3999999999999999" size="5" text="=" color="#000000" rotation="0"/>
+    <text x="1.2999999999999998" y="4.4" size="5" text="=" color="#000000" rotation="0"/>
+    <line x1="0.0" y1="-5.0" x2="0.0" y2="-10.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="5.0" x2="0.0" y2="10.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-10.0" orientation="n" uuid="{88482470-26fd-5b61-9500-1b6291016c6e}" name="" type="Generic"/>
+    <terminal x="0.0" y="10.0" orientation="s" uuid="{5dbed00b-2334-5900-97cb-34921d3c1687}" name="" type="Generic"/>
+  </description>
+</definition>

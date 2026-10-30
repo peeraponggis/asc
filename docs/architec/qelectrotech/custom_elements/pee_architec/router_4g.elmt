@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="50" height="38" hotspot_x="25" hotspot_y="19">
+  <uuid uuid="{874ff0d2-4f8b-5ca7-a00e-8a36fb42acad}"/>
+  <names>
+    <name lang="en">4G router</name>
+    <name lang="th">เราเตอร์ 4G (กล่องแดง)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 27 · โดย ลุงพี</informations>
+  <description>
+    <polygon x1="-20.0" y1="8.0" x2="20.0" y2="8.0" x3="20.0" y3="-8.0" x4="-20.0" y4="-8.0" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:red"/>
+    <text x="-13.5" y="2.0" size="5" text="4G ROUTER" color="#000000" rotation="0"/>
+    <line x1="0.0" y1="-8.0" x2="0.0" y2="-14.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:red"/>
+    <line x1="0.0" y1="8.0" x2="0.0" y2="14.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:red"/>
+    <terminal x="0.0" y="-14.0" orientation="n" uuid="{46ec8a40-70d9-5de1-b22c-c9c8ce1cff19}" name="" type="Generic"/>
+    <terminal x="0.0" y="14.0" orientation="s" uuid="{b5593e51-a57e-5754-a162-3c84044cd686}" name="" type="Generic"/>
+  </description>
+</definition>

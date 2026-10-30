@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="34" height="38" hotspot_x="17" hotspot_y="19">
+  <uuid uuid="{b9941292-a91f-550f-94cd-24e79bdaafe4}"/>
+  <names>
+    <name lang="en">SM</name>
+    <name lang="th">สมาร์ทมิเตอร์ (zero export)</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 21 · โดย ลุงพี</informations>
+  <description>
+    <polygon x1="-12.0" y1="8.0" x2="12.0" y2="8.0" x3="12.0" y3="-8.0" x4="-12.0" y4="-8.0" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <text x="-3.0" y="2.0" size="5" text="SM" color="#000000" rotation="0"/>
+    <line x1="0.0" y1="-8.0" x2="0.0" y2="-14.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <line x1="0.0" y1="8.0" x2="0.0" y2="14.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-14.0" orientation="n" uuid="{d4dd0f34-9f65-56ff-9799-304d3bb53206}" name="" type="Generic"/>
+    <terminal x="0.0" y="14.0" orientation="s" uuid="{b437e516-2b12-5586-9751-5a18cf782781}" name="" type="Generic"/>
+  </description>
+</definition>

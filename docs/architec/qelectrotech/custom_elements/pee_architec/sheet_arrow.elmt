@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition type="element" version="0.80" link_type="simple" width="20" height="30" hotspot_x="10" hotspot_y="21">
+  <uuid uuid="{efa646b0-6a47-5eb0-b5b8-09a29d749b73}"/>
+  <names>
+    <name lang="en">Off-sheet connector</name>
+    <name lang="th">ลูกศรต่อแผ่น ▽ + FROM …</name>
+  </names>
+  <informations>pee_architec · หมวด 4 ข้อ 30 · โดย ลุงพี</informations>
+  <description>
+    <line x1="0.0" y1="-16.0" x2="0.0" y2="-4.0" end1="none" end2="none" length1="1.5" length2="1.5" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <polygon x1="-5.0" y1="-4.0" x2="5.0" y2="-4.0" x3="0.0" y3="4.0" closed="true" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black"/>
+    <terminal x="0.0" y="-16.0" orientation="n" uuid="{f261f0b2-8a6b-5478-b83a-a28b3b765114}" name="" type="Generic"/>
+  </description>
+</definition>
