@@ -32,7 +32,7 @@
 2. ~~SQL Editor: รันไฟล์ `out/cloud/standards-data.sql`~~ (รันแล้ว 21 แถว)
 3. ~~`supabase/allow-domains.sql`~~ (รันแล้ว 30 ต.ค. 2569) · `cleanup-allowlist.sql` ไม่บังคับ
 4. ~~SQL Editor: รัน `supabase/ai-install.sql`~~ (รันแล้ว 30 ต.ค. 2569 — รหัสติดตั้งผู้ช่วย AI + จำกัด 2 เครื่อง)
-5. SQL Editor: รัน `supabase/kb.sql` (ตารางฐานความรู้ผู้ช่วย AI · ครั้งแรกครั้งเดียว) แล้วรัน `out/cloud/kb-data.sql` จาก design-auto (สร้างด้วย `npm run kb:sql` · ทำซ้ำทุกครั้งที่อัปเดตความรู้) — ยังไม่รัน = ผู้ช่วยบนเว็บเข้าใจเฉพาะคำสั่งพื้นฐาน
+5. ~~SQL Editor: รัน `supabase/kb.sql` แล้วรัน `out/cloud/kb-data.sql` จาก design-auto~~ (รันแล้ว 30 ต.ค. 2569) · อัปเดตความรู้ครั้งต่อไป = `npm run kb:sql` แล้วรัน `kb-data.sql` ซ้ำ
 6. ลองเปิดงานเดิม 2–3 งานด้วย "เปิดใน ASCS" แล้วตั้ง `rollout: 'all'`
 
 ---
