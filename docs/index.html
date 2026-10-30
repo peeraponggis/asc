@@ -743,13 +743,18 @@
                             <input type="text" id="al-search" placeholder="ค้นหาอีเมล..." oninput="renderAllowlist()"
                                    class="flex-1 min-w-[160px] border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <span id="al-count" class="text-xs text-slate-500"></span>
+                            <button id="al-bulk-btn" onclick="allowlistRemoveSelected()" disabled
+                                    class="px-3 py-2 rounded-lg text-xs font-bold text-white bg-red-600 hover:bg-red-700 shadow transition whitespace-nowrap disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed">
+                                <i class="fa-solid fa-trash-can mr-1"></i> ถอดที่เลือก (<span id="al-sel-n">0</span>)
+                            </button>
                         </div>
 
                         <div class="max-h-96 overflow-y-auto">
                             <table class="w-full text-sm">
                                 <thead class="bg-slate-50 sticky top-0">
                                     <tr class="text-left text-xs text-slate-500">
-                                        <th class="px-6 py-2 font-semibold"><button type="button" onclick="allowlistSort('email')" class="hover:text-slate-800 select-none" title="คลิกเพื่อเรียง ก→ฮ / ฮ→ก">อีเมล <i id="al-sort-email" class="fa-solid fa-sort ml-0.5"></i></button></th>
+                                        <th class="pl-6 pr-1 py-2 w-8"><input type="checkbox" id="al-sel-all" onchange="allowlistSelectAll(this.checked)" class="w-4 h-4 accent-red-600 cursor-pointer" title="เลือกทั้งหมดที่แสดง"></th>
+                                        <th class="px-3 py-2 font-semibold"><button type="button" onclick="allowlistSort('email')" class="hover:text-slate-800 select-none" title="คลิกเพื่อเรียง ก→ฮ / ฮ→ก">อีเมล <i id="al-sort-email" class="fa-solid fa-sort ml-0.5"></i></button></th>
                                         <th class="px-3 py-2 font-semibold"><button type="button" onclick="allowlistSort('status')" class="hover:text-slate-800 select-none" title="คลิกเพื่อเรียง สมัครแล้วก่อน / ยังไม่สมัครก่อน">สถานะ <i id="al-sort-status" class="fa-solid fa-sort ml-0.5"></i></button></th>
                                         <th class="px-3 py-2 font-semibold hidden sm:table-cell">หมายเหตุ</th>
                                         <th class="px-3 py-2"></th>
@@ -2289,6 +2294,8 @@ async function uploadCompanyLogo(input) {
 let ALLOWLIST = [];
 // คลิกหัวคอลัมน์ อีเมล/สถานะ = เรียง · คลิกซ้ำ = กลับทิศ (dir 1 = น้อยไปมาก/ก→ฮ · สถานะ: สมัครแล้วก่อน)
 let AL_SORT = { key: 'email', dir: 1 };
+let AL_SEL   = new Set();   // อีเมลที่ติ๊กเลือกไว้ถอดทีละหลายรายชื่อ
+let AL_SHOWN = [];          // แถวที่แสดงอยู่ (หลังค้นหา) — ช่องติ๊กหัวตารางเลือกเฉพาะชุดนี้
 
 function allowlistSort(key) {
     AL_SORT = AL_SORT.key === key ? { key, dir: -AL_SORT.dir } : { key, dir: 1 };
@@ -2315,13 +2322,13 @@ async function loadAllowlist() {
     if (!card) return;
     card.classList.remove('hidden');
     document.getElementById('al-tbody').innerHTML =
-        '<tr><td colspan="4" class="px-6 py-4 text-sm text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังโหลด...</td></tr>';
+        '<tr><td colspan="5" class="px-6 py-4 text-sm text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังโหลด...</td></tr>';
     try {
         ALLOWLIST = await AscCloud.listAllowedEmails();
         renderAllowlist();
     } catch (e) {
         document.getElementById('al-tbody').innerHTML =
-            '<tr><td colspan="4" class="px-6 py-4 text-sm text-red-600">โหลดรายชื่อไม่สำเร็จ : ' + esc(e.message) + '</td></tr>';
+            '<tr><td colspan="5" class="px-6 py-4 text-sm text-red-600">โหลดรายชื่อไม่สำเร็จ : ' + esc(e.message) + '</td></tr>';
     }
 }
 
@@ -2340,9 +2347,12 @@ function renderAllowlist() {
         'ทั้งหมด ' + ALLOWLIST.length + ' รายชื่อ · สมัครแล้ว ' + done + ' · ยังไม่สมัคร ' + (ALLOWLIST.length - done) +
         (term ? '  (แสดง ' + list.length + ')' : '');
 
+    AL_SHOWN = list;
     document.getElementById('al-tbody').innerHTML = list.length ? list.map(x => `
-        <tr class="border-t border-slate-100 hover:bg-slate-50">
-            <td class="px-6 py-2.5">
+        <tr class="border-t border-slate-100 hover:bg-slate-50${AL_SEL.has(x.email) ? ' bg-red-50' : ''}">
+            <td class="pl-6 pr-1 py-2.5"><input type="checkbox" data-al-email="${esc(x.email)}" ${AL_SEL.has(x.email) ? 'checked' : ''}
+                onchange="allowlistToggle(this.dataset.alEmail, this.checked)" class="w-4 h-4 accent-red-600 cursor-pointer"></td>
+            <td class="px-3 py-2.5">
                 <div class="font-medium text-slate-800 break-all">${esc(x.email)}</div>
                 ${x.display ? '<div class="text-[11px] text-slate-500">' + esc(x.display) + (x.isAdmin ? ' · ผู้ดูแลระบบ' : '') + '</div>' : ''}
             </td>
@@ -2358,7 +2368,58 @@ function renderAllowlist() {
                 </button>
             </td>
         </tr>`).join('')
-        : '<tr><td colspan="4" class="px-6 py-4 text-sm text-slate-400">ไม่พบรายชื่อที่ตรงกับคำค้นหา</td></tr>';
+        : '<tr><td colspan="5" class="px-6 py-4 text-sm text-slate-400">ไม่พบรายชื่อที่ตรงกับคำค้นหา</td></tr>';
+    allowlistSyncSel();
+}
+
+/* เลือกหลายรายชื่อแล้วถอดทีเดียว · ช่องติ๊กหัวตาราง = เลือก/ยกเลิกทุกแถวที่แสดงอยู่ (ตามคำค้นหา)
+   ที่เลือกไว้ยังอยู่เมื่อค้นหา/เรียงใหม่ · ถอดเสร็จล้างที่เลือก */
+function allowlistToggle(email, on) {
+    if (on) AL_SEL.add(email); else AL_SEL.delete(email);
+    renderAllowlist();
+}
+
+function allowlistSelectAll(on) {
+    AL_SHOWN.forEach(x => on ? AL_SEL.add(x.email) : AL_SEL.delete(x.email));
+    renderAllowlist();
+}
+
+function allowlistSyncSel() {
+    // ตัดอีเมลที่ไม่มีในรายชื่อแล้ว (ถูกถอดจากที่อื่น/โหลดใหม่)
+    const have = new Set(ALLOWLIST.map(x => x.email));
+    [...AL_SEL].forEach(m => { if (!have.has(m)) AL_SEL.delete(m); });
+    document.getElementById('al-sel-n').innerText = AL_SEL.size;
+    document.getElementById('al-bulk-btn').disabled = AL_SEL.size === 0;
+    const all = document.getElementById('al-sel-all');
+    const n = AL_SHOWN.filter(x => AL_SEL.has(x.email)).length;
+    all.checked = AL_SHOWN.length > 0 && n === AL_SHOWN.length;
+    all.indeterminate = n > 0 && n < AL_SHOWN.length;
+}
+
+async function allowlistRemoveSelected() {
+    const mails = [...AL_SEL];
+    if (!mails.length) return;
+    const reg = ALLOWLIST.filter(x => AL_SEL.has(x.email) && x.registered).length;
+    const list = mails.slice(0, 10).join('\n') + (mails.length > 10 ? '\n… และอีก ' + (mails.length - 10) + ' รายชื่อ' : '');
+    // ถอดออกจากรายชื่อไม่ได้ลบบัญชีที่สมัครไปแล้ว (เหมือนปุ่มถังขยะทีละแถว)
+    const warn = reg
+        ? '\n\n⚠ ในนี้มี ' + reg + ' คนที่สมัครแล้ว การถอดชื่อออกจะกันแค่การสมัครใหม่เท่านั้น\nบัญชีเดิมยังเข้าใช้งานได้ตามปกติ ถ้าต้องการปิดบัญชีต้องไปลบที่ Supabase Dashboard'
+        : '';
+    if (!confirm('ถอด ' + mails.length + ' รายชื่อออกจากรายชื่อผู้มีสิทธิ์ใช้งานหรือไม่?\n\n' + list + warn)) return;
+
+    const btn = document.getElementById('al-bulk-btn');
+    btn.disabled = true;
+    const failed = [];
+    for (const [i, m] of mails.entries()) {
+        allowMsg('กำลังถอด ' + (i + 1) + '/' + mails.length + ' ...', true);
+        try { await AscCloud.removeAllowedEmail(m); AL_SEL.delete(m); }
+        catch (e) { failed.push(m + ' (' + e.message + ')'); }
+    }
+    const ok = mails.length - failed.length;
+    allowMsg(failed.length
+        ? 'ถอดแล้ว ' + ok + ' รายชื่อ · ไม่สำเร็จ ' + failed.length + ': ' + failed.join(', ')
+        : 'ถอดแล้ว ' + ok + ' รายชื่อ', failed.length === 0);
+    await loadAllowlist();
 }
 
 async function allowlistAdd() {
