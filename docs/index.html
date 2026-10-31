@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASC Cloud — เข้าสู่ระบบ</title>
+    <title>ASC Enterprise — เข้าสู่ระบบ</title>
     <link rel="icon" href="img/favicon.ico" sizes="any">
     <link rel="icon" href="img/pilogo.png?v=2" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -265,7 +265,7 @@
         <div class="h-16 flex items-center px-6 border-b border-slate-800 bg-slate-950">
             <img src="img/pilogo.png" alt="" class="w-8 h-8 object-contain mr-3"
                  onerror="this.outerHTML='<div class=&quot;bg-blue-600 text-white p-1.5 rounded mr-3&quot;><i class=&quot;fa-solid fa-solar-panel text-sm&quot;></i></div>'">
-            <span class="font-bold text-lg text-white tracking-wide">ASC<span class="text-blue-500 font-medium"> Cloud</span></span>
+            <span class="font-bold text-lg text-white tracking-wide">ASC<span class="text-blue-500 font-medium"> Enterprise</span></span>
         </div>
 
         <nav class="flex-1 py-6 px-4 space-y-2">
@@ -283,6 +283,8 @@
                 <i class="fa-solid fa-gear w-6"></i><span class="font-medium">Settings</span>
                 <span class="ml-auto text-[9px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">SOON</span>
             </button>
+            <!-- แอปเสริม (APP_MENUS) · เห็นเฉพาะผู้ดูแลระบบ และผู้ใช้ที่ผู้ดูแลระบบให้สิทธิ์ -->
+            <div id="app-links" class="hidden pt-3 mt-3 border-t border-slate-800 space-y-2"></div>
         </nav>
 
         <div class="p-4 border-t border-slate-800 bg-slate-950 relative">
@@ -758,6 +760,7 @@
                                         <th class="pl-6 pr-1 py-2 w-8"><input type="checkbox" id="al-sel-all" onchange="allowlistSelectAll(this.checked)" class="w-4 h-4 accent-red-600 cursor-pointer" title="เลือกทั้งหมดที่แสดง"></th>
                                         <th class="px-3 py-2 font-semibold"><button type="button" onclick="allowlistSort('email')" class="hover:text-slate-800 select-none" title="คลิกเพื่อเรียง ก→ฮ / ฮ→ก">อีเมล <i id="al-sort-email" class="fa-solid fa-sort ml-0.5"></i></button></th>
                                         <th class="px-3 py-2 font-semibold"><button type="button" onclick="allowlistSort('status')" class="hover:text-slate-800 select-none" title="คลิกเพื่อเรียง สมัครแล้วก่อน / ยังไม่สมัครก่อน">สถานะ <i id="al-sort-status" class="fa-solid fa-sort ml-0.5"></i></button></th>
+                                        <th class="px-3 py-2 font-semibold">สิทธิ์เมนู <span class="font-normal text-slate-400">(คลิกเพื่อเปิด/ปิด)</span></th>
                                         <th class="px-3 py-2 font-semibold hidden sm:table-cell">หมายเหตุ</th>
                                         <th class="px-3 py-2"></th>
                                     </tr>
@@ -1302,7 +1305,7 @@ async function logout() {
 async function enterApp() {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-shell').classList.remove('hidden');
-    document.title = 'ASC Cloud — Dashboard';
+    document.title = 'ASC Enterprise — Dashboard';
 
     // แสดงชื่อผู้ใช้ทุกจุด
     document.getElementById('user-name').innerText   = SESSION.display;
@@ -1318,6 +1321,8 @@ async function enterApp() {
         document.querySelectorAll('.admin-col').forEach(el => el.classList.remove('hidden'));
         document.getElementById('admin-analytics').classList.remove('hidden');
     }
+
+    renderAppLinks();
 
     if (CLOUD) {
         showCloudBadge();
@@ -2327,13 +2332,13 @@ async function loadAllowlist() {
     if (!card) return;
     card.classList.remove('hidden');
     document.getElementById('al-tbody').innerHTML =
-        '<tr><td colspan="5" class="px-6 py-4 text-sm text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังโหลด...</td></tr>';
+        '<tr><td colspan="6" class="px-6 py-4 text-sm text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังโหลด...</td></tr>';
     try {
         ALLOWLIST = await AscCloud.listAllowedEmails();
         renderAllowlist();
     } catch (e) {
         document.getElementById('al-tbody').innerHTML =
-            '<tr><td colspan="5" class="px-6 py-4 text-sm text-red-600">โหลดรายชื่อไม่สำเร็จ : ' + esc(e.message) + '</td></tr>';
+            '<tr><td colspan="6" class="px-6 py-4 text-sm text-red-600">โหลดรายชื่อไม่สำเร็จ : ' + esc(e.message) + '</td></tr>';
     }
 }
 
@@ -2366,6 +2371,7 @@ function renderAllowlist() {
                     ? '<span class="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded">สมัครแล้ว</span>'
                     : '<span class="text-[11px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded">ยังไม่สมัคร</span>'}
             </td>
+            <td class="px-3 py-2.5">${accessChips(x)}</td>
             <td class="px-3 py-2.5 text-xs text-slate-500 hidden sm:table-cell">${esc(x.note || '')}</td>
             <td class="px-3 py-2.5 text-right">
                 <button onclick="allowlistRemove('${esc(x.email)}')" class="text-slate-300 hover:text-red-500 transition" title="ถอดออกจากรายชื่อ">
@@ -2373,7 +2379,7 @@ function renderAllowlist() {
                 </button>
             </td>
         </tr>`).join('')
-        : '<tr><td colspan="5" class="px-6 py-4 text-sm text-slate-400">ไม่พบรายชื่อที่ตรงกับคำค้นหา</td></tr>';
+        : '<tr><td colspan="6" class="px-6 py-4 text-sm text-slate-400">ไม่พบรายชื่อที่ตรงกับคำค้นหา</td></tr>';
     allowlistSyncSel();
 }
 
@@ -2462,6 +2468,82 @@ async function allowlistRemove(email) {
     } catch (e) {
         allowMsg(e.message, false);
     }
+}
+
+/* ─── แอปเสริมต่อจาก Settings + สิทธิ์เมนูรายคน ─────────────────────────
+
+   เพิ่มเมนูใหม่ในอนาคต = เพิ่มแถวใน APP_MENUS แถวเดียว
+   (เมนู sidebar + ช่องติ๊กสิทธิ์ในหน้า Settings สร้างจากรายการนี้)
+   key ห้ามเปลี่ยนหลังใช้งาน เพราะเก็บอยู่ใน user_menus.menus ของแต่ละคน
+   ผู้ดูแลระบบเห็นทุกเมนู · ผู้ใช้ทั่วไปเห็นเฉพาะ key ที่อยู่ใน SESSION.menus */
+const APP_MENUS = [
+    { key: 'project_plan',  label: 'Project Plan',  icon: 'fa-diagram-project', url: 'https://peeraponggis.github.io/aisolar2/project_plan_spa.html' },
+    { key: 'asc_architect', label: 'ASC Architect', icon: 'fa-compass-drafting', url: 'architec/index.html' },
+    { key: 'pi_system',     label: 'Pi-System',     icon: 'fa-building',        url: 'https://pi-system.pages.dev/' }
+];
+
+function canSeeMenu(key) {
+    return !!SESSION && (SESSION.isAdmin || (SESSION.menus || []).includes(key));
+}
+
+function renderAppLinks() {
+    const box = document.getElementById('app-links');
+    if (!box) return;
+    const list = APP_MENUS.filter(m => canSeeMenu(m.key));
+    box.classList.toggle('hidden', list.length === 0);
+    box.innerHTML = list.map(m => `
+        <a href="${esc(m.url)}" target="_blank" rel="noopener"
+           class="w-full flex items-center px-4 py-3 rounded-lg transition text-left hover:bg-slate-800 hover:text-white">
+            <i class="fa-solid ${m.icon} w-6"></i><span class="font-medium">${esc(m.label)}</span>
+            <i class="fa-solid fa-arrow-up-right-from-square ml-auto text-[10px] text-slate-500"></i>
+        </a>`).join('');
+}
+
+/* ป้ายสิทธิ์ในตารางรายชื่อ · Admin = เห็นทุกเมนูอยู่แล้ว ป้ายเมนูจึงปิดกดไว้ */
+function accessChips(x) {
+    if (!x.registered) return '<span class="text-[11px] text-slate-400">สมัครก่อนจึงกำหนดได้</span>';
+    if (!x.menusReady) return '<span class="text-[11px] text-amber-600">รัน supabase/menu-access.sql ก่อน</span>';
+    const chip = (on, label, attrs, title) =>
+        `<button type="button" ${attrs} title="${esc(title)}"
+            class="text-[11px] px-2 py-0.5 rounded border transition disabled:cursor-not-allowed ${on
+                ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:border-blue-300'
+                : 'bg-white text-slate-500 border-slate-300 hover:border-blue-400 hover:text-blue-600'}">${on ? '✓ ' : ''}${esc(label)}</button>`;
+    const id = esc(x.userId);
+    const self = SESSION && x.email.toLowerCase() === String(SESSION.username).toLowerCase();
+    const menus = APP_MENUS.map(m => chip(x.isAdmin || x.menus.includes(m.key), m.label,
+        `onclick="accessToggleMenu('${id}','${m.key}')"` + (x.isAdmin ? ' disabled' : ''),
+        x.isAdmin ? 'ผู้ดูแลระบบเห็นทุกเมนูอยู่แล้ว' : 'เปิด/ปิดเมนู ' + m.label));
+    const admin = `<button type="button" onclick="accessToggleAdmin('${id}')" ${self && x.isAdmin ? 'disabled' : ''}
+        title="${self ? 'ถอดสิทธิ์ผู้ดูแลระบบของตัวเองไม่ได้' : 'ตั้ง/ถอดผู้ดูแลระบบ (เห็นทุกเมนู ทุกโครงการ และแก้รายชื่อนี้ได้)'}"
+        class="text-[11px] px-2 py-0.5 rounded border transition disabled:cursor-not-allowed ${x.isAdmin
+            ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700 disabled:opacity-60'
+            : 'bg-white text-slate-500 border-slate-300 hover:border-purple-400 hover:text-purple-600'}">${x.isAdmin ? '✓ ' : ''}Admin</button>`;
+    return '<div class="flex flex-wrap gap-1">' + menus.join('') + admin + '</div>';
+}
+
+async function accessToggleMenu(userId, key) {
+    const row = ALLOWLIST.find(x => x.userId === userId);
+    if (!row || row.isAdmin) return;
+    const next = row.menus.includes(key) ? row.menus.filter(k => k !== key) : [...row.menus, key];
+    const label = (APP_MENUS.find(m => m.key === key) || {}).label || key;
+    try {
+        await AscCloud.setUserMenus(userId, next);
+        row.menus = next;
+        allowMsg((next.includes(key) ? 'เปิด' : 'ปิด') + 'เมนู ' + label + ' ให้ ' + row.email + ' แล้ว (มีผลเมื่อเขาเข้าระบบครั้งถัดไป)', true);
+        renderAllowlist();
+    } catch (e) { allowMsg(e.message, false); }
+}
+
+async function accessToggleAdmin(userId) {
+    const row = ALLOWLIST.find(x => x.userId === userId);
+    if (!row) return;
+    const on = !row.isAdmin;
+    if (on && !confirm('ตั้ง ' + row.email + ' เป็นผู้ดูแลระบบหรือไม่?\n\nผู้ดูแลระบบเห็นโครงการของทุกคน เห็นทุกเมนู และแก้รายชื่อ/สิทธิ์ของทุกคนได้')) return;
+    try {
+        await AscCloud.setUserAdmin(userId, on);
+        allowMsg((on ? 'ตั้ง ' : 'ถอด ') + row.email + (on ? ' เป็นผู้ดูแลระบบแล้ว' : ' ออกจากผู้ดูแลระบบแล้ว'), true);
+        await loadAllowlist();
+    } catch (e) { allowMsg(e.message, false); }
 }
 
 /* ─── คลังสเปกอุปกรณ์ (เฉพาะผู้ดูแลระบบ) ────────────────────────────────

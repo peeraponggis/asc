@@ -285,12 +285,19 @@
         if (!user) { _profile = null; return null; }
         const { data, error } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
         if (error) console.warn('อ่านโปรไฟล์ไม่สำเร็จ', error);
+        // สิทธิ์เมนูแอปเสริม (supabase/menu-access.sql) · ยังไม่รัน SQL = ไม่มีเมนูเพิ่ม ไม่ล้ม
+        let menus = [];
+        try {
+            const { data: um } = await sb.from('user_menus').select('menus').eq('user_id', user.id).maybeSingle();
+            menus = (um && Array.isArray(um.menus)) ? um.menus : [];
+        } catch (e) { console.warn('อ่านสิทธิ์เมนูไม่สำเร็จ', e); }
         _profile = {
             id       : user.id,
             email    : user.email,
             username : user.email,                                   // ให้เข้ากับโค้ดเดิมที่ใช้ชื่อผู้ใช้
             display  : (data && data.display_name) || (user.email || '').split('@')[0],
             isAdmin  : !!(data && data.is_admin),
+            menus    : menus,
             loginAt  : Date.now()
         };
         return _profile;
@@ -529,9 +536,17 @@
             // เทียบกับโปรไฟล์ เพื่อบอกว่าใครสมัครแล้วใครยัง
             let signed = {};
             try {
-                const { data: pr } = await sb.from('profiles').select('email, display_name, is_admin');
+                const { data: pr } = await sb.from('profiles').select('id, email, display_name, is_admin');
                 (pr || []).forEach(p => { signed[String(p.email).toLowerCase()] = p; });
             } catch (e) { console.warn('อ่านโปรไฟล์เพื่อเทียบสถานะไม่สำเร็จ', e); }
+
+            // สิทธิ์เมนูของทุกคน · menusReady = false เมื่อยังไม่ได้รัน menu-access.sql
+            let menusBy = {}, menusReady = true;
+            {
+                const { data: um, error: ue } = await sb.from('user_menus').select('user_id, menus');
+                if (ue) { menusReady = false; console.warn('อ่านสิทธิ์เมนูไม่สำเร็จ', ue); }
+                (um || []).forEach(m => { menusBy[m.user_id] = m.menus || []; });
+            }
 
             return (data || []).map(r => {
                 const p = signed[String(r.email).toLowerCase()];
@@ -541,9 +556,33 @@
                     createdAt : r.created_at,
                     registered: !!p,
                     display   : p ? p.display_name : '',
-                    isAdmin   : !!(p && p.is_admin)
+                    isAdmin   : !!(p && p.is_admin),
+                    userId    : p ? p.id : null,
+                    menus     : (p && menusBy[p.id]) || [],
+                    menusReady: menusReady
                 };
             });
+        },
+
+        /* ── สิทธิ์เมนูแอปเสริม (เฉพาะผู้ดูแลระบบ · บังคับที่ RLS/ฟังก์ชัน) ── */
+
+        async setUserMenus(userId, menus) {
+            need();
+            const { error } = await sb.from('user_menus').upsert({
+                user_id   : userId,
+                menus     : [...new Set(menus || [])],
+                updated_at: new Date().toISOString(),
+                updated_by: _profile ? _profile.id : null
+            }, { onConflict: 'user_id' });
+            if (error) throw fail(error);
+            return true;
+        },
+
+        async setUserAdmin(userId, on) {
+            need();
+            const { error } = await sb.rpc('admin_set_admin', { p_user: userId, p_on: !!on });
+            if (error) throw fail(error);
+            return true;
         },
 
         async addAllowedEmail(email, note) {
