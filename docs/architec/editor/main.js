@@ -1,15 +1,15 @@
 // ตัวเขียนแบบ ASC Architect — เชื่อมผัง 2D · 3D · แผงคุณสมบัติ · บันทึก/ส่งออก (โดย ลุงพี)
-import * as M from "./model.js?v=0.15.0";
-import { Plan2D } from "./plan2d.js?v=0.15.0";
-import { View3D } from "./view3d.js?v=0.15.0";
-import { toDXF } from "./dxf.js?v=0.15.0";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.15.0";
-import * as CAD from "./cadlayer.js?v=0.15.0";
-import { Sketch3D } from "./sketch3d.js?v=0.15.0";
-import { PALETTE } from "./materials.js?v=0.15.0";
-import { sunPosition } from "./sun.js?v=0.15.0";
-import { readDXF, decodeDXF } from "./dxfread.js?v=0.15.0";
-import * as LS from "./localstore.js?v=0.15.0";
+import * as M from "./model.js?v=0.16.0";
+import { Plan2D } from "./plan2d.js?v=0.16.0";
+import { View3D } from "./view3d.js?v=0.16.0";
+import { toDXF } from "./dxf.js?v=0.16.0";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.16.0";
+import * as CAD from "./cadlayer.js?v=0.16.0";
+import { Sketch3D } from "./sketch3d.js?v=0.16.0";
+import { PALETTE } from "./materials.js?v=0.16.0";
+import { sunPosition } from "./sun.js?v=0.16.0";
+import { readDXF, decodeDXF } from "./dxfread.js?v=0.16.0";
+import * as LS from "./localstore.js?v=0.16.0";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -225,6 +225,10 @@ async function act(a) {
   if (a === "cad-close") { $("#cad-dlg").hidden = true; return; }
   if (a === "plot") return plotDialog();
   if (a === "plot-close") { $("#plot-dlg").hidden = true; return; }
+  if (a === "drawset") return drawsetDialog();
+  if (a === "set-go") return makeDrawset();
+  if (a === "set-close") { $("#set-dlg").hidden = true; return; }
+  if (a === "set-open") return openDrawset();
   if (a === "plot-go") return doPlot();
   if (a === "dxf") return output(safe(d.name) + ".dxf", new Blob([toDXF(d)], { type: "application/dxf" }), "plan.dxf");
   if (a === "glb") return output(safe(d.name) + ".glb", await view.exportGLB(), "model.glb");
@@ -265,6 +269,40 @@ async function doPlot() {
     $("#plot-msg").textContent = `เสร็จ ${j.scale} · ${j.pdf}` + (j.clipped ? " · ⚠ ผังใหญ่กว่ากระดาษ ส่วนเกินถูกตัด" : "") + " · ";
     $("#plot-msg").append(a);
   } catch (e) { $("#plot-msg").textContent = "Plot ไม่สำเร็จ: " + e.message; }
+}
+
+// ชุดแบบก่อสร้าง (Phase 8): แบบนี้ → ConstructCAD (โปรแกรมแยกในเครื่อง) → PDF A3 เล่มเดียว + IFC · กรอบชื่อใช้ฟอร์มเดียวกับ Plot
+let lastSet = null;
+async function drawsetDialog() {
+  if (CLOUD) return toast("ชุดแบบก่อสร้างต้องใช้รุ่นในเครื่อง (ASC Architect ในเครื่อง + ConstructCAD)");
+  $("#set-body").innerHTML = `<div id="set-form">${plotFormHTML(null, { DWG_TITLE: hist.doc.name, PROJECT1: hist.doc.name })}</div><div id="set-res"></div>`;
+  wirePlotForm($("#set-form"));
+  for (const id of ["#pl-paper", "#pl-scale", "#pl-custom", "#pl-mono"]) { const el = $("#set-form " + id); if (el) el.closest("label").hidden = true; }   // ชุดแบบ = A3 มาตราส่วนอัตโนมัติ
+  $("#set-dlg").hidden = false; $("#set-msg").textContent = "ตรวจ ConstructCAD…";
+  const st = await (await fetch("/api/drawset/status")).json().catch(() => ({ ok: false, message: "ต่อ server ไม่ได้" }));
+  $("[data-act=set-go]").disabled = !st.ok;
+  $("#set-msg").textContent = st.ok ? `พร้อม · ${st.version}` : st.message;
+}
+async function makeDrawset() {
+  const o = readPlotForm($("#set-form")), status = $("#set-form #pl-status")?.value || "";
+  $("#set-msg").textContent = "กำลังสร้างชุดแบบ… (ประมาณ 5–20 วินาที)"; $("[data-act=set-go]").disabled = true;
+  try {
+    const r = await fetch("/api/drawset", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ doc: serialize(hist.doc), fields: o.fields, status }) });
+    const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status);
+    lastSet = j;
+    $("#set-res").innerHTML = `<p><b>✓ ชุดแบบ ${j.sheets.length} แผ่น</b> · มาตราส่วน 1:${j.scale} · ${j.seconds} วินาที · ${esc(j.engine || "")}</p>
+      <p><a class="btn accent" href="${j.pdf}" target="_blank" rel="noopener">📄 เปิด PDF</a> ${j.ifc ? `<a class="btn" href="${j.ifc}" download>⬇ IFC</a>` : ""}
+      <button data-act="set-open" title="เปิดโปรเจกต์ .ccad ใน ConstructCAD เพื่อแก้ต่อแบบ BIM">🏗 เปิดใน ConstructCAD</button></p>
+      <ol class="small">${j.sheets.map(([no, t]) => `<li>${esc(no)} ${esc(t)}</li>`).join("")}</ol>` +
+      (j.warnings.length ? `<p class="small">⚠ ${j.warnings.map(esc).join("<br>⚠ ")}</p>` : "");
+    $("#set-msg").textContent = "เก็บที่ out\\drawsets\\" + j.folder;
+  } catch (e) { $("#set-msg").textContent = "สร้างชุดแบบไม่สำเร็จ: " + e.message; }
+  finally { $("[data-act=set-go]").disabled = false; }
+}
+async function openDrawset() {
+  if (!lastSet) return;
+  const r = await fetch("/api/drawset/open", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ folder: lastSet.folder }) });
+  const j = await r.json(); toast(r.ok ? "เปิด ConstructCAD แล้ว (หน้าต่างใหม่บนเครื่องนี้)" : j.error);
 }
 
 const safe = (s) => String(s || "แบบ").replace(/[<>:"/\\|?*\x00-\x1f]/g, "_").slice(0, 60);
@@ -500,7 +538,7 @@ async function traceLocal(f) {
 function parseDxfLocal(buf, name) {
   return new Promise((res, rej) => {
     let w;
-    try { w = new Worker(new URL("./dxfworker.js?v=0.15.0", import.meta.url), { type: "module" }); } catch (err) { w = null; }
+    try { w = new Worker(new URL("./dxfworker.js?v=0.16.0", import.meta.url), { type: "module" }); } catch (err) { w = null; }
     if (!w) { try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } return; }
     w.onmessage = (ev) => { w.terminate(); ev.data.error ? rej(new Error(ev.data.error)) : res(ev.data.data); };
     w.onerror = (ev) => { w.terminate(); try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } ev.preventDefault(); };
@@ -666,6 +704,7 @@ window.ascaAI = {
       { done: d.roof.type !== "none" || !s.walls, say: "เลือกทรงหลังคา (แผงขวา หลังคา + แผงโซลาร์)", act: { tool: "set", id: "roof-type", value: "gable", label: "หลังคาจั่ว" } },
       ...(s.pvCount ? [{ done: false, say: `ส่งแผง ${s.pvCount} แผง (${s.pvKwp} kWp) ไปคำนวณผลผลิตไฟฟ้า`, act: { tool: "press", key: "yield", label: "⚡ ผลผลิต" } }] : []),
       { done: !dirty, say: "บันทึกแบบ (Ctrl+S)", act: { tool: "press", key: "save", label: "บันทึก" } },
+      ...(s.walls && !CLOUD ? [{ done: false, say: "สร้างชุดแบบก่อสร้าง A3: ผังพื้น รูปด้าน รูปตัด 3D ตาราง + IFC (ConstructCAD)", act: { tool: "press", key: "drawset", label: "📑 ชุดแบบ" } }] : []),
       { done: false, say: "ส่งออกงาน: 📷 Render ภาพ · 🖨 Plot PDF · DXF · GLB", act: { tool: "press", key: "render", label: "📷 Render" } },
     ];
     const todo = steps.filter((x) => !x.done);

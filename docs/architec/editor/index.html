@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>เขียนแบบ · ASC Architect</title>
 <link rel="icon" href="../favicon.ico">
-<link rel="stylesheet" href="editor.css?v=0.15.0">
-<script src="../mode.js?v=0.15.0"></script>
+<link rel="stylesheet" href="editor.css?v=0.16.0">
+<script src="../mode.js?v=0.16.0"></script>
 <script type="importmap">
 { "imports": { "three": "../vendor/three/build/three.module.min.js", "three/addons/": "../vendor/three/examples/jsm/" } }
 </script>
-<link rel="stylesheet" href="../ai/assistant.css?v=0.15.0">
+<link rel="stylesheet" href="../ai/assistant.css?v=0.16.0">
 </head>
 <body>
 <header class="bar">
@@ -36,6 +36,7 @@
   <div class="grp">
     <button data-act="render" class="accent" title="render ภาพนิ่ง 1920×1080">📷 Render</button>
     <button data-act="plot" title="Plot ผัง 2D เป็น PDF: กระดาษ A4–A0 + กรอบชื่อ + มาตราส่วน">🖨 Plot</button>
+    <button data-act="drawset" title="ชุดแบบก่อสร้าง A3: ผังพื้น · รูปด้าน 4 ด้าน · รูปตัด · 3D · ตารางประตูหน้าต่างห้อง + ไฟล์ IFC — สร้างด้วย ConstructCAD (รุ่นในเครื่อง)">📑 ชุดแบบ</button>
     <button data-act="dxf" title="ส่งออกผัง 2D เป็น DXF">DXF</button>
     <button data-act="glb" title="ส่งออกโมเดล 3D (เปิดใน Blender ได้)">GLB</button>
     <button data-act="yield" title="ส่ง kWp + มุม + ทิศของแผงไปคำนวณผลผลิต">⚡ ผลผลิต</button>
@@ -141,8 +142,16 @@
     <div class="dlg-foot"><span id="cad-msg" class="muted"></span><button data-act="cad-close">ปิด</button></div>
   </div>
 </div>
+<div id="set-dlg" class="dlg" hidden>
+  <div class="dlg-box">
+    <h3>📑 ชุดแบบก่อสร้าง A3</h3>
+    <p class="muted">ConstructCAD สร้างผังพื้น รูปด้าน 4 ด้าน รูปตัด ทัศนียภาพ 3D และตาราง จากแบบนี้ → PDF เล่มเดียว (ภาษาไทย) + IFC · กรอบชื่อใช้ค่าเดียวกับ 🖨 Plot</p>
+    <div id="set-body"></div>
+    <div class="dlg-foot"><span id="set-msg" class="muted"></span><span><button data-act="set-go" class="accent">📑 สร้างชุดแบบ</button> <button data-act="set-close">ปิด</button></span></div>
+  </div>
+</div>
 <div id="toast" class="toast" hidden></div>
-<script type="module" src="main.js?v=0.15.0"></script>
-<script type="module" src="../ai/assistant.js?v=0.15.0"></script>
+<script type="module" src="main.js?v=0.16.0"></script>
+<script type="module" src="../ai/assistant.js?v=0.16.0"></script>
 </body>
 </html>

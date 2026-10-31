@@ -3,8 +3,8 @@
 // คีย์อยู่ในเบราว์เซอร์ · AI ไม่คิดตัวเลขเอง (ตัวเลขมาจาก facts ของหน้า) · จะกดปุ่ม/เปลี่ยนค่า ต้องให้คนกดยืนยันการ์ดก่อน ·
 // รู้ว่าอยู่หน้าไหน · "ต่อไปทำอะไร" ตอบจากสถานะจริงของหน้า (host.next)
 // หน้าเว็บบอกสถานะผ่าน window.ascaAI = { page(), pageName(), facts(), next(), sets } (ดู editor/main.js · cad/app.js · app.js)
-import { loadKB } from "./kb.js?v=0.15.0";
-import { PROVIDERS, loadCfg, saveCfg, chain, askChain, parseReply } from "./providers.js?v=0.15.0";
+import { loadKB } from "./kb.js?v=0.16.0";
+import { PROVIDERS, loadCfg, saveCfg, chain, askChain, parseReply } from "./providers.js?v=0.16.0";
 
 const BASE = new URL("./", import.meta.url);
 const CLOUD = window.PA_MODE === "cloud";
@@ -71,7 +71,7 @@ function run(a) {
 }
 
 // ---------------------------------------------------------------- piBot: 4 ท่า (ตาเปิด · ตาปิด · นิ้วซ้ายกด · นิ้วขวากด)
-function bot(size) { return `<span class="pibot" style="width:${size}px;height:${size}px;background-image:url(${new URL("pibot.webp?v=0.15.0", BASE)})" aria-hidden="true"></span>`; }
+function bot(size) { return `<span class="pibot" style="width:${size}px;height:${size}px;background-image:url(${new URL("pibot.webp?v=0.16.0", BASE)})" aria-hidden="true"></span>`; }
 let mood = "idle", frame = 0, burst = 0, nextBlink = Date.now() + 2500;
 function animate() {
   const now = Date.now();
