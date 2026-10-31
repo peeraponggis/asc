@@ -1,0 +1,20 @@
+{
+ "app": "ASC Architect",
+ "version": "0.18.0",
+ "runtime": "py312-66bd077d",
+ "published": "2026-10-31",
+ "notes": [
+  "ติดตั้งง่าย: ดาวน์โหลด → ดับเบิลคลิก → ใส่รหัสผ่าน → ถัดไป · ไม่ต้องลง Python ไม่ต้องต่อเน็ต ไม่ต้อง admin · เมนูภาษาไทย · ไอคอน Desktop + Start menu …",
+  "มีรุ่นใหม่ → หน้าแรกขึ้นแถบ 🔔 พร้อมสิ่งที่เปลี่ยน → กด อัปเดตตอนนี้ → ดาวน์โหลดเฉพาะโปรแกรม (ไม่กี่ MB) ตรวจ SHA-256 → ปิดแล้วเปิดใหม่เอง · ไม่ขึ้นใน 60 วินาที …",
+  "สร้างชุดด้วย scripts\\build_installer.py (Python พกพา python-build-standalone 3.12 + Inno Setup 6.7) · ชุดอัปเดต + latest.json ที่ ASC Cloud (asc/asca-release)",
+  "ติดตั้งจาก git (เครื่อง home/laptop) อัปเดตด้วย git pull เหมือนเดิม · คลังความรู้ piBot เพิ่มเรื่องติดตั้งและอัปเดต",
+  "เทสต์ใหม่: tests\\test_updater.py 5 ข้อ (เข้ารหัส · ตรวจรุ่น · ไฟล์เสีย · รหัสผิด · ชื่อไฟล์อันตราย · สคริปต์สลับ/ย้อนกลับ)"
+ ],
+ "package": {
+  "file": "asca-app-0.18.0.bin",
+  "size": 1806252,
+  "sha256": "06eb860ecda7aa6a40f3ea92290b28042441227849e039b266fbebd1674c4914"
+ },
+ "setup_url": null,
+ "constructcad": "0.8.0"
+}
