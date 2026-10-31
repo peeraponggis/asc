@@ -177,8 +177,8 @@
                         <input id="login-pass" name="password" type="password" autocomplete="current-password"
                                class="w-full border border-slate-300 rounded-lg py-3 pl-10 pr-11 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                                placeholder="••••••••">
-                        <button type="button" id="toggle-pass" title="แสดง/ซ่อนรหัสผ่าน"
-                                class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">
+                        <button type="button" id="toggle-pass" data-for="login-pass" title="แสดงรหัสผ่าน" aria-label="แสดงรหัสผ่าน" aria-pressed="false"
+                                class="pw-eye absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">
                             <i class="fa-regular fa-eye text-sm"></i>
                         </button>
                     </div>
@@ -229,13 +229,25 @@
                 </div>
                 <div class="mb-4">
                     <label for="su-pass" class="block text-sm font-semibold text-slate-700 mb-1.5">ตั้งรหัสผ่าน (อย่างน้อย 8 ตัวอักษร)</label>
-                    <input id="su-pass" type="password" autocomplete="new-password" placeholder="••••••••"
-                           class="w-full border border-slate-300 rounded-lg py-3 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    <div class="relative">
+                        <input id="su-pass" type="password" autocomplete="new-password" placeholder="••••••••"
+                               class="w-full border border-slate-300 rounded-lg py-3 pl-3 pr-11 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition">
+                        <button type="button" class="pw-eye absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+                                data-for="su-pass" title="แสดงรหัสผ่าน" aria-label="แสดงรหัสผ่าน" aria-pressed="false">
+                            <i class="fa-regular fa-eye text-sm"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="mb-6">
                     <label for="su-pass2" class="block text-sm font-semibold text-slate-700 mb-1.5">พิมพ์รหัสผ่านอีกครั้ง</label>
-                    <input id="su-pass2" type="password" autocomplete="new-password" placeholder="••••••••"
-                           class="w-full border border-slate-300 rounded-lg py-3 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    <div class="relative">
+                        <input id="su-pass2" type="password" autocomplete="new-password" placeholder="••••••••"
+                               class="w-full border border-slate-300 rounded-lg py-3 pl-3 pr-11 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition">
+                        <button type="button" class="pw-eye absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+                                data-for="su-pass2" title="แสดงรหัสผ่าน" aria-label="แสดงรหัสผ่าน" aria-pressed="false">
+                            <i class="fa-regular fa-eye text-sm"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div id="signup-error" class="hidden mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"></div>
@@ -3083,13 +3095,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Login
     document.getElementById('login-form').addEventListener('submit', doLogin);
-    document.getElementById('toggle-pass').addEventListener('click', function () {
-        const inp = document.getElementById('login-pass');
+    // ปุ่มรูปตาทุกช่องรหัสผ่าน (เข้าสู่ระบบ · สมัครใช้งาน 2 ช่อง) — data-for = id ของช่อง
+    document.querySelectorAll('.pw-eye').forEach(btn => btn.addEventListener('click', function () {
+        const inp = document.getElementById(this.dataset.for);
         const on  = inp.type === 'password';
         inp.type  = on ? 'text' : 'password';
+        const tip = on ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน';
+        this.title = tip; this.setAttribute('aria-label', tip); this.setAttribute('aria-pressed', String(on));
         this.innerHTML = `<i class="fa-regular ${on ? 'fa-eye-slash' : 'fa-eye'} text-sm"></i>`;
         inp.focus();
-    });
+    }));
     document.getElementById('login-user').addEventListener('input', hideLoginError);
     document.getElementById('login-pass').addEventListener('input', hideLoginError);
 
