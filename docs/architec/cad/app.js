@@ -1,9 +1,9 @@
 // CAD 2D ของ ASC Architect — เปิด/แก้/บันทึก DWG·DXF แบบ AutoCAD (โดย ลุงพี)
 // เอกสารจริงอยู่ฝั่ง server (ezdxf) · หน้านี้ถือสำเนาวัตถุใน model space + จดสิ่งที่เปลี่ยน แล้วส่งไปตอนบันทึก
-import * as G from "./geom.js?v=0.16.0";
-import * as H from "./geom2.js?v=0.16.0";
-import { aciColor } from "../editor/cadlayer.js?v=0.16.0";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.16.0";
+import * as G from "./geom.js?v=0.17.0";
+import * as H from "./geom2.js?v=0.17.0";
+import { aciColor } from "../editor/cadlayer.js?v=0.17.0";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.17.0";
 
 const $ = (s) => document.querySelector(s);
 const CLOUD = window.PA_MODE === "cloud";

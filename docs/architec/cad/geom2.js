@@ -1,6 +1,6 @@
 // เรขาคณิตขั้นที่ 2 ของ CAD 2D: จุดตัด · OFFSET · TRIM · EXTEND · FILLET · ARRAY · EXPLODE · มิติ · HATCH (โดย ลุงพี)
 // ไม่มี DOM — ทดสอบด้วย node ได้ · วัตถุใช้รูปแบบเดียวกับ geom.js ({t, g, d, x})
-import * as G from "./geom.js?v=0.16.0";
+import * as G from "./geom.js?v=0.17.0";
 
 const EPS = 1e-9;
 const r4 = (v) => Math.round(v * 1e4) / 1e4;

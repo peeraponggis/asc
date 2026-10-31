@@ -3,12 +3,12 @@
 // คีย์อยู่ในเบราว์เซอร์ · AI ไม่คิดตัวเลขเอง (ตัวเลขมาจาก facts ของหน้า) · จะกดปุ่ม/เปลี่ยนค่า ต้องให้คนกดยืนยันการ์ดก่อน ·
 // รู้ว่าอยู่หน้าไหน · "ต่อไปทำอะไร" ตอบจากสถานะจริงของหน้า (host.next)
 // หน้าเว็บบอกสถานะผ่าน window.ascaAI = { page(), pageName(), facts(), next(), sets } (ดู editor/main.js · cad/app.js · app.js)
-import { loadKB } from "./kb.js?v=0.16.0";
-import { PROVIDERS, loadCfg, saveCfg, chain, askChain, parseReply } from "./providers.js?v=0.16.0";
+import { loadKB } from "./kb.js?v=0.17.0";
+import { PROVIDERS, loadCfg, saveCfg, chain, askChain, parseReply } from "./providers.js?v=0.17.0";
 
 const BASE = new URL("./", import.meta.url);
 const CLOUD = window.PA_MODE === "cloud";
-const LS_CHAT = "asca.ai.chat", LS_POS = "asca.ai.pos", LS_MISS = "asca.ai.unanswered";
+const LS_CHAT = "asca.ai.chat", LS_POS = "asca.ai.pos", LS_MISS = "asca.ai.unanswered", LS_FAB = "asca.ai.fab";
 const NEXT_RE = /ต่อไป|ขั้นตอนไหน|ขั้นต่อไป|ขาดอะไร|ทำอะไรต่อ|เหลืออะไร|ต้องทำอะไร|เริ่มตรงไหน|next/i;
 const HELP_RE = /^(หน้านี้|ใช้ยังไง|ใช้งานยังไง|ช่วยด้วย|help)/i;
 const FACT_RE = /สรุป|กี่|เท่าไร|เท่าไหร่|kwp|พื้นที่|ความยาว|จำนวน/i;
@@ -71,7 +71,7 @@ function run(a) {
 }
 
 // ---------------------------------------------------------------- piBot: 4 ท่า (ตาเปิด · ตาปิด · นิ้วซ้ายกด · นิ้วขวากด)
-function bot(size) { return `<span class="pibot" style="width:${size}px;height:${size}px;background-image:url(${new URL("pibot.webp?v=0.16.0", BASE)})" aria-hidden="true"></span>`; }
+function bot(size) { return `<span class="pibot" style="width:${size}px;height:${size}px;background-image:url(${new URL("pibot.webp?v=0.17.0", BASE)})" aria-hidden="true"></span>`; }
 let mood = "idle", frame = 0, burst = 0, nextBlink = Date.now() + 2500;
 function animate() {
   const now = Date.now();
@@ -92,7 +92,7 @@ const saveChat = () => { try { localStorage.setItem(LS_CHAT, JSON.stringify(chat
 seq = chat.reduce((m, x) => Math.max(m, x.id || 0), 0);
 
 const fab = document.createElement("button");
-fab.className = "aifab"; fab.type = "button"; fab.title = "ผู้ช่วย AI piBot (Ctrl+J)"; fab.innerHTML = bot(60);
+fab.className = "aifab"; fab.type = "button"; fab.title = "ผู้ช่วย AI piBot (Ctrl+J) · ลากเพื่อย้ายไม่ให้บังตัวอักษร"; fab.innerHTML = bot(60);
 const win = document.createElement("section");
 win.className = "aiw"; win.hidden = true; win.setAttribute("aria-label", "ผู้ช่วย AI");
 document.body.append(fab, win);
@@ -236,7 +236,7 @@ function saveSettings() {
 }
 
 // ---------------------------------------------------------------- เหตุการณ์
-fab.onclick = () => toggle();
+fab.onclick = () => { if (fabMoved) { fabMoved = false; return; } toggle(); };
 addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "j") { e.preventDefault(); toggle(); } });
 win.addEventListener("keydown", (e) => {
   e.stopPropagation();                                                            // ไม่ให้คีย์ลัดของหน้า (W, L, Delete…) ทำงานตอนพิมพ์ในแชท
@@ -275,6 +275,27 @@ let drag = null;                                                                
 win.addEventListener("pointerdown", (e) => { if (!e.target.closest(".aih") || e.target.closest("button")) return; drag = { dx: e.clientX - win.offsetLeft, dy: e.clientY - win.offsetTop }; win.setPointerCapture(e.pointerId); });
 win.addEventListener("pointermove", (e) => { if (!drag) return; win.style.left = Math.min(Math.max(0, e.clientX - drag.dx), innerWidth - win.offsetWidth) + "px"; win.style.top = Math.min(Math.max(0, e.clientY - drag.dy), innerHeight - 40) + "px"; });
 win.addEventListener("pointerup", () => { if (!drag) return; drag = null; try { localStorage.setItem(LS_POS, JSON.stringify({ x: win.offsetLeft, y: win.offsetTop })); } catch (e) { /* */ } });
+// ลากปุ่มกลม piBot ไปวางที่อื่นได้ (กันบังตัวอักษรในหน้า) · ขยับเกิน 5px = ลาก ไม่นับเป็นคลิก · จำตำแหน่งไว้ · ไม่ให้หลุดขอบจอ
+let fabDrag = null, fabMoved = false;
+function placeFab(p) {
+  if (!p) return;
+  const x = Math.min(Math.max(0, p.x), innerWidth - fab.offsetWidth), y = Math.min(Math.max(0, p.y), innerHeight - fab.offsetHeight);
+  fab.style.left = x + "px"; fab.style.top = y + "px"; fab.style.right = "auto"; fab.style.bottom = "auto";
+}
+try { placeFab(JSON.parse(localStorage.getItem(LS_FAB) || "null")); } catch (e) { /* */ }
+fab.addEventListener("pointerdown", (e) => { if (e.button !== 0) return; fabDrag = { sx: e.clientX, sy: e.clientY, dx: e.clientX - fab.offsetLeft, dy: e.clientY - fab.offsetTop, on: false }; fab.setPointerCapture(e.pointerId); });
+fab.addEventListener("pointermove", (e) => {
+  if (!fabDrag) return;
+  if (!fabDrag.on && Math.hypot(e.clientX - fabDrag.sx, e.clientY - fabDrag.sy) < 5) return;
+  fabDrag.on = true; fab.classList.add("drag"); placeFab({ x: e.clientX - fabDrag.dx, y: e.clientY - fabDrag.dy });
+});
+fab.addEventListener("pointerup", () => {
+  if (!fabDrag) return;
+  if (fabDrag.on) { fabMoved = true; fab.classList.remove("drag"); try { localStorage.setItem(LS_FAB, JSON.stringify({ x: fab.offsetLeft, y: fab.offsetTop })); } catch (e) { /* */ } }
+  fabDrag = null;
+});
+fab.addEventListener("pointercancel", () => { fabDrag = null; fab.classList.remove("drag"); });
+addEventListener("resize", () => { if (fab.style.left) placeFab({ x: fab.offsetLeft, y: fab.offsetTop }); });
 requestAnimationFrame(animate);
 
 export const piBot = { toggle, ask, isOpen: () => open };

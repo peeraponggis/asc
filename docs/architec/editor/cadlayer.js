@@ -1,7 +1,7 @@
 // ชั้นไฟล์ CAD นำเข้า (DXF/DWG ที่ server อ่านแล้ว) — วาดบน canvas ด้วย Path2D ต่อ layer จึงซูม/เลื่อนแบบใหญ่ ๆ ได้ลื่น (โดย ลุงพี)
 // ref (เก็บในแบบ): { id, file, name, toMM, dx, dy, bbox:[x0,y0,x1,y1] (หน่วยไฟล์), hidden: {layer: true} }
 // data (จาก /api/cad/load): { polys: [[layer, aci, closed, [x,y,…]]], texts: [[layer, aci, x, y, h, rot, s]], layers: [{name, color, count}] }
-import * as M from "./model.js?v=0.16.0";
+import * as M from "./model.js?v=0.17.0";
 
 const ACI = { 1: "#d0302f", 2: "#a88a00", 3: "#2e8b3d", 4: "#1b8a9e", 5: "#2f56c9", 6: "#a03aa8", 7: "", 8: "#7d858f", 9: "#a9b0b8",
               30: "#d9822b", 40: "#c26a00", 140: "#3a7bd5", 150: "#2f5fb3", 250: "#555", 251: "#6b6b6b", 252: "#888", 253: "#9e9e9e", 254: "#bbb" };

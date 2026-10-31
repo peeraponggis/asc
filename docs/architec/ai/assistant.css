@@ -1,7 +1,8 @@
 /* ผู้ช่วย AI piBot — ปุ่มลอย + หน้าต่างแชท (โดย ลุงพี) · ใช้สีตามธีมของหน้า ถ้าไม่มีใช้ค่าสำรอง */
 .pibot { display: inline-block; flex: none; border-radius: 50%; background-size: 400% 100%; background-repeat: no-repeat; background-position: 0 0; }
 .aifab { position: fixed; right: 16px; bottom: 16px; z-index: 9000; width: 68px; height: 68px; padding: 4px; border: 0; border-radius: 50%;
-  background: transparent; cursor: pointer; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .35)); transition: transform .15s; }
+  background: transparent; cursor: pointer; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .35)); transition: transform .15s; touch-action: none; }
+.aifab.drag { cursor: grabbing; transform: scale(1.1); transition: none; }
 .aifab:hover { transform: scale(1.06); }
 .aifab.on { transform: scale(.92); }
 .aiw { position: fixed; z-index: 9001; display: flex; flex-direction: column; overflow: hidden; border-radius: 14px;
