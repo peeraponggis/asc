@@ -25,6 +25,28 @@
     if (name === "library") loadCatalog();
   }
   $("#tabs").addEventListener("click", function (e) { if (e.target.dataset.tab) showTab(e.target.dataset.tab); });
+  // ผู้ช่วย AI piBot: แท็บที่เปิดอยู่ = หน้าของผู้ช่วย · ต่อไปทำอะไร ตามแท็บ
+  var TABS = { home: "หน้าแรก", projects: "โครงการ", yield: "ผลผลิตไฟฟ้า", strings: "จัดสตริง", library: "คลังสัญลักษณ์", templates: "แม่แบบ & โปรแกรม" };
+  function curTab() { var b = document.querySelector("#tabs button.on"); return b ? b.dataset.tab : "home"; }
+  window.ascaAI = {
+    page: curTab,
+    pageName: function () { return "หน้าหลัก › " + (TABS[curTab()] || curTab()); },
+    facts: function () { return { "โหมด": window.PA_MODE === "cloud" ? "ออนไลน์" : "ในเครื่อง", "โครงการ": (state.projects || []).length }; },
+    next: function () {
+      var t = curTab(), n = (state.projects || []).length, cloud = window.PA_MODE === "cloud";
+      if (t === "yield") return [{ done: false, say: "กรอกละติจูด ลองจิจูด kWp มุมเอียง ทิศ แล้วกด คำนวณ" + (cloud ? " (รุ่นออนไลน์คำนวณไม่ได้ ใช้รุ่นในเครื่อง)" : "") },
+        { done: false, say: "ได้ผลแล้ว: ดาวน์โหลด JSON ส่ง ASC หรือเปิดหน้ารายงาน" }];
+      if (t === "strings") return [{ done: false, say: "กรอกจำนวนแผง + สเปกแผงและอินเวอร์เตอร์ (ช่องว่าง = ค่าเริ่มต้น) แล้วกด หาแบบจัดสตริง" }];
+      if (t === "projects") return [
+        { done: n > 0 || cloud, say: "นำเข้างาน ASC Studio (กด นำเข้า ในกล่อง ASC Studio — ทุกโฟลเดอร์) หรือสร้างโครงการเปล่า" },
+        { done: false, say: n ? "เลือกโครงการ → ✏️ เขียนแบบ หรือ คำนวณผลผลิต" : "หลังมีโครงการ: ✏️ เขียนแบบ / คำนวณผลผลิต", act: n ? { tool: "press", key: "yield", label: "ไปแท็บผลผลิตไฟฟ้า" } : null }];
+      return [
+        { done: false, say: "เขียนแบบบ้าน/อาคาร → ✏️ เขียนแบบ 2D/3D (ลิงก์ด้านบน)" },
+        { done: false, say: "แก้แบบ DWG/DXF/PDF ของลูกค้า → 📐 CAD 2D" + (cloud ? " (รุ่นในเครื่อง)" : "") },
+        { done: n > 0 || cloud, say: "งานโซลาร์รูฟท็อป → นำเข้างาน ASC Studio ที่แท็บ โครงการ", act: { tool: "press", key: "projects", label: "ไปแท็บโครงการ" } }];
+    },
+    sets: {},
+  };
 
   // ---------------------------------------------------------------- เริ่ม
   function init() {

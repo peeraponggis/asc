@@ -1,9 +1,9 @@
 // CAD 2D ของ ASC Architect — เปิด/แก้/บันทึก DWG·DXF แบบ AutoCAD (โดย ลุงพี)
 // เอกสารจริงอยู่ฝั่ง server (ezdxf) · หน้านี้ถือสำเนาวัตถุใน model space + จดสิ่งที่เปลี่ยน แล้วส่งไปตอนบันทึก
-import * as G from "./geom.js?v=0.14.0";
-import * as H from "./geom2.js?v=0.14.0";
-import { aciColor } from "../editor/cadlayer.js?v=0.14.0";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.14.0";
+import * as G from "./geom.js?v=0.15.0";
+import * as H from "./geom2.js?v=0.15.0";
+import { aciColor } from "../editor/cadlayer.js?v=0.15.0";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.15.0";
 
 const $ = (s) => document.querySelector(s);
 const CLOUD = window.PA_MODE === "cloud";
@@ -973,6 +973,25 @@ async function newDoc() { if (S.dirty && !confirm("แบบปัจจุบ�
 window.addEventListener("beforeunload", (e) => { if (S.dirty) { e.preventDefault(); e.returnValue = ""; } });
 window.__cad = S;
 window.__cadDbg = { grips, gripDown, pick };
+// ผู้ช่วย AI piBot: สถานะหน้า (ตัวเลขจากโค้ด) + ต่อไปทำอะไร
+window.ascaAI = {
+  page: () => "cad",
+  pageName: () => "CAD 2D",
+  facts: () => ({ "ไฟล์": S.doc ? (S.doc.file ? "เปิดไฟล์อยู่" : "แบบใหม่ ยังไม่บันทึก") : "ยังไม่เปิด", "วัตถุ": S.ents.size, "layer": S.layers.size,
+    "หน่วย": $("#units").textContent, "ดูอย่างเดียว": S.ro ? "ใช่ (ไฟล์ใหญ่)" : "ไม่", "แก้แล้วยังไม่บันทึก": S.dirty ? "ใช่" : "ไม่", "OSNAP": S.osnap ? "เปิด" : "ปิด", "ORTHO": S.ortho ? "เปิด" : "ปิด" }),
+  next() {
+    const opened = !!(S.doc && (S.doc.file || S.ents.size)), unitless = S.doc && !S.doc.insunits;
+    const steps = [
+      { done: opened, say: "เปิดไฟล์ DWG / DXF / PDF จาก CAD (หรือวาดใหม่ด้วย L, PL, REC)", act: { tool: "press", key: "OPEN", label: "เปิด" } },
+      ...(opened && unitless ? [{ done: false, say: "ไฟล์ไม่ระบุหน่วย — ตรวจขนาดด้วย DI (วัดระยะ) ถ้าไม่ตรงใช้ CAL ตั้งระยะจากเส้นที่รู้ระยะ", act: { tool: "press", key: "CAL", label: "ตั้งระยะ" } }] : []),
+      { done: !S.dirty && opened, say: S.ro ? "ไฟล์ใหญ่เปิดแบบดูอย่างเดียว — ใช้ Plot หรือเปิดใน AutoCAD/ZWCAD เพื่อแก้" : "แก้แบบแล้วบันทึก (Ctrl+S) หรือ บันทึกเป็น… DWG/DXF", act: S.ro ? null : { tool: "press", key: "SAVE", label: "บันทึก" } },
+      { done: false, say: "Plot เป็น PDF พร้อมกรอบชื่อ (Ctrl+P)", act: { tool: "press", key: "PLOT", label: "🖨 Plot PDF" } },
+    ];
+    return [...steps.filter((x) => x.done).slice(-1), ...steps.filter((x) => !x.done).slice(0, 3)];
+  },
+  sets: {},
+};
+
 const qf = new URLSearchParams(location.search).get("file");
 resize();
 if (CLOUD) { prompt("รุ่นออนไลน์: CAD 2D ต้องใช้รุ่นในเครื่อง"); }

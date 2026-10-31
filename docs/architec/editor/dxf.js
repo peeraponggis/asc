@@ -1,6 +1,6 @@
 // ส่งออกผัง 2D เป็น DXF R12 (ASCII) — เปิดได้ใน CadCraft · LibreCAD · FreeCAD · AutoCAD (โดย ลุงพี)
 // ตัวอักษรไทยเขียนเป็น \U+XXXX (รูปแบบมาตรฐานของ DXF) · ชั้นตาม AIA เดียวกับแม่แบบใน cadcraft\templates
-import { wallPolygon, openingSpans, wallLength, norm, sub, add, mul, perp, dist } from "./model.js?v=0.14.0";
+import { wallPolygon, openingSpans, wallLength, norm, sub, add, mul, perp, dist } from "./model.js?v=0.15.0";
 
 const LAYERS = [["A-WALL", 7], ["A-DOOR", 3], ["A-GLAZ", 4], ["A-DIMS", 2], ["A-TEXT", 7], ["A-MASS", 5], ["A-LINE", 8], ["A-SYMB", 6]];
 

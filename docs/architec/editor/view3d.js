@@ -5,8 +5,8 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import * as M from "./model.js?v=0.14.0";
-import { material } from "./materials.js?v=0.14.0";
+import * as M from "./model.js?v=0.15.0";
+import { material } from "./materials.js?v=0.15.0";
 
 const MM = 0.001;
 

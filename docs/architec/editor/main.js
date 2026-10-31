@@ -1,15 +1,15 @@
 // ตัวเขียนแบบ ASC Architect — เชื่อมผัง 2D · 3D · แผงคุณสมบัติ · บันทึก/ส่งออก (โดย ลุงพี)
-import * as M from "./model.js?v=0.14.0";
-import { Plan2D } from "./plan2d.js?v=0.14.0";
-import { View3D } from "./view3d.js?v=0.14.0";
-import { toDXF } from "./dxf.js?v=0.14.0";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.14.0";
-import * as CAD from "./cadlayer.js?v=0.14.0";
-import { Sketch3D } from "./sketch3d.js?v=0.14.0";
-import { PALETTE } from "./materials.js?v=0.14.0";
-import { sunPosition } from "./sun.js?v=0.14.0";
-import { readDXF, decodeDXF } from "./dxfread.js?v=0.14.0";
-import * as LS from "./localstore.js?v=0.14.0";
+import * as M from "./model.js?v=0.15.0";
+import { Plan2D } from "./plan2d.js?v=0.15.0";
+import { View3D } from "./view3d.js?v=0.15.0";
+import { toDXF } from "./dxf.js?v=0.15.0";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.15.0";
+import * as CAD from "./cadlayer.js?v=0.15.0";
+import { Sketch3D } from "./sketch3d.js?v=0.15.0";
+import { PALETTE } from "./materials.js?v=0.15.0";
+import { sunPosition } from "./sun.js?v=0.15.0";
+import { readDXF, decodeDXF } from "./dxfread.js?v=0.15.0";
+import * as LS from "./localstore.js?v=0.15.0";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -500,7 +500,7 @@ async function traceLocal(f) {
 function parseDxfLocal(buf, name) {
   return new Promise((res, rej) => {
     let w;
-    try { w = new Worker(new URL("./dxfworker.js?v=0.14.0", import.meta.url), { type: "module" }); } catch (err) { w = null; }
+    try { w = new Worker(new URL("./dxfworker.js?v=0.15.0", import.meta.url), { type: "module" }); } catch (err) { w = null; }
     if (!w) { try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } return; }
     w.onmessage = (ev) => { w.terminate(); ev.data.error ? rej(new Error(ev.data.error)) : res(ev.data.data); };
     w.onerror = (ev) => { w.terminate(); try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } ev.preventDefault(); };
@@ -643,5 +643,40 @@ function demoDoc() {
   d.masses.push({ id: M.uid("m"), name: "โรงจอดรถ", pts: [[11000, 0], [14000, 0], [14000, 5500], [11000, 5500]], base: 0, height: 2600 });
   return d;
 }
+
+// ---------------------------------------------------------------- ผู้ช่วย AI piBot: สถานะหน้า (ตัวเลขจากโค้ด) + ต่อไปทำอะไร + ช่องที่ผู้ช่วยตั้งค่าได้ (หลังผู้ใช้ยืนยัน)
+window.ascaAI = {
+  page: () => "editor",
+  pageName: () => "ตัวเขียนแบบ 2D/3D",
+  facts() {
+    const d = hist.doc, s = M.summary(d);
+    return { "ผนัง (ช่วง)": s.walls, "ผนังยาวรวม (ม.)": s.wallLengthM, "ประตู": s.doors, "หน้าต่าง": s.windows, "พื้นที่ตามกรอบผนัง (ตร.ม.)": s.footprintM2,
+      "กล่อง 3D": d.masses.length, "ทรงหลังคา": d.roof.type === "none" ? "ไม่มี" : ROOF_TH[d.roof.type] || d.roof.type, "ความชันหลังคา (°)": d.roof.pitch,
+      "แผงโซลาร์ (แผง)": s.pvCount, "kWp": s.pvKwp, "ไฟล์ CAD ที่นำเข้า": d.cads.length, "ภาพลอกแบบ": d.backdrop && (d.backdrop.sketch || d.backdrop.img) ? "มี" : "ไม่มี",
+      "บันทึกแล้ว": dirty ? "ยังไม่บันทึก" : "บันทึกแล้ว" };
+  },
+  next() {
+    const d = hist.doc, s = M.summary(d), trace = d.backdrop && (d.backdrop.sketch || d.backdrop.img);
+    const drawn = s.walls > 0 || d.masses.length > 0;
+    const steps = [
+      { done: drawn || d.cads.length > 0 || !!trace, say: "เริ่มแบบ: วาดผนัง (W) ด้วยระยะจริง หรือนำเข้า CAD / ภาพลอกแบบ", act: { tool: "press", key: "wall", label: "วาดผนัง" } },
+      ...(trace && !drawn ? [{ done: false, say: "ตั้งระยะภาพลอกแบบ (K): คลิก 2 จุดบนเส้นที่รู้ระยะ แล้ววาดผนังทับภาพ", act: { tool: "press", key: "calib", label: "ตั้งระยะ" } }] : []),
+      ...(d.cads.length && !drawn ? [{ done: false, say: "แปลง layer ของไฟล์ CAD เป็นผนังหรือกล่อง — แผงขวา “ไฟล์ CAD” ปุ่ม ผนัง/กล่อง ข้าง layer" }] : []),
+      { done: s.doors + s.windows > 0 || (!s.walls && drawn), say: "ใส่ประตู (D) และหน้าต่าง (N) บนผนัง", act: { tool: "press", key: "door", label: "ใส่ประตู" } },
+      { done: d.roof.type !== "none" || !s.walls, say: "เลือกทรงหลังคา (แผงขวา หลังคา + แผงโซลาร์)", act: { tool: "set", id: "roof-type", value: "gable", label: "หลังคาจั่ว" } },
+      ...(s.pvCount ? [{ done: false, say: `ส่งแผง ${s.pvCount} แผง (${s.pvKwp} kWp) ไปคำนวณผลผลิตไฟฟ้า`, act: { tool: "press", key: "yield", label: "⚡ ผลผลิต" } }] : []),
+      { done: !dirty, say: "บันทึกแบบ (Ctrl+S)", act: { tool: "press", key: "save", label: "บันทึก" } },
+      { done: false, say: "ส่งออกงาน: 📷 Render ภาพ · 🖨 Plot PDF · DXF · GLB", act: { tool: "press", key: "render", label: "📷 Render" } },
+    ];
+    const todo = steps.filter((x) => !x.done);
+    return [...steps.filter((x) => x.done).slice(-2), ...todo.slice(0, 3)];
+  },
+  sets: {
+    "roof-type": { label: "ทรงหลังคา", hint: "none flat shed gable hip curved" }, "roof-pitch": { label: "ความชันหลังคา (°)" }, "roof-over": { label: "ชายคายื่น (มม.)" },
+    "roof-ridge": { label: "แนวสัน", hint: "auto short" }, "pv-on": { label: "วางแผงโซลาร์อัตโนมัติ", hint: "true/false" }, "pv-watt": { label: "แผง W" },
+    "pv-edge": { label: "ระยะห่างขอบแผง (มม.)" }, "north": { label: "ทิศเหนือของแบบ (°)" }, "d-thick": { label: "ผนังหนา (มม.) ค่าเริ่มต้น" },
+    "d-height": { label: "ผนังสูง (มม.) ค่าเริ่มต้น" }, "d-door": { label: "ประตูกว้าง (มม.)" }, "d-win": { label: "หน้าต่างกว้าง (มม.)" }, "d-mass": { label: "กล่องสูง (มม.)" },
+  },
+};
 
 start();

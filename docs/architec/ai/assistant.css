@@ -1,0 +1,46 @@
+/* ผู้ช่วย AI piBot — ปุ่มลอย + หน้าต่างแชท (โดย ลุงพี) · ใช้สีตามธีมของหน้า ถ้าไม่มีใช้ค่าสำรอง */
+.pibot { display: inline-block; flex: none; border-radius: 50%; background-size: 400% 100%; background-repeat: no-repeat; background-position: 0 0; }
+.aifab { position: fixed; right: 16px; bottom: 16px; z-index: 9000; width: 68px; height: 68px; padding: 4px; border: 0; border-radius: 50%;
+  background: transparent; cursor: pointer; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .35)); transition: transform .15s; }
+.aifab:hover { transform: scale(1.06); }
+.aifab.on { transform: scale(.92); }
+.aiw { position: fixed; z-index: 9001; display: flex; flex-direction: column; overflow: hidden; border-radius: 14px;
+  background: var(--panel, #1c2128); color: var(--ink, #e6e9ed); border: 1px solid var(--line, #3a414b); box-shadow: 0 12px 36px rgba(0, 0, 0, .45);
+  font: 14px/1.5 Tahoma, "Noto Sans Thai", system-ui, sans-serif; }
+.aiw[hidden] { display: none; }
+.aih { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 10px; cursor: move; user-select: none; border-bottom: 1px solid var(--line, #3a414b); }
+.aiht { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.aiht b { font-size: 14px; }
+.aichip { font-size: 11px; opacity: .75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aihb { border: 0; background: transparent; color: inherit; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+.aihb:hover { background: rgba(127, 127, 127, .2); }
+.aictx { padding: 4px 12px; font-size: 12px; opacity: .8; border-bottom: 1px solid var(--line, #3a414b); }
+.aibody { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.aimsg { padding: 8px 10px; border-radius: 10px; max-width: 92%; white-space: normal; word-break: break-word; }
+.aimsg.me { align-self: flex-end; background: #2f6fd6; color: #fff; }
+.aimsg.ai { align-self: flex-start; background: rgba(127, 127, 127, .14); }
+.aimsg.thinking { opacity: .7; font-style: italic; }
+.aisrc { margin-top: 4px; font-size: 11px; opacity: .65; }
+.aisteps { margin: 6px 0 0; padding-left: 20px; }
+.aisteps li { margin: 4px 0; }
+.aisteps li.done { opacity: .55; }
+.aicard { border: 1px solid #e8892b; border-radius: 10px; overflow: hidden; }
+.aich { background: rgba(232, 137, 43, .18); padding: 6px 10px; font-weight: bold; font-size: 13px; }
+.aicard ul { margin: 6px 0; padding: 0 12px 0 28px; }
+.aicf { display: flex; gap: 6px; padding: 6px 10px 8px; align-items: center; }
+.aist { font-size: 12px; opacity: .75; }
+.aibtn { border: 1px solid var(--line, #3a414b); background: rgba(127, 127, 127, .12); color: inherit; border-radius: 8px; padding: 4px 10px; cursor: pointer; font: inherit; font-size: 13px; }
+.aibtn.pri { background: #e8892b; border-color: #e8892b; color: #111; font-weight: bold; }
+.aibtn.small { padding: 1px 8px; font-size: 12px; }
+.aibtn:disabled { opacity: .45; cursor: default; }
+.aiq { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 10px; border-top: 1px solid var(--line, #3a414b); }
+.aiqc { border: 1px solid var(--line, #3a414b); background: transparent; color: inherit; border-radius: 999px; padding: 3px 10px; cursor: pointer; font: inherit; font-size: 12.5px; }
+.aiqc:hover { background: rgba(127, 127, 127, .18); }
+.aiin { display: flex; gap: 6px; padding: 8px 10px 10px; }
+.aita { flex: 1; resize: none; border-radius: 8px; border: 1px solid var(--line, #3a414b); background: rgba(0, 0, 0, .15); color: inherit; padding: 6px 8px; font: inherit; }
+.aicfg label { display: block; margin: 6px 0; }
+.aicfg input, .aicfg select { width: 100%; box-sizing: border-box; margin-top: 2px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--line, #3a414b); background: rgba(0, 0, 0, .15); color: inherit; font: inherit; }
+.aicfg fieldset { border: 1px solid var(--line, #3a414b); border-radius: 8px; margin: 8px 0; padding: 4px 8px 8px; }
+.aicfg .small { font-size: 12px; opacity: .8; }
+.aicfg a { color: #4fb3ff; font-size: 12px; }
+@media (max-width: 520px) { .aifab { width: 56px; height: 56px; right: 10px; bottom: 10px; } }
