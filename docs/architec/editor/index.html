@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>เขียนแบบ · ASC Architect</title>
 <link rel="icon" href="../favicon.ico">
-<link rel="stylesheet" href="editor.css?v=0.10.0">
-<script src="../mode.js?v=0.10.0"></script>
+<link rel="stylesheet" href="editor.css?v=0.14.0">
+<script src="../mode.js?v=0.14.0"></script>
 <script type="importmap">
 { "imports": { "three": "../vendor/three/build/three.module.min.js", "three/addons/": "../vendor/three/examples/jsm/" } }
 </script>
@@ -19,7 +19,9 @@
     <button data-act="new" title="แบบใหม่">ใหม่</button>
     <label class="btn" title="เปิดไฟล์แบบ (.json)">เปิด<input type="file" id="open-file" accept=".json,application/json" hidden></label>
     <button data-act="save" title="บันทึก (Ctrl+S)">บันทึก</button>
-    <button data-act="cad" title="นำเข้าไฟล์ CAD (DXF / DWG)">📂 CAD</button>
+    <button data-act="cad" title="นำเข้าไฟล์ CAD (DXF / DWG / PDF จาก CAD)">📂 CAD</button>
+    <label class="btn" title="ภาพลอกแบบ: ภาพร่าง/ภาพถ่าย/PDF สแกน วางใต้ผัง → 📏 ตั้งระยะ → วาดผนัง/ห้อง/กล่องทับ">🖼 ภาพลอกแบบ<input type="file" id="trace-file" accept="image/*,.pdf,.webp" hidden></label>
+    <button data-act="ai-draft" title="ให้ AI ในเครื่องร่างกล่องอาคาร (3D) จากภาพลอกแบบ — ภาพร่าง/ภาพทัศนียภาพ · อ่านระยะที่เขียนในภาพ · ผลเป็นร่างให้ปรับต่อ">🤖 ร่างด้วย AI</button>
   </div>
   <div class="grp">
     <button data-act="undo" title="ย้อน (Ctrl+Z)">↶</button>
@@ -54,6 +56,7 @@
     <button data-tool="text" title="ข้อความ (T)">T<span>ข้อความ</span></button>
     <button data-tool="symbol" title="สัญลักษณ์ (S)">◈<span>สัญลักษณ์</span></button>
     <button data-tool="erase" title="ลบ (E)">✕<span>ลบ</span></button>
+    <button data-tool="calib" title="ตั้งระยะภาพลอกแบบ (K): คลิก 2 จุดบนเส้นที่รู้ระยะ แล้วพิมพ์ระยะจริง">📏<span>ตั้งระยะ</span></button>
   </nav>
 
   <section class="views split" id="viewarea">
@@ -131,13 +134,13 @@
   <div class="dlg-box">
     <h3>นำเข้าไฟล์ CAD</h3>
     <p class="muted" id="cad-conv"></p>
-    <label class="btn">เลือกไฟล์จากเครื่อง (.dxf / .dwg)<input type="file" id="cad-upload" accept=".dxf,.dwg" hidden></label>
+    <label class="btn">เลือกไฟล์จากเครื่อง (.dxf / .dwg / .pdf จาก CAD)<input type="file" id="cad-upload" accept=".dxf,.dwg,.pdf" hidden></label>
     <label class="chk"><input type="checkbox" id="cad-showlib"> แสดงแม่แบบ/คลังที่โปรแกรมสร้างเอง</label>
     <div id="cad-files" class="cadfiles"></div>
     <div class="dlg-foot"><span id="cad-msg" class="muted"></span><button data-act="cad-close">ปิด</button></div>
   </div>
 </div>
 <div id="toast" class="toast" hidden></div>
-<script type="module" src="main.js?v=0.10.0"></script>
+<script type="module" src="main.js?v=0.14.0"></script>
 </body>
 </html>

@@ -1,9 +1,9 @@
 // CAD 2D ของ ASC Architect — เปิด/แก้/บันทึก DWG·DXF แบบ AutoCAD (โดย ลุงพี)
 // เอกสารจริงอยู่ฝั่ง server (ezdxf) · หน้านี้ถือสำเนาวัตถุใน model space + จดสิ่งที่เปลี่ยน แล้วส่งไปตอนบันทึก
-import * as G from "./geom.js?v=0.10.0";
-import * as H from "./geom2.js?v=0.10.0";
-import { aciColor } from "../editor/cadlayer.js?v=0.10.0";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.10.0";
+import * as G from "./geom.js?v=0.14.0";
+import * as H from "./geom2.js?v=0.14.0";
+import { aciColor } from "../editor/cadlayer.js?v=0.14.0";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.14.0";
 
 const $ = (s) => document.querySelector(s);
 const CLOUD = window.PA_MODE === "cloud";
@@ -58,9 +58,9 @@ async function openPath(path) {
 
 async function openDialog() {
   if (CLOUD) return toast("CAD 2D ต้องใช้รุ่นในเครื่อง (ASC Architect ในเครื่อง)");
-  showDlg("เปิดไฟล์ CAD", "ไฟล์ .dwg / .dxf ใน ASC Architect (รวมโครงการ) และทุกโฟลเดอร์ของ ASC Studio · หรือเลือกจากเครื่อง");
+  showDlg("เปิดไฟล์ CAD", "ไฟล์ .dwg / .dxf / .pdf (แบบจาก CAD) ใน ASC Architect (รวมโครงการ) และทุกโฟลเดอร์ของ ASC Studio · หรือเลือกจากเครื่อง");
   const body = $("#dlg-body");
-  body.innerHTML = '<label class="row"><button id="up-btn">เลือกไฟล์จากเครื่อง…</button><input type="file" id="up" accept=".dwg,.dxf" hidden></label><div class="muted small">กำลังค้นไฟล์…</div>';
+  body.innerHTML = '<label class="row"><button id="up-btn">เลือกไฟล์จากเครื่อง…</button><input type="file" id="up" accept=".dwg,.dxf,.pdf" hidden></label><div class="muted small">กำลังค้นไฟล์…</div>';
   $("#up-btn").onclick = () => $("#up").click();
   $("#up").onchange = async (e) => {
     const f = e.target.files[0]; if (!f) return;
@@ -234,11 +234,26 @@ function colorOf(e) {
 }
 function visible(e) { const L = S.layers.get(e.l); return !L || (L.on !== false && !L.frozen); }
 
+// ภาพในแบบ (วัตถุ IMAGE เช่น ภาพจาก PDF) — โหลดครั้งเดียว วาดใต้เส้นทั้งหมด
+const IMGS = new Map();
+function imgOf(url) {
+  let im = IMGS.get(url);
+  if (!im) { im = new Image(); im.onload = draw; im.src = url; IMGS.set(url, im); }
+  return im.complete && im.naturalWidth ? im : null;
+}
+function paintImage(e) {
+  const im = e.img && imgOf(e.img), f = e.d[0] && e.d[0][0]; if (!im || !f || f.length < 8) return;
+  const W = im.naturalWidth, H = im.naturalHeight;          // กรอบ: ล่างซ้าย ล่างขวา บนขวา บนซ้าย → แกนภาพ x = บนซ้าย→บนขวา · y (ลง) = บนซ้าย→ล่างซ้าย
+  ctx.save(); ctx.transform((f[4] - f[6]) / W, (f[5] - f[7]) / W, (f[0] - f[6]) / H, (f[1] - f[7]) / H, f[6], f[7]);
+  ctx.drawImage(im, 0, 0); ctx.restore();
+}
+
 function buildCache() {
-  const groups = new Map(), texts = [];
+  const groups = new Map(), texts = [], images = [];
   S.fills = new Map();
   for (const h of S.order) {
     const e = S.ents.get(h); if (!e || !visible(e)) continue;
+    if (e.img) images.push(e);
     const col = colorOf(e);
     let p = groups.get(col); if (!p) { p = new Path2D(); groups.set(col, p); }
     for (const [f, cl, sc, fill] of e.d) {
@@ -248,7 +263,7 @@ function buildCache() {
     }
     for (const t of e.x || []) texts.push([t, col, h]);
   }
-  S.cache = { groups, texts };
+  S.cache = { groups, texts, images };
 }
 function subPath(groups, col) { let p = groups.get(col); if (!p) { p = new Path2D(); groups.set(col, p); } return p; }
 
@@ -309,6 +324,7 @@ function paint() {
   if (!S.cache) buildCache();
   ctx.setTransform(v.s * v.dpr, 0, 0, -v.s * v.dpr, v.ox * v.dpr, v.oy * v.dpr);
   ctx.lineWidth = 1 / v.s; ctx.lineJoin = ctx.lineCap = "round";
+  for (const e of S.cache.images) paintImage(e);
   for (const [col, p] of S.fills || []) { ctx.fillStyle = col; ctx.globalAlpha = 0.85; ctx.fill(p, "evenodd"); ctx.globalAlpha = 1; }
   for (const [col, p] of S.cache.groups) { ctx.strokeStyle = col; ctx.stroke(p); }
   for (const [[x, y, h, rot, s], col] of S.cache.texts) {
@@ -397,7 +413,7 @@ const ask = {
 };
 const ln = (a, b) => ({ d: [[[...a, ...b], 0]], x: [] });
 const ALIAS = { L: "LINE", PL: "PLINE", REC: "RECTANG", C: "CIRCLE", A: "ARC", T: "TEXT", DT: "TEXT", M: "MOVE", CO: "COPY", CP: "COPY", RO: "ROTATE",
-  SC: "SCALE", MI: "MIRROR", E: "ERASE", ZE: "ZE", Z: "ZE", U: "U", OPEN: "OPEN", NEW: "NEW", SAVE: "SAVE", SAVEAS: "SAVEAS", REDO: "REDO", LA: "LAYER" };
+  SC: "SCALE", CAL: "CAL", MI: "MIRROR", E: "ERASE", ZE: "ZE", Z: "ZE", U: "U", OPEN: "OPEN", NEW: "NEW", SAVE: "SAVE", SAVEAS: "SAVEAS", REDO: "REDO", LA: "LAYER" };
 
 const CMDS = {
   *LINE() {
@@ -649,6 +665,17 @@ Object.assign(CMDS, {
     let m = G.translate(p[0], p[1]); if (k && k !== 1) m = G.mul(m, G.scaleAt(k, [0, 0])); if (a) m = G.mul(G.rotateAt(a, p), m);
     const n = G.transformEntity(proto, m); n.h = tempH(); n.orig = false; n.l = S.clayer; n.c = 256; delete n.m;
     commit(`INSERT ${name}`, [[n.h, n]]);
+  },
+  /** ตั้งระยะ: 2 จุดบนระยะที่รู้ + ระยะจริง → ย่อขยายทั้งแบบ (หรือเฉพาะที่เลือก) รอบจุดแรก · ใช้กับ PDF/ภาพที่ไม่รู้มาตราส่วน */
+  *CAL() {
+    const a = yield ask.point("ตั้งระยะ: คลิกจุดแรกของระยะที่รู้ (เช่น ปลายเส้นบอกระยะ · เส้นกริด):"); if (!a || typeof a === "string") return;
+    const b = yield ask.point("จุดที่สอง:", a, (q) => [ln(a, q)]); if (!b || typeof b === "string") return;
+    const now = Math.hypot(b[0] - a[0], b[1] - a[1]); if (!(now > 0)) return;
+    const real = yield ask.num(`ระยะจริง (มม.) — ตอนนี้ ${fmt(now)}:`, null, null, null); if (!(real > 0)) return;
+    const all = !S.sel.size; if (all) for (const h of S.order) S.sel.add(h);
+    transformSel(G.scaleAt(real / now, a), false, `ตั้งระยะ ×${fmt(real / now)}${all ? " (ทั้งแบบ)" : ""}`);
+    if (all) S.sel.clear();
+    S.cache = null; draw();
   },
   *DIST() {
     const a = yield ask.point("DIST จุดแรก:"); if (!a) return;

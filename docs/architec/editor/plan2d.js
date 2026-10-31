@@ -1,8 +1,8 @@
 // กระดานวาด 2D (SVG) ของตัวเขียนแบบ ASC Architect (โดย ลุงพี)
 // เครื่องมือ: เลือก/ย้าย · ผนัง · ห้อง · กล่อง (push-pull) · ประตู · หน้าต่าง · เส้น · มิติ · ข้อความ · สัญลักษณ์ · ลบ
 // จับจุด: กริด · ปลายผนัง/เส้น · ตั้งฉาก (Shift ปิด) · พิมพ์ระยะแล้ว Enter ระหว่างวาด (แบบ SketchUp)
-import * as M from "./model.js?v=0.10.0";
-import * as CAD from "./cadlayer.js?v=0.10.0";
+import * as M from "./model.js?v=0.14.0";
+import * as CAD from "./cadlayer.js?v=0.14.0";
 
 const NS = "http://www.w3.org/2000/svg";
 const el = (tag, attrs, parent) => {
@@ -173,6 +173,7 @@ export class Plan2D {
       return;
     }
     if (t === "erase") { const h = this.hit(p); if (h) { this.sel = h; this.deleteSelected(); } return; }
+    if (t === "calib") return this.calibrate(p);
     if (t === "wall" || t === "line") {
       if (!this.draft) this.draft = { kind: t, pts: [s, s] };
       else { this.draft.pts[this.draft.pts.length - 1] = s; this.draft.pts.push(s.slice()); }
@@ -196,7 +197,30 @@ export class Plan2D {
     }
   }
 
+  /** ตั้งระยะภาพลอกแบบ: คลิกจุดแรก → จุดที่สอง → พิมพ์ระยะจริง → ย่อ/ขยายภาพรอบจุดแรก (ไม่จับกริด เพื่อให้ตรงเส้นในภาพ) */
+  calibrate(p) {
+    const k = this.doc.backdrop;
+    if (!k || !k.sketch) return this.host.status("นำเข้าภาพก่อน — ปุ่ม 🖼 ภาพลอกแบบ");
+    if (!this.draft) { this.draft = { kind: "calib", from: p, to: p }; return this.render(); }
+    const a = this.draft.from, b = p, now = M.dist(a, b);
+    this.draft = null; this.render();
+    if (now < 1) return;
+    const v = prompt(`ระยะจริงของเส้นนี้ (มม.)
+ตอนนี้ยาว ${Math.round(now).toLocaleString()} มม. ในแบบ`, "");
+    const real = parseFloat(String(v || "").replace(/,/g, ""));
+    if (!(real > 0)) return;
+    const f = real / now;
+    this.host.hist.commit((d) => { const q = d.backdrop; q.x = a[0] + (q.x - a[0]) * f; q.y = a[1] + (q.y - a[1]) * f; q.w *= f; q.h *= f; });
+    this.host.backdropChanged && this.host.backdropChanged();
+    this.host.onChange();
+    this.host.status(`ตั้งระยะแล้ว: ภาพกว้าง ${(this.doc.backdrop.w / 1000).toFixed(2)} ม. — วาดผนัง (W) / ห้อง (R) / กล่อง (B) ทับภาพได้เลย · ตั้งซ้ำได้`);
+  }
+
   _move(p, e) {
+    if (this.draft && this.draft.kind === "calib") {
+      this.draft.to = p; this.host.status(`ยาว ${Math.round(M.dist(this.draft.from, p)).toLocaleString()} มม. (ตามภาพตอนนี้) — คลิกจุดที่สอง`);
+      return this.render();
+    }
     const last = this.draft && this.draft.pts ? this.draft.pts[this.draft.pts.length - 2] : this.draft && this.draft.from;
     const sn = this.snap(p, this.tool === "select" ? null : last, e);
     this.cursor = sn;
@@ -386,6 +410,7 @@ export class Plan2D {
             el("polygon", { points: M.wallPolygon({ a: dr.pts[i], b: dr.pts[i + 1], thick: th }).map(P).join(" "), class: "wall draft" }, L.draft);
         } else el("polyline", { points: dr.pts.map(P).join(" "), class: "line draft" }, L.draft);
       } else if (dr.kind === "dim") this._dim({ a: dr.from, b: dr.to, offset: 600 }, L.draft, false);
+      else if (dr.kind === "calib") el("polyline", { points: [dr.from, dr.to].map(P).join(" "), class: "line draft calib" }, L.draft);
       else {
         const a = this.toScreen(dr.from), b = this.toScreen(dr.to);
         el("rect", { x: Math.min(a[0], b[0]), y: Math.min(a[1], b[1]), width: Math.abs(b[0] - a[0]), height: Math.abs(b[1] - a[1]), class: dr.kind === "room" ? "wall draft" : "mass draft" }, L.draft);

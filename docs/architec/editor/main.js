@@ -1,13 +1,15 @@
 // ตัวเขียนแบบ ASC Architect — เชื่อมผัง 2D · 3D · แผงคุณสมบัติ · บันทึก/ส่งออก (โดย ลุงพี)
-import * as M from "./model.js?v=0.10.0";
-import { Plan2D } from "./plan2d.js?v=0.10.0";
-import { View3D } from "./view3d.js?v=0.10.0";
-import { toDXF } from "./dxf.js?v=0.10.0";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.10.0";
-import * as CAD from "./cadlayer.js?v=0.10.0";
-import { Sketch3D } from "./sketch3d.js?v=0.10.0";
-import { PALETTE } from "./materials.js?v=0.10.0";
-import { sunPosition } from "./sun.js?v=0.10.0";
+import * as M from "./model.js?v=0.14.0";
+import { Plan2D } from "./plan2d.js?v=0.14.0";
+import { View3D } from "./view3d.js?v=0.14.0";
+import { toDXF } from "./dxf.js?v=0.14.0";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.14.0";
+import * as CAD from "./cadlayer.js?v=0.14.0";
+import { Sketch3D } from "./sketch3d.js?v=0.14.0";
+import { PALETTE } from "./materials.js?v=0.14.0";
+import { sunPosition } from "./sun.js?v=0.14.0";
+import { readDXF, decodeDXF } from "./dxfread.js?v=0.14.0";
+import * as LS from "./localstore.js?v=0.14.0";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -33,6 +35,7 @@ const host = {
              door: { width: num($("#d-door").value, 900) }, window: { width: num($("#d-win").value, 1200) } };
   },
   selection: () => plan && plan.sel,
+  backdropChanged: () => view.setBackdrop(hist.doc.backdrop),
   cads: () => hist.doc.cads.map((ref) => ({ ref, built: (cadStore.get(ref.id) || {}).built })),
   cadSnap(p, tol) {                                   // จุดยอดของเส้น CAD ใกล้เมาส์ (ช่วยวาดทับแบบ)
     const out = [];
@@ -139,7 +142,7 @@ $("#views").addEventListener("click", (e) => {
   $("#viewarea").className = "views " + ({ "2d": "v2d", "3d": "v3d", split: "split" }[b.dataset.view]);
   setTimeout(() => { plan.resize(); view.resize(); }, 30);
 });
-const KEYS = { v: "select", h: "pan", w: "wall", r: "room", d: "door", n: "window", b: "box", l: "line", m: "dim", t: "text", s: "symbol", e: "erase" };
+const KEYS = { v: "select", h: "pan", w: "wall", r: "room", d: "door", n: "window", b: "box", l: "line", m: "dim", t: "text", s: "symbol", e: "erase", k: "calib" };
 document.addEventListener("keydown", (e) => {
   const inField = e.target.matches("input, select, textarea") && e.target.id !== "vcb";
   if ((e.ctrlKey || e.metaKey) && !inField) {
@@ -217,6 +220,7 @@ async function act(a) {
   }
   if (a === "new") { if (dirty && !confirm("แบบปัจจุบันยังไม่บันทึก — เริ่มแบบใหม่?")) return; hist.replace(M.newDoc()); plan.select(null); host.onChange(); plan.fit(); return; }
   if (a === "save") return save();
+  if (a === "ai-draft") return aiDraft();
   if (a === "cad") return openCadDialog();
   if (a === "cad-close") { $("#cad-dlg").hidden = true; return; }
   if (a === "plot") return plotDialog();
@@ -300,6 +304,12 @@ const fileUrl = (name) => `/api/projects/${encodeURIComponent(PROJECT)}/files/${
 async function attachImported() {
   const d = hist.doc;
   if (d.backdrop && d.backdrop.file && PROJECT && !CLOUD) { d.backdrop.url = fileUrl(d.backdrop.file); view.setBackdrop(d.backdrop); }
+  if (d.backdrop && d.backdrop.sketch && !CLOUD) { d.backdrop.url = "/api/sketch/" + encodeURIComponent(d.backdrop.sketch); view.setBackdrop(d.backdrop); }
+  if (d.backdrop && d.backdrop.img) {                                        // ภาพลอกแบบของรุ่นออนไลน์ (เก็บในเบราว์เซอร์)
+    const blob = await LS.get("img:" + d.backdrop.img);
+    if (blob) { d.backdrop.url = URL.createObjectURL(blob); view.setBackdrop(d.backdrop); }
+    else toast(`ไม่พบภาพลอกแบบ ${d.backdrop.name || ""} ในเบราว์เซอร์นี้ — นำเข้าภาพใหม่ด้วยปุ่ม 🖼 ภาพลอกแบบ`);
+  }
   if (d.imported && d.imported.glb && PROJECT && !CLOUD) {
     status("กำลังโหลดโมเดล 3D จาก ASC Studio…");
     try {
@@ -329,7 +339,11 @@ async function importFromASC(p) {
 $("#open-file").addEventListener("change", async (e) => {
   const f = e.target.files[0]; if (!f) return;
   try { const doc = JSON.parse(await f.text()); if (doc.app !== "pee_architec-drawing") throw new Error("ไม่ใช่ไฟล์แบบของ ASC Architect");
-    hist.replace(doc); plan.select(null); host.onChange(); plan.fit(); view.fit(); toast("เปิด " + f.name); }
+    hist.replace(M.normalize(doc)); plan.select(null); cadStore.clear(); view.setBackdrop(null);
+    host.onChange(); plan.fit(); view.fit(); toast("เปิด " + f.name);
+    attachImported();                                                          // ภาพลอกแบบ/ภาพพื้นหลัง + ไฟล์ CAD ที่แบบอ้างถึง
+    for (const ref of hist.doc.cads) loadCad(ref, false);
+    updateCad3D(); renderCadPanel(); }
   catch (er) { toast("เปิดไม่ได้: " + er.message); }
   e.target.value = "";
 });
@@ -392,8 +406,16 @@ async function start() {
 
 // ---------------------------------------------------------------- นำเข้าไฟล์ CAD
 async function openCadDialog() {
-  if (CLOUD) return toast("นำเข้าไฟล์ CAD ต้องใช้รุ่นในเครื่อง (ASC Architect ในเครื่อง)");
   $("#cad-dlg").hidden = false;
+  if (CLOUD) {                                    // รุ่นออนไลน์: อ่าน DXF ในเบราว์เซอร์ (ไม่ส่งไฟล์ขึ้นเน็ต) · DWG/PDF ต้องใช้รุ่นในเครื่อง
+    $("#cad-upload").accept = ".dxf";
+    $("#cad-upload").parentElement.firstChild.textContent = "เลือกไฟล์ .dxf จากเครื่อง";
+    $("#cad-showlib").parentElement.hidden = true;
+    $("#cad-conv").textContent = "รุ่นออนไลน์: เปิดไฟล์ .dxf ได้ — อ่านในเบราว์เซอร์นี้ ไม่ส่งไฟล์ขึ้นเน็ต · .dwg / PDF ต้องใช้ ASC Architect ในเครื่อง (หรือ Save As เป็น DXF จากโปรแกรม CAD ก่อน)";
+    $("#cad-files").innerHTML = "";
+    $("#cad-msg").textContent = "";
+    return;
+  }
   $("#cad-msg").textContent = "กำลังค้นไฟล์…";
   try {
     const r = await (await fetch("/api/cad/files")).json();
@@ -411,8 +433,97 @@ async function openCadDialog() {
 }
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 $("#cad-files").addEventListener("click", (e) => { const b = e.target.closest("button[data-path]"); if (b) importCad(b.dataset.path); });
+// AI ร่างแบบ: ภาพลอกแบบ → AI ในเครื่อง (Ollama) → กล่องอาคาร วางขวาภาพ ให้ปรับต่อ (เครื่อง CPU ใช้หลายนาที)
+async function aiDraft() {
+  if (CLOUD) return toast("AI ร่างแบบต้องใช้รุ่นในเครื่อง (ASC Architect ในเครื่อง)");
+  const k = hist.doc.backdrop;
+  if (!k || !k.sketch) return toast("นำเข้าภาพก่อน — ปุ่ม 🖼 ภาพลอกแบบ แล้วกด 🤖 ร่างด้วย AI");
+  if (aiDraft.busy) return toast("AI กำลังร่างอยู่ — รอสักครู่");
+  const st = await (await fetch("/api/sketch/ai")).json();
+  if (!st.ok) return toast(st.message);
+  const r = await fetch("/api/sketch/ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sketch: k.sketch }) });
+  let job = await r.json();
+  if (!r.ok) return toast(job.error || "เริ่ม AI ไม่ได้");
+  aiDraft.busy = true;
+  const t0 = Date.now();
+  try {
+    while (job.state === "running") {
+      status(`🤖 AI (${st.model}) กำลังอ่านภาพ… ${Math.round((Date.now() - t0) / 1000)} วินาที (อาจใช้หลายนาที — ขึ้นกับการ์ดจอ/RAM ของเครื่องที่รัน AI)`);
+      await new Promise((res) => setTimeout(res, 3000));
+      job = await (await fetch("/api/jobs/" + job.id)).json();
+    }
+  } finally { aiDraft.busy = false; }
+  if (job.state !== "done") return toast("AI ร่างไม่สำเร็จ: " + (job.log || job.error || "ไม่ทราบสาเหตุ"));
+  const ox = Math.round(k.x + k.w + 2000), oy = Math.round(k.y - k.h);       // วางขวาภาพ ห่าง 2 ม. (ไม่ทับภาพ)
+  if (job.masses.length) hist.commit((d) => { for (const m of job.masses) d.masses.push({ id: M.uid("m"), name: m.name, pts: m.pts.map(([x, y]) => [x + ox, y + oy]), base: m.base, height: m.height }); });
+  host.onChange(); plan.fit(); view.fit();
+  const dims = (job.dims || []).map((x) => x.text).slice(0, 8).join(", ");
+  status(`🤖 AI ร่าง ${job.masses.length} กล่อง (${Math.round((Date.now() - t0) / 1000)} วินาที · ภาพแบบ ${job.view || "?"})` + (dims ? ` · อ่านระยะได้: ${dims}` : " · ไม่พบระยะในภาพ — ขนาดเป็นค่าประมาณ")
+    + (job.warn && job.warn.length ? " · " + job.warn.join(" · ") : "") + " — ตรวจและปรับขนาดก่อนใช้");
+  if (job.notes) toast("AI: " + job.notes);
+}
+
+// ภาพลอกแบบ: ภาพร่าง/ภาพถ่าย/PDF สแกน วางใต้ผัง (เริ่มที่ 10 มม./พิกเซล) → 📏 ตั้งระยะ → วาดทับ
+$("#trace-file").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  if (hist.doc.backdrop && !hist.doc.backdrop.sketch && !hist.doc.backdrop.img && !confirm("แบบนี้มีภาพพื้นหลัง (ภาพดาวเทียม) อยู่แล้ว — แทนที่ด้วยภาพลอกแบบ?")) return;
+  if (CLOUD) return traceLocal(f);
+  status(`กำลังส่ง ${f.name}…`);
+  const r = await fetch("/api/sketch/upload?" + new URLSearchParams({ name: f.name }), { method: "POST", body: f });
+  const j = await r.json();
+  if (!r.ok) return toast(j.error || "นำเข้าภาพไม่ได้");
+  const px = 10, w = j.width * px, h = j.height * px;
+  hist.commit((d) => { d.backdrop = { sketch: j.name, url: j.url, x: 0, y: h, w, h, opacity: 0.55 }; });
+  view.setBackdrop(hist.doc.backdrop); host.onChange(); plan.fit(); setTool("calib");
+  status(`วางภาพแล้ว (${j.width}×${j.height} พิกเซล${j.pages > 1 ? ` · PDF หน้า 1 จาก ${j.pages}` : ""}) — 📏 คลิก 2 จุดบนเส้นที่รู้ระยะ แล้วพิมพ์ระยะจริง`);
+});
+
+/** รุ่นออนไลน์: ภาพลอกแบบเก็บในเบราว์เซอร์ (ย่อด้านยาวไม่เกิน 3000 พิกเซล เหมือนรุ่นในเครื่อง) */
+async function traceLocal(f) {
+  if (!/^image\//.test(f.type)) return toast("รุ่นออนไลน์รับภาพ (JPG / PNG / WebP) — PDF ต้องใช้รุ่นในเครื่อง หรือส่งออกหน้า PDF เป็นภาพก่อน");
+  status(`กำลังเปิด ${f.name}…`);
+  let bmp;
+  try { bmp = await createImageBitmap(f); } catch (err) { return toast("เปิดภาพไม่ได้: " + f.name); }
+  const k = Math.min(1, 3000 / Math.max(bmp.width, bmp.height)), W = Math.round(bmp.width * k), H = Math.round(bmp.height * k);
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const g = cv.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, W, H); g.drawImage(bmp, 0, 0, W, H);
+  const blob = await new Promise((res) => cv.toBlob(res, "image/jpeg", 0.9));
+  const id = M.uid("img");
+  try { await LS.put("img:" + id, blob); } catch (err) { toast("เก็บภาพในเบราว์เซอร์ไม่ได้ — ภาพจะหายเมื่อปิดหน้า"); }
+  const px = 10, w = W * px, h = H * px;
+  hist.commit((d) => { d.backdrop = { img: id, name: f.name, url: URL.createObjectURL(blob), x: 0, y: h, w, h, opacity: 0.55 }; });
+  view.setBackdrop(hist.doc.backdrop); host.onChange(); plan.fit(); setTool("calib");
+  status(`วางภาพแล้ว (${W}×${H} พิกเซล · เก็บในเบราว์เซอร์นี้) — 📏 คลิก 2 จุดบนเส้นที่รู้ระยะ แล้วพิมพ์ระยะจริง`);
+}
+
+/** รุ่นออนไลน์: อ่าน DXF ใน Web Worker (หน้าไม่ค้าง) — ไม่มี Worker ก็อ่านในหน้าเลย */
+function parseDxfLocal(buf, name) {
+  return new Promise((res, rej) => {
+    let w;
+    try { w = new Worker(new URL("./dxfworker.js?v=0.14.0", import.meta.url), { type: "module" }); } catch (err) { w = null; }
+    if (!w) { try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } return; }
+    w.onmessage = (ev) => { w.terminate(); ev.data.error ? rej(new Error(ev.data.error)) : res(ev.data.data); };
+    w.onerror = (ev) => { w.terminate(); try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } ev.preventDefault(); };
+    w.postMessage({ buf, name }, [buf]);
+  });
+}
+
+async function importLocalDxf(f) {
+  if (!/\.dxf$/i.test(f.name)) { $("#cad-msg").textContent = "รุ่นออนไลน์เปิดได้เฉพาะ .dxf — DWG/PDF ใช้ ASC Architect ในเครื่อง หรือ Save As เป็น DXF ก่อน"; return; }
+  const mb = f.size / 1048576;
+  if (mb > 80 && !confirm(`ไฟล์ใหญ่ ${mb.toFixed(0)} MB — เบราว์เซอร์อาจช้า/ใช้หน่วยความจำมาก (ไฟล์ใหญ่แนะนำรุ่นในเครื่อง) อ่านต่อหรือไม่?`)) return;
+  $("#cad-msg").textContent = `กำลังอ่าน ${f.name} (${mb.toFixed(1)} MB) ในเบราว์เซอร์…`;
+  const t0 = Date.now();
+  let data;
+  try { data = await parseDxfLocal(await f.arrayBuffer(), f.name); } catch (err) { $("#cad-msg").textContent = "อ่านไฟล์ไม่ได้: " + err.message; return; }
+  const ref = addCad("local:" + f.name, data, { local: true });
+  try { await LS.put("cad:" + ref.id, data); } catch (err) { toast("เก็บเส้นในเบราว์เซอร์ไม่ได้ — เปิดแบบใหม่ต้องเลือกไฟล์ DXF อีกครั้ง"); }
+  status(`อ่าน ${f.name} ในเบราว์เซอร์ ${((Date.now() - t0) / 1000).toFixed(1)} วินาที` + (Object.keys(data.skipped).length ? ` · ข้าม: ${Object.entries(data.skipped).map(([k, v]) => `${k} ${v}`).join(", ")}` : ""));
+}
+
 $("#cad-upload").addEventListener("change", async (e) => {
   const f = e.target.files[0]; if (!f) return;
+  if (CLOUD) { e.target.value = ""; return importLocalDxf(f); }
   $("#cad-msg").textContent = `กำลังส่ง ${f.name} (${(f.size / 1048576).toFixed(1)} MB)…`;
   const q = new URLSearchParams({ name: f.name }); if (PROJECT) q.set("project", PROJECT);
   const r = await fetch("/api/cad/upload?" + q, { method: "POST", body: f });
@@ -432,8 +543,13 @@ async function importCad(path) {
   $("#cad-msg").textContent = `กำลังอ่าน ${path}… (ไฟล์ใหญ่ / DWG อาจใช้เวลาหลายนาที)`;
   let data;
   try { data = await fetchCad(path); } catch (e) { $("#cad-msg").textContent = e.message; return; }
+  addCad(path, data);
+}
+
+/** เส้นที่อ่านแล้ว → ชั้นไฟล์ CAD ในแบบ (ใช้ทั้งรุ่นในเครื่องและออนไลน์) */
+function addCad(path, data, extra = {}) {
   const toMM = data.insunits ? data.toMM : data.guessToMM || 1;
-  const ref = { id: M.uid("cad"), file: path, name: data.name, toMM, dx: 0, dy: 0, bbox: data.bbox, hidden: {}, units: data.units };
+  const ref = { id: M.uid("cad"), file: path, name: data.name, toMM, dx: 0, dy: 0, bbox: data.bbox, hidden: {}, units: data.units, ...extra };
   // แบบอยู่ไกลจุดกำเนิดมาก (พิกัดแผนที่) → ย้ายมุมล่างซ้ายมาที่ 0,0 (ตั้งค่าเลื่อนได้ภายหลัง)
   if (Math.max(Math.abs(data.bbox[0]), Math.abs(data.bbox[1])) * toMM > 1e6) { ref.dx = -Math.round(data.bbox[0] * toMM); ref.dy = -Math.round(data.bbox[1] * toMM); }
   for (const L of data.layers) if (!L.on) ref.hidden[L.name] = true;
@@ -442,11 +558,13 @@ async function importCad(path) {
   $("#cad-dlg").hidden = true;
   host.onChange(); plan.fit(); updateCad3D();
   toast(`นำเข้า ${data.name}: ${data.polys.length.toLocaleString()} เส้น · ${data.texts.length.toLocaleString()} ข้อความ · ${data.layers.length} layer · หน่วย ${data.units}` + (data.insunits ? "" : " (เดาหน่วย — ตรวจในแผงขวา)"));
+  return hist.doc.cads.find((r) => r.id === ref.id) || ref;
 }
 
 async function loadCad(ref, fit) {
   try {
-    const data = await fetchCad(ref.file);
+    const data = ref.local ? await LS.get("cad:" + ref.id) : await fetchCad(ref.file);
+    if (!data) { toast(`ไม่พบเส้นของ ${ref.name} ในเบราว์เซอร์นี้ (เปิดจากเครื่องอื่น/ล้างข้อมูลเบราว์เซอร์) — เอาออกแล้วนำเข้าไฟล์ DXF ใหม่`); return; }
     cadStore.set(ref.id, { data, built: CAD.build(data) });
     plan.render(); updateCad3D(); renderCadPanel();
     if (fit) plan.fit();

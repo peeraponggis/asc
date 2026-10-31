@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CAD 2D · ASC Architect</title>
 <link rel="icon" href="../favicon.ico">
-<link rel="stylesheet" href="cad.css?v=0.10.0">
-<script src="../mode.js?v=0.10.0"></script>
+<link rel="stylesheet" href="cad.css?v=0.14.0">
+<script src="../mode.js?v=0.14.0"></script>
 </head>
 <body>
 <header class="bar">
@@ -56,6 +56,7 @@
     <button data-cmd="INSERT" title="INSERT (I)">⊕<span>insert</span></button>
     <div class="tl">วัด</div>
     <button data-cmd="DIST" title="DIST (DI)">📏<span>ระยะ</span></button>
+    <button data-cmd="CAL" title="ตั้งระยะ (CAL): คลิก 2 จุดบนระยะที่รู้ แล้วพิมพ์ระยะจริง → ย่อขยายทั้งแบบ (หรือเฉพาะที่เลือก) · ใช้กับ PDF/ภาพที่ไม่รู้มาตราส่วน">📐<span>ตั้งระยะ</span></button>
     <button data-cmd="AREA" title="AREA (AA)">⬠<span>พื้นที่</span></button>
     <button data-cmd="MATCHPROP" title="MATCHPROP (MA)">🖌<span>match</span></button>
   </nav>
@@ -85,6 +86,6 @@
   <div class="dlg-foot"><span id="dlg-msg" class="muted small"></span><button id="dlg-close">ปิด</button></div>
 </div></div>
 <div id="toast" class="toast" hidden></div>
-<script type="module" src="app.js?v=0.10.0"></script>
+<script type="module" src="app.js?v=0.14.0"></script>
 </body>
 </html>
