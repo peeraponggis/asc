@@ -1,4 +1,4 @@
-// pee_architec หน้าเว็บ — รุ่นในเครื่อง (local: เรียก server) และรุ่นออนไลน์ (cloud: ไฟล์คงที่บน ASC Cloud) (โดย ลุงพี)
+// ASC Architect หน้าเว็บ — รุ่นในเครื่อง (local: เรียก server) และรุ่นออนไลน์ (cloud: ไฟล์คงที่บน ASC Cloud) (โดย ลุงพี)
 (function () {
   "use strict";
   var CLOUD = window.PA_MODE === "cloud";
@@ -66,6 +66,9 @@
       fillPresets(s.locations);
       $("#da-path").textContent = s.designauto_found ? "อ่านจาก " + s.designauto_out : "ไม่พบโฟลเดอร์ ASC Studio: " + s.designauto_out;
       fillDefaults(s.defaults);
+      var rl = $("#remote-links"), r = s.remote || [];
+      rl.hidden = !r.length;
+      rl.innerHTML = "📱 เปิดจากมือถือ / laptop ผ่าน Tailscale: " + r.map(function (u) { return '<a href="' + esc(u) + '">' + esc(u) + "</a>"; }).join(" · ");
     }).catch(function (e) { toast("ต่อ server ไม่ได้: " + e.message, true); });
   }
 
@@ -73,7 +76,7 @@
     var s = state.status, html = [];
     if (CLOUD) {
       html.push(card("โหมด", "ออนไลน์", "คลังสัญลักษณ์ · แม่แบบ · จัดสตริง ใช้ได้เลย"));
-      html.push(card("งานเต็ม", "รุ่นในเครื่อง", "pvlib · เปิดโปรแกรม · render ต้องใช้ pee_architec.bat"));
+      html.push(card("งานเต็ม", "รุ่นในเครื่อง", "pvlib · เปิดโปรแกรม · render ต้องใช้ ASC Architect ในเครื่อง"));
     } else if (s) {
       var n = Object.keys(s.apps).filter(function (k) { return s.apps[k].installed; }).length;
       html.push(card("โครงการ", fmt(state.projects.length), "ใน out\\"));

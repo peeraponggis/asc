@@ -1,9 +1,9 @@
-// CAD 2D ของ pee_architec — เปิด/แก้/บันทึก DWG·DXF แบบ AutoCAD (โดย ลุงพี)
+// CAD 2D ของ ASC Architect — เปิด/แก้/บันทึก DWG·DXF แบบ AutoCAD (โดย ลุงพี)
 // เอกสารจริงอยู่ฝั่ง server (ezdxf) · หน้านี้ถือสำเนาวัตถุใน model space + จดสิ่งที่เปลี่ยน แล้วส่งไปตอนบันทึก
-import * as G from "./geom.js?v=0.9.0";
-import * as H from "./geom2.js?v=0.9.0";
-import { aciColor } from "../editor/cadlayer.js?v=0.9.0";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.9.0";
+import * as G from "./geom.js?v=0.10.0";
+import * as H from "./geom2.js?v=0.10.0";
+import { aciColor } from "../editor/cadlayer.js?v=0.10.0";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.10.0";
 
 const $ = (s) => document.querySelector(s);
 const CLOUD = window.PA_MODE === "cloud";
@@ -57,8 +57,8 @@ async function openPath(path) {
 }
 
 async function openDialog() {
-  if (CLOUD) return toast("CAD 2D ต้องใช้รุ่นในเครื่อง (pee_architec.bat)");
-  showDlg("เปิดไฟล์ CAD", "ไฟล์ .dwg / .dxf ใน pee_architec (รวมโครงการ) และทุกโฟลเดอร์ของ ASC Studio · หรือเลือกจากเครื่อง");
+  if (CLOUD) return toast("CAD 2D ต้องใช้รุ่นในเครื่อง (ASC Architect ในเครื่อง)");
+  showDlg("เปิดไฟล์ CAD", "ไฟล์ .dwg / .dxf ใน ASC Architect (รวมโครงการ) และทุกโฟลเดอร์ของ ASC Studio · หรือเลือกจากเครื่อง");
   const body = $("#dlg-body");
   body.innerHTML = '<label class="row"><button id="up-btn">เลือกไฟล์จากเครื่อง…</button><input type="file" id="up" accept=".dwg,.dxf" hidden></label><div class="muted small">กำลังค้นไฟล์…</div>';
   $("#up-btn").onclick = () => $("#up").click();
@@ -79,7 +79,7 @@ async function openDialog() {
     const own = r.files.filter((f) => !f.library && !f.asc), groups = new Map();
     for (const f of r.files.filter((x) => x.asc)) { if (!groups.has(f.asc)) groups.set(f.asc, []); groups.get(f.asc).push(f); }
     body.lastElementChild.outerHTML = '<input id="dlg-q" type="search" placeholder="ค้นชื่อไฟล์…" style="width:100%;margin:6px 0">' +
-      `<details open><summary><b>pee_architec</b> (${own.length})</summary>${own.map((f) => btn(f, f.path)).join("") || '<p class="muted">ไม่มี</p>'}</details>` +
+      `<details open><summary><b>ASC Architect</b> (${own.length})</summary>${own.map((f) => btn(f, f.path)).join("") || '<p class="muted">ไม่มี</p>'}</details>` +
       [...groups].map(([g, fs]) => `<details><summary><b>ASC Studio · ${esc(g)}</b> (${fs.length})</summary>${fs.map((f) => btn(f, f.path.slice(4 + g.length + 1) || f.name)).join("")}</details>`).join("");
     body.querySelectorAll("button[data-path]").forEach((b) => (b.onclick = () => openPath(b.dataset.path)));
     $("#dlg-q").oninput = (e) => { const q = e.target.value.trim().toLowerCase();
@@ -121,7 +121,7 @@ async function save(asNew) {
   let target = null, fmt = null;
   if (asNew || !S.doc.file) {
     const def = (S.doc.file || "out/แบบใหม่.dwg").replace(/^asc\//, "out/asc_studio/").replace(/\.(dwg|dxf)$/i, "");
-    showDlg("บันทึกเป็น", "ที่อยู่ภายในโฟลเดอร์ pee_architec · เลือกรูปแบบไฟล์");
+    showDlg("บันทึกเป็น", "ที่อยู่ภายในโฟลเดอร์ของ ASC Architect · เลือกรูปแบบไฟล์");
     $("#dlg-body").innerHTML = `<div class="row"><input type="text" id="sv-name" value="${esc(def)}"><select id="sv-fmt"><option value="dwg">.dwg</option><option value="dxf">.dxf</option></select><button id="sv-go">บันทึก</button></div>`;
     $("#sv-fmt").value = (S.doc.file || "").toLowerCase().endsWith(".dxf") ? "dxf" : "dwg";
     await new Promise((res) => ($("#sv-go").onclick = res));
@@ -518,7 +518,7 @@ Object.assign(ALIAS, { O: "OFFSET", TR: "TRIM", EX: "EXTEND", F: "FILLET", AR: "
   DIM: "DIMLINEAR", H: "HATCH", B: "BLOCK", I: "INSERT", DI: "DIST", AA: "AREA", ID: "ID", MA: "MATCHPROP", PRINT: "PLOT" });
 Object.assign(CMDS, {
   *PLOT() {
-    if (CLOUD) return toast("Plot PDF ต้องใช้รุ่นในเครื่อง (pee_architec.bat)");
+    if (CLOUD) return toast("Plot PDF ต้องใช้รุ่นในเครื่อง (ASC Architect ในเครื่อง)");
     const o = yield ask.wait(plotDialog(), "PLOT ตั้งค่าในหน้าต่าง…"); if (!o) return;
     if (o.area === "window") {
       closeDlg();

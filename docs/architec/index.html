@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>pee_architec</title>
+<title>ASC Architect</title>
 <link rel="icon" href="favicon.ico">
-<link rel="stylesheet" href="style.css?v=0.9.0">
+<link rel="stylesheet" href="style.css?v=0.10.0">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
 <script src="../supabase-config.js" onerror="void 0"></script>
 <script src="../asc-cloud.js" onerror="void 0"></script>
-<script src="mode.js?v=0.9.0"></script>
+<script src="mode.js?v=0.10.0"></script>
 </head>
 <body>
 <header class="top">
   <img src="logo.png" alt="" class="logo" width="36" height="36">
-  <div class="brand"><b>pee_architec</b><span>เขียนแบบ AEC · โซลาร์ · ProInventive</span></div>
+  <div class="brand"><b>ASC Architect</b><span>ASCA · Design · Structure · Single line diagrams · ProInventive</span></div>
   <span id="mode" class="badge">…</span>
   <span id="ver" class="ver"></span>
   <span id="user" class="ver"></span>
@@ -34,6 +34,7 @@
 <section id="tab-home" class="tab on">
   <h1>ภาพรวม</h1>
   <p class="muted" id="home-intro">ชุดเครื่องมือเขียนแบบฟรีแทน AutoCAD + SketchUp — ต่อกับ ASC Studio และ ASC Cloud</p>
+  <p class="muted small local-only" id="remote-links" hidden></p>
   <p><a class="primary bigbtn" href="editor/">✏️ เปิดตัวเขียนแบบ — วาดผัง 2D → 3D → Render</a>
      <a class="primary bigbtn" href="cad/">📐 CAD 2D — เปิด/แก้/บันทึก DWG · DXF</a></p>
   <div class="cards" id="home-cards"></div>
@@ -83,7 +84,7 @@
 
 <section id="tab-yield" class="tab">
   <h1>ประมาณการผลิตไฟฟ้า</h1>
-  <div class="cloud-only panel warn">รุ่นออนไลน์คำนวณ pvlib ไม่ได้ (ต้องใช้ Python ในเครื่อง) — ใช้ผลผลิตไฟฟ้าใน ASC Studio รุ่นคลาวด์ หรือเปิด pee_architec ในเครื่อง</div>
+  <div class="cloud-only panel warn">รุ่นออนไลน์คำนวณ pvlib ไม่ได้ (ต้องใช้ Python ในเครื่อง) — ใช้ผลผลิตไฟฟ้าใน ASC Studio รุ่นคลาวด์ หรือเปิด ASC Architect ในเครื่อง</div>
   <div class="row">
     <form id="yield-form" class="panel form" style="min-width:300px;max-width:360px">
       <label>โครงการ<select name="project"><option value="">— ไม่ผูกโครงการ —</option></select></label>
@@ -147,7 +148,7 @@
   <div id="tpl-list" class="list"></div>
   <h2>QElectroTech</h2>
   <div class="panel">
-    <p>สัญลักษณ์ SLD แบบไทย 47 ตัวเป็น element ของ QElectroTech: โฟลเดอร์ <code>qelectrotech\custom_elements\pee_architec\</code></p>
+    <p>สัญลักษณ์ SLD แบบไทย 47 ตัวเป็น element ของ QElectroTech: โฟลเดอร์ <code>qelectrotech\custom_elements\ASC Architect\</code></p>
     <p class="small muted">วิธีใช้: QElectroTech › Settings › Configure › Paths → ชี้ "custom elements" มาที่โฟลเดอร์ <code>qelectrotech\custom_elements</code></p>
   </div>
   <h2>Blender</h2>
@@ -160,7 +161,7 @@
 </section>
 </main>
 <div id="toast" class="toast" hidden></div>
-<script src="strings.js?v=0.9.0"></script>
-<script src="app.js?v=0.9.0"></script>
+<script src="strings.js?v=0.10.0"></script>
+<script src="app.js?v=0.10.0"></script>
 </body>
 </html>

@@ -1,12 +1,12 @@
-// มุมมอง 3D + push-pull + render ภาพนิ่ง (three.js ในเครื่อง) ของตัวเขียนแบบ pee_architec (โดย ลุงพี)
+// มุมมอง 3D + push-pull + render ภาพนิ่ง (three.js ในเครื่อง) ของตัวเขียนแบบ ASC Architect (โดย ลุงพี)
 // พิกัด three: x = x แบบ (ม.) · y = ความสูง (ม.) · z = −y แบบ (ม.) → มองจากใต้ขึ้นเหนือเหมือนแบบ
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import * as M from "./model.js?v=0.9.0";
-import { material } from "./materials.js?v=0.9.0";
+import * as M from "./model.js?v=0.10.0";
+import { material } from "./materials.js?v=0.10.0";
 
 const MM = 0.001;
 

@@ -1,13 +1,13 @@
-// ตัวเขียนแบบ pee_architec — เชื่อมผัง 2D · 3D · แผงคุณสมบัติ · บันทึก/ส่งออก (โดย ลุงพี)
-import * as M from "./model.js?v=0.9.0";
-import { Plan2D } from "./plan2d.js?v=0.9.0";
-import { View3D } from "./view3d.js?v=0.9.0";
-import { toDXF } from "./dxf.js?v=0.9.0";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.9.0";
-import * as CAD from "./cadlayer.js?v=0.9.0";
-import { Sketch3D } from "./sketch3d.js?v=0.9.0";
-import { PALETTE } from "./materials.js?v=0.9.0";
-import { sunPosition } from "./sun.js?v=0.9.0";
+// ตัวเขียนแบบ ASC Architect — เชื่อมผัง 2D · 3D · แผงคุณสมบัติ · บันทึก/ส่งออก (โดย ลุงพี)
+import * as M from "./model.js?v=0.10.0";
+import { Plan2D } from "./plan2d.js?v=0.10.0";
+import { View3D } from "./view3d.js?v=0.10.0";
+import { toDXF } from "./dxf.js?v=0.10.0";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.10.0";
+import * as CAD from "./cadlayer.js?v=0.10.0";
+import { Sketch3D } from "./sketch3d.js?v=0.10.0";
+import { PALETTE } from "./materials.js?v=0.10.0";
+import { sunPosition } from "./sun.js?v=0.10.0";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -244,7 +244,7 @@ async function act(a) {
 }
 // ---------------------------------------------------------------- Plot PDF (ขั้นที่ 4): ผัง 2D ลงกระดาษ + กรอบชื่อ
 function plotDialog() {
-  if (CLOUD) return toast("Plot PDF ต้องใช้รุ่นในเครื่อง (pee_architec.bat) — รุ่นออนไลน์ส่งออก DXF แล้วพิมพ์จากโปรแกรม CAD");
+  if (CLOUD) return toast("Plot PDF ต้องใช้รุ่นในเครื่อง (ASC Architect ในเครื่อง) — รุ่นออนไลน์ส่งออก DXF แล้วพิมพ์จากโปรแกรม CAD");
   $("#plot-form").innerHTML = plotFormHTML(null, { DWG_TITLE: hist.doc.name, PROJECT1: hist.doc.name });
   wirePlotForm($("#plot-form"));
   $("#plot-msg").textContent = ""; $("#plot-dlg").hidden = false;
@@ -328,7 +328,7 @@ async function importFromASC(p) {
 
 $("#open-file").addEventListener("change", async (e) => {
   const f = e.target.files[0]; if (!f) return;
-  try { const doc = JSON.parse(await f.text()); if (doc.app !== "pee_architec-drawing") throw new Error("ไม่ใช่ไฟล์แบบของ pee_architec");
+  try { const doc = JSON.parse(await f.text()); if (doc.app !== "pee_architec-drawing") throw new Error("ไม่ใช่ไฟล์แบบของ ASC Architect");
     hist.replace(doc); plan.select(null); host.onChange(); plan.fit(); view.fit(); toast("เปิด " + f.name); }
   catch (er) { toast("เปิดไม่ได้: " + er.message); }
   e.target.value = "";
@@ -392,7 +392,7 @@ async function start() {
 
 // ---------------------------------------------------------------- นำเข้าไฟล์ CAD
 async function openCadDialog() {
-  if (CLOUD) return toast("นำเข้าไฟล์ CAD ต้องใช้รุ่นในเครื่อง (pee_architec.bat)");
+  if (CLOUD) return toast("นำเข้าไฟล์ CAD ต้องใช้รุ่นในเครื่อง (ASC Architect ในเครื่อง)");
   $("#cad-dlg").hidden = false;
   $("#cad-msg").textContent = "กำลังค้นไฟล์…";
   try {
@@ -403,7 +403,7 @@ async function openCadDialog() {
       const lib = $("#cad-showlib").checked;
       const files = r.files.filter((f) => lib || !f.library);
       $("#cad-files").innerHTML = files.map((f) => `<button data-path="${esc(f.path)}"><span>${f.kind === "dwg" ? "📐" : "📄"} ${esc(f.path)}</span><small>${(f.size / 1048576).toFixed(1)} MB${f.kind === "dwg" && !conv.length ? " · ต้องมีตัวแปลง" : ""}</small></button>`).join("")
-        || '<p class="muted">ไม่พบไฟล์ — วางไฟล์ไว้ในโฟลเดอร์ pee_architec หรือกด "เลือกไฟล์จากเครื่อง"</p>';
+        || '<p class="muted">ไม่พบไฟล์ — วางไฟล์ไว้ในโฟลเดอร์ของ ASC Architect หรือกด "เลือกไฟล์จากเครื่อง"</p>';
     };
     $("#cad-showlib").onchange = show; show();
     $("#cad-msg").textContent = "";
