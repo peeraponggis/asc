@@ -86,6 +86,16 @@ t('presence-ingest.sql: รับจาก Pi ด้วยรหัสลับ 
   assert.match(ing, /revoke all on function public\.presence_ingest\(text, jsonb\) from public, authenticated;/);
 });
 
+const dev = readFileSync(new URL('../supabase/presence-device.sql', import.meta.url), 'utf8');
+t('presence-device.sql: desktop ผูกเครื่องผ่าน ai_installs · ตรวจรหัสลับ · กันโดเมน · แตะแถวอื่นไม่ได้', () => {
+  assert.match(dev, /and i\.secret_hash  = md5\(coalesce\(p_secret, ''\)\)/);
+  assert.match(dev, /and i\.revoked_at is null/);
+  assert.match(dev, /if uid is null then return 'unlinked'; end if;/);
+  assert.match(dev, /not like '%@' \|\| coalesce\(domain, 'proinventive\.co\.th'\)/);
+  assert.match(dev, /where p\.user_id = uid and p\.source = 'desktop';/);
+  assert.match(dev, /revoke all on function public\.device_user\(text, text\) from public, anon, authenticated;/);
+});
+
 t('asc-cloud.js: ไม่มีพิกัด/IP · ออกจากระบบแจ้งก่อน', () => {
   assert.doesNotMatch(src, /geolocation/);
   assert.match(src, /await presenceSend\(true\);\s+\/\/ แจ้งออกจากระบบ/);

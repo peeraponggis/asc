@@ -15,6 +15,18 @@
 
 ---
 
+## [4.4.4] — 2569-11-01
+### Pi monitor ขั้น 4 · รุ่น desktop (ผูกเครื่องด้วยรหัส)
+โดย ลุงพี
+
+- `supabase/presence-device.sql`: `presence_device_ping(แฮชเครื่อง, รหัสลับ, …)` + `presence_device_whoami()` — รุ่นในเครื่องไม่มีล็อกอิน จึงรู้ตัวผู้ใช้จากเครื่องที่ผูกในตาราง `ai_installs`
+  · ผูกด้วยรหัสเดียวกับติดตั้งผู้ช่วย AI (นับรวม 2 เครื่องต่อบัญชี) · เครื่องที่ติดตั้ง AI แล้วผูกอยู่แล้ว
+  · แถว desktop: `d:` + session · platform `desktop` · source `desktop` · กันโดเมนเหมือนเดิม · ผิด/ถูกยกเลิก = 'unlinked'
+- ฝั่งโปรแกรม: ASC Studio (design-auto) 0.129.0 · ASC Architect 0.19.0 (`server/asc_link.py` ไฟล์เดียวกัน)
+- `tests/presence.mjs` เพิ่มเป็น 10 ข้อ
+
+---
+
 ## [4.4.3] — 2569-11-01
 ### Pi monitor ขั้น 3 · รับสถานะ Pi-System มารวมรายงานเดียว
 โดย ลุงพี
