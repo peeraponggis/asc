@@ -47,7 +47,7 @@ grant select on public.monitor_state to authenticated;
 -- ── token จาก Vault ─────────────────────────────────────────────────────────
 create or replace function public.pi_monitor_token()
 returns text language sql stable security definer set search_path = public, vault as $$
-    select decrypted_secret from vault.decrypted_secrets
+    select nullif(regexp_replace(decrypted_secret, '\s', '', 'g'), '') from vault.decrypted_secrets   -- ตัดช่องว่าง/ขึ้นบรรทัดที่ติดมาตอนวาง
      where name = 'pi_monitor_bot_token' order by created_at desc limit 1;
 $$;
 revoke all on function public.pi_monitor_token() from public, anon, authenticated;
@@ -61,7 +61,8 @@ begin
     return net.http_post(
         url     := 'https://api.telegram.org/bot' || tok || '/' || p_method,
         body    := p_payload,
-        headers := '{"Content-Type": "application/json"}'::jsonb
+        headers := '{"Content-Type": "application/json"}'::jsonb,
+        timeout_milliseconds := 20000                    -- ค่าปริยาย 5 วินาทีหมดเวลาบ่อย (พบ 1 พ.ย. 2569)
     );
 end;
 $$;
@@ -81,7 +82,7 @@ returns text language plpgsql volatile security definer set search_path = public
 declare tok text := public.pi_monitor_token(); req bigint;
 begin
     if tok is null then return 'ยังไม่มี token ใน Vault ชื่อ pi_monitor_bot_token (ดู README ข้อใส่ token)'; end if;
-    req := net.http_get(url := 'https://api.telegram.org/bot' || tok || '/getUpdates');
+    req := net.http_get(url := 'https://api.telegram.org/bot' || tok || '/getUpdates', timeout_milliseconds := 20000);
     update public.monitor_settings set pending_find_id = req where id = 1;
     return 'ส่งคำขอแล้ว รอ 5 วินาที แล้วรัน: select public.pi_monitor_find_chat_result();';
 end;
@@ -90,10 +91,13 @@ revoke all on function public.pi_monitor_find_chat_start() from public, anon, au
 
 create or replace function public.pi_monitor_find_chat_result()
 returns text language plpgsql volatile security definer set search_path = public as $$
-declare j jsonb; cid text; ctitle text;
+declare j jsonb; cid text; ctitle text; r_timeout boolean; r_err text;
 begin
+    select r.timed_out, r.error_msg into r_timeout, r_err
+      from net._http_response r where r.id = (select pending_find_id from public.monitor_settings where id = 1);
+    if r_timeout then return 'Telegram ตอบไม่ทันเวลา — รัน pi_monitor_find_chat_start() ใหม่'; end if;
     j := public.pi_monitor_resp((select pending_find_id from public.monitor_settings where id = 1));
-    if j is null then return 'ยังไม่ได้คำตอบจาก Telegram — รอ 5 วินาทีแล้วรันบรรทัดนี้ใหม่'; end if;
+    if j is null then return 'ยังไม่ได้คำตอบจาก Telegram — รอ 5 วินาทีแล้วรันบรรทัดนี้ใหม่' || coalesce(' (' || r_err || ')', ''); end if;
     if not coalesce((j->>'ok')::boolean, false) then return 'Telegram ตอบว่า: ' || coalesce(j->>'description', j::text); end if;
     -- ข้อความหรือการเพิ่มบอทเข้ากลุ่มล่าสุด · กลุ่มถูกยกเป็น supergroup = ใช้รหัสใหม่
     select coalesce(u->'message'->>'migrate_to_chat_id', c->>'id'), c->>'title'
@@ -104,7 +108,7 @@ begin
      order by (u->>'update_id')::bigint desc
      limit 1;
     if cid is null then
-        return 'ไม่พบกลุ่ม Pi monitor — พิมพ์ข้อความใดก็ได้ในกลุ่ม 1 ข้อความ แล้วรัน start ใหม่';
+        return 'ไม่พบกลุ่ม Pi monitor (บอทได้รับ ' || jsonb_array_length(j->'result') || ' อัปเดต) — พิมพ์ /start ในกลุ่ม แล้วรัน start ใหม่';
     end if;
     update public.monitor_settings
        set telegram_chat_id = cid, pinned_message_id = null, pending_send_id = null, pending_edit_id = null,
