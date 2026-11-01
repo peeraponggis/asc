@@ -64,6 +64,18 @@ t('presence.sql: เติมอีเมลจากบัญชีเอง + 
   assert.match(sql, /report_minutes  int         not null default 10/); // ทุก 10 นาที ตั้งค่าได้
 });
 
+const tg = readFileSync(new URL('../supabase/pi-monitor-telegram.sql', import.meta.url), 'utf8');
+t('pi-monitor-telegram.sql: token จาก Vault เท่านั้น · ฟังก์ชันปิดจากหน้าเว็บ · ตั้งเวลาทุก 1 นาที', () => {
+  assert.doesNotMatch(tg, /\d{8,}:[\w-]{30,}/);                         // ไม่มี token จริงในไฟล์
+  assert.match(tg, /where name = 'pi_monitor_bot_token'/);
+  for (const fn of ['pi_monitor_token()', 'pi_monitor_tg(text, jsonb)', 'pi_monitor_tick()', 'pi_monitor_text()', 'pi_monitor_alerts(text)',
+                    'pi_monitor_find_chat_start()', 'pi_monitor_find_chat_result()', 'pi_monitor_test()', 'pi_monitor_resp(bigint)'])
+    assert.ok(tg.includes(`revoke all on function public.${fn} from public, anon, authenticated;`), fn);
+  assert.match(tg, /cron\.schedule\('pi-monitor-tick', +'\* \* \* \* \*'/);
+  assert.match(tg, /'editMessageText'/);                                // แก้ข้อความปักหมุด ไม่ส่งใหม่ทุกรอบ
+  assert.match(tg, /split_part\(r\.email, '@', 1\)/);                   // แสดงแค่ชื่อหน้าอีเมล
+});
+
 t('asc-cloud.js: ไม่มีพิกัด/IP · ออกจากระบบแจ้งก่อน', () => {
   assert.doesNotMatch(src, /geolocation/);
   assert.match(src, /await presenceSend\(true\);\s+\/\/ แจ้งออกจากระบบ/);

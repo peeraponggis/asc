@@ -203,6 +203,52 @@ Sigenergy ตระกูล TP ที่ตารางจำนวน MPPT เ
 เรียก `docs/asc-datasheet-parse.js` ตัวเดียวกันหมด ค่าที่ได้จึงตรงกันทุกฟิลด์
 อย่าเขียนตัวแยกไฟล์ขึ้นใหม่ที่ไหนอีก
 
+## Pi monitor — สรุปการใช้งาน ASCS/ASCA เข้ากลุ่ม Telegram
+
+ทำครั้งเดียว · ทุกขั้นทำใน SQL Editor ของโปรเจกต์ ASC Cloud:
+https://supabase.com/dashboard/project/rcaslesvgilknupqmwrp/sql/new
+
+**ก่อนเริ่ม** รัน `C:\LocalAI\git\asc\supabase\presence.sql` แล้ว (ขั้น 1) · สร้างบอทกับ @BotFather · สร้างกลุ่ม **Pi monitor** · เพิ่มบอทเข้ากลุ่มและตั้งเป็นผู้ดูแล (ติ๊ก Pin Messages) · พิมพ์ข้อความใดก็ได้ในกลุ่ม 1 ข้อความ
+
+1. **สร้างฟังก์ชันและตั้งเวลา** — เปิดไฟล์ `C:\LocalAI\git\asc\supabase\pi-monitor-telegram.sql` ด้วย Notepad → Ctrl+A → Ctrl+C → วางใน SQL Editor → **Run** (ขึ้นกล่องเตือน destructive ให้กด **Run this query**)
+2. **ใส่ token ของบอท** — New query ใหม่ วางบรรทัดนี้ แล้วเปลี่ยน `วาง-token-ตรงนี้` เป็น token จากแชต BotFather (ข้อความ "Done! Congratulations" บรรทัดถัดจาก *Use this token to access the HTTP API:*) เก็บเครื่องหมาย `'` ไว้ทั้งสองข้าง → **Run**
+
+   ```sql
+   select vault.create_secret('วาง-token-ตรงนี้', 'pi_monitor_bot_token', 'Pi monitor Telegram bot');
+   ```
+
+   token ใหม่ภายหลัง (เคยใส่แล้ว):
+   ```sql
+   select vault.update_secret((select id from vault.secrets where name = 'pi_monitor_bot_token'), 'วาง-token-ใหม่');
+   ```
+3. **หารหัสกลุ่ม** — รันบรรทัดแรก รอ 5 วินาที แล้วรันบรรทัดที่สอง ต้องขึ้น `พบกลุ่ม "Pi monitor" …`
+
+   ```sql
+   select public.pi_monitor_find_chat_start();
+   ```
+   ```sql
+   select public.pi_monitor_find_chat_result();
+   ```
+4. **ทดสอบ** — `select public.pi_monitor_test();` → กลุ่มได้ข้อความ ✅ · ภายใน 1–2 นาทีจะมีข้อความสรุปปักหมุด
+
+**ปรับค่า** (แก้ตัวเลขแล้ว Run · มีผลรอบถัดไป)
+
+```sql
+update public.monitor_settings set report_minutes = 10 where id = 1;   -- สรุปทุกกี่นาที
+update public.monitor_settings set alert_changes = false where id = 1; -- ไม่แจ้งตอนคนเข้า/ออก
+update public.monitor_settings set telegram_enabled = false where id = 1; -- หยุดส่งชั่วคราว
+select public.pi_monitor_text();                                        -- ดูข้อความสรุปตอนนี้ (ไม่ส่ง)
+```
+
+| ส่วน | หน้าที่ |
+|---|---|
+| `pi_monitor_tick()` | pg_cron เรียกทุก 1 นาที: แจ้งคนเข้า/ออก · ครบรอบ = แก้ข้อความสรุปที่ปักหมุด (ข้อความถูกลบ = ส่งใหม่เอง) |
+| `pi_monitor_text()` | สร้างข้อความสรุป 🟢 ใช้งาน · 🟡 เปิดทิ้งไว้ · ⚫ ออฟไลน์ |
+| Vault `pi_monitor_bot_token` | token บอท — ไม่อยู่ในไฟล์ใดของ repo |
+| งาน cron `pi-monitor-cleanup` | ล้างประวัติเก่ากว่า `retention_days` (90) ทุกวัน 03:15 น. |
+
+---
+
 ## ข้อจำกัดที่ต้องรู้
 
 - **การสมัครใช้งานเองยังทำไม่ได้จนกว่าจะตั้ง SMTP** (ขั้นที่ 4) เพราะระบบต้องส่งอีเมลยืนยัน
@@ -240,6 +286,7 @@ Sigenergy ตระกูล TP ที่ตารางจำนวน MPPT เ
 |---|---|
 | `supabase/schema.sql` | โครงสร้างตาราง สิทธิ์ และที่เก็บรูป |
 | `supabase/presence.sql` | Pi monitor: สถานะการใช้งาน ASCS/ASCA ของผู้ใช้ @proinventive.co.th (`app_presence` · `monitor_settings` · มุมมอง `presence_status`) — รันใน SQL Editor หลัง `schema.sql` · ยังไม่รัน = หน้าเว็บไม่ส่งสถานะ ไม่มีผลอื่น |
+| `supabase/pi-monitor-telegram.sql` | Pi monitor ขั้น 2: ส่งสรุปเข้ากลุ่ม Telegram ทุก 10 นาที (pg_cron + pg_net · token ใน Vault) — ดูหัวข้อ Pi monitor |
 | `supabase/invite-users.mjs` | นำผู้ใช้เดิมเข้าระบบ รันบนเครื่องเท่านั้น |
 | `supabase/import-devices.mjs` | นำเข้าคลังสเปกอุปกรณ์จากไฟล์ดาต้าชีต รันบนเครื่องเท่านั้น |
 | `docs/supabase-config.js` | ค่าเชื่อมต่อ (แก้ไฟล์นี้ไฟล์เดียว) |

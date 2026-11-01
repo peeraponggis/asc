@@ -3,6 +3,21 @@
 
 ---
 
+## [4.4.1] — 2569-11-01
+### Pi monitor ขั้น 2 · สรุปเข้ากลุ่ม Telegram "Pi monitor"
+โดย ลุงพี
+
+#### เพิ่มใหม่
+- `supabase/pi-monitor-telegram.sql`: pg_cron เรียก `pi_monitor_tick()` ทุก 1 นาที (ทำงานใน Supabase เอง ไม่พึ่งเครื่อง home)
+  - ครบ `report_minutes` (10 นาที · ตั้งค่าได้) → แก้ **ข้อความสรุปที่ปักหมุด** ข้อความเดียว (ครั้งแรกส่งแล้วปักหมุด · ถูกลบ = ส่งใหม่เอง)
+  - มีคนเข้าใช้/ออก → ส่งข้อความสั้นแบบไม่มีเสียง (ปิดได้ `alert_changes`)
+  - token บอทเก็บใน Supabase Vault (`pi_monitor_bot_token`) · หารหัสกลุ่มด้วย `pi_monitor_find_chat_start/result()` · ทดสอบ `pi_monitor_test()`
+  - ล้างประวัติเก่าทุกวัน 03:15 น. (`presence_cleanup`)
+- `supabase/README.md`: หัวข้อ Pi monitor ทีละขั้น (ที่อยู่ไฟล์เต็ม + ลิงก์ SQL Editor)
+- `tests/presence.mjs` เพิ่มเป็น 8 ข้อ
+
+---
+
 ## [4.4.0] — 2569-11-01
 ### Pi monitor ขั้น 1 · สถานะการใช้งาน ASCS / ASCA
 โดย ลุงพี
