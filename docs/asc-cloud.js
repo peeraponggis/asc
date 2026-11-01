@@ -355,6 +355,7 @@
         if (p.includes('asc_design'))       return { app: 'ASCS', base: 'ASC · ออกแบบ (ASC เดิม)' };
         if (p.includes('master_shell'))     return { app: 'ASCS', base: 'ASC · เมนูหลัก' };
         if (p.includes('mobi'))             return { app: 'ASCS', base: 'ASC · มือถือ' };
+        if (p.includes('pi-monitor'))       return { app: 'ASCS', base: 'ASC Enterprise · Pi monitor' };
         const file = p.split('/').pop() || '';
         if (!file || file === 'index.html') return { app: 'ASCS', base: 'ASC Enterprise · Dashboard' };
         return { app: 'ASCS', base: 'ASC · ' + file.replace(/\.html?$/, '') };

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<!-- Auto Solar Co-pilot Studio (ASC Studio / ASCS) · Copyright (C) 2024-2569 ProInventive. All rights reserved. · Proprietary -->
+<!--
+  Pi monitor ขั้น 5 — หน้า Dashboard ผู้ดูแล (ลุงพีสั่ง 1 พ.ย. 2569)
+  สถานะการใช้งาน ASCS / ASCA / Pi-System (เว็บ + desktop) ของผู้ใช้ @proinventive.co.th แบบสด
+  · เฉพาะผู้ดูแลระบบ (ด่านจริงคือ RLS ของมุมมอง presence_status — ผู้ใช้ทั่วไปเห็นแค่ของตัวเอง)
+  · รีเฟรชเองตามรอบที่เลือก (จำในเครื่อง) · กรองตามโปรแกรม/สถานะ/ช่องทาง/ค้นหา
+  · ตั้งค่ารายงาน Telegram (ตาราง monitor_settings) ได้ในหน้านี้
+  ตรรกะอยู่ใน asc-pimonitor.js (ทดสอบด้วย node tests/presence.mjs)
+-->
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Pi monitor — ASC Enterprise</title>
+<link rel="icon" href="img/favicon.ico" sizes="any">
+<link rel="icon" href="img/pilogo.png?v=2" type="image/png">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
+<script src="supabase-config.js"></script>
+<script src="asc-cloud.js"></script>
+<script src="asc-pimonitor.js"></script>
+<style>
+  :root { --bg:#f1f5f9; --card:#fff; --ink:#0f172a; --mute:#64748b; --line:#e2e8f0; --brand:#0f766e;
+          --g:#16a34a; --y:#ca8a04; --k:#475569; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:Kanit, system-ui, sans-serif; background:var(--bg); color:var(--ink); }
+  header { background:#0f172a; color:#fff; padding:14px 20px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  header h1 { font-size:20px; margin:0; font-weight:600; }
+  header .sub { color:#94a3b8; font-size:13px; }
+  header .right { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:13px; }
+  header a { color:#99f6e4; }
+  main { max-width:1280px; margin:0 auto; padding:16px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .card b { font-size:28px; display:block; }
+  .card span { color:var(--mute); font-size:13px; }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  select, input, button { font:inherit; font-size:14px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+  button { cursor:pointer; background:var(--brand); color:#fff; border-color:var(--brand); }
+  button.ghost { background:#fff; color:var(--ink); border-color:var(--line); }
+  .tbl { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:auto; }
+  table { border-collapse:collapse; width:100%; font-size:14px; }
+  th, td { padding:8px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th { background:#f8fafc; color:var(--mute); font-weight:500; position:sticky; top:0; }
+  td.page { white-space:normal; min-width:220px; }
+  tr.offline td { color:var(--mute); }
+  .empty { padding:30px; text-align:center; color:var(--mute); }
+  .msg { padding:40px 20px; text-align:center; }
+  details.settings { margin-top:16px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 16px; }
+  details.settings summary { cursor:pointer; font-weight:500; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px 16px; margin-top:12px; }
+  .grid label { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--mute); }
+  .grid label.chk { flex-direction:row; align-items:center; gap:8px; color:var(--ink); }
+  .note { font-size:12px; color:var(--mute); margin-top:8px; }
+  #err { color:#b91c1c; font-size:13px; }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>📊 Pi monitor</h1><div class="sub">สถานะการใช้งาน ASCS · ASCA · Pi-System (เว็บ + เครื่อง) — ผู้ใช้ @proinventive.co.th</div></div>
+  <div class="right">
+    <span id="updated">—</span>
+    <label>รีเฟรชทุก
+      <select id="every">
+        <option value="30">30 วินาที</option><option value="60" selected>1 นาที</option>
+        <option value="300">5 นาที</option><option value="600">10 นาที</option>
+      </select></label>
+    <button id="refresh" class="ghost" type="button">↻ รีเฟรช</button>
+    <a href="index.html">กลับ Dashboard</a>
+  </div>
+</header>
+
+<main>
+  <div id="gate" class="msg">กำลังตรวจการเข้าสู่ระบบ…</div>
+  <div id="app" hidden>
+    <div class="cards">
+      <div class="card"><b id="c-active">0</b><span>🟢 ใช้งานอยู่ (คน)</span></div>
+      <div class="card"><b id="c-idle">0</b><span>🟡 เปิดทิ้งไว้ (คน)</span></div>
+      <div class="card"><b id="c-offline">0</b><span>⚫ ออฟไลน์ · ใช้ใน 24 ชม. (คน)</span></div>
+      <div class="card"><b id="c-people">0</b><span>ผู้ใช้ทั้งหมดใน 24 ชม.</span></div>
+    </div>
+
+    <div class="filters">
+      <select id="f-app"><option value="">ทุกโปรแกรม</option><option value="ASCS">ASC Studio</option><option value="ASCA">ASC Architect</option><option value="PI">Pi-System</option></select>
+      <select id="f-status"><option value="">ทุกสถานะ</option><option value="active">🟢 ใช้งานอยู่</option><option value="idle">🟡 เปิดทิ้งไว้</option><option value="offline">⚫ ออฟไลน์</option></select>
+      <select id="f-platform"><option value="">ทุกช่องทาง</option><option value="web">เว็บ</option><option value="mobile">มือถือ</option><option value="desktop">เครื่อง (desktop)</option></select>
+      <input id="f-q" type="search" placeholder="ค้นหาอีเมล หรือหน้า/เมนู">
+    </div>
+
+    <div class="tbl">
+      <table>
+        <thead><tr><th>สถานะ</th><th>ผู้ใช้</th><th>โปรแกรม</th><th>ช่องทาง</th><th>หน้า/เมนู</th><th>ไม่ขยับ</th><th>สัญญาณล่าสุด</th><th>เริ่มใช้</th><th>เวอร์ชัน</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div id="empty" class="empty" hidden>ไม่มีรายการตามที่กรอง</div>
+    </div>
+
+    <details class="settings">
+      <summary>⚙️ ตั้งค่ารายงาน (กลุ่ม Telegram "Pi monitor")</summary>
+      <div class="grid">
+        <label>สรุปเข้ากลุ่มทุกกี่นาที<input id="s-report" type="number" min="1" max="1440"></label>
+        <label>ไม่ขยับกี่นาที = 🟡 เปิดทิ้งไว้<input id="s-idle" type="number" min="1" max="240"></label>
+        <label>ไม่มีสัญญาณกี่นาที = ⚫ ออฟไลน์<input id="s-offline" type="number" min="2" max="60"></label>
+        <label class="chk"><input id="s-alert" type="checkbox"> แจ้งในกลุ่มเมื่อมีคนเข้าใช้/ออก</label>
+        <label class="chk"><input id="s-tg" type="checkbox"> ส่งเข้ากลุ่ม Telegram (ปิด = หยุดส่งชั่วคราว)</label>
+      </div>
+      <p><button id="s-save" type="button">บันทึก</button> <span id="s-msg" class="note"></span></p>
+      <p class="note">มีผลรอบถัดไป (ภายใน 1 นาที) · ประวัติเก็บ <span id="s-keep">90</span> วันแล้วลบเอง · หน้านี้ไม่แสดงชื่อลูกค้า/โครงการ — ระบบเก็บแค่ชื่อหน้า/เมนู</p>
+    </details>
+    <p id="err"></p>
+  </div>
+</main>
+
+<script>
+(function () {
+    'use strict';
+    const AC = window.AscCloud, M = window.AscPiMonitor;
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    let rows = [], timer = 0;
+
+    function gate(html) { $('gate').innerHTML = html; $('gate').hidden = false; $('app').hidden = true; }
+
+    function render() {
+        const f = { app: $('f-app').value, status: $('f-status').value, platform: $('f-platform').value, q: $('f-q').value };
+        const s = M.summarize(rows);
+        $('c-active').textContent = s.active; $('c-idle').textContent = s.idle;
+        $('c-offline').textContent = s.offline; $('c-people').textContent = s.people;
+        const list = M.sortRows(M.filterRows(rows, f));
+        $('rows').innerHTML = list.map(r => `
+          <tr class="${esc(r.status)}">
+            <td>${esc(M.STATUS_LABEL[r.status] || r.status)}</td>
+            <td>${esc(r.email)}</td>
+            <td>${esc(M.APP_LABEL[r.app] || r.app)}</td>
+            <td>${esc(M.PLATFORM_LABEL[r.platform] || r.platform)}</td>
+            <td class="page">${esc(r.page)}</td>
+            <td>${r.status === 'offline' ? '—' : esc(r.idle_for_minutes) + ' นาที'}</td>
+            <td title="${esc(M.timeTh(r.last_seen))}">${esc(M.ago(r.last_seen))}</td>
+            <td>${esc(M.timeTh(r.started_at))}</td>
+            <td>${esc(r.version || '—')}</td>
+          </tr>`).join('');
+        $('empty').hidden = list.length > 0;
+    }
+
+    async function load() {
+        try {
+            const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+            const { data, error } = await AC.client.from('presence_status').select('*')
+                .gte('last_seen', since).order('last_seen', { ascending: false }).limit(1000);
+            if (error) throw error;
+            rows = data || [];
+            $('err').textContent = '';
+            $('updated').textContent = 'อัปเดต ' + M.timeTh(new Date().toISOString());
+            render();
+        } catch (e) {
+            $('err').textContent = 'อ่านข้อมูลไม่สำเร็จ: ' + (e.message || e) + ' (ตรวจว่ารัน supabase/presence.sql แล้ว)';
+        }
+    }
+
+    function schedule() {
+        clearInterval(timer);
+        const sec = Number($('every').value) || 60;
+        try { localStorage.setItem('asc_pimonitor_every', String(sec)); } catch (e) { /* ไม่มีที่เก็บ = ใช้ค่าเริ่มต้น */ }
+        timer = setInterval(() => { if (!document.hidden) load(); }, sec * 1000);
+    }
+
+    async function loadSettings() {
+        const { data, error } = await AC.client.from('monitor_settings').select('*').eq('id', 1).maybeSingle();
+        if (error || !data) { $('s-msg').textContent = 'อ่านค่าตั้งไม่ได้ — รัน supabase/presence.sql และ pi-monitor-telegram.sql ก่อน'; return; }
+        $('s-report').value = data.report_minutes; $('s-idle').value = data.idle_minutes; $('s-offline').value = data.offline_minutes;
+        $('s-alert').checked = data.alert_changes !== false; $('s-tg').checked = data.telegram_enabled !== false;
+        $('s-keep').textContent = data.retention_days;
+    }
+
+    async function saveSettings() {
+        const s = {
+            report_minutes: Number($('s-report').value), idle_minutes: Number($('s-idle').value),
+            offline_minutes: Number($('s-offline').value), alert_changes: $('s-alert').checked,
+            telegram_enabled: $('s-tg').checked, updated_at: new Date().toISOString()
+        };
+        const bad = M.checkSettings(s);
+        if (bad) { $('s-msg').textContent = '⚠ ' + bad; return; }
+        const { error } = await AC.client.from('monitor_settings').update(s).eq('id', 1);
+        $('s-msg').textContent = error ? '⚠ บันทึกไม่สำเร็จ: ' + error.message : '✔ บันทึกแล้ว · มีผลรอบถัดไป';
+        if (!error) load();
+    }
+
+    async function start() {
+        if (!AC || !AC.enabled) { gate('ยังเชื่อมต่อ ASC Cloud ไม่ได้ — ' + esc(AC ? AC.disabledReason : 'โหลด asc-cloud.js ไม่สำเร็จ')); return; }
+        const user = await AC.ready();
+        if (!user) { gate('ต้องเข้าสู่ระบบก่อน — <a href="index.html">ไปหน้าเข้าสู่ระบบ ASC Enterprise</a> แล้วเปิดหน้านี้อีกครั้ง'); return; }
+        if (!user.isAdmin) { gate('หน้านี้สำหรับผู้ดูแลระบบเท่านั้น'); return; }
+        $('gate').hidden = true; $('app').hidden = false;
+        try { const v = localStorage.getItem('asc_pimonitor_every'); if (v) $('every').value = v; } catch (e) { /* */ }
+        ['f-app', 'f-status', 'f-platform'].forEach(id => $(id).addEventListener('change', render));
+        $('f-q').addEventListener('input', render);
+        $('every').addEventListener('change', schedule);
+        $('refresh').addEventListener('click', load);
+        $('s-save').addEventListener('click', saveSettings);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
+        setInterval(render, 30000);                                   // "x นาทีที่แล้ว" เดินเองระหว่างรอบ
+        await Promise.all([load(), loadSettings()]);
+        schedule();
+    }
+
+    start();
+})();
+</script>
+</body>
+</html>

@@ -96,6 +96,45 @@ t('presence-device.sql: desktop ผูกเครื่องผ่าน ai_in
   assert.match(dev, /revoke all on function public\.device_user\(text, text\) from public, anon, authenticated;/);
 });
 
+// ── Pi monitor ขั้น 5: หน้า Dashboard ผู้ดูแล (docs/asc-pimonitor.js) ──
+const pm = {};
+vm.runInNewContext(readFileSync(new URL('../docs/asc-pimonitor.js', import.meta.url), 'utf8'), { window: pm, globalThis: pm });
+const PM = pm.AscPiMonitor;
+const R = (email, app, status, platform, last_seen, page = '') => ({ email, app, status, platform, last_seen, page });
+const rowsPM = [
+  R('a@proinventive.co.th', 'ASCS', 'idle', 'web', '2026-11-01T03:00:00Z', 'ASCS · ออกแบบ'),
+  R('a@proinventive.co.th', 'PI', 'active', 'web', '2026-11-01T03:01:00Z', 'Pi · CRM · 📈 Pipeline'),
+  R('b@proinventive.co.th', 'ASCA', 'offline', 'desktop', '2026-11-01T01:00:00Z', 'ASCA · หน้าแรก'),
+  R('c@proinventive.co.th', 'ASCA', 'idle', 'desktop', '2026-11-01T02:59:00Z', 'ASCA · ผลผลิตไฟฟ้า'),
+];
+t('Dashboard: นับคนละครั้ง (สถานะดีที่สุดของคนนั้น) · กรอง · เรียง', () => {
+  assert.deepEqual({ ...PM.summarize(rowsPM) }, { active: 1, idle: 1, offline: 1, people: 3, sessions: 4 });
+  assert.equal(PM.filterRows(rowsPM, { app: 'ASCA' }).length, 2);
+  assert.equal(PM.filterRows(rowsPM, { platform: 'desktop', status: 'idle' }).length, 1);
+  assert.equal(PM.filterRows(rowsPM, { q: 'pipeline' }).length, 1);                 // ค้นในหน้า/เมนูด้วย
+  assert.deepEqual([...PM.sortRows(rowsPM).map(r => r.status)], ['active', 'idle', 'idle', 'offline']);  // [...] = อาร์เรย์ของ realm นี้ (vm คนละ realm)
+  assert.equal(PM.sortRows(rowsPM)[1].email, 'a@proinventive.co.th');               // idle ล่าสุดมาก่อน
+});
+t('Dashboard: เวลา "ที่แล้ว" · เวลาไทย · ตรวจค่าตั้ง', () => {
+  const now = Date.parse('2026-11-01T03:10:00Z');
+  assert.equal(PM.ago('2026-11-01T03:09:40Z', now), 'เมื่อสักครู่');
+  assert.equal(PM.ago('2026-11-01T03:00:00Z', now), '10 นาทีที่แล้ว');
+  assert.equal(PM.ago('2026-11-01T01:05:00Z', now), '2 ชม. 5 นาทีที่แล้ว');
+  assert.match(PM.timeTh('2026-11-01T03:10:00Z'), /10:10/);                          // UTC+7
+  assert.equal(PM.checkSettings({ report_minutes: 10, idle_minutes: 10, offline_minutes: 3 }), '');
+  assert.match(PM.checkSettings({ report_minutes: 0, idle_minutes: 10, offline_minutes: 3 }), /1–1440/);
+  assert.match(PM.checkSettings({ report_minutes: 10, idle_minutes: 10, offline_minutes: 1 }), /2–60/);
+});
+t('Dashboard: เมนูเฉพาะผู้ดูแล · หน้าไม่ใช้ innerHTML กับข้อมูลดิบ', () => {
+  const idx = readFileSync(new URL('../docs/index.html', import.meta.url), 'utf8');
+  assert.match(idx, /key: 'pi_monitor',.*adminOnly: true/);
+  assert.match(idx, /if \(m && m\.adminOnly\) return !!SESSION && !!SESSION\.isAdmin;/);
+  const page = readFileSync(new URL('../docs/pi-monitor.html', import.meta.url), 'utf8');
+  assert.match(page, /if \(!user\.isAdmin\) \{ gate\('หน้านี้สำหรับผู้ดูแลระบบเท่านั้น'\)/);
+  assert.match(page, /<td>\$\{esc\(r\.email\)\}<\/td>/);                              // ข้อมูลจากฐานข้อมูลผ่าน esc เสมอ
+  assert.match(page, /<td class="page">\$\{esc\(r\.page\)\}<\/td>/);
+});
+
 t('asc-cloud.js: ไม่มีพิกัด/IP · ออกจากระบบแจ้งก่อน', () => {
   assert.doesNotMatch(src, /geolocation/);
   assert.match(src, /await presenceSend\(true\);\s+\/\/ แจ้งออกจากระบบ/);
