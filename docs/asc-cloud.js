@@ -117,7 +117,7 @@
         if (/Failed to fetch|NetworkError|network/i.test(m))
             return 'ติดต่อเซิร์ฟเวอร์ไม่ได้ กรุณาตรวจการเชื่อมต่ออินเทอร์เน็ต';
         if (/row-level security|violates row-level/i.test(m))
-            return 'ไม่มีสิทธิ์ทำรายการนี้';
+            return 'ไม่มีสิทธิ์ทำรายการนี้ (ถ้าเปิดหน้าค้างไว้นาน ให้ออกจากระบบแล้วเข้าใหม่ก่อน)';
         // PostgREST ตอบแบบนี้ทั้งกรณีไม่มีแถวจริง และกรณี RLS กรองออกจนไม่เหลือแถว
         // ผู้ใช้แยกสองกรณีนี้ไม่ออกอยู่แล้ว จึงบอกรวมเป็นข้อความเดียวที่เข้าใจได้
         if (/multiple \(or no\) rows|no rows|Results contain 0 rows|Cannot coerce the result|PGRST116/i.test(m))
@@ -146,6 +146,41 @@
     }
 
     function fail(e) { const err = new Error(humanError(e)); err.original = e; return err; }
+
+    /* ── เซสชันหมดอายุระหว่างเปิดหน้าค้าง (1 พ.ย. 2569) ──
+       เบราว์เซอร์พักแท็บที่เปิดทิ้งไว้ ตัวต่ออายุอัตโนมัติของ supabase-js จึงไม่ได้ทำงาน
+       หน้าจอยังโชว์ผู้ดูแลระบบ แต่คำขอถูกส่งแบบไม่มีบัญชี → RLS ปฏิเสธ ขึ้น "ไม่มีสิทธิ์" ทั้งที่มีสิทธิ์
+       ทางแก้: ต่ออายุก่อนเขียน · ถูกปฏิเสธแล้วต่ออายุแล้วลองซ้ำอีกครั้ง · ต่อไม่ได้ = บอกให้เข้าระบบใหม่ */
+    const SESSION_EXPIRED = 'หมดเวลาเข้าสู่ระบบ กรุณาออกจากระบบแล้วเข้าใหม่ แล้วลองอีกครั้ง';
+    const isRlsDenied = (e) => !!e && /row-level security|violates row-level|JWT expired|PGRST301|PGRST303/i.test(String(e.message || e.code || ''));
+
+    async function freshSession(force) {
+        try {
+            const { data } = await sb.auth.getSession();
+            const s = data && data.session;
+            if (!s) return false;
+            // เหลือไม่ถึง 1 นาที (หรือถูกปฏิเสธมาแล้ว) = ต่ออายุเดี๋ยวนี้
+            if (force || !s.expires_at || s.expires_at * 1000 - Date.now() < 60000) {
+                const r = await sb.auth.refreshSession();
+                return !r.error && !!(r.data && r.data.session);
+            }
+            return true;
+        } catch (e) { console.warn('ต่ออายุเซสชันไม่สำเร็จ', e); return false; }
+    }
+
+    /* เขียนข้อมูลแบบทนเซสชันหมดอายุ · run() คืน { data, error } ของ supabase
+       denied(r) = ถือว่าถูกปฏิเสธเพราะสิทธิ์ (ค่าเริ่ม: ข้อความ RLS) */
+    async function withSession(run, denied) {
+        const isDenied = denied || ((r) => isRlsDenied(r.error));
+        if (!(await freshSession(false))) throw new Error(SESSION_EXPIRED);
+        let r = await run();
+        if (isDenied(r)) {
+            if (!(await freshSession(true))) throw new Error(SESSION_EXPIRED);
+            r = await run();
+        }
+        if (r.error) throw fail(r.error);
+        return r;
+    }
 
     /* data URL ⇄ Blob : รูปในระบบเดิมเป็น data URL ทั้งหมด
        ตอนอัปโหลดต้องแปลงเป็นไฟล์จริง ตอนอ่านกลับต้องแปลงคืน
@@ -680,20 +715,20 @@
 
         async setUserMenus(userId, menus) {
             need();
-            const { error } = await sb.from('user_menus').upsert({
+            await withSession(() => sb.from('user_menus').upsert({
                 user_id   : userId,
                 menus     : [...new Set(menus || [])],
                 updated_at: new Date().toISOString(),
                 updated_by: _profile ? _profile.id : null
-            }, { onConflict: 'user_id' });
-            if (error) throw fail(error);
+            }, { onConflict: 'user_id' }));
             return true;
         },
 
         async setUserAdmin(userId, on) {
             need();
-            const { error } = await sb.rpc('admin_set_admin', { p_user: userId, p_on: !!on });
-            if (error) throw fail(error);
+            // ฟังก์ชันโยน 42501 "เฉพาะผู้ดูแลระบบ…" เมื่อ auth.uid() ว่าง (เซสชันหมด) — ลองต่ออายุก่อนเชื่อข้อความนั้น
+            await withSession(() => sb.rpc('admin_set_admin', { p_user: userId, p_on: !!on }),
+                (r) => isRlsDenied(r.error) || !!(r.error && r.error.code === '42501'));
             return true;
         },
 
@@ -701,18 +736,17 @@
             need();
             const mail = String(email || '').trim().toLowerCase();
             if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) throw new Error('รูปแบบอีเมลไม่ถูกต้อง');
-            const { error } = await sb.from('allowed_emails')
-                .upsert({ email: mail, note: String(note || '').trim() }, { onConflict: 'email' });
-            if (error) throw fail(error);
+            await withSession(() => sb.from('allowed_emails')
+                .upsert({ email: mail, note: String(note || '').trim() }, { onConflict: 'email' }));
             return mail;
         },
 
         async removeAllowedEmail(email) {
             need();
             const mail = String(email || '').trim().toLowerCase();
-            const { data: rows, error } = await sb.from('allowed_emails')
-                .delete().eq('email', mail).select('email');
-            if (error) throw fail(error);
+            // RLS ไม่โยน error ตอนลบ แค่ลบได้ 0 แถว — เซสชันหมดก็ได้ผลแบบนี้ จึงต่ออายุแล้วลองซ้ำก่อน
+            const { data: rows } = await withSession(() => sb.from('allowed_emails')
+                .delete().eq('email', mail).select('email'), (r) => isRlsDenied(r.error) || !(r.data && r.data.length));
             if (!rows || rows.length === 0) {
                 throw new Error('ลบไม่สำเร็จ เฉพาะผู้ดูแลระบบเท่านั้นที่แก้รายชื่อได้');
             }
