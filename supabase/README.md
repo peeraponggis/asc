@@ -286,6 +286,7 @@ select public.pi_monitor_text();                                        -- ด�
 |---|---|
 | `supabase/schema.sql` | โครงสร้างตาราง สิทธิ์ และที่เก็บรูป |
 | `supabase/presence.sql` | Pi monitor: สถานะการใช้งาน ASCS/ASCA ของผู้ใช้ @proinventive.co.th (`app_presence` · `monitor_settings` · มุมมอง `presence_status`) — รันใน SQL Editor หลัง `schema.sql` · ยังไม่รัน = หน้าเว็บไม่ส่งสถานะ ไม่มีผลอื่น |
+| `supabase/presence-ingest.sql` | Pi monitor ขั้น 3: รับสถานะการใช้งาน Pi-System จากอีกโปรเจกต์ (รหัสลับ Vault `pi_ingest_secret`) — ขั้นตอนอยู่ใน `picode\pi-system\README.md` หัวข้อ Pi monitor |
 | `supabase/pi-monitor-telegram.sql` | Pi monitor ขั้น 2: ส่งสรุปเข้ากลุ่ม Telegram ทุก 10 นาที (pg_cron + pg_net · token ใน Vault) — ดูหัวข้อ Pi monitor |
 | `supabase/invite-users.mjs` | นำผู้ใช้เดิมเข้าระบบ รันบนเครื่องเท่านั้น |
 | `supabase/import-devices.mjs` | นำเข้าคลังสเปกอุปกรณ์จากไฟล์ดาต้าชีต รันบนเครื่องเท่านั้น |

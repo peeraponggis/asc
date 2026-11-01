@@ -76,6 +76,16 @@ t('pi-monitor-telegram.sql: token จาก Vault เท่านั้น · �
   assert.match(tg, /split_part\(r\.email, '@', 1\)/);                   // แสดงแค่ชื่อหน้าอีเมล
 });
 
+const ing = readFileSync(new URL('../supabase/presence-ingest.sql', import.meta.url), 'utf8');
+t('presence-ingest.sql: รับจาก Pi ด้วยรหัสลับ · แตะแถว ASC ไม่ได้ · กันโดเมน', () => {
+  assert.match(ing, /if want is null or p_secret is distinct from want then raise exception/);
+  assert.match(ing, /where p\.source = 'pi';/);
+  assert.match(ing, /left\('pi:' \|\| \(r->>'session_id'\), 64\)/);
+  assert.match(ing, /not like '%@' \|\| coalesce\(domain, 'proinventive\.co\.th'\)/);
+  assert.match(ing, /grant execute on function public\.presence_ingest\(text, jsonb\) to anon;/);
+  assert.match(ing, /revoke all on function public\.presence_ingest\(text, jsonb\) from public, authenticated;/);
+});
+
 t('asc-cloud.js: ไม่มีพิกัด/IP · ออกจากระบบแจ้งก่อน', () => {
   assert.doesNotMatch(src, /geolocation/);
   assert.match(src, /await presenceSend\(true\);\s+\/\/ แจ้งออกจากระบบ/);

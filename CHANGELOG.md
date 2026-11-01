@@ -3,6 +3,17 @@
 
 ---
 
+## [4.4.3] — 2569-11-01
+### Pi monitor ขั้น 3 · รับสถานะ Pi-System มารวมรายงานเดียว
+โดย ลุงพี
+
+- `supabase/presence-ingest.sql`: `presence_ingest(รหัสลับ, แถว)` รับสถานะ CRM-Pi/Pi_BoQ จากโปรเจกต์ Pi (ล็อกอินคนละโปรเจกต์) ทุก 1 นาที
+  · รหัสลับร่วมใน Vault `pi_ingest_secret` (สร้างเอง) · แถว Pi: `pi:` + session · app `PI` · `user_id` ว่าง · `source = 'pi'` · แตะแถว ASC ไม่ได้ · กันโดเมนเหมือนเดิม
+  · ข้อความสรุปในกลุ่ม Telegram รวม ASCS/ASCA/Pi ในข้อความเดียว (ไม่ต้องแก้ `pi-monitor-telegram.sql`)
+- `tests/presence.mjs` เพิ่มเป็น 9 ข้อ · ฝั่ง Pi อยู่ใน repo picode (CRM-Pi 1.1.0)
+
+---
+
 ## [4.4.2] — 2569-11-01
 ### Pi monitor · คำขอ Telegram ไม่หมดเวลาง่าย
 โดย ลุงพี
