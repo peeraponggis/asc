@@ -11,6 +11,7 @@ node tests/batmatch.mjs
 node tests/advisor-batrule.mjs
 node tests/lps.mjs
 node tests/lps-zone.mjs
+node tests/presence.mjs
 ```
 
 ชุด `batmatch` รับพารามิเตอร์เสริมเพื่อกวาดคลังจริงทั้งคลังด้วย

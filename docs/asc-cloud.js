@@ -303,10 +303,121 @@
         return _profile;
     }
 
+    /* ── สถานะการใช้งาน (Pi monitor ขั้น 1 · supabase/presence.sql) ─────────
+       ลุงพีสั่ง 1 พ.ย. 2569: รายงานว่าใคร (@proinventive.co.th) ใช้ ASCS/ASCA อยู่ หน้า/เมนูไหน
+       ส่ง presence_ping ทุก 60 วินาที + ทันทีที่เปลี่ยนหน้า/เมนู · ฐานข้อมูลเติมอีเมลเอง และข้ามอีเมลนอกโดเมน
+       "หน้า/เมนู" = ชื่อหน้า + หัวข้อหน้าต่างที่เปิด หรือแท็บที่เลือก (เป็นป้ายของโปรแกรม ไม่ใช่ข้อมูลลูกค้า)
+       ไม่เก็บที่ตั้ง/IP · ยังไม่ได้รัน SQL = ฟังก์ชันไม่มี → หยุดส่งเงียบ ๆ ไม่รบกวนผู้ใช้                       */
+    const PRESENCE_MS = 60 * 1000;
+    const presence = { app: '', platform: 'web', version: '', base: '', page: '', sid: '', sent: '', lastInput: Date.now(), started: false, off: false };
+
+    /* โปรแกรม + ชื่อหน้า จากที่อยู่หน้าเว็บ (หน้าที่ต้องการละเอียดกว่านี้เรียก AscCloud.presence()/presencePage()) */
+    function presenceDefaults(path) {
+        const p = String(path || '').toLowerCase();
+        if (p.includes('/architec/'))       return { app: 'ASCA', base: 'ASCA' };
+        if (p.includes('/studio/report'))   return { app: 'ASCS', base: 'ASCS · รายงาน' };
+        if (p.includes('/studio/'))         return { app: 'ASCS', base: 'ASCS · ออกแบบ' };
+        if (p.includes('asc_design'))       return { app: 'ASCS', base: 'ASC · ออกแบบ (ASC เดิม)' };
+        if (p.includes('master_shell'))     return { app: 'ASCS', base: 'ASC · เมนูหลัก' };
+        if (p.includes('mobi'))             return { app: 'ASCS', base: 'ASC · มือถือ' };
+        const file = p.split('/').pop() || '';
+        if (!file || file === 'index.html') return { app: 'ASCS', base: 'ASC Enterprise · Dashboard' };
+        return { app: 'ASCS', base: 'ASC · ' + file.replace(/\.html?$/, '') };
+    }
+
+    function presencePlatform(w) {
+        if (w && w.Capacitor) return 'mobile';
+        return /Android|iPhone|iPad|Mobile/i.test((w && w.navigator && w.navigator.userAgent) || '') ? 'mobile' : 'web';
+    }
+
+    /* ป้ายสั้นอ่านง่าย: ยุบช่องว่าง · ตัดเหลือ 40 ตัวอักษร */
+    function presenceLabel(s) {
+        const t = String(s || '').replace(/\s+/g, ' ').trim();
+        return t.length > 40 ? t.slice(0, 39) + '…' : t;
+    }
+
+    /* เมนูที่เปิดอยู่: หัวข้อหน้าต่าง (dialog) ที่เปิด ก่อน · ไม่มีก็แท็บที่เลือก */
+    function presenceDetail(doc) {
+        if (!doc || !doc.querySelector) return '';
+        const h = doc.querySelector('dialog[open] h2, dialog[open] h3, [role="dialog"]:not([hidden]) h2');
+        if (h && h.textContent) return presenceLabel(h.textContent);
+        const tab = doc.querySelector('#tabs button.on, [role="tab"][aria-selected="true"]');
+        return tab && tab.textContent ? presenceLabel(tab.textContent) : '';
+    }
+
+    function presencePageNow() {
+        const d = presence.page || presenceDetail(document);
+        return d ? presence.base + ' · ' + d : presence.base;
+    }
+
+    function presenceSid() {
+        const fresh = () => String((window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+            : Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/-/g, '').slice(0, 32);
+        try {
+            let s = sessionStorage.getItem('asc_presence_sid');
+            if (!s) { s = fresh(); sessionStorage.setItem('asc_presence_sid', s); }
+            return s;
+        } catch (e) { return fresh(); }
+    }
+
+    async function presenceSend(closed) {
+        if (presence.off || !enabled || !_profile || !presence.app) return;
+        const page = presencePageNow();
+        const active = !document.hidden && (Date.now() - presence.lastInput) < PRESENCE_MS + 5000;
+        try {
+            const { error } = await sb.rpc('presence_ping', {
+                p_session: presence.sid, p_app: presence.app, p_platform: presence.platform,
+                p_version: presence.version, p_page: page, p_active: active, p_closed: !!closed
+            });
+            if (error) {
+                // ยังไม่ได้รัน presence.sql = หยุดส่ง (ไม่ยิงซ้ำทุกนาที)
+                if (/presence_ping|function|schema cache|not exist/i.test(error.message || '')) presence.off = true;
+                return;
+            }
+            presence.sent = page;
+        } catch (e) { /* เน็ตหลุด = รอบหน้าค่อยส่ง */ }
+    }
+
+    function presenceStart() {
+        if (presence.started || !enabled) return;
+        presence.started = true;
+        presence.sid = presenceSid();
+        const mark = () => { presence.lastInput = Date.now(); };
+        ['pointerdown', 'keydown', 'wheel', 'mousemove', 'touchstart'].forEach(ev =>
+            window.addEventListener(ev, mark, { passive: true, capture: true }));
+        setInterval(() => presenceSend(false), PRESENCE_MS);
+        // เปลี่ยนหน้า/เมนู → ส่งทันที (ตรวจทุก 5 วินาที เบากว่าเฝ้าทุกการเปลี่ยนแปลงของหน้า)
+        setInterval(() => { if (_profile && presencePageNow() !== presence.sent) presenceSend(false); }, 5000);
+        document.addEventListener('visibilitychange', () => presenceSend(false));
+        window.addEventListener('pagehide', () => presenceSend(true));
+    }
+
     const AscCloud = {
         enabled        : enabled,
         disabledReason : disabledReason,
         client         : sb,
+
+        /* ตั้งโปรแกรม/เวอร์ชัน/หน้า ให้ละเอียดกว่าค่าจากที่อยู่หน้าเว็บ · { app:'ASCS'|'ASCA', platform, version, base, page } */
+        presence(opts) {
+            Object.keys(opts || {}).forEach(k => {
+                if (['app', 'platform', 'version', 'base', 'page'].includes(k) && opts[k] != null) presence[k] = String(opts[k]);
+            });
+            presenceStart();
+            presenceSend(false);
+        },
+        /* หน้า/เมนูที่เปิดอยู่ (ป้ายของโปรแกรม ห้ามใส่ชื่อลูกค้า) · '' = กลับไปดูหน้าต่าง/แท็บเอง */
+        presencePage(label) {
+            presence.page = presenceLabel(label);
+            if (presencePageNow() !== presence.sent) presenceSend(false);
+        },
+        /* แอดมิน: สถานะทุกแท็บ · ผู้ใช้ทั่วไป: ของตัวเอง (มุมมอง presence_status) */
+        async presenceList() {
+            need();
+            const { data, error } = await sb.from('presence_status').select('*').order('last_seen', { ascending: false });
+            if (error) throw fail(error);
+            return data || [];
+        },
+        _presenceUtil: { defaults: presenceDefaults, platform: presencePlatform, label: presenceLabel, detail: presenceDetail },
 
         /* รอให้กู้เซสชันเดิมเสร็จก่อน ต้องเรียกก่อนใช้งานอย่างอื่นเสมอ */
         async ready() {
@@ -348,6 +459,7 @@
 
         async signOut() {
             if (!enabled) return;
+            await presenceSend(true);                       // แจ้งออกจากระบบก่อนเซสชันหาย (ส่งหลังจากนี้ไม่ได้แล้ว)
             await sb.auth.signOut();
             _profile = null;
             // ล้างธงด้วย ไม่งั้นครั้งถัดไปที่ล็อกอินโดยไม่ติ๊ก จะยังถูกจำไว้จากธงเก่า
@@ -898,6 +1010,13 @@
     };
 
     window.AscCloud = AscCloud;
+
+    // เริ่มนับสถานะทุกหน้าที่โหลดไฟล์นี้ · ส่งจริงเมื่อมีผู้ใช้ล็อกอิน (ready/signIn/onAuthChange ตั้ง _profile)
+    if (enabled) {
+        const d = presenceDefaults(location.pathname);
+        presence.app = d.app; presence.base = d.base; presence.platform = presencePlatform(window);
+        presenceStart();
+    }
 
     if (!enabled) {
         console.info('ASC Cloud ยังไม่พร้อมใช้งาน : ' + disabledReason + ' — ระบบจะทำงานแบบเก็บในเครื่องต่อไป');

@@ -239,6 +239,7 @@ Sigenergy ตระกูล TP ที่ตารางจำนวน MPPT เ
 | ไฟล์ | หน้าที่ |
 |---|---|
 | `supabase/schema.sql` | โครงสร้างตาราง สิทธิ์ และที่เก็บรูป |
+| `supabase/presence.sql` | Pi monitor: สถานะการใช้งาน ASCS/ASCA ของผู้ใช้ @proinventive.co.th (`app_presence` · `monitor_settings` · มุมมอง `presence_status`) — รันใน SQL Editor หลัง `schema.sql` · ยังไม่รัน = หน้าเว็บไม่ส่งสถานะ ไม่มีผลอื่น |
 | `supabase/invite-users.mjs` | นำผู้ใช้เดิมเข้าระบบ รันบนเครื่องเท่านั้น |
 | `supabase/import-devices.mjs` | นำเข้าคลังสเปกอุปกรณ์จากไฟล์ดาต้าชีต รันบนเครื่องเท่านั้น |
 | `docs/supabase-config.js` | ค่าเชื่อมต่อ (แก้ไฟล์นี้ไฟล์เดียว) |
