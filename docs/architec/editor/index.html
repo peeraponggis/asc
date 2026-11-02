@@ -4,61 +4,64 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>เขียนแบบ · ASC Architect</title>
-<link rel="icon" href="../favicon.ico?v=0.23.0">
-<link rel="stylesheet" href="editor.css?v=0.23.0">
-<script src="../mode.js?v=0.23.0"></script>
+<link rel="icon" href="../favicon.ico?v=0.24.0">
+<link rel="stylesheet" href="editor.css?v=0.24.0">
+<script src="../mode.js?v=0.24.0"></script>
 <script type="importmap">
 { "imports": { "three": "../vendor/three/build/three.module.min.js", "three/addons/": "../vendor/three/examples/jsm/" } }
 </script>
-<link rel="stylesheet" href="../ai/assistant.css?v=0.23.0">
-<script src="../brand.js?v=0.23.0"></script>
+<link rel="stylesheet" href="../ai/assistant.css?v=0.24.0">
+<script src="../brand.js?v=0.24.0"></script>
 </head>
-<body>
+<body data-view="split">
 <div class="appbrand" data-brand="line"></div>
 <header class="bar">
-  <a href="../" class="home" title="กลับหน้าหลัก"><img src="../logo.png?v=0.23.0" alt="" width="28" height="28"></a>
-  <input id="doc-name" class="docname" value="แบบใหม่" aria-label="ชื่อแบบ">
-  <div class="grp">
-    <button data-act="new" title="แบบใหม่">ใหม่</button>
-    <label class="btn" title="เปิดไฟล์แบบ (.json)">เปิด<input type="file" id="open-file" accept=".json,application/json" hidden></label>
-    <button data-act="save" title="บันทึก (Ctrl+S)">บันทึก</button>
-    <button data-act="cad" title="นำเข้าไฟล์ CAD (DXF / DWG / PDF จาก CAD)">📂 CAD</button>
-    <label class="btn" title="ภาพลอกแบบ: ภาพร่าง/ภาพถ่าย/PDF สแกน วางใต้ผัง → 📏 ตั้งระยะ → วาดผนัง/ห้อง/กล่องทับ">🖼 ภาพลอกแบบ<input type="file" id="trace-file" accept="image/*,.pdf,.webp" hidden></label>
-    <button data-act="ai-draft" title="ให้ AI ในเครื่องร่างกล่องอาคาร (3D) จากภาพลอกแบบ — ภาพร่าง/ภาพทัศนียภาพ · อ่านระยะที่เขียนในภาพ · ผลเป็นร่างให้ปรับต่อ">🤖 ร่างด้วย AI</button>
+  <a href="../" class="home" title="กลับหน้าหลัก ASC Architect"><img src="../logo.png?v=0.24.0" alt="" width="30" height="30"></a>
+  <div class="docbox"><input id="doc-name" class="docname" value="แบบใหม่" aria-label="ชื่อแบบ"><span id="saved" class="muted"></span></div>
+  <div class="grp seg modeseg" id="views" role="tablist" aria-label="โหมดมุมมอง">
+    <button data-view="2d" title="ผัง 2D อย่างเดียว — ปุ่มเฉพาะงานผัง/เขียนแบบ">ผัง 2D</button>
+    <button data-view="split" class="on" title="ผัง 2D คู่ภาพ 3D — แสดงปุ่มทั้งหมด">2D + 3D</button>
+    <button data-view="3d" title="ภาพ 3D อย่างเดียว — ปุ่มเฉพาะงานโมเดล/ภาพนำเสนอ">3D</button>
   </div>
-  <div class="grp">
-    <button data-act="undo" title="ย้อน (Ctrl+Z)">↶</button>
-    <button data-act="redo" title="ทำซ้ำ (Ctrl+Y)">↷</button>
+  <span class="sp"></span>
+  <div class="grp acts">
+    <button data-act="struct" class="pill" title="โครงสร้าง: ชั้นอาคาร · สร้างเสา/คาน/ฐานรากจากผนัง · ตรวจขนาดเบื้องต้น (WSD) · ตารางเสา คาน ฐานราก + ปริมาณคอนกรีต/เหล็ก">🏗 โครงสร้าง</button>
+    <button data-act="solar" class="pill" title="ระบบโซลาร์: ผลผลิตไฟฟ้า (pvlib) · จัดสตริง · Single Line Diagram (DXF/PDF) จากแผงบนหลังคาจริง">⚡ โซลาร์ + SLD</button>
+    <button data-act="drawset" class="pill" title="ชุดแบบก่อสร้าง A3: ผังพื้น · รูปด้าน 4 ด้าน · รูปตัด · 3D · ตารางประตูหน้าต่างห้อง + ไฟล์ IFC (ConstructCAD · รุ่นในเครื่อง)">📑 ชุดแบบ</button>
+    <button data-act="plot" class="pill v2only" title="Plot ผัง 2D เป็น PDF: กระดาษ A4–A0 + กรอบชื่อ + มาตราส่วน">🖨 Plot PDF</button>
+    <button data-act="render" class="accent v3only" title="ภาพนิ่งคุณภาพสูงสำหรับงานนำเสนอ (จากมุมที่เห็นอยู่)">📷 Render</button>
+    <div class="ddwrap"><button type="button" class="pill" id="exportBtn" title="ส่งออกไฟล์">ส่งออก ▾</button>
+      <div class="ddm" id="exportMenu" hidden>
+        <button data-act="dxf">DXF — ผัง 2D + โครงสร้าง (AutoCAD)</button>
+        <button data-act="glb">GLB — โมเดล 3D (Blender / SketchUp)</button>
+        <button data-act="save">JSON — ไฟล์แบบ ASC Architect</button>
+      </div></div>
   </div>
-  <div class="grp seg" id="views">
-    <button data-view="2d">2D</button>
-    <button data-view="split" class="on">2D | 3D</button>
-    <button data-view="3d">3D</button>
-  </div>
-  <div class="grp">
-    <button data-act="render" class="accent" title="render ภาพนิ่ง 1920×1080">📷 Render</button>
-    <button data-act="plot" title="Plot ผัง 2D เป็น PDF: กระดาษ A4–A0 + กรอบชื่อ + มาตราส่วน">🖨 Plot</button>
-    <button data-act="drawset" title="ชุดแบบก่อสร้าง A3: ผังพื้น · รูปด้าน 4 ด้าน · รูปตัด · 3D · ตารางประตูหน้าต่างห้อง + ไฟล์ IFC — สร้างด้วย ConstructCAD (รุ่นในเครื่อง)">📑 ชุดแบบ</button>
-    <button data-act="dxf" title="ส่งออกผัง 2D เป็น DXF">DXF</button>
-    <button data-act="glb" title="ส่งออกโมเดล 3D (เปิดใน Blender ได้)">GLB</button>
-    <button data-act="yield" title="ส่ง kWp + มุม + ทิศของแผงไปคำนวณผลผลิต">⚡ ผลผลิต</button>
-  </div>
-  <span id="saved" class="muted"></span>
+  <input type="file" id="open-file" accept=".json,application/json" hidden>
+  <input type="file" id="trace-file" accept="image/*,.pdf,.webp" hidden>
 </header>
 <nav class="menubar" id="menubar" aria-label="เมนู"></nav>
 <div class="toolbars" id="toolbars">
   <div class="tgrp" id="tgStd" aria-label="มาตรฐาน (Standard)"></div>
-  <div class="tgrp sun3d" id="tgShadow" title="วันที่และเวลา → ตำแหน่งดวงอาทิตย์จริงตามพิกัดโครงการ">
+  <div class="tgrp v2only" id="tg2d" aria-label="ผัง 2D">
+    <button type="button" class="sk" data-act="fit2d" title="ดูทั้งผัง (Zoom Extents 2D)" id="fit2dBtn"></button>
+    <label title="ชั้นที่แสดงและวาด — ผนัง/เสา/คานใหม่ใช้ระดับของชั้นนี้">ชั้น <select id="levelSel"></select></label><button type="button" data-act="level-add" title="เพิ่มชั้น (ระดับ + ความสูงชั้น)">＋</button>
+    <label title="แสดงคาน ฐานราก พื้นโครงสร้างในผัง (เสา/บันไดแสดงเสมอ)"><input type="checkbox" id="showStruct" checked> โครงสร้าง</label>
+    <label><input type="checkbox" id="ortho" checked> ล็อกมุม</label>
+    <label><input type="checkbox" id="snap" checked> จับจุด</label>
+    <select id="grid" title="กริด"><option value="10">กริด 10</option><option value="50">กริด 50</option><option value="100" selected>กริด 100</option><option value="500">กริด 500</option><option value="0">ไม่จับกริด</option></select>
+  </div>
+  <div class="tgrp sun3d v3only" id="tgShadow" title="วันที่และเวลา → ตำแหน่งดวงอาทิตย์จริงตามพิกัดโครงการ">
     <button type="button" class="sk" id="skShadow" title="เปิด/ปิดเงา (Shadows)"></button>
     <div class="slid month"><div class="ticks"><span>ม</span><span>ก</span><span>ม</span><span>เ</span><span>พ</span><span>ม</span><span>ก</span><span>ส</span><span>ก</span><span>ต</span><span>พ</span><span>ธ</span></div><input type="range" id="skMonth" min="0" max="11" step="1" value="5" aria-label="เดือน"></div>
     <div class="slid"><div class="ticks"><span>06:00</span><span>เที่ยง</span><span>19:00</span></div><input type="range" id="skTime" min="6" max="19" step="0.25" value="10" aria-label="เวลา"></div>
     <span class="mono muted" id="skTimeLbl"></span>
     <input type="date" id="sun-date" aria-label="วันที่"> <input type="time" id="sun-time" value="10:00" step="900" aria-label="เวลา">
   </div>
-  <div class="tgrp" id="skStyles" aria-label="รูปแบบ (Styles)"></div>
-  <div class="tgrp" id="tgLoc" aria-label="ตำแหน่ง (Location)"></div>
-  <div class="tgrp" id="skViews" aria-label="มุมมอง (Views)"></div>
-  <div class="tgrp" id="tgSect">
+  <div class="tgrp v3only" id="skStyles" aria-label="รูปแบบ (Styles)"></div>
+  <div class="tgrp v3only" id="tgLoc" aria-label="ตำแหน่ง (Location)"></div>
+  <div class="tgrp v3only" id="skViews" aria-label="มุมมอง (Views)"></div>
+  <div class="tgrp v3only" id="tgSect">
     <label title="ระดับระนาบตัด (Section Plane)">ตัด <input type="range" id="section" min="0" max="12000" step="100" value="12000"></label>
     <select id="scenes" title="ฉาก (Scenes): มุมกล้องที่บันทึกไว้"><option value="">มุมกล้อง…</option></select><button type="button" data-act="scene-add" title="บันทึกมุมกล้องนี้เป็นฉาก">＋</button>
   </div>
@@ -66,29 +69,10 @@
 </div>
 
 <div class="main">
-  <nav class="tools" id="tools">
-    <button data-tool="select" class="on" title="เลือก/ย้าย (V)">⬚<span>เลือก</span></button>
-    <button data-tool="pan" title="เลื่อนจอ (H)">✋<span>เลื่อน</span></button>
-    <button data-tool="wall" title="ผนัง (W)">▭<span>ผนัง</span></button>
-    <button data-tool="room" title="ห้องสี่เหลี่ยม (R)">⊡<span>ห้อง</span></button>
-    <button data-tool="door" title="ประตู (D)">🚪<span>ประตู</span></button>
-    <button data-tool="window" title="หน้าต่าง (N)">▤<span>หน้าต่าง</span></button>
-    <button data-tool="box" title="กล่อง push-pull (B)">⬛<span>กล่อง</span></button>
-    <button data-tool="line" title="เส้น (L)">╱<span>เส้น</span></button>
-    <button data-tool="dim" title="มิติ (M)">↔<span>มิติ</span></button>
-    <button data-tool="text" title="ข้อความ (T)">T<span>ข้อความ</span></button>
-    <button data-tool="symbol" title="สัญลักษณ์ (S)">◈<span>สัญลักษณ์</span></button>
-    <button data-tool="erase" title="ลบ (E)">✕<span>ลบ</span></button>
-    <button data-tool="calib" title="ตั้งระยะภาพลอกแบบ (K): คลิก 2 จุดบนเส้นที่รู้ระยะ แล้วพิมพ์ระยะจริง">📏<span>ตั้งระยะ</span></button>
-  </nav>
+  <nav class="big tools2d" id="tools" aria-label="เครื่องมือผัง 2D"></nav>
 
   <section class="views split" id="viewarea">
-    <div class="pane" id="pane2d"><svg id="plan" aria-label="ผัง 2D"></svg>
-      <div class="corner"><button data-act="fit2d" title="ดูทั้งหมด">⤢</button>
-        <label><input type="checkbox" id="ortho" checked> ล็อกมุม</label>
-        <label><input type="checkbox" id="snap" checked> จับจุด</label>
-        <select id="grid" title="กริด"><option value="10">กริด 10</option><option value="50">50</option><option value="100" selected>100</option><option value="500">500</option><option value="0">ไม่จับกริด</option></select></div>
-    </div>
+    <div class="pane" id="pane2d"><svg id="plan" aria-label="ผัง 2D"></svg><div class="vlabel" id="plabel">ผังพื้น</div></div>
     <div class="pane" id="pane3d">
       <nav class="big tools3d" id="tools3d" aria-label="ชุดเครื่องมือใหญ่ (Large Tool Set)"></nav>
       <div class="vp"><canvas id="c3d" aria-label="มุมมอง 3D"></canvas>
@@ -101,10 +85,9 @@
   <aside class="props tray" id="props">
     <header class="trayh"><span>ถาดเครื่องมือ (Default Tray)</span><button type="button" id="trayX" title="ซ่อนถาด (เปิดใหม่: หน้าต่าง → ถาดเครื่องมือ)">×</button></header>
     <div class="traybody" id="trayBody"></div>
-    <div class="ascah">ASCA · ผัง 2D · หลังคา · โซลาร์</div>
+    <div class="ascah">ASCA · ผัง หลังคา โซลาร์</div>
     <div class="ascatray">
-    <div id="sel-box"></div>
-    <details open><summary>ค่าเริ่มต้นเครื่องมือ</summary>
+    <details open class="v2only"><summary>ค่าเริ่มต้นเครื่องมือ</summary>
       <div class="form">
         <label>ผนังหนา (มม.)<input type="number" id="d-thick" value="200" min="50" step="any"></label>
         <label>ผนังสูง (มม.)<input type="number" id="d-height" value="3000" min="100" step="any"></label>
@@ -128,7 +111,7 @@
       </div>
     </details>
     <details open id="cad-box" hidden><summary>ไฟล์ CAD</summary><div id="cad-list"></div></details>
-    <details><summary>สัญลักษณ์</summary>
+    <details class="v2only"><summary>สัญลักษณ์</summary>
       <input id="sym-q" placeholder="ค้นหา ประตู WC รถ ต้นไม้">
       <div id="sym-list" class="symlist"></div>
     </details>
@@ -139,7 +122,7 @@
 <footer class="status">
   <span id="status">พร้อม</span>
   <label class="vcb">ระยะ <input id="vcb" autocomplete="off" placeholder="พิมพ์แล้ว Enter"></label>
-  <button type="button" class="rbtn" id="renderBtn" title="ภาพนิ่งความละเอียดสูงสำหรับงานนำเสนอ (จากมุมที่เห็นอยู่)">📷 Render ภาพนำเสนอ</button>
+  <button type="button" class="rbtn v3only" id="renderBtn" title="ภาพนิ่งความละเอียดสูงสำหรับงานนำเสนอ (จากมุมที่เห็นอยู่)">📷 Render ภาพนำเสนอ</button>
 </footer>
 <div id="plot-dlg" class="dlg" hidden>
   <div class="dlg-box">
@@ -167,8 +150,12 @@
     <div class="dlg-foot"><span id="set-msg" class="muted"></span><span><button data-act="set-go" class="accent">📑 สร้างชุดแบบ</button> <button data-act="set-close">ปิด</button></span></div>
   </div>
 </div>
+<div id="struct-dlg" class="dlg" hidden><div class="dlg-box wide"><h3>🏗 โครงสร้าง — ชั้นอาคาร · เสา คาน ฐานราก · ตรวจขนาดเบื้องต้น</h3><div class="dlg-body" id="struct-body"></div>
+  <div class="dlg-foot"><span class="muted">ผลเป็นการตรวจเบื้องต้นวิธีหน่วยแรงใช้งาน (WSD) สำหรับออกแบบร่าง — ไม่แทนรายการคำนวณที่วิศวกรโยธาลงนาม</span><button data-act="struct-close">ปิด</button></div></div></div>
+<div id="solar-dlg" class="dlg" hidden><div class="dlg-box wide"><h3>⚡ ระบบโซลาร์ — ผลผลิตไฟฟ้า · สตริง · Single Line Diagram</h3><div class="dlg-body" id="solar-body"></div>
+  <div class="dlg-foot"><span class="muted" id="solar-msg"></span><button data-act="solar-close">ปิด</button></div></div></div>
 <div id="toast" class="toast" hidden></div>
-<script type="module" src="main.js?v=0.23.0"></script>
-<script type="module" src="../ai/assistant.js?v=0.23.0"></script>
+<script type="module" src="main.js?v=0.24.0"></script>
+<script type="module" src="../ai/assistant.js?v=0.24.0"></script>
 </body>
 </html>

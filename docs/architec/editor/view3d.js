@@ -12,9 +12,10 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
 import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import * as M from "./model.js?v=0.23.0";
-import { material } from "./materials.js?v=0.23.0";
-import { buildItem, kindTh } from "./props3d.js?v=0.23.0";
+import * as M from "./model.js?v=0.24.0";
+import { material } from "./materials.js?v=0.24.0";
+import { buildItem, kindTh } from "./props3d.js?v=0.24.0";
+import * as ST from "./struct.js?v=0.24.0";
 
 const MM = 0.001;
 const v3 = (p, z = 0) => new THREE.Vector3(p[0] * MM, z * MM, -p[1] * MM);
@@ -24,7 +25,7 @@ export const STYLES = [
   { k: "tex", th: "สีพื้น + ลายวัสดุ", en: "Shaded With Textures" }, { k: "mono", th: "สีเดียว", en: "Monochrome" },
 ];
 export const TAGS = [
-  { k: "walls", th: "ผนัง" }, { k: "openings", th: "ประตู หน้าต่าง" }, { k: "roof", th: "หลังคา" }, { k: "pv", th: "แผงโซลาร์" },
+  { k: "walls", th: "ผนัง" }, { k: "openings", th: "ประตู หน้าต่าง" }, { k: "roof", th: "หลังคา" }, { k: "pv", th: "แผงโซลาร์" }, { k: "struct", th: "โครงสร้าง เสา คาน ฐานราก" },
   { k: "masses", th: "กล่อง push-pull" }, { k: "slab", th: "พื้น" }, { k: "land", th: "ภูมิทัศน์ ลาน รั้ว" }, { k: "pool", th: "สระว่ายน้ำ" },
   { k: "items", th: "ต้นไม้ รถ ของตกแต่ง" }, { k: "notes", th: "เส้น ข้อความ มิติ 3D" }, { k: "asc", th: "โมเดล ASC Studio" }, { k: "site", th: "พื้นดิน / ภาพดาวเทียม" },
 ];
@@ -130,11 +131,27 @@ export class View3D {
     this.setSun(135, 50);
     new ResizeObserver(() => this.resize()).observe(canvas);
     this.resize();
-    const loop = () => { this.controls.update(); if (this.anim) this.anim(performance.now()); this.composer.render(); this.overlay(); this._raf = requestAnimationFrame(loop); };
+    // วาดเฉพาะเมื่อมีอะไรเปลี่ยน: ระหว่างหมุน/ลาก = ภาพเร็ว (ไม่มี AO/ลบรอยหยัก) · หยุดนิ่ง 0.25 วินาที = ภาพสวยเต็มที่ 1 ครั้ง
+    // (เดิมวาดภาพเต็มทุกเฟรม → เครื่องการ์ดจอในตัวได้ ~1.5 ภาพ/วินาที คลิกแล้วเหมือนไม่ตอบสนอง)
+    this.dirty = true; this.lastChange = performance.now(); this.hqDone = false;
+    const wake = () => this.invalidate();
+    for (const ev of ["pointerdown", "pointermove", "pointerup", "wheel"]) canvas.addEventListener(ev, wake, { passive: true });
+    for (const ev of ["click", "input", "change", "keydown", "keyup", "pointerup"]) document.addEventListener(ev, wake, { passive: true, capture: true });
+    this.controls.addEventListener("change", wake);
+    const loop = () => {
+      this._raf = requestAnimationFrame(loop);
+      const moved = this.controls.update(), now = performance.now();
+      if (this.anim) { this.anim(now); this.invalidate(); }
+      if (moved) this.invalidate();
+      if (this.dirty) { this.dirty = false; this.renderer.render(this.scene, this.camera); this.overlay(); this.hqDone = false; return; }
+      if (!this.hqDone && now - this.lastChange > 250) { this.hqDone = true; this.composer.render(); this.overlay(); }
+    };
     loop();
   }
 
   get doc() { return this.host.hist.doc; }
+  /** ขอให้วาดภาพใหม่ (เรียกได้บ่อย ไม่เปลือง) */
+  invalidate() { this.dirty = true; this.lastChange = performance.now(); }
   /** เส้น ป้ายข้อความ มิติ 3D วาดทับภาพสุดท้าย */
   overlay() { const r = this.renderer; r.autoClear = false; r.render(this.notesScene, this.camera); r.autoClear = true; }
 
@@ -142,7 +159,7 @@ export class View3D {
     const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
     if (!w || !h) return;
     this.renderer.setSize(w, h, false); this.composer.setPixelRatio(this.renderer.getPixelRatio()); this.composer.setSize(w, h);
-    this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
+    this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); this.invalidate && this.invalidate();
   }
 
   /** ดวงอาทิตย์: azimuth (0=เหนือ ตามเข็ม) · มุมเงย — ท้องฟ้า แสง ความสว่างภาพ และไฟในอาคารตอนพลบค่ำ ตามไปด้วย */
@@ -165,7 +182,7 @@ export class View3D {
     clearTimeout(this._envT); this._envT = setTimeout(() => this.updateEnv(), 80);
     this._fitShadow();
   }
-  updateEnv() { const old = this.envRT; this.envRT = this.pmrem.fromScene(this.envScene, 0, 1, 1000); this.scene.environment = this.envRT.texture; if (old) old.dispose(); }
+  updateEnv() { const old = this.envRT; this.envRT = this.pmrem.fromScene(this.envScene, 0, 1, 1000); this.scene.environment = this.envRT.texture; if (old) old.dispose(); this.invalidate(); }
 
   bounds() {
     const b = new THREE.Box3(); for (const o of this.model.children) if (!o.userData.helper) b.expandByObject(o);
@@ -191,7 +208,7 @@ export class View3D {
     g.clear();
     const add = (mesh, name, data, tag) => { mesh.castShadow = mesh.receiveShadow = true; mesh.name = name; mesh.userData = { ...(data || {}), tag: tag || (data && data.type) }; g.add(mesh); return mesh; };
     // พื้น
-    const wb = M.wallBounds(d);
+    const g1 = d.walls.filter((w) => (w.base || 0) <= 100), wb = g1.length && !(d.struct || []).some((o) => o.kind === "slab" && Math.abs(o.z ?? 0) < 200) ? M.wallBounds({ walls: g1 }) : null;
     if (wb) {
       const W = (wb.x1 - wb.x0) * MM, D = (wb.y1 - wb.y0) * MM;
       const slab = new THREE.Mesh(boxUV(new THREE.BoxGeometry(W, 0.1, D), W, 0.1, D), this.mats.slab);
@@ -199,29 +216,29 @@ export class View3D {
       add(slab, "พื้น", null, "slab");
     }
     // ผนัง (ตัดช่องเปิด)
-    const sel = this.host.selection && this.host.selection();
     for (const w of d.walls) {
       const L = M.wallLength(w); if (L < 1) continue;
       const u = M.norm(M.sub(w.b, w.a)), ang = Math.atan2(u[1], u[0]);
       for (const p of M.wallPieces(d, w)) {
         const W = (p.s1 - p.s0) * MM, Hh = (p.z1 - p.z0) * MM, T = w.thick * MM;
         const geo = boxUV(new THREE.BoxGeometry(W, Hh, T), W, Hh, T);
-        const m = new THREE.Mesh(geo, sel && sel.type === "walls" && sel.id === w.id ? this.mats.wallSel : w.mat ? material(w.mat) : this.mats.wall);
+        const m = new THREE.Mesh(geo, w.mat ? material(w.mat) : this.mats.wall);
         const c = M.add(w.a, M.mul(u, (p.s0 + p.s1) / 2));
-        m.position.copy(v3(c, (p.z0 + p.z1) / 2));
+        m.position.copy(v3(c, (w.base || 0) + (p.z0 + p.z1) / 2));
         m.rotation.y = ang;
         add(m, "ผนัง", { type: "walls", id: w.id });
       }
+      const zb = w.base || 0;
       for (const { o, s0, s1 } of M.openingSpans(d, w)) {
         const c = M.add(w.a, M.mul(u, (s0 + s1) / 2)), W = (s1 - s0) * MM, H = o.height * MM;
         if (o.kind === "window") {
           const gl = new THREE.Mesh(new THREE.BoxGeometry(W, H, 0.02), this.mats.glass);
-          gl.position.copy(v3(c, o.sill + o.height / 2)); gl.rotation.y = ang; gl.castShadow = false; gl.name = "กระจก"; gl.userData = { tag: "openings" }; g.add(gl);
+          gl.position.copy(v3(c, zb + o.sill + o.height / 2)); gl.rotation.y = ang; gl.castShadow = false; gl.name = "กระจก"; gl.userData = { type: "openings", id: o.id, tag: "openings" }; g.add(gl);
           const T = w.thick * MM * 1.05, fr = new THREE.Mesh(boxUV(new THREE.BoxGeometry(W, 0.05, T), W, 0.05, T), this.mats.frame);
-          fr.position.copy(v3(c, o.sill)); fr.rotation.y = ang; add(fr, "ขอบหน้าต่าง", null, "openings");
+          fr.position.copy(v3(c, zb + o.sill)); fr.rotation.y = ang; add(fr, "ขอบหน้าต่าง", { type: "openings", id: o.id }, "openings");
         } else {
           const leaf = new THREE.Mesh(boxUV(new THREE.BoxGeometry(W * 0.98, H, 0.04), W * 0.98, H, 0.04), this.mats.door);
-          leaf.position.copy(v3(c, o.sill + o.height / 2)); leaf.rotation.y = ang; add(leaf, "ประตู", { type: "openings", id: o.id });
+          leaf.position.copy(v3(c, zb + o.sill + o.height / 2)); leaf.rotation.y = ang; add(leaf, "ประตู", { type: "openings", id: o.id });
         }
       }
     }
@@ -234,6 +251,33 @@ export class View3D {
       mesh.position.y = (m.base || 0) * MM;
       add(mesh, m.name || "กล่อง", { type: "masses", id: m.id }, m.tag || "masses");
       if (m.mat === "water") mesh.castShadow = false;
+    }
+    // โครงสร้าง: ฐานราก เสา คาน พื้น บันได (คอนกรีตเสริมเหล็ก)
+    for (const o of d.struct || []) {
+      const mt = material(o.mat || (o.kind === "slab" ? "concrete" : o.kind === "stair" ? "granite" : "concrete")), data = { type: "struct", id: o.id }, nm = `${ST.KINDS[o.kind] || "โครงสร้าง"} ${o.mark || ""}`;
+      if (o.kind === "column" || o.kind === "footing") {
+        const w = o.w, l = o.kind === "footing" ? o.l : o.l || o.w, z0 = o.kind === "footing" ? (o.z ?? -1200) - o.t : o.base ?? 0, z1 = o.kind === "footing" ? o.z ?? -1200 : o.top ?? 3000;
+        if (z1 - z0 < 1) continue;
+        const m = new THREE.Mesh(boxUV(new THREE.BoxGeometry(w * MM, (z1 - z0) * MM, l * MM), w * MM, (z1 - z0) * MM, l * MM), mt);
+        m.position.copy(v3(o.p, (z0 + z1) / 2)); m.rotation.y = ((o.rot || 0) * Math.PI) / 180; add(m, nm, data, "struct");
+      } else if (o.kind === "beam") {
+        const Lb = M.dist(o.a, o.b); if (Lb < 1) continue;
+        const m = new THREE.Mesh(boxUV(new THREE.BoxGeometry(Lb * MM, o.d * MM, o.w * MM), Lb * MM, o.d * MM, o.w * MM), mt);
+        m.position.copy(v3(M.mul(M.add(o.a, o.b), 0.5), (o.z ?? 0) - o.d / 2)); m.rotation.y = Math.atan2(o.b[1] - o.a[1], o.b[0] - o.a[0]); add(m, nm, data, "struct");
+      } else if (o.kind === "slab") {
+        const sh = new THREE.Shape(o.pts.map((q) => new THREE.Vector2(q[0] * MM, q[1] * MM)));
+        for (const hl of o.holes || []) sh.holes.push(new THREE.Path(hl.map((q) => new THREE.Vector2(q[0] * MM, q[1] * MM))));
+        const geo = new THREE.ExtrudeGeometry(sh, { depth: o.t * MM, bevelEnabled: false }); geo.rotateX(-Math.PI / 2);
+        const m = new THREE.Mesh(geo, mt); m.position.y = ((o.z ?? 0) - o.t) * MM; add(m, nm, data, "struct");
+      } else if (o.kind === "stair") {
+        const n = Math.max(2, o.n | 0), r = (o.rise || 3000) / n, ang = ((o.rot || 0) * Math.PI) / 180, u = [Math.cos(ang), Math.sin(ang)];
+        const geos = [];
+        for (let i = 0; i < n; i++) {
+          const h = (i + 1) * r, c = M.add(o.p, M.mul(u, (i + 0.5) * o.run)), gb = new THREE.BoxGeometry(o.run * MM, Math.min(h, r * 3) * MM, o.w * MM);
+          gb.translate(0, ((o.base ?? 0) + h - Math.min(h, r * 3) / 2) * MM, 0); gb.rotateY(ang); gb.translate(c[0] * MM, 0, -c[1] * MM); geos.push(gb);
+        }
+        for (const gb of geos) { const m = new THREE.Mesh(gb, mt); add(m, nm, data, "struct"); }
+      }
     }
     // ชิ้นส่วน (ต้นไม้ รถ ของตกแต่ง)
     for (const it of d.items3d || []) {
@@ -277,6 +321,7 @@ export class View3D {
     this._fitShadow();
     this.applyStyle();
     if (this.onBuilt) this.onBuilt();
+    this.invalidate();
     return this.pv;
   }
 

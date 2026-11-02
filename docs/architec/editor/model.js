@@ -17,14 +17,16 @@ export function newDoc(name) {
     app: "pee_architec-drawing", version: 1, name: name || "แบบใหม่", units: "mm",
     site: { lat: null, lon: null, north: 0 },
     walls: [], openings: [], masses: [], lines: [], dims: [], texts: [], syms: [], trees: [], cads: [], backdrop: null,
-    items3d: [], texts3d: [], dims3d: [], sweeps: [],
+    items3d: [], texts3d: [], dims3d: [], sweeps: [], struct: [],
+    levels: [{ id: "L1", name: "ชั้น 1", z: 0, h: 3000 }],
     roof: Object.assign({}, DEFAULTS.roof), pv: Object.assign({}, DEFAULTS.pv),
   };
 }
 
 export function normalize(doc) {
   const d = Object.assign(newDoc(), doc || {});
-  for (const k of ["walls", "openings", "masses", "lines", "dims", "texts", "syms", "trees", "cads", "items3d", "texts3d", "dims3d", "sweeps"]) d[k] = Array.isArray(d[k]) ? d[k] : [];
+  for (const k of ["walls", "openings", "masses", "lines", "dims", "texts", "syms", "trees", "cads", "items3d", "texts3d", "dims3d", "sweeps", "struct"]) d[k] = Array.isArray(d[k]) ? d[k] : [];
+  if (!Array.isArray(d.levels) || !d.levels.length) d.levels = [{ id: "L1", name: "ชั้น 1", z: 0, h: 3000 }];
   d.roof = Object.assign({}, DEFAULTS.roof, d.roof || {});
   d.pv = Object.assign({}, DEFAULTS.pv, d.pv || {});
   d.site = Object.assign({ lat: null, lon: null, north: 0 }, d.site || {});
@@ -118,6 +120,7 @@ export function bounds(doc) {
   doc.lines.forEach((l) => l.pts.forEach(addp));
   (doc.items3d || []).forEach((t) => { addp([t.p[0] - 1500, t.p[1] - 1500]); addp([t.p[0] + 1500, t.p[1] + 1500]); });
   (doc.sweeps || []).forEach((l) => l.pts.forEach(addp));
+  (doc.struct || []).forEach((o) => { if (o.p) addp(o.p); if (o.a) { addp(o.a); addp(o.b); } if (o.pts) o.pts.forEach(addp); });
   doc.dims.forEach((d) => { addp(d.a); addp(d.b); });
   doc.texts.forEach((t) => addp(t.p));
   doc.trees.forEach((t) => { addp([t.p[0] - t.r, t.p[1] - t.r]); addp([t.p[0] + t.r, t.p[1] + t.r]); });
@@ -176,14 +179,20 @@ function faceOrientation(pts3, north) {
 /** หลังคาจากผนัง → { faces: [{key, pts3, tilt, azimuth, normal, gable?}], base, ridgeZ, angle }
  *  พิกัด 3D: x, y (แบบ มม.), z ขึ้น · ฐานหลังคาที่ความสูงผนังสูงสุด · วางตามแนวอาคาร (buildingAngle)
  *  ทรง: none · flat · shed (ลาดลงด้านล่างของแนวอาคาร) · gable · hip · curved (โค้งแบ่ง facets ช่วง สูง rise) */
+/** ผนังชั้นบนสุด (หลังคาวางบนผนังชุดนี้) */
+export function topWalls(doc) {
+  if (!doc.walls.length) return [];
+  const zt = Math.max(...doc.walls.map((w) => w.base || 0));
+  return doc.walls.filter((w) => (w.base || 0) >= zt - 100);
+}
 export function roofFaces(doc) {
   const r = doc.roof;
   if (!doc.walls.length || r.type === "none") return { faces: [], base: 0, angle: 0 };
-  const ang = buildingAngle(doc), north = doc.site.north || 0;
-  const pts = doc.walls.flatMap(wallPolygon).map((p) => rot2(p, -ang));          // พิกัดตามแนวอาคาร
+  const ang = buildingAngle(doc), north = doc.site.north || 0, TW = topWalls(doc);
+  const pts = TW.flatMap(wallPolygon).map((p) => rot2(p, -ang));          // พิกัดตามแนวอาคาร
   const bx0 = Math.min(...pts.map((p) => p[0])), bx1 = Math.max(...pts.map((p) => p[0]));
   const by0 = Math.min(...pts.map((p) => p[1])), by1 = Math.max(...pts.map((p) => p[1]));
-  const base = Math.max(...doc.walls.map((w) => w.height));
+  const base = Math.max(...TW.map((w) => (w.base || 0) + w.height));
   const o = r.overhang, x0 = bx0 - o, x1 = bx1 + o, y0 = by0 - o, y1 = by1 + o;
   const W = x1 - x0, D = y1 - y0, tan = Math.tan((r.pitch * Math.PI) / 180);
   const along = r.ridge === "x" || ((r.ridge === "auto" || r.ridge === "long") && W >= D) || (r.ridge === "short" && W < D) ? "x" : "y";
@@ -378,5 +387,6 @@ export function summary(doc) {
     doors: doc.openings.filter((o) => o.kind === "door").length, windows: doc.openings.filter((o) => o.kind === "window").length,
     footprintM2: b ? Math.round(((b.x1 - b.x0) * (b.y1 - b.y0)) / 1e4) / 100 : 0,
     pvCount: pv.count, pvKwp: pv.kwp, pvTilt: pv.tilt, pvAzimuth: pv.azimuth, pvFaces: pv.parts.length,
+    levels: (doc.levels || []).length || 1, struct: (doc.struct || []).length,
   };
 }

@@ -25,6 +25,7 @@
     if (name === "library") loadCatalog();
   }
   $("#tabs").addEventListener("click", function (e) { if (e.target.dataset.tab) showTab(e.target.dataset.tab); });
+document.addEventListener("click", function (e) { var b = e.target.closest && e.target.closest(".feat[data-tab]"); if (b) showTab(b.dataset.tab); });
   // ผู้ช่วย AI piBot: แท็บที่เปิดอยู่ = หน้าของผู้ช่วย · ต่อไปทำอะไร ตามแท็บ
   var TABS = { home: "หน้าแรก", projects: "โครงการ", yield: "ผลผลิตไฟฟ้า", strings: "จัดสตริง", library: "คลังสัญลักษณ์", templates: "แม่แบบ & โปรแกรม" };
   function curTab() { var b = document.querySelector("#tabs button.on"); return b ? b.dataset.tab : "home"; }

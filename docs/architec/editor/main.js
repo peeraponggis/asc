@@ -1,16 +1,19 @@
 // ตัวเขียนแบบ ASC Architect — เชื่อมผัง 2D · 3D · แผงคุณสมบัติ · บันทึก/ส่งออก (โดย ลุงพี)
-import * as M from "./model.js?v=0.23.0";
-import { Plan2D } from "./plan2d.js?v=0.23.0";
-import { View3D } from "./view3d.js?v=0.23.0";
-import { toDXF } from "./dxf.js?v=0.23.0";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.23.0";
-import * as CAD from "./cadlayer.js?v=0.23.0";
-import { Sketch3D } from "./sketch3d.js?v=0.23.0";
-import { PALETTE } from "./materials.js?v=0.23.0";
-import { sunPosition } from "./sun.js?v=0.23.0";
-import { initSkUI } from "./skui.js?v=0.23.0";
-import { readDXF, decodeDXF } from "./dxfread.js?v=0.23.0";
-import * as LS from "./localstore.js?v=0.23.0";
+import * as M from "./model.js?v=0.24.0";
+import { Plan2D } from "./plan2d.js?v=0.24.0";
+import { View3D } from "./view3d.js?v=0.24.0";
+import { toDXF } from "./dxf.js?v=0.24.0";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.24.0";
+import * as CAD from "./cadlayer.js?v=0.24.0";
+import { Sketch3D } from "./sketch3d.js?v=0.24.0";
+import { PALETTE } from "./materials.js?v=0.24.0";
+import { sunPosition } from "./sun.js?v=0.24.0";
+import { initSkUI } from "./skui.js?v=0.24.0";
+import { readDXF, decodeDXF } from "./dxfread.js?v=0.24.0";
+import * as LS from "./localstore.js?v=0.24.0";
+import * as ST from "./struct.js?v=0.24.0";
+import { openStruct } from "./structui.js?v=0.24.0";
+import { openSolar } from "./solarui.js?v=0.24.0";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -52,7 +55,11 @@ const host = {
     return out;
   },
   onChange() { dirty = true; $("#saved").textContent = "ยังไม่บันทึก"; refresh(); draft(); },
-  onSelect(sel, obj, live) { showProps(sel, obj, live); if (!live && view) view.build(); },
+  onSelect(sel, obj, live) {                          // เลือกในผัง 2D → เลือกชิ้นเดียวกันใน 3D + ข้อมูลวัตถุ
+    if (live) return;
+    if (sk) { sk.S.clear(); if (sel) sk.S.add(`${sel.type}:${sel.id}`); sk.redeco(); }
+    showProps(sel, obj);
+  },
 };
 
 function ascSummary(im) {
@@ -70,11 +77,13 @@ function refresh() {
   const s = M.summary(hist.doc);
   $("#summary").innerHTML =
     `<b>สรุปแบบ</b><br>ผนัง ${s.walls} ช่วง · ยาวรวม ${s.wallLengthM.toLocaleString()} ม.<br>ประตู ${s.doors} · หน้าต่าง ${s.windows}<br>` +
-    `พื้นที่ตามกรอบผนัง ${s.footprintM2.toLocaleString()} ตร.ม.<br>` +
+    `พื้นที่ตามกรอบผนัง ${s.footprintM2.toLocaleString()} ตร.ม. · ${s.levels} ชั้น<br>` + (s.struct ? `โครงสร้าง ${s.struct} ชิ้น (ดู 🏗 โครงสร้าง)<br>` : "") +
     (pv && pv.count ? `<b>แผงโซลาร์ ${pv.count} แผง = ${s.pvKwp.toLocaleString()} kWp</b><br>เอียง ${s.pvTilt}° · หัน ${Math.round(s.pvAzimuth)}°` : "") +
     (hist.doc.imported ? ascSummary(hist.doc.imported) : pv && pv.count ? "" : "ไม่มีแผงโซลาร์ (ต้องมีผนังและหลังคา)");
   $("#doc-name").value = hist.doc.name;
   syncRoofInputs();
+  if (plan.level && !ST.levels(hist.doc).some((l) => l.id === plan.level.id)) plan.level = null;
+  if ($("#levelSel").options.length !== ST.levels(hist.doc).length + (ST.levels(hist.doc).length > 1 ? 1 : 0)) syncLevels();
 }
 
 // ---------------------------------------------------------------- แผงคุณสมบัติของสิ่งที่เลือก
@@ -89,33 +98,13 @@ const FIELDS = {
 };
 const NAMES = { walls: "ผนัง", openings: "ช่องเปิด", masses: "กล่อง", texts: "ข้อความ", dims: "มิติ", syms: "สัญลักษณ์", lines: "เส้น" };
 
-function showProps(sel, obj, live) {
-  const box = $("#sel-box");
-  if (!sel || !obj) { box.innerHTML = '<p class="muted">คลิกเลือกวัตถุเพื่อแก้ค่า · ค่าที่พิมพ์ใช้ตามนั้นทุกตัว</p>'; return; }
-  if (live && box.dataset.id === sel.id) return;          // ระหว่างลาก ไม่สร้างฟอร์มใหม่ (ไม่ให้ช่องที่พิมพ์อยู่หาย)
-  box.dataset.id = sel.id;
-  const rows = FIELDS[sel.type].map(([k, label, kind]) => {
-    const v = k === "len" ? Math.round(M.wallLength(obj)) : obj[k] ?? "";
-    if (Array.isArray(kind)) return `<label>${label}<select data-k="${k}">${kind.map((o) => `<option value="${o}" ${o === v ? "selected" : ""}>${o === "door" ? "ประตู" : "หน้าต่าง"}</option>`).join("")}</select></label>`;
-    return `<label>${label}<input data-k="${k}" ${kind === "text" ? "" : 'type="number" step="any"'} value="${String(v).replace(/"/g, "&quot;")}"></label>`;
-  }).join("");
-  box.innerHTML = `<h3>${NAMES[sel.type]}</h3><div class="form">${rows}</div><button id="del-sel">ลบ</button>`;
-  box.querySelectorAll("[data-k]").forEach((inp) => inp.addEventListener("change", () => {
-    const k = inp.dataset.k, val = inp.type === "number" ? Number(inp.value) : inp.value;
-    if (inp.type === "number" && (isNaN(val) || (val <= 0 && !["base", "sill", "rot", "offset"].includes(k)))) { toast("ค่าไม่ถูกต้อง — ไม่ได้เปลี่ยน"); return; }
-    hist.commit((d) => {
-      const o = d[sel.type].find((x) => x.id === sel.id); if (!o) return;
-      if (k === "len") { const u = M.norm(M.sub(o.b, o.a)); o.b = M.add(o.a, M.mul(u, val)).map((x) => Math.round(x * 1000) / 1000); }
-      else o[k] = val;
-      if (sel.type === "openings") {                     // เตือนแทนการบีบค่า (ค่าที่พิมพ์คงไว้)
-        const w = d.walls.find((x) => x.id === o.wall);
-        if (w && o.width > M.wallLength(w)) toast("ช่องเปิดกว้างกว่าผนัง — ตรวจค่าอีกครั้ง");
-        if (w && o.sill + o.height > w.height) toast("ช่องเปิดสูงเกินผนัง — ตรวจค่าอีกครั้ง");
-      }
-    });
-    host.onChange();
-  }));
-  $("#del-sel").onclick = () => plan.deleteSelected();
+/** ข้อมูลวัตถุอยู่ในถาดขวา (แผงเดียวกันทั้ง 2D และ 3D — entity.js) */
+function showProps() { if (ui) { ui.openPanel("entity", true); } }
+/** เลือกใน 3D → ผัง 2D ไฮไลต์ชิ้นเดียวกัน (ชนิดที่มีในผัง) */
+function onSelect3D(keys) {
+  const k = keys.find((x) => /^(walls|openings|masses|lines|texts|dims|syms|struct):/.test(x));
+  plan.sel = k ? { type: k.slice(0, k.indexOf(":")), id: k.slice(k.indexOf(":") + 1) } : null;
+  plan.render();
 }
 
 // ---------------------------------------------------------------- หลังคา/แผง/ค่าไซต์
@@ -137,17 +126,31 @@ $("#doc-name").addEventListener("change", (e) => { hist.commit((d) => (d.name = 
 // ---------------------------------------------------------------- เครื่องมือ/มุมมอง/คีย์ลัด
 $("#tools").addEventListener("click", (e) => { const b = e.target.closest("button[data-tool]"); if (b) setTool(b.dataset.tool); });
 function setTool(t) { $$("#tools button").forEach((b) => b.classList.toggle("on", b.dataset.tool === t)); plan.setTool(t); if (t === "symbol") $("#sym-q").closest("details").open = true; }
-$("#views").addEventListener("click", (e) => {
-  const b = e.target.closest("button[data-view]"); if (!b) return;
-  $$("#views button").forEach((x) => x.classList.toggle("on", x === b));
-  $("#viewarea").className = "views " + ({ "2d": "v2d", "3d": "v3d", split: "split" }[b.dataset.view]);
-  document.body.dataset.view = b.dataset.view;
+$("#views").addEventListener("click", (e) => { const b = e.target.closest("button[data-view]"); if (b) setMode(b.dataset.view); });
+/** โหมด 2D / 2D+3D / 3D: แสดงเฉพาะปุ่ม แถบ เมนู และแผงของโหมดนั้น (2D+3D = ทุกปุ่ม) */
+function setMode(m) {
+  $$("#views button").forEach((x) => x.classList.toggle("on", x.dataset.view === m));
+  $("#viewarea").className = "views " + ({ "2d": "v2d", "3d": "v3d", split: "split" }[m]);
+  document.body.dataset.view = m;
+  try { localStorage.setItem("ascaEditor.mode", m); } catch (e) { /* */ }
+  if (ui) ui.applyMode(m);
   setTimeout(() => { plan.resize(); view.resize(); }, 30);
-});
+}
+// ชั้นอาคาร (ผัง 2D แสดง/วาดทีละชั้น)
+function syncLevels() {
+  const L = ST.levels(hist.doc), sel = $("#levelSel"), cur = plan.level && L.find((l) => l.id === plan.level.id);
+  sel.innerHTML = (L.length > 1 ? '<option value="">ทุกชั้น</option>' : "") + L.map((l) => `<option value="${l.id}">${esc(l.name)} (${(l.z / 1000).toFixed(2)})</option>`).join("");
+  plan.level = cur || (L.length > 1 ? L[0] : null); sel.value = plan.level ? plan.level.id : "";
+  $("#plabel").textContent = plan.level ? `ผังพื้น${plan.level.name} · ระดับ ${(plan.level.z / 1000).toFixed(2)} ม.` : L.length > 1 ? "ผังรวมทุกชั้น" : "ผังพื้น";
+}
+$("#levelSel").addEventListener("change", (e) => { plan.level = ST.levels(hist.doc).find((l) => l.id === e.target.value) || null; syncLevels(); plan.render(); });
+// เมนูส่งออก
+$("#exportBtn").addEventListener("click", (e) => { e.stopPropagation(); $("#exportMenu").hidden = !$("#exportMenu").hidden; });
+addEventListener("click", () => { $("#exportMenu").hidden = true; });
 let ui = null;
-const KEYS = { v: "select", h: "pan", w: "wall", r: "room", d: "door", n: "window", b: "box", l: "line", m: "dim", t: "text", s: "symbol", e: "erase", k: "calib" };
+const KEYS = { v: "select", h: "pan", w: "wall", r: "room", d: "door", n: "window", b: "box", l: "line", m: "dim", t: "text", s: "symbol", e: "erase", k: "calib", c: "column", g: "beam", f: "footing" };
 document.addEventListener("keydown", (e) => {
-  const inField = e.target.matches("input, select, textarea") && e.target.id !== "vcb";
+  const inField = !!(e.target.matches && e.target.matches("input, select, textarea")) && e.target.id !== "vcb";
   if (e.key === "F1" && ui) { e.preventDefault(); ui.keysDlg(); return; }
   if ((e.ctrlKey || e.metaKey) && !inField) {
     const k = e.key.toLowerCase();
@@ -167,28 +170,32 @@ document.addEventListener("keydown", (e) => {
   if (inField) return;
   // ระหว่างวาด: ตัวเลข/จุลภาคไปที่ช่องระยะ (แบบ SketchUp)
   if (plan.draft && /^[0-9.,x*]$/.test(e.key) && e.target.id !== "vcb") { $("#vcb").focus(); return; }
+  if ((e.key === "Delete" || e.key === "Backspace") && sk && sk.S.size && !plan.draft) { e.preventDefault(); ui.ext.removeSel(); plan.select(null); return; }   // ลบที่เลือก (2D หรือ 3D) ทุกชนิด
   if (plan.key(e)) { e.preventDefault(); return; }
   if (e.target.id === "vcb") return;
+  if (over3d && /^[0-9.,x*s-]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && (/^[0-9.,-]$/.test(e.key) || ui.ext.busy() || $("#vcb").value)) { vcb3d = true; $("#vcb").focus(); return; }   // พิมพ์ระยะ/มุมได้ทันทีแบบ SketchUp
   if (over3d && !e.ctrlKey && !e.metaKey && !e.altKey) {
-    if (e.key === "Escape") { if (!ui.ext.cancel()) setTool3d("select"); return; }
+    if (e.key === "Escape") { if (!ui.ext.cancel()) { if (sk.tool === "select" && sk.S.size) { sk.S.clear(); ui.ext.selChanged(); } else setTool3d("select"); } return; }
     if (e.key === "Enter") { if (ui.ext.busy()) { e.preventDefault(); ui.ext.finish(); } return; }
     if (e.key === "Z" && e.shiftKey) { e.preventDefault(); view.fit(); return; }
     if (sk.tool === "walk" && /^(w|a|s|d|arrow\w+)$/i.test(e.key)) return;
     const k3 = { o: "orbit", " ": "select", p: "pushpull", r: "rect", m: "move", q: "rotate", b: "paint", t: "tape", h: "pan", z: "zoom", l: "line", c: "circle", a: "arc", e: "eraser", s: "scale", f: "offset" }[e.key.toLowerCase()];
     if (k3) { e.preventDefault(); setTool3d(k3); return; }
-    if (e.key === "Delete") { ui.ext.removeSel(); sk.remove(); return; }
+    if (e.key === "Delete") { ui.ext.removeSel(); return; }
   }
   if (!e.ctrlKey && !e.metaKey && !e.altKey && KEYS[e.key.toLowerCase()]) setTool(KEYS[e.key.toLowerCase()]);
 });
 document.addEventListener("keyup", (e) => plan.key(e));
-let over3d = false;
-$("#pane3d").addEventListener("pointerenter", () => (over3d = true)); $("#pane3d").addEventListener("pointerleave", (e) => { if (!e.relatedTarget || e.relatedTarget.id !== "vcb") over3d = false; });
+let over3d = false, vcb3d = false;
+$("#pane2d").addEventListener("pointerenter", () => (vcb3d = false)); $("#pane3d").addEventListener("pointerenter", () => (over3d = true)); $("#pane3d").addEventListener("pointerleave", (e) => { if (!e.relatedTarget || e.relatedTarget.id !== "vcb") over3d = false; });
 $("#vcb").addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && ui && (over3d || ui.ext.busy()) && ui.ext.typed($("#vcb").value)) { e.preventDefault(); $("#vcb").value = ""; $("#vcb").blur(); return; }
+  if (e.key === "Enter" && ui && (over3d || vcb3d || ui.ext.busy()) && ui.ext.typed($("#vcb").value)) { e.preventDefault(); $("#vcb").value = ""; $("#vcb").blur(); vcb3d = false; return; }
+  if (e.key === "Escape") vcb3d = false;
   if (e.key === "Enter") { e.preventDefault(); plan.key(e); $("#vcb").blur(); }
   if (e.key === "Escape") { $("#vcb").value = ""; $("#vcb").blur(); plan.key(e); }
 });
 $("#ortho").addEventListener("change", (e) => (plan.ortho = e.target.checked));
+$("#showStruct").addEventListener("change", (e) => { plan.showStruct = e.target.checked; plan.render(); });
 $("#snap").addEventListener("change", (e) => (plan.snapOn = e.target.checked));
 $("#grid").addEventListener("change", (e) => { plan.grid = Number(e.target.value); plan.render(); });
 // ---------------------------------------------------------------- เครื่องมือ 3D (SketchUp)
@@ -227,6 +234,16 @@ async function act(a) {
   if (a === "undo") { if (hist.undo()) { plan.select(null); host.onChange(); } return; }
   if (a === "redo") { if (hist.redo()) { plan.select(null); host.onChange(); } return; }
   if (a === "fit2d") return plan.fit();
+  if (a === "struct") return openStruct({ hist, onChange: host.onChange, status, output, levelsChanged: () => { syncLevels(); plan.render(); }, select: (k) => { sk.S.clear(); sk.S.add(k); ui.ext.selChanged(); $("#struct-dlg").hidden = true; } });
+  if (a === "struct-close") { $("#struct-dlg").hidden = true; return; }
+  if (a === "solar") return openSolar({ hist, status, CLOUD });
+  if (a === "solar-close") { $("#solar-dlg").hidden = true; return; }
+  if (a === "level-add") {
+    const L = ST.levels(d), l = L[L.length - 1], z = Number(prompt(`ระดับพื้นชั้น ${L.length + 1} (มม. จาก ±0.00)`, String(l.z + (l.h || 3000))));
+    if (!isFinite(z)) return;
+    hist.commit((dd) => { dd.levels = JSON.parse(JSON.stringify(L)); dd.levels.push({ id: M.uid("L"), name: `ชั้น ${L.length + 1}`, z, h: 3000 }); });
+    plan.level = ST.levels(hist.doc)[L.length]; host.onChange(); syncLevels(); status(`เพิ่ม${plan.level.name} ที่ระดับ ${z.toLocaleString()} มม. — ผนัง/เสา/คานที่วาดต่อจากนี้อยู่ชั้นนี้`); return;
+  }
   if (a === "fit3d") return view.fit();
   if (a === "group3d") return sk.group();
   if (a === "ungroup3d") return sk.ungroup();
@@ -248,7 +265,7 @@ async function act(a) {
   if (a === "set-close") { $("#set-dlg").hidden = true; return; }
   if (a === "set-open") return openDrawset();
   if (a === "plot-go") return doPlot();
-  if (a === "dxf") return output(safe(d.name) + ".dxf", new Blob([toDXF(d)], { type: "application/dxf" }), "plan.dxf");
+  if (a === "dxf") return output(safe(d.name) + (plan.level ? "_" + plan.level.name : "") + ".dxf", new Blob([toDXF(d, { level: plan.level })], { type: "application/dxf" }), "plan.dxf");
   if (a === "glb") return output(safe(d.name) + ".glb", await view.exportGLB(), "model.glb");
   if (a === "render") return ui.renderDlg();
   if (a === "yield") {
@@ -274,7 +291,7 @@ async function doPlot() {
   $("#plot-msg").textContent = "กำลังสร้าง PDF…";
   try {
     const r = await fetch("/api/plot/dxf", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...o, area: null, dxf: toDXF(hist.doc), name: hist.doc.name }) });
+      body: JSON.stringify({ ...o, area: null, dxf: toDXF(hist.doc, { level: plan.level }), name: hist.doc.name + (plan.level ? " " + plan.level.name : "") }) });
     const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status);
     const a = document.createElement("a");                // ลิงก์ให้กดเอง (เบราว์เซอร์บล็อกการเปิดแท็บอัตโนมัติ)
     a.href = j.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = "📄 เปิด PDF";
@@ -442,19 +459,24 @@ async function start() {
     if (p && !doc) { doc = M.newDoc(p.name); doc.site.lat = p.lat ?? null; doc.site.lon = p.lon ?? null; }
   }
   let saved = null; try { saved = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) { /* */ }
-  if (saved && saved.app === "pee_architec-drawing" && confirm("มีแบบที่ยังไม่ได้บันทึกจากครั้งก่อน — เปิดต่อหรือไม่?")) doc = saved;
+  const START = params.get("start");                   // ?start=demo · ?start=new (จากหน้าแรก)
+  if (!doc && START === "new") doc = M.newDoc("แบบใหม่");
+  if (!doc && START !== "demo" && saved && saved.app === "pee_architec-drawing" && confirm("มีแบบที่ยังไม่ได้บันทึกจากครั้งก่อน — เปิดต่อหรือไม่?")) doc = saved;
   let firstScene = false;
   if (!doc) { doc = demoDoc(); firstScene = true; }
   hist.doc = M.normalize(doc);
   if (hist.doc.imported) hist.doc.imported = Object.assign({ outlines: [] }, hist.doc.imported);
-  refresh(); plan.fit(); view.fit(); showProps(null);
+  refresh(); plan.fit(); view.fit();
   attachImported();
   renderScenes(); sunNow();
-  ui = initSkUI({ view, sk, hist, M, status, sunNow, act, setTool3d, onChange: host.onChange,      // หน้าตาแบบ SketchUp ของมุมมอง 3D (ตามหน้าตัวอย่าง 0.23.0)
+  ui = initSkUI({ view, sk, hist, M, status, sunNow, act, setTool3d, setTool2d: (t) => setTool(t), onChange: host.onChange, onSelect3D,      // หน้าตาแบบ SketchUp ของมุมมอง 3D (ตามหน้าตัวอย่าง 0.23.0)
     demo: openDemo, saveImage: (blob, suffix) => output(safe(hist.doc.name) + suffix, blob, "render_editor.png") });
   if (firstScene && hist.doc.scenes && hist.doc.scenes[0]) { const s0 = hist.doc.scenes[0]; view.camera.position.fromArray(s0.pos); view.controls.target.fromArray(s0.target); view.controls.update(); $("#sun-date").value = s0.sun.date; $("#sun-time").value = s0.sun.time; sunNow(); }
   for (const ref of hist.doc.cads) loadCad(ref, false);
-  setTool("select");
+  syncLevels();
+  let m0 = "split"; try { m0 = localStorage.getItem("ascaEditor.mode") || "split"; } catch (e) { /* */ }
+  setMode(m0);
+  setTool("select"); setTool3d("select");
   loadSymbols();
 }
 
@@ -554,7 +576,7 @@ async function traceLocal(f) {
 function parseDxfLocal(buf, name) {
   return new Promise((res, rej) => {
     let w;
-    try { w = new Worker(new URL("./dxfworker.js?v=0.23.0", import.meta.url), { type: "module" }); } catch (err) { w = null; }
+    try { w = new Worker(new URL("./dxfworker.js?v=0.24.0", import.meta.url), { type: "module" }); } catch (err) { w = null; }
     if (!w) { try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } return; }
     w.onmessage = (ev) => { w.terminate(); ev.data.error ? rej(new Error(ev.data.error)) : res(ev.data.data); };
     w.onerror = (ev) => { w.terminate(); try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } ev.preventDefault(); };
@@ -682,9 +704,66 @@ $("#cad-list").addEventListener("click", (e) => {
   toast(`สร้าง${{ lines: "เส้น", walls: "ผนัง", masses: "กล่อง" }[key]} ${add.length.toLocaleString()} ชิ้นจากชั้น ${L} — แก้ไข/ลบได้ · Ctrl+Z ย้อนได้`);
 });
 
-/** แบบตัวอย่างตอนเปิดครั้งแรก: บ้านชั้นเดียว 10 × 8 ม. — ลบได้ด้วยปุ่ม "ใหม่" */
-/** แบบตัวอย่าง: บ้าน 12×8 ม. + ลานหิน สระว่ายน้ำ โรงจอดรถ รถ ต้นไม้ เตียงอาบแดด รั้วหิน + ฉาก 3 มุม (ภาพนำเสนอแบบหน้าตัวอย่าง) */
+/** แบบตัวอย่างหลัก (เปิดครั้งแรก): บ้านพักอาศัย 2 ชั้น 8 × 10 ม. โครงสร้าง คสล. ครบ (ฐานรากเข็ม เสา คานคอดิน คานชั้น 2 คานหลังคา พื้น บันได)
+ *  + หลังคาปั้นหยา + แผงโซลาร์บนหลังคา (ใช้สร้าง Single Line Diagram ได้จริง) + โรงจอดรถ ทางเข้า ต้นไม้ · พิกัดขอนแก่น (มีแคชอากาศ) */
 function demoDoc() {
+  const d = M.newDoc("บ้านพักอาศัย 2 ชั้น คสล. + โซลาร์รูฟท็อป (ตัวอย่าง)"), rect = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+  const uid = M.uid, X = [0, 4000, 8000], Y = [0, 3500, 7000, 10000], Z2 = 3200, ZR = 6200;
+  Object.assign(d.site, { lat: 16.47, lon: 102.84, north: 0 });
+  d.levels = [{ id: "L1", name: "ชั้น 1", z: 0, h: 3200 }, { id: "L2", name: "ชั้น 2", z: Z2, h: 3000 }];
+  const wall = (a, b, thick, base, height, mat) => { const w = { id: uid("w"), a, b, thick, height, mat }; if (base) w.base = base; d.walls.push(w); return w; };
+  const ring = (base, height) => [[0, 0], [8000, 0], [8000, 10000], [0, 10000]].map((a, i, c) => wall(a, c[(i + 1) % 4], 200, base, height, i === 0 ? "white" : i === 3 && !base ? "stone" : "white"));
+  const op = (w, kind, t, width, height, sill, mark) => d.openings.push({ id: uid("o"), wall: w.id, kind, t, width, height, sill, mark });
+  // ชั้น 1: นั่งเล่น + รับประทานอาหาร (หน้า) · ครัว + บันได (หลัง) · ห้องน้ำ
+  const g = ring(0, 3200);
+  const p1 = wall([4000, 0], [4000, 7000], 120, 0, 3200, "interior"), p2 = wall([0, 7000], [8000, 7000], 120, 0, 3200, "interior");
+  op(g[0], "door", 0.22, 1000, 2200, 0, "D1"); op(g[0], "window", 0.7, 2400, 2100, 300, "W1"); op(g[1], "window", 0.25, 1200, 1200, 900, "W2"); op(g[1], "window", 0.82, 1200, 1200, 900, "W2");
+  op(g[2], "window", 0.3, 1500, 1100, 1000, "W3"); op(g[2], "door", 0.85, 900, 2100, 0, "D2"); op(g[3], "window", 0.55, 1500, 1200, 900, "W2"); op(p1, "door", 0.75, 900, 2100, 0, "D3"); op(p2, "door", 0.82, 900, 2100, 0, "D3");
+  // ชั้น 2: ห้องนอน 2 ห้อง + ห้องน้ำ + โถงบันได
+  const u = ring(Z2, 3000);
+  const q1 = wall([4000, 0], [4000, 7000], 120, Z2, 3000, "interior"), q2 = wall([5300, 7000], [8000, 7000], 120, Z2, 3000, "interior");
+  op(u[0], "window", 0.25, 1500, 1500, 800, "W4"); op(u[0], "window", 0.75, 1500, 1500, 800, "W4"); op(u[1], "window", 0.3, 1200, 1200, 900, "W2"); op(u[1], "window", 0.85, 600, 600, 1600, "W5");
+  op(u[2], "window", 0.7, 1200, 1100, 1000, "W3"); op(u[3], "window", 0.3, 1200, 1200, 900, "W2"); op(q1, "door", 0.85, 900, 2100, 0, "D3"); op(q2, "door", 0.5, 800, 2100, 0, "D4");
+  Object.assign(d.roof, { type: "gable", ridge: "short", pitch: 20, overhang: 800, mat: "metal" });   // สันตามด้านสั้น → หน้าหลังคาหันใต้ วางแผงได้เต็มผืน
+  Object.assign(d.pv, { enabled: true, watt: 550, edge: 400 });
+  // โครงสร้าง คสล. (fc' 240 · SD40): ฐานรากเข็ม · เสา · คานคอดิน GB1 · คานชั้น 2 B1 · คานหลังคา RB1 · พื้น S0/S1 · บันได ST1
+  const S = d.struct, inner = (x, y) => x === 4000 && y > 0 && y < 10000;
+  for (const x of X) for (const y of Y) {
+    const big = inner(x, y);
+    S.push({ id: uid("c"), kind: "footing", p: [x, y], w: big ? 1500 : 1200, l: big ? 1500 : 1200, t: big ? 400 : 350, z: -1200, mark: big ? "F2" : "F1", pile: big ? "เข็มตอก I-0.22 ยาว 8 ม. 3 ต้น รับ 20 ตัน/ต้น" : "เข็มตอก I-0.18 ยาว 6 ม. 2 ต้น รับ 15 ตัน/ต้น" });
+    S.push({ id: uid("c"), kind: "column", p: [x, y], w: big ? 250 : 200, l: big ? 250 : 200, base: -1200, top: ZR, mark: big ? "C2" : "C1", rebar: big ? "8-DB16 · ปลอก RB6@0.15" : "4-DB16 · ปลอก RB6@0.15" });
+  }
+  const beams = (z, mark, w, dep, rebar, only) => {
+    for (const x of X) for (let i = 0; i < Y.length - 1; i++) if (!only || only(x, null)) S.push({ id: uid("c"), kind: "beam", a: [x, Y[i]], b: [x, Y[i + 1]], w, d: dep, z, mark, rebar });
+    for (const y of Y) for (let i = 0; i < X.length - 1; i++) if (!only || only(null, y)) S.push({ id: uid("c"), kind: "beam", a: [X[i], y], b: [X[i + 1], y], w, d: dep, z, mark, rebar });
+  };
+  beams(0, "GB1", 200, 500, "บน 2-DB12 · ล่าง 3-DB16 · ปลอก RB6@0.15");
+  beams(Z2, "B1", 200, 500, "บน 2-DB16 · ล่าง 3-DB16 · ปลอก RB6@0.15");
+  beams(ZR, "RB1", 200, 400, "บน 2-DB12 · ล่าง 2-DB12 · ปลอก RB6@0.20", (x, y) => x === 0 || x === 8000 || y === 0 || y === 10000);
+  S.push({ id: uid("c"), kind: "slab", pts: rect(0, 0, 8000, 10000), t: 100, z: 0, mark: "S0" });
+  S.push({ id: uid("c"), kind: "slab", pts: rect(0, 0, 8000, 10000), holes: [rect(400, 7300, 5100, 8700)], t: 120, z: Z2, mark: "S1" });
+  S.push({ id: uid("c"), kind: "stair", p: [500, 8000], rot: 0, w: 1200, n: 18, run: 250, base: 0, rise: Z2, mark: "ST1" });
+  // ภายนอก: ลานหน้าบ้าน ทางเข้า โรงจอดรถ รั้ว ต้นไม้
+  const mass = (name, pts, height, mat, tag, base = 0) => d.masses.push({ id: uid("m"), name, pts, base, height, mat, tag });
+  const item = (kind, x, y, rot = 0, sc = 1, z = 0) => d.items3d.push({ id: uid("i"), kind, p: [x, y], z, rot, s: sc });
+  mass("ลานหน้าบ้าน (หินแกรนิต)", rect(-800, -2600, 8800, 0), 100, "granite", "land");
+  mass("ทางเข้า คอนกรีต", rect(9200, -9000, 13600, 6500), 80, "concrete", "land");
+  for (const [x, y] of [[9400, 200], [13400, 200], [9400, 6200], [13400, 6200]]) mass("เสาโรงจอดรถ (เหล็ก)", rect(x - 75, y - 75, x + 75, y + 75), 2650, "alu", "masses", 80);
+  mass("หลังคาโรงจอดรถ", rect(9100, -100, 13700, 6500), 150, "white2", "masses", 2730);
+  mass("รั้วหลัง", rect(-4000, 13500, 16000, 13700), 1800, "white", "land"); mass("รั้วข้าง", rect(-4000, -9000, -3800, 13500), 1800, "white", "land"); mass("รั้วข้าง", rect(15800, -9000, 16000, 13500), 1800, "white", "land");
+  item("car", 11400, 3200, 90);
+  for (const [x, y, sc] of [[-2200, 11000, 1.1], [-2400, -6500, 1.2], [6500, 12200, 0.9], [14800, 10800, 1]]) item("tree", x, y, (((x + y) % 360) + 360) % 360, sc);
+  for (let i = 0; i < 6; i++) item("shrub", 300 + i * 1500, -3200, i * 50, 0.85);
+  item("lamp", 8900, -2500);
+  d.dims.push({ id: uid("d"), a: [0, 0], b: [4000, 0], offset: -3800 }, { id: uid("d"), a: [4000, 0], b: [8000, 0], offset: -3800 }, { id: uid("d"), a: [0, 0], b: [8000, 0], offset: -4800 },
+    { id: uid("d"), a: [8000, 0], b: [8000, 3500], offset: -1600 }, { id: uid("d"), a: [8000, 3500], b: [8000, 7000], offset: -1600 }, { id: uid("d"), a: [8000, 7000], b: [8000, 10000], offset: -1600 });
+  d.texts.push({ id: uid("t"), p: [1300, 3500], s: "นั่งเล่น", h: 300 }, { id: uid("t"), p: [5300, 3500], s: "รับประทานอาหาร", h: 300 }, { id: uid("t"), p: [6000, 8800], s: "ครัว", h: 300 });
+  const yr = new Date().getFullYear(), sc = (name, pos, target, time) => ({ name, pos, target, sun: { date: `${yr}-04-15`, time } });
+  d.scenes = [sc("มุมสูงหน้าบ้าน", [21, 13, 20], [4.5, 2.6, -4], "09:30"), sc("หน้าบ้าน ระดับสายตา", [5, 1.65, 13], [4, 3, -4], "16:00"), sc("พลบค่ำ", [-12, 4, 17], [4, 3, -5], "18:15")];
+  return d;
+}
+/** แบบตัวอย่างภาพนำเสนอ: บ้าน 12×8 ม. + ลานหิน สระว่ายน้ำ โรงจอดรถ รถ ต้นไม้ (เดิม 0.23.0) */
+function demoPool() {
   const d = M.newDoc("บ้านตัวอย่างพร้อมสระ 12×8 ม."), rect = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
   const mass = (name, pts, height, mat, tag, base = 0) => d.masses.push({ id: M.uid("m"), name, pts, base, height, mat, tag });
   const item = (kind, x, y, rot = 0, s = 1, z = 0) => d.items3d.push({ id: M.uid("i"), kind, p: [x, y], z, rot, s });
@@ -718,12 +797,12 @@ function demoDoc() {
   d.scenes = [sc("มุมสูงหน้าบ้าน", [26, 11, 27], [6, 1.2, 3], "09:30"), sc("ริมสระว่ายน้ำ", [-5.5, 2.2, 16], [7, 1.6, 4], "15:30"), sc("พลบค่ำ", [21, 3.2, 19], [6, 2, 1], "18:15")];
   return d;
 }
-function openDemo() {
-  if (dirty && !confirm("แบบปัจจุบันยังไม่บันทึก — เปิดแบบตัวอย่าง (บ้านพร้อมสระ)?")) return;
-  hist.replace(demoDoc()); plan.select(null); host.onChange(); renderScenes(); plan.fit();
+function openDemo(which) {
+  if (dirty && !confirm("แบบปัจจุบันยังไม่บันทึก — เปิดแบบตัวอย่าง?")) return;
+  hist.replace(which === "pool" ? demoPool() : demoDoc()); plan.level = null; plan.select(null); host.onChange(); syncLevels(); renderScenes(); plan.fit();
   const s = hist.doc.scenes[0]; view.camera.position.fromArray(s.pos); view.controls.target.fromArray(s.target); view.controls.update();
   $("#sun-date").value = s.sun.date; $("#sun-time").value = s.sun.time; sunNow(); view.setStyle("render"); ui.refresh();
-  status("แบบตัวอย่าง: บ้านพร้อมสระ · ลองคลิกฉากในถาด ฉาก หรือ 📷 Render ภาพนำเสนอ");
+  status(which === "pool" ? "แบบตัวอย่าง: บ้านพร้อมสระ · ลองคลิกฉากในถาด ฉาก หรือ 📷 Render ภาพนำเสนอ" : "แบบตัวอย่าง: บ้าน 2 ชั้น คสล. — ลองเปลี่ยน ชั้น ที่แถบผัง 2D · 🏗 โครงสร้าง = ตรวจขนาด + ตาราง · ⚡ โซลาร์ + SLD = แบบไฟฟ้าจริง");
 }
 
 // ---------------------------------------------------------------- ผู้ช่วย AI piBot: สถานะหน้า (ตัวเลขจากโค้ด) + ต่อไปทำอะไร + ช่องที่ผู้ช่วยตั้งค่าได้ (หลังผู้ใช้ยืนยัน)

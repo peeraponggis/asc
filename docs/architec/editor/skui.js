@@ -2,10 +2,12 @@
 // เมนู 9 หมวด · แถบเครื่องมือ (มาตรฐาน · เงา · รูปแบบ · ตำแหน่ง · มุมมอง · ตัด/ฉาก) · ชุดเครื่องมือใหญ่ 39 ปุ่ม · ถาดเครื่องมือ 11 แผง (ติดขวา)
 // ข้อมูลโมเดล 11 หน้า · แถบเครื่องมือ (ติ๊กเลือก) · Render ภาพนำเสนอ · ช่องเดิมของ main.js (#sun-date #sun-time #section #scenes #mat3d) ยังใช้ร่วม
 import * as THREE from "three";
-import { STYLES, TAGS } from "./view3d.js?v=0.23.0";
-import { PALETTE, swatch } from "./materials.js?v=0.23.0";
-import { KINDS } from "./props3d.js?v=0.23.0";
-import { Tools3D, SETTINGS } from "./tools3d.js?v=0.23.0";
+import { STYLES, TAGS } from "./view3d.js?v=0.24.0";
+import { PALETTE, swatch } from "./materials.js?v=0.24.0";
+import { KINDS } from "./props3d.js?v=0.24.0";
+import { entityHTML, applyField } from "./entity.js?v=0.24.0";
+import * as SEL from "./sel3d.js?v=0.24.0";
+import { Tools3D, SETTINGS } from "./tools3d.js?v=0.24.0";
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -55,6 +57,32 @@ const IC = {
   walk: '<path d="M8 4c2 0 3 2 2 5l-2 4H5c-1-3 0-9 3-9zM16 9c2 0 3 2 2 5l-2 4h-3c-1-3 0-9 3-9z" fill="currentColor"/>', section: '<circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16" stroke="#e08a2c"/><path d="M16 8l3-3"/>',
   tray: '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M15 4v16M17 8h2M17 11h2"/>', toolbars: '<rect x="3" y="4" width="18" height="5"/><rect x="3" y="12" width="8" height="8"/>',
 };
+// ไอคอนเครื่องมือผัง 2D (ชุดเดียวกับ 3D) + งานโครงสร้าง
+Object.assign(IC, {
+  p2wall: '<rect x="3" y="9" width="18" height="6" fill="currentColor" fill-opacity=".35"/><path d="M3 9h18M3 15h18M3 9v6M21 9v6"/>',
+  p2room: '<path d="M4 4h16v16H4z" stroke-width="2.6"/><path d="M14 20v-5"/>',
+  p2door: '<path d="M4 20h4M16 20h4" stroke-width="2.4"/><path d="M8 20V6"/><path d="M8 6a12 12 0 0 1 12 14" stroke-dasharray="2 2"/>',
+  p2window: '<rect x="3" y="9" width="18" height="6"/><path d="M3 12h18" stroke="#3a8fd6"/>',
+  p2box: '<path d="M4 8l8-4 8 4v8l-8 4-8-4z" fill="currentColor" fill-opacity=".15"/><path d="M4 8l8 4 8-4M12 12v8"/>',
+  p2line: '<path d="M4 18L20 6"/><circle cx="4" cy="18" r="1.6"/><circle cx="20" cy="6" r="1.6"/>',
+  p2dim: '<path d="M4 7v10M20 7v10M4 12h16" stroke="#b5522b"/><path d="M7 10l-3 2 3 2M17 10l3 2-3 2" stroke="#b5522b"/>',
+  p2text: '<path d="M5 6h14M12 6v13M9 19h6"/>',
+  p2symbol: '<circle cx="12" cy="12" r="7"/><path d="M12 5v14M5 12h14"/>',
+  p2calib: '<path d="M3 17L17 3l4 4L7 21H3z"/><path d="M8 12l2 2M11 9l2 2M14 6l2 2"/>',
+  p2column: '<rect x="7" y="7" width="10" height="10" fill="currentColor"/><path d="M3 12h4M17 12h4M12 3v4M12 17v4" stroke-dasharray="1.5 1.5"/>',
+  p2beam: '<rect x="2" y="9" width="4" height="6" fill="currentColor"/><rect x="18" y="9" width="4" height="6" fill="currentColor"/><path d="M6 10h12M6 14h12" stroke-dasharray="3 2"/>',
+  p2footing: '<rect x="4" y="4" width="16" height="16" stroke-dasharray="3 2"/><rect x="9" y="9" width="6" height="6" fill="currentColor"/>',
+  p2slab: '<path d="M3 16l5-7h13l-5 7z" fill="currentColor" fill-opacity=".18"/><path d="M3 16l5-7h13l-5 7zM6 16l4-5.5M10 16l4-5.5M14 16l4-5.5"/>',
+  p2stair: '<path d="M3 20h4v-4h4v-4h4V8h4V4" stroke-width="2"/>',
+  p2fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><rect x="8" y="8" width="8" height="8" stroke-dasharray="2 1.5"/>',
+});
+const TOOLS2D = {
+  select: ["เลือก / ย้าย", "V", "select"], pan: ["เลื่อนจอ", "H", "pan"], wall: ["ผนัง", "W", "p2wall"], room: ["ห้องสี่เหลี่ยม", "R", "p2room"],
+  door: ["ประตู", "D", "p2door"], window: ["หน้าต่าง", "N", "p2window"], box: ["กล่อง push-pull", "B", "p2box"], line: ["เส้น", "L", "p2line"],
+  dim: ["มิติ", "M", "p2dim"], text: ["ข้อความ", "T", "p2text"], symbol: ["สัญลักษณ์", "S", "p2symbol"], erase: ["ลบ", "E", "eraser"],
+  column: ["เสา", "C", "p2column"], beam: ["คาน", "G", "p2beam"], footing: ["ฐานราก", "F", "p2footing"], slab: ["พื้นโครงสร้าง", "", "p2slab"], stair: ["บันได", "", "p2stair"], calib: ["ตั้งระยะภาพลอกแบบ", "K", "p2calib"],
+};
+const BIG2 = [["select", "pan"], ["wall", "room"], ["door", "window"], ["box", "line"], ["dim", "text"], ["symbol", "erase"], "งานโครงสร้าง", ["column", "beam"], ["footing", "slab"], ["stair", "calib"]];
 const icon = (k) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${IC[k] || IC.info}</svg>`;
 
 // ------------------------------------------------------------------ เครื่องมือ 39 ปุ่ม (ชุดเครื่องมือใหญ่ · Large Tool Set) — [ชื่อไทย, อังกฤษ, คีย์, คำแนะนำ]
@@ -104,7 +132,7 @@ const IFC = { walls: "IfcWall", openings: "IfcDoor / IfcWindow", roof: "IfcRoof"
 export function initSkUI(opts) {
   const { view, sk, hist, M, status, sunNow, act } = opts;
   view.fmtLen = fmtLen; view.dimText = SETTINGS.dimText;
-  const ext = new Tools3D(view, sk, { hist, status, onChange: opts.onChange, defaults: () => ({}) });
+  const ext = new Tools3D(view, sk, { hist, status, onChange: opts.onChange, defaults: () => ({}), onSelect3D: (ks) => { renderTray("entity"); renderTray("outliner"); opts.onSelect3D && opts.onSelect3D(ks); } });
   if (store.get("theme", "")) document.documentElement.dataset.theme = store.get("theme", "");
   const toast = (m) => status(m);
 
@@ -151,6 +179,9 @@ export function initSkUI(opts) {
     d.querySelectorAll("[data-tg]").forEach((c) => (c.onchange = () => { c.checked ? tgHide.delete(c.dataset.tg) : tgHide.add(c.dataset.tg); store.set("tgHide", [...tgHide]); applyTg(); }));
   }
 
+  // ---------------------------------------------------------------- เครื่องมือผัง 2D (ซ้ายของผัง · 2 คอลัมน์ ชุดไอคอนเดียวกับ 3D)
+  $("#tools").innerHTML = BIG2.map((row) => typeof row === "string" ? `<hr><small class="bigcap">${row}</small>` : row.map((t) => { const d = TOOLS2D[t], tt = `${d[0]}${d[1] ? " (" + d[1] + ")" : ""}`; return `<button type="button" data-tool="${t}" class="${t === "select" ? "on" : ""}" title="${esc(tt)}" aria-label="${esc(tt)}">${icon(d[2])}</button>`; }).join("")).join("");
+  if ($("#fit2dBtn")) $("#fit2dBtn").innerHTML = icon("p2fit");
   // ---------------------------------------------------------------- ชุดเครื่องมือใหญ่ (ซ้าย · 2 คอลัมน์)
   const big = $("#tools3d");
   big.innerHTML = BIG.map((row) => row === "-" ? "<hr>" : row.map((t) => { if (!t) return "<span></span>"; const d = TOOLS[t], tt = `${d[0]} (${d[1]}${d[2] ? " · " + d[2] : ""})`; return ACTS.has(t) ? `<button type="button" data-a3="${t}" title="${esc(tt)}" aria-label="${esc(tt)}">${icon(ICK[t] || t)}</button>` : `<button type="button" data-t3="${t}" title="${esc(tt)}" aria-label="${esc(tt)}">${icon(ICK[t] || t)}</button>`; }).join("")).join("");
@@ -189,25 +220,30 @@ export function initSkUI(opts) {
   });
 
   // ---------------------------------------------------------------- เมนู (9 เมนู แบบ SketchUp)
-  const T3 = (t) => () => opts.setTool3d(t);
+  const T3 = (t) => () => opts.setTool3d(t), T2 = (t) => () => opts.setTool2d(t);
+  let mode = "split";
   const MENUS = [
-    ["ไฟล์", [["ใหม่", "Ctrl+N", () => act("new")], ["เปิด…", "Ctrl+O", () => $("#open-file").click()], ["บันทึก", "Ctrl+S", () => act("save")], ["เปิดแบบตัวอย่าง: บ้านพร้อมสระ", "", () => opts.demo()], "-",
+    ["ไฟล์", [["ใหม่", "Ctrl+N", () => act("new")], ["เปิด…", "Ctrl+O", () => $("#open-file").click()], ["บันทึก", "Ctrl+S", () => act("save")], ["เปิดแบบตัวอย่าง: บ้าน 2 ชั้น คสล. + โซลาร์ (งานจริง)", "", () => opts.demo()], ["เปิดแบบตัวอย่าง: บ้านพร้อมสระ (ภาพนำเสนอ)", "", () => opts.demo("pool")], "-",
       ["นำเข้าไฟล์ CAD (DXF/DWG/PDF)…", "", () => act("cad")], ["ภาพลอกแบบ…", "", () => $("#trace-file").click()], "-",
       ["ส่งออกภาพ (Render)…", "", () => renderDlg()], ["ส่งออก GLB → Blender", "", () => act("glb")], ["ส่งออก DXF (ผัง 2D)", "", () => act("dxf")], ["Plot PDF…", "Ctrl+P", () => act("plot")], ["ชุดแบบก่อสร้าง A3…", "", () => act("drawset")]]],
     ["แก้ไข", [["ย้อน", "Ctrl+Z", () => act("undo")], ["ทำซ้ำ", "Ctrl+Y", () => act("redo")], "-", ["ตัด", "Ctrl+X", () => ext.copy(true)], ["คัดลอก", "Ctrl+C", () => ext.copy(false)], ["วาง", "Ctrl+V", () => ext.paste()], ["ลบที่เลือก", "Delete", STD.erase], "-",
-      ["เลือกทั้งหมด (3D)", "Ctrl+A", () => selectAll()], ["ยกเลิกเลือก", "Esc", () => { sk.sel.clear(); ext.itemSel.clear(); view.build(); }], "-", ["รวมกลุ่ม (Make Group)", "", () => sk.group()], ["แยกกลุ่ม", "", () => sk.ungroup()]]],
-    ["มุมมอง", [["แถบเครื่องมือ…", "", toolbarsDlg], ["ถาดเครื่องมือ (Default Tray)", "", () => toggleTray()], "-", ["เงา", "", () => $("#skShadow").click()], ["หมอก", "", () => { view.setFog(!view.fogOn); status(view.fogOn ? "เปิดหมอก (ไกลจางลง)" : "ปิดหมอก"); }],
-      ["แกน", "", () => { view.axes.visible = !view.axes.visible; }], "-", ...STYLES.map((s) => [`รูปแบบ: ${s.th}`, "", () => setStyle(s.k)]), "-",
+      ["เลือกทั้งหมด", "Ctrl+A", () => selectAll(), "3d"], ["ยกเลิกเลือก", "Esc", () => { sk.S.clear(); ext.selChanged(); }], "-", ["รวมกลุ่ม (Make Group)", "", () => sk.group()], ["แยกกลุ่ม", "", () => sk.ungroup()]]],
+    ["มุมมอง", [["แถบเครื่องมือ…", "", toolbarsDlg], ["ถาดเครื่องมือ (Default Tray)", "", () => toggleTray()], "-", ["เงา", "", () => $("#skShadow").click(), "3d"], ["หมอก", "", () => { view.setFog(!view.fogOn); status(view.fogOn ? "เปิดหมอก (ไกลจางลง)" : "ปิดหมอก"); }, "3d"],
+      ["แกน", "", () => { view.axes.visible = !view.axes.visible; view.invalidate(); }, "3d"], "-", ...STYLES.map((s) => [`รูปแบบ: ${s.th}`, "", () => setStyle(s.k), "3d"]), "-",
       ["ผัง 2D อย่างเดียว", "", () => $('[data-view="2d"]').click()], ["ผัง 2D | 3D", "", () => $('[data-view="split"]').click()], ["3D อย่างเดียว", "", () => $('[data-view="3d"]').click()]]],
-    ["กล้อง", [["มุมก่อนหน้า", "", () => view.previous()], "-", ...[["iso", "ไอโซเมตริก"], ["top", "ด้านบน"], ["front", "ด้านหน้า"], ["right", "ด้านขวา"], ["back", "ด้านหลัง"], ["left", "ด้านซ้าย"]].map(([k, t]) => [`มุมมองมาตรฐาน: ${t}`, "", () => view.setView(k)]), "-",
+    ["กล้อง", [["ดูทั้งผัง 2D", "", () => act("fit2d"), "2d"], "-", ["มุมก่อนหน้า", "", () => view.previous()], "-", ...[["iso", "ไอโซเมตริก"], ["top", "ด้านบน"], ["front", "ด้านหน้า"], ["right", "ด้านขวา"], ["back", "ด้านหลัง"], ["left", "ด้านซ้าย"]].map(([k, t]) => [`มุมมองมาตรฐาน: ${t}`, "", () => view.setView(k)]), "-",
       ["ตั้งกล้อง", "", T3("poscam")], ["มองรอบ", "", T3("look")], ["เดิน", "", T3("walk")], "-", ["หมุนรอบ", "O", T3("orbit")], ["เลื่อนภาพ", "H", T3("pan")], ["ซูม", "Z", T3("zoom")], ["ซูมกรอบ", "", T3("zoomwin")], ["ดูทั้งหมด", "Shift+Z", () => view.fit()], "-",
       ["บันทึกมุมนี้เป็นฉาก…", "", () => act("scene-add")]]],
-    ["วาด", ["line", "freehand", "rect", "rrect", "circle", "polygon", "arc", "arc2", "arc3", "pie"].map((t) => [TOOLS[t][0], TOOLS[t][2], T3(t)])],
-    ["เครื่องมือ", [...["select", "component", "eraser", "tagtool", "paint", "move", "rotate", "scale", "offset", "pushpull", "follow"].map((t) => [TOOLS[t][0], TOOLS[t][2], ACTS.has(t) ? () => doAct(t) : T3(t)]), "-",
-      ...["tape", "dim", "protractor", "text", "axes", "text3d"].map((t) => [TOOLS[t][0], TOOLS[t][2], T3(t)]), "-", ["ระนาบตัด (Section Plane)", "", () => doAct("section")]]],
+    ["วาด", [...["wall", "room", "door", "window", "box", "line", "dim", "text", "symbol"].map((t) => [`ผัง: ${TOOLS2D[t][0]}`, TOOLS2D[t][1], T2(t), "2d"]), "-",
+      ...["line", "freehand", "rect", "rrect", "circle", "polygon", "arc", "arc2", "arc3", "pie"].map((t) => [`3D: ${TOOLS[t][0]}`, TOOLS[t][2], T3(t), "3d"])]],
+    ["โครงสร้าง", [["ชั้นอาคาร · ตรวจขนาด · ตาราง…", "", () => act("struct")], "-", ...["column", "beam", "footing", "slab", "stair"].map((t) => [TOOLS2D[t][0], TOOLS2D[t][1], T2(t), "2d"]), "-",
+      ["แสดงเฉพาะโครงสร้าง (ซ่อนผนัง หลังคา)", "", () => { for (const k of ["walls", "openings", "roof", "pv"]) view.setTagVisible(k, view.hiddenTags.has("struct") ? true : !view.hiddenTags.has(k) ? false : true); view.setTagVisible("struct", true); renderTray("tags"); status("สลับมุมมองโครงสร้าง (ถาด Tags เปิด/ปิดทีละกลุ่มได้)"); }, "3d"]]],
+    ["เครื่องมือ", [...["select", "pan", "erase", "calib"].map((t) => [`ผัง: ${TOOLS2D[t][0]}`, TOOLS2D[t][1], T2(t), "2d"]), "-",
+      ...["select", "component", "eraser", "tagtool", "paint", "move", "rotate", "scale", "offset", "pushpull", "follow"].map((t) => [TOOLS[t][0], TOOLS[t][2], ACTS.has(t) ? () => doAct(t) : T3(t), "3d"]), "-",
+      ...["tape", "dim", "protractor", "text", "axes", "text3d"].map((t) => [TOOLS[t][0], TOOLS[t][2], T3(t), "3d"]), "-", ["ระนาบตัด (Section Plane)", "", () => doAct("section"), "3d"]]],
     ["หน้าต่าง", [["ข้อมูลโมเดล (Model Info)", "", () => modelInfo("units")], ["ถาดเครื่องมือ (Default Tray)", "", () => toggleTray(true)], ["ชิ้นส่วน (Components)", "", () => openPanel("components")], ["จับคู่ภาพถ่าย (Match Photo)", "", () => openPanel("match")],
       ["โครงสร้างโมเดล (Outliner)", "", () => openPanel("outliner")], "-", ["สลับธีม สว่าง/มืด", "", () => { const r = document.documentElement, cur = r.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); r.dataset.theme = cur === "dark" ? "light" : "dark"; store.set("theme", r.dataset.theme); }]]],
-    ["ส่วนเสริม", [["ASCA: ผลผลิตไฟฟ้าโซลาร์ (pvlib)", "", () => act("yield")], ["ASCA: ชุดแบบก่อสร้าง + IFC", "", () => act("drawset")], ["ASCA: ร่างกล่องอาคารด้วย AI", "", () => act("ai-draft")],
+    ["ส่วนเสริม", [["ASCA: โซลาร์ — ผลผลิต + สตริง + Single Line Diagram", "", () => act("solar")], ["ASCA: โครงสร้าง — ตรวจขนาด + ตาราง", "", () => act("struct")], ["ASCA: ผลผลิตไฟฟ้าโซลาร์ (หน้าหลัก pvlib)", "", () => act("yield")], ["ASCA: ชุดแบบก่อสร้าง + IFC", "", () => act("drawset")], ["ASCA: ร่างกล่องอาคารด้วย AI", "", () => act("ai-draft")],
       ["ASCA: Render สมจริงด้วย Blender", "", () => { act("glb"); status("ส่งออก GLB แล้ว → เปิดหน้าหลัก แท็บ Render (Blender) เพื่อ render แบบ path tracing"); }]]],
     ["ช่วยเหลือ", [["คีย์ลัด", "F1", () => keysDlg()], ["ผู้แนะนำ (Instructor)", "", () => openPanel("instructor")], ["เกี่ยวกับ ASC Architect", "", () => modelInfo("credits")]]],
   ];
@@ -217,18 +253,30 @@ export function initSkUI(opts) {
     const openMenu = (e) => {
       e.stopPropagation(); const was = w.classList.contains("open"); closeMenus(); if (was && e.type === "click") return; w.classList.add("open");
       const r = b.getBoundingClientRect(), dd = document.createElement("div"); dd.className = "dd"; dd.id = "ddm";
-      items.forEach((it) => { if (it === "-") return dd.append(document.createElement("hr")); const x = document.createElement("button"); x.type = "button"; x.innerHTML = `${esc(it[0])}${it[1] ? `<kbd>${esc(it[1])}</kbd>` : ""}`; x.onclick = (ev) => { ev.stopPropagation(); closeMenus(); it[2](); }; dd.append(x); });
+      const vis = items.filter((it) => it === "-" || !it[3] || mode === "split" || it[3] === mode);
+      vis.forEach((it, i) => { if (it === "-") { if (i && vis[i - 1] !== "-" && i < vis.length - 1) dd.append(document.createElement("hr")); return; } const x = document.createElement("button"); x.type = "button"; x.innerHTML = `${esc(it[0])}${it[1] ? `<kbd>${esc(it[1])}</kbd>` : ""}`; x.onclick = (ev) => { ev.stopPropagation(); closeMenus(); it[2](); }; dd.append(x); });
       document.body.append(dd); dd.style.left = Math.max(4, Math.min(r.left, innerWidth - dd.offsetWidth - 8)) + "px"; dd.style.top = r.bottom + 2 + "px";
     };
     b.onclick = openMenu; b.onmouseenter = (e) => { if ($("#ddm")) openMenu(e); };
+    w.dataset.menu = name; w._items = items;
   });
+  /** สลับโหมด 2D / 2D+3D / 3D: ซ่อนเมนูที่ไม่มีรายการของโหมดนั้น + แผงถาดตามโหมด */
+  function applyMode(m) {
+    mode = m;
+    for (const w of $$(".menubar > div")) w.hidden = !(w._items || []).some((it) => it !== "-" && (!it[3] || m === "split" || it[3] === m));
+    closeMenus(); renderTray(); refresh();
+  }
   addEventListener("click", closeMenus);
   function closeMenus() { $("#ddm")?.remove(); $$(".menubar > div").forEach((d) => d.classList.remove("open")); }
-  function selectAll() { sk.sel = new Set(hist.doc.masses.map((m) => m.id)); ext.itemSel = new Set(hist.doc.items3d.map((x) => x.id)); view.build(); status(`เลือก ${sk.sel.size} กล่อง · ${ext.itemSel.size} ชิ้นส่วน`); }
+  function selectAll() {
+    const d = hist.doc; sk.S.clear();
+    for (const [t, L] of [["walls", "walls"], ["masses", "masses"], ["items", "items3d"], ["struct", "struct"], ["sweeps", "sweeps"], ["lines", "lines"], ["texts3d", "texts3d"], ["dims3d", "dims3d"]]) for (const o of d[L] || []) sk.S.add(SEL.key(t, o.id));
+    ext.selChanged(); status(`เลือกทั้งหมด ${sk.S.size} ชิ้น (ผนัง ${d.walls.length} · โครงสร้าง ${(d.struct || []).length} · กล่อง ${d.masses.length} · ชิ้นส่วน ${d.items3d.length})`);
+  }
 
   // ---------------------------------------------------------------- ถาดเครื่องมือ (Default Tray · 11 แผง) — ติดขวา เปิดตั้งแต่เริ่ม
-  const PANELS = [["entity", "ข้อมูลวัตถุ", "Entity Info"], ["materials", "วัสดุ", "Materials"], ["components", "ชิ้นส่วน", "Components"], ["styles", "รูปแบบ", "Styles"], ["tags", "Tags", "Tags"], ["shadows", "เงา", "Shadows"],
-    ["scenes", "ฉาก", "Scenes"], ["instructor", "ผู้แนะนำ", "Instructor"], ["soften", "ลบเหลี่ยมขอบ", "Soften Edges"], ["match", "จับคู่ภาพถ่าย", "Match Photo"], ["outliner", "โครงสร้างโมเดล", "Outliner"]];
+  const PANELS = [["entity", "ข้อมูลวัตถุ", "Entity Info"], ["materials", "วัสดุ", "Materials", "3d"], ["components", "ชิ้นส่วน", "Components", "3d"], ["styles", "รูปแบบ", "Styles", "3d"], ["tags", "Tags", "Tags", "3d"], ["shadows", "เงา", "Shadows", "3d"],
+    ["scenes", "ฉาก", "Scenes", "3d"], ["instructor", "ผู้แนะนำ", "Instructor", "3d"], ["soften", "ลบเหลี่ยมขอบ", "Soften Edges", "3d"], ["match", "จับคู่ภาพถ่าย", "Match Photo", "3d"], ["outliner", "โครงสร้างโมเดล", "Outliner"]];
   const open = new Set(store.get("trayOpen", ["entity", "materials", "scenes"]));
   const thumbs = new Map(), photo = { url: null, op: 0.5 };
   const tagCount = () => { const c = {}; for (const m of view.meshes()) { const t = m.userData.tag, id = m.userData.id ?? m.uuid; (c[t] = c[t] || new Set()).add(id); } return c; };
@@ -236,16 +284,8 @@ export function initSkUI(opts) {
     const d = hist.doc;
     if (k === "entity") {
       const info = ext.selectedInfo();
-      if (info) return `<div class="kv"><span>ชนิด</span><b>ชิ้นส่วน: ${esc(info.th)}${info.n > 1 ? ` (${info.n})` : ""}</b><span>ขนาดแบบ</span><span>${esc(info.size)}</span><span>ตัวคูณ</span><input type="number" id="eS" min="0.1" step="0.05" value="${info.s}"><span>หมุน (°)</span><input type="number" id="eR" step="15" value="${info.rot}"><span>Tag</span><span>${esc(info.tag)}</span><span>ตำแหน่ง</span><span class="mono">${info.p.map((v) => v.toLocaleString()).join(", ")} มม.</span></div>`;
-      const ms = [...sk.sel].map((id) => d.masses.find((m) => m.id === id)).filter(Boolean);
-      if (!ms.length) return `<p class="note">ยังไม่ได้เลือก — ใช้ เลือก แล้วคลิกกล่อง/ชิ้นส่วน (ผนัง ประตู หน้าต่าง เลือกในผัง 2D · ข้อมูลอยู่ด้านล่างถาด)</p>`;
-      const xs = ms.flatMap((m) => m.pts.map((p) => p[0])), ys = ms.flatMap((m) => m.pts.map((p) => p[1])), h = Math.max(...ms.map((m) => (m.base || 0) + m.height)) - Math.min(...ms.map((m) => m.base || 0));
-      const mat = PALETTE.find((p) => p.key === ms[0].mat), area = ms.reduce((s, m) => s + Math.abs(M.polygonArea(m.pts)), 0) / 1e6;
-      return `<div class="kv"><span>ชื่อ</span><input id="eName" value="${esc(ms[0].name || "กล่อง")}"><span>ชนิด</span><b>${ms[0].height <= 1 ? "หน้า (Face)" : "กล่อง push-pull"}${ms.length > 1 ? ` (${ms.length})` : ""}</b>
-        <span>Tag</span><select id="eTag">${TAGS.filter((t) => !["asc", "site", "walls", "openings", "roof", "pv", "slab"].includes(t.k)).map((t) => `<option value="${t.k}" ${t.k === (ms[0].tag || "masses") ? "selected" : ""}>${t.th}</option>`).join("")}</select>
-        <span>ขนาด</span><span class="mono">${fmtLen((Math.max(...xs) - Math.min(...xs)) / 1000)} × ${fmtLen((Math.max(...ys) - Math.min(...ys)) / 1000)} × ${fmtLen(h / 1000)}</span><span>พื้นที่ฐาน</span><span class="mono">${area.toFixed(2)} ตร.ม.</span>
-        <span>สูง (มม.)</span><input type="number" id="eH" min="1" step="50" value="${ms[0].height}"><span>ฐาน (มม.)</span><input type="number" id="eB" step="50" value="${ms[0].base || 0}">
-        <span>วัสดุ</span><span>${esc(mat ? mat.th : "ค่าเริ่มต้น")}</span><span>เงา</span><span>รับเงา ✓ · ทอดเงา ✓</span></div>`;
+      if (info && sk.S.size === 1) return entityHTML(d, [...sk.S]) + `<p class="note">ชิ้นส่วน: ${esc(info.th)} · ขนาดแบบ ${esc(info.size)} · Tag ${esc(info.tag)}</p>`;
+      return entityHTML(d, [...sk.S]);
     }
     if (k === "materials") return `<div class="sw">${PALETTE.filter((p) => !p.hide).map((p) => { const u = swatch(p.key); return `<button type="button" data-mat="${p.key}" class="${sk.mat === p.key ? "on" : ""}" title="${esc(p.th)}" style="${u ? `background-image:url(${u})` : `background:${p.base}`}"><span>${esc(p.th)}</span></button>`; }).join("")}</div><p class="note">เลือกวัสดุ แล้วใช้ ถังสี คลิกผิว · หน้าที่วาดใหม่/กล่องใหม่ใช้วัสดุนี้ · ทุกลายมีความนูน (normal map) และความมันตามจริง</p>`;
     if (k === "components") return `<div class="cmp">${KINDS.map((c) => `<button type="button" data-cmp="${c.k}" class="${sk.tool === "place" && ext.placing === c.k ? "on" : ""}" title="${esc(c.size)}">${icon(c.k === "pv" ? "shaded" : c.k === "car" ? "viso" : "component")}${esc(c.th)}</button>`).join("")}</div>
@@ -263,12 +303,21 @@ export function initSkUI(opts) {
       <div class="row" style="margin-top:6px"><button type="button" class="chipb" id="mpHide" ${photo.url ? "" : "disabled"}>${$("#matchImg").hidden ? "แสดงภาพ" : "ซ่อนภาพ"}</button><button type="button" class="chipb" data-scact="add">บันทึกเป็นฉาก</button></div>
       <p class="note">วางภาพถ่ายทับมุมมอง 3D แล้วหมุน/เลื่อนกล้อง + ปรับมุมเลนส์ให้ขอบอาคารตรงภาพ → บันทึกเป็นฉาก · ภาพอยู่ในหน่วยความจำ ไม่บันทึกลงไฟล์แบบ</p>`;
     if (k === "outliner") {
-      const row = (t, sel, attrs = "", dep = 1) => `<div class="orow${sel ? " on" : ""}" style="--d:${dep}" ${attrs}>${t}</div>`, s = M.summary(d), gs = new Map();
+      const row = (t, sel, attrs = "", dep = 1) => `<div class="orow${sel ? " on" : ""}" style="--d:${dep}" ${attrs}>${t}</div>`, s2 = M.summary(d), gs = new Map();
+      const one = (t, o, label) => row(esc(label), sk.S.has(SEL.key(t, o.id)), `data-okey="${SEL.key(t, o.id)}"`, 2);
+      const grp = (title, list, t, label) => list.length ? row(`▾ ${title} <small>${list.length}</small>`) + list.slice(0, 150).map((o, i) => one(t, o, label(o, i))).join("") : "";
       for (const m of d.masses) { const g = m.gid || m.id; gs.set(g, [...(gs.get(g) || []), m]); }
-      return `<div class="outl">${row(`▾ <b>${esc(d.name)}</b>`, false, "", 0)}${row(`ผนัง <small>${d.walls.length}</small>`)}${row(`ประตู หน้าต่าง <small>${d.openings.length}</small>`)}${row(`หลังคา ${esc(d.roof.type || "-")} · แผงโซลาร์ <small>${s.pvCount || 0}</small>`)}
-        ${row(`▾ กล่อง / หน้า <small>${d.masses.length}</small>`)}${[...gs.values()].map((ms) => ms.length > 1 ? row(`▸ กลุ่ม ${ms.length} ชิ้น`, ms.every((m) => sk.sel.has(m.id)), `data-osel="${ms[0].id}"`, 2) : row(esc(ms[0].name || "กล่อง"), sk.sel.has(ms[0].id), `data-osel="${ms[0].id}"`, 2)).join("")}
-        ${row(`▾ ชิ้นส่วน <small>${d.items3d.length}</small>`)}${d.items3d.slice(0, 120).map((it) => row(esc((KINDS.find((x) => x.k === it.kind) || { th: it.kind }).th), ext.itemSel.has(it.id), `data-oitem="${it.id}"`, 2)).join("")}
-        ${row(`เส้น <small>${d.lines.length}</small>`)}${row(`ข้อความ 3D <small>${d.texts3d.length}</small>`)}${row(`มิติ 3D <small>${d.dims3d.length}</small>`)}${row(`หน้าตัดกวาด (Follow Me) <small>${d.sweeps.length}</small>`)}${row(`โมเดล ASC Studio <small>${view.asc.children.length ? "มี" : "-"}</small>`)}</div>`;
+      const lv = (z) => (z || 0) >= 2500 ? "ชั้น 2" : "ชั้น 1";
+      return `<div class="outl">${row(`▾ <b>${esc(d.name)}</b>`, false, "", 0)}
+        ${grp("ผนัง", d.walls, "walls", (w) => `ผนัง ${lv(w.base)} · ${(M.wallLength(w) / 1000).toFixed(2)} ม.`)}
+        ${grp("ประตู หน้าต่าง", d.openings, "openings", (o) => `${o.mark || (o.kind === "door" ? "ประตู" : "หน้าต่าง")} ${o.width}×${o.height}`)}
+        ${row(`หลังคา ${esc(d.roof.type || "-")} · แผงโซลาร์ ${s2.pvCount || 0}`, sk.S.has("roof:roof"), 'data-okey="roof:roof"', 1)}
+        ${grp("โครงสร้าง", d.struct || [], "struct", (o) => `${SEL.STRUCT_TH[o.kind] || ""} ${o.mark || ""}`)}
+        ${d.masses.length ? row(`▾ กล่อง / หน้า <small>${d.masses.length}</small>`) + [...gs.values()].map((ms) => ms.length > 1 ? row(`▸ กลุ่ม ${ms.length} ชิ้น`, ms.every((m) => sk.sel.has(m.id)), `data-okey="masses:${ms[0].id}"`, 2) : one("masses", ms[0], ms[0].name || "กล่อง")).join("") : ""}
+        ${grp("ชิ้นส่วน", d.items3d, "items", (it) => (KINDS.find((x) => x.k === it.kind) || { th: it.kind }).th)}
+        ${grp("เส้น", d.lines, "lines", (l, i) => `เส้น ${i + 1}`)}${grp("หน้าตัดกวาด", d.sweeps, "sweeps", (x, i) => `Follow Me ${i + 1}`)}
+        ${grp("ข้อความ 3D", d.texts3d, "texts3d", (x) => x.s)}${grp("มิติ 3D", d.dims3d, "dims3d", (x, i) => `มิติ ${i + 1}`)}
+        ${row(`โมเดล ASC Studio <small>${view.asc.children.length ? "มี" : "-"}</small>`)}</div>`;
     }
     return "";
   }
@@ -276,10 +325,13 @@ export function initSkUI(opts) {
     const t = $("#props"); if (t.hidden) return;
     if (only && !open.has(only)) return;
     const body = $("#trayBody"), y = body.scrollTop;
-    body.innerHTML = PANELS.map(([k, th, en]) => `<div class="tp${open.has(k) ? " open" : ""}" data-p="${k}"><button type="button" class="th" data-tp="${k}">${th}<em>${en}</em></button><div class="tbody">${open.has(k) ? panel(k) : ""}</div></div>`).join("");
+    body.innerHTML = PANELS.filter((x) => !x[3] || mode === "split" || x[3] === mode).map(([k, th, en]) => `<div class="tp${open.has(k) ? " open" : ""}" data-p="${k}"><button type="button" class="th" data-tp="${k}">${th}<em>${en}</em></button><div class="tbody">${open.has(k) ? panel(k) : ""}</div></div>`).join("");
     body.scrollTop = y;
   }
-  function openPanel(k) { toggleTray(true); open.add(k); store.set("trayOpen", [...open]); renderTray(); const el = $(`[data-p="${k}"]`); if (el) el.scrollIntoView({ block: "nearest" }); }
+  function openPanel(k, quiet) {
+    if (quiet) { if ($("#props").hidden) return; if (!open.has(k)) { open.add(k); store.set("trayOpen", [...open]); renderTray(); } else renderTray(k); return; }
+    toggleTray(true); open.add(k); store.set("trayOpen", [...open]); renderTray(); const el = $(`[data-p="${k}"]`); if (el) el.scrollIntoView({ block: "nearest" });
+  }
   function toggleTray(force) { const t = $("#props"); t.hidden = force === true ? false : !t.hidden; store.set("tray", !t.hidden); if (!t.hidden) renderTray(); refresh(); setTimeout(() => view.resize(), 30); }
   $("#trayX").onclick = () => { toggleTray(); status("เปิดถาดอีกครั้ง: เมนู หน้าต่าง → ถาดเครื่องมือ"); };
   const tb3 = $("#trayBody");
@@ -293,8 +345,12 @@ export function initSkUI(opts) {
     const tg = e.target.closest("[data-tag]"); if (tg) { view.setTagVisible(tg.dataset.tag, view.hiddenTags.has(tg.dataset.tag)); renderTray("tags"); return; }
     const sc = e.target.closest("[data-scn]"); if (sc) return goScene(Number(sc.dataset.scn));
     const sa = e.target.closest("[data-scact]"); if (sa) { if (sa.dataset.scact === "add") { act("scene-add"); setTimeout(() => { makeThumbs(); renderTray("scenes"); }, 50); } if (sa.dataset.scact === "play") playScenes(); if (sa.dataset.scact === "del") { hist.commit((d) => d.scenes.pop()); opts.onChange(); renderTray("scenes"); } return; }
-    const os = e.target.closest("[data-osel]"); if (os) { sk.sel = new Set(sk.groupOf(os.dataset.osel)); ext.itemSel.clear(); view.build(); return; }
-    const oi = e.target.closest("[data-oitem]"); if (oi) { ext.itemSel = new Set([oi.dataset.oitem]); sk.sel.clear(); view.build(); return; }
+    const ok = e.target.closest("[data-okey]"); if (ok) { if (!e.shiftKey) sk.S.clear(); ext.expand(ok.dataset.okey).forEach((x) => sk.S.add(x)); ext.selChanged(); return; }
+    const en = e.target.closest("[data-ent]"); if (en) { const a = en.dataset.ent;
+      if (a === "del") ext.removeSel();
+      if (a === "copy") { ext.copy(false); ext.paste(); }
+      if (a === "door" || a === "window") { const wk = [...sk.S].find((x) => x.startsWith("walls:")), w = wk && SEL.find(hist.doc, wk); if (w) { const o = { id: M.uid("o"), wall: w.id, kind: a, t: 0.5, ...(a === "door" ? { width: 900, height: 2100, sill: 0 } : { width: 1200, height: 1100, sill: 900 }) }; hist.commit((dd) => dd.openings.push(o)); opts.onChange(); sk.S.clear(); sk.S.add("openings:" + o.id); ext.selChanged(); status(`เพิ่ม${a === "door" ? "ประตู" : "หน้าต่าง"}กลางผนังแล้ว — ใช้ ย้าย (M) เลื่อนไปตามผนัง`); } }
+      return; }
     if (e.target.id === "mpHide") { $("#matchImg").hidden = !$("#matchImg").hidden; renderTray("match"); }
   });
   tb3.addEventListener("change", (e) => {
@@ -304,6 +360,8 @@ export function initSkUI(opts) {
     if (id === "trSh") { view.setShadows(e.target.checked); refresh(); }
     if (id === "trSoft") { view.setEdgeAngle(Number(v)); renderTray("soften"); }
     if (id === "cRand") { SETTINGS.compRandom = e.target.checked; saveSettings(); }
+    const ent = e.target.closest(".ent [data-k]");
+    if (ent) { const keys = e.target.closest(".ent").dataset.keys.split(","); let warn = ""; hist.commit((dd) => { warn = applyField(dd, keys, ent.dataset.k, ent.value); }); if (warn && /ไม่ได้เปลี่ยน/.test(warn)) hist.undo(); opts.onChange(); renderTray("entity"); if (warn) status(warn); return; }
     if (id === "eName") editMass((m) => (m.name = v || "กล่อง"));
     if (id === "eTag") editMass((m) => (m.tag = v));
     if (id === "eH") editMass((m) => (m.height = Math.max(1, Number(v) || 1)));
@@ -421,5 +479,5 @@ export function initSkUI(opts) {
   view.onBuilt = ((prev) => () => { prev && prev(); renderTray("entity"); renderTray("outliner"); renderTray("tags"); refresh(); })(view.onBuilt);
   $("#section").addEventListener("input", () => refresh());
   $("#renderBtn").onclick = renderDlg;
-  return { renderTray, modelInfo, refresh, renderDlg, keysDlg, ext, selectAll, doAct, closeMenus };
+  return { renderTray, openPanel, modelInfo, refresh, renderDlg, keysDlg, ext, selectAll, doAct, closeMenus, applyMode };
 }

@@ -3,10 +3,15 @@
 // แก้: ยางลบ Tag ย่อขยาย Offset Follow Me (กวาดหน้าตัดตามเส้น) · ใส่ข้อมูล: มิติ 3D ไม้โปรแทรกเตอร์ ข้อความชี้ แกน ข้อความ 3D
 // กล้อง: ซูมกรอบ เดิน (WASD/ลูกศร) · ชิ้นส่วน: วางต้นไม้ รถ ฯลฯ · คัดลอก/ตัด/วาง · ทุกการแก้ผ่าน hist.commit (Ctrl+Z ได้)
 import * as THREE from "three";
-import * as M from "./model.js?v=0.23.0";
-import { kindTh, KINDS } from "./props3d.js?v=0.23.0";
+import * as M from "./model.js?v=0.24.0";
+import { kindTh, KINDS } from "./props3d.js?v=0.24.0";
+import * as SEL from "./sel3d.js?v=0.24.0";
+
+/** ชนิดที่คลิกเลือกได้ใน 3D (ทุกอย่างที่เห็น ยกเว้นพื้นดิน/แผงโซลาร์อัตโนมัติ) */
+const PICK = new Set(["walls", "openings", "roof", "masses", "items", "lines", "texts3d", "dims3d", "sweeps", "struct"]);
 
 const MM = 0.001;
+const cap = (el, id) => { try { el.setPointerCapture(id); } catch (e) { /* ไม่มี pointer ที่กดอยู่จริง — ข้ามได้ */ } };
 const snap = (v, s = 50) => Math.round(v / s) * s;
 const toPlan = (P) => [Math.round(P.x / MM), Math.round(-P.z / MM)];
 const v3 = (p, z = 0) => new THREE.Vector3(p[0] * MM, z * MM, -p[1] * MM);
@@ -42,12 +47,14 @@ function offsetPoly(pts, d) {
   return out;
 }
 
-export const SETTINGS = { polySides: 6, sweepW: 200, sweepH: 200, text3dH: 600, textH: 250, dimText: 250, compRandom: true, compScale: 1, curTag: "masses" };
+export const SETTINGS = { rotStep: 15, polySides: 6, sweepW: 200, sweepH: 200, text3dH: 600, textH: 250, dimText: 250, compRandom: true, compScale: 1, curTag: "masses" };
 
 export class Tools3D {
   constructor(view, sk, host) {
-    this.v = view; this.sk = sk; this.host = host; this.pts = []; this.st = null; this.clip = null; this.itemSel = new Set(); this.placing = null;
+    this.v = view; this.sk = sk; this.host = host; this.pts = []; this.st = null; this.clip = null; this.placing = null; this.lastMove = null;
+    this._is = new SEL.TypedSet(sk.S, "items");
     sk.ext = this; this.ray = new THREE.Raycaster(); this.ray.params.Line.threshold = 0.15;
+    this.hov = new THREE.Group(); this.hov.name = "เมาส์ชี้"; view.scene.add(this.hov); this.hovKey = null; this._hovT = 0;
     this.prot = document.createElement("div"); this.prot.className = "tape-label"; this.prot.hidden = true; view.canvas.parentNode.appendChild(this.prot);
     this.zbox = document.createElement("div"); this.zbox.className = "zoombox"; this.zbox.hidden = true; view.canvas.parentNode.appendChild(this.zbox);
     view.canvas.addEventListener("dblclick", (e) => { if (["line", "arc", "arc2", "arc3"].includes(sk.tool)) { e.preventDefault(); this.finish(); } });
@@ -56,9 +63,11 @@ export class Tools3D {
   }
   get doc() { return this.host.hist.doc; }
   get tool() { return this.sk.tool; }
+  get itemSel() { return this._is; }
+  set itemSel(v) { this._is.clear(); for (const id of v) this._is.add(id); }
   busy() { return this.pts.length > 0 || !!this.st; }
   commit(fn, msg) { this.host.hist.commit(fn); this.host.onChange(); if (msg) this.host.status(msg); }
-  reset() { this.pts = []; this.st = null; this.sk.clearOver(); this.prot.hidden = true; this.zbox.hidden = true; }
+  reset() { this.pts = []; this.st = null; this.sk.clearOver(); this.prot.hidden = true; this.zbox.hidden = true; if (this.hov) this.clearHover(); }
 
   // ---------------------------------------------------------------- ยิงเมาส์ + จับจุด
   ndc(e) { const r = this.v.canvas.getBoundingClientRect(); return new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); }
@@ -110,16 +119,28 @@ export class Tools3D {
   down(e) {
     const t = this.tool; if (e.button !== 0) return false;
     const own = () => { e.stopImmediatePropagation(); this.v.controls.enabled = false; };
-    // ชิ้นส่วนในฉาก: เลือก/ย้าย/หมุน/ลบ ได้แบบเดียวกับกล่อง
+    // ทุกวัตถุในฉาก: เลือก ย้าย หมุน ลบ ทาสี Tag ย่อขยาย — ผนัง หลังคา ประตู/หน้าต่าง กล่อง โครงสร้าง ชิ้นส่วน เส้น ข้อความ มิติ
     if (["select", "move", "rotate", "eraser", "scale", "tagtool", "paint"].includes(t)) {
-      const h = this.hitAny(e, (u) => ["masses", "items", "lines", "texts3d", "dims3d", "sweeps", "walls", "roof", "openings"].includes(u.type));
-      if (h && h.type === "items") return this.onItem(e, t, h, own);
-      if (h && t === "eraser") { own(); this.erase(h); return true; }
-      if (h && t === "tagtool" && ["masses", "sweeps"].includes(h.type)) { own(); this.tagObj(h); return true; }
-      if (h && t === "paint" && h.type === "sweeps") { own(); const mat = this.sk.mat; this.commit((d) => { const s = d.sweeps.find((x) => x.id === h.id); if (s) s.mat = mat; }); return true; }
-      if (t === "select" && !e.shiftKey && this.itemSel.size) { this.itemSel.clear(); }
-      if (t === "scale" && h && h.type === "masses") { own(); return this.scaleStart(e, h); }
-      if (t === "eraser" || t === "tagtool") { e.stopImmediatePropagation(); return true; }
+      const h = this.hitAny(e, (u) => PICK.has(u.type)), k = h ? this.keyOf(h) : null;
+      if (t === "select") {
+        if (!h) { if (!e.shiftKey && this.sk.S.size) { this.sk.S.clear(); this.selChanged(); } return false; }  // คลิกที่ว่าง = ยกเลิกเลือก (ลากต่อ = หมุนรอบ)
+        e.stopImmediatePropagation();
+        const ks = this.expand(k);
+        if (e.shiftKey || e.ctrlKey) { const all = ks.every((x) => this.sk.S.has(x)); ks.forEach((x) => (all ? this.sk.S.delete(x) : this.sk.S.add(x))); }
+        else { this.sk.S.clear(); ks.forEach((x) => this.sk.S.add(x)); }
+        this.selChanged(); return true;
+      }
+      if (!h) { if (t === "eraser" || t === "tagtool") { e.stopImmediatePropagation(); return true; } return false; }
+      if (h.type === "items" && (t === "scale" || t === "tagtool" || t === "paint")) return this.onItem(e, t, h, own);
+      if (t === "eraser") { own(); this.v.controls.enabled = true; this.erase(h); return true; }
+      if (t === "tagtool") { own(); this.v.controls.enabled = true; this.tagObj(h); return true; }
+      if (t === "paint") {
+        if (h.type === "sweeps" || h.type === "struct") { own(); this.v.controls.enabled = true; const mat = this.sk.mat, L = h.type; this.commit((d) => { const s = d[L].find((x) => x.id === h.id); if (s) s.mat = mat; }); return true; }
+        return false;                                                    // กล่อง ผนัง หลังคา → sketch3d.js
+      }
+      if (t === "scale") { if (h.type === "masses") { own(); return this.scaleStart(e, h); } this.host.status("ย่อขยาย: ใช้กับกล่อง/หน้า และชิ้นส่วน (ผนัง/โครงสร้าง แก้ขนาดที่ ข้อมูลวัตถุ)"); e.stopImmediatePropagation(); return true; }
+      if (t === "move") { own(); return this.gmoveStart(e, h, k); }
+      if (t === "rotate") { own(); this.v.controls.enabled = true; return this.grotate(e, k); }
       return false;
     }
     if (t === "place") {
@@ -131,7 +152,7 @@ export class Tools3D {
     if (["line", "rrect", "circle", "polygon", "arc", "arc2", "arc3", "pie", "dim", "protractor", "axes"].includes(t)) {
       const p = this.point(e); if (!p) return true; own(); this.click(t, p); return true;
     }
-    if (t === "freehand") { const p = this.point(e); if (!p) return true; own(); this.v.canvas.setPointerCapture(e.pointerId); this.st = { kind: "free", list: [p] }; return true; }
+    if (t === "freehand") { const p = this.point(e); if (!p) return true; own(); cap(this.v.canvas, e.pointerId); this.st = { kind: "free", list: [p] }; return true; }
     if (t === "offset") { const h = this.hitAny(e, (u) => u.type === "masses"); if (!h || h.n.y < 0.9) { this.host.status("Offset: คลิกที่หน้าบนของกล่อง/หน้า แล้วลากเข้า/ออก"); e.stopImmediatePropagation(); return true; } own(); const m = this.doc.masses.find((x) => x.id === h.id); this.st = { kind: "offset", m, p0: toPlan(h.point), y: h.point.y }; return true; }
     if (t === "follow") {
       const h = this.hitAny(e, (u) => u.type === "lines"); e.stopImmediatePropagation();
@@ -155,11 +176,20 @@ export class Tools3D {
       this.commit((d) => d.texts3d.push(rec), t === "text" ? "ใส่ข้อความชี้แล้ว" : "ใส่ข้อความ 3D แล้ว (ตั้งหันหาผู้มอง · ทอดเงาได้)");
       return true;
     }
-    if (t === "zoomwin") { own(); const r = this.v.canvas.getBoundingClientRect(); this.st = { kind: "zoom", x0: e.clientX - r.left, y0: e.clientY - r.top }; this.v.canvas.setPointerCapture(e.pointerId); return true; }
+    if (t === "zoomwin") { own(); const r = this.v.canvas.getBoundingClientRect(); this.st = { kind: "zoom", x0: e.clientX - r.left, y0: e.clientY - r.top }; cap(this.v.canvas, e.pointerId); return true; }
     return false;
   }
   move(e) {
     const t = this.tool, st = this.st;
+    if (st && st.kind === "gmove") {
+      e.stopImmediatePropagation(); const P = this.planeAt(e, st.y); if (!P) return true;
+      const q = toPlan(P); let dx = snap(q[0] - st.p0[0]), dy = snap(q[1] - st.p0[1]);
+      if (e.shiftKey) { if (Math.abs(dx) > Math.abs(dy)) dy = 0; else dx = 0; }          // Shift = ล็อกแนวแกน
+      this.restore(st); SEL.translate(this.doc, st.keys, dx, dy); st.d = [dx, dy];
+      this.v.build(); this.host.status(`ย้าย ${this.v.fmtLen(Math.hypot(dx, dy) / 1000)} (${dx.toLocaleString()}, ${dy.toLocaleString()} มม.)${st.copy ? " · คัดลอก" : ""} · Shift = ล็อกแนว · ปล่อยแล้วพิมพ์ระยะ + Enter ได้`);
+      return true;
+    }
+    if (!st && !this.pts.length && ["select", "move", "rotate", "eraser", "paint", "tagtool", "scale"].includes(t) && e.buttons === 0) { this.hover(e); return false; }
     if (st && st.kind === "item") { e.stopImmediatePropagation(); const P = this.planeAt(e, st.y); if (!P) return true; const q = toPlan(P); st.it.p = [snap(st.orig[0] + q[0] - st.p0[0]), snap(st.orig[1] + q[1] - st.p0[1])]; this.v.build(); this.host.status(`ย้าย${kindTh(st.it.kind)} ${st.it.p[0] - st.orig[0]}, ${st.it.p[1] - st.orig[1]} มม.`); return true; }
     if (st && st.kind === "scale") { e.stopImmediatePropagation(); const k = Math.max(0.05, Math.round((1 + (e.clientX - st.x0) / 200) * 20) / 20); this.applyScale(st, k); return true; }
     if (st && st.kind === "free") { e.stopImmediatePropagation(); const p = this.point(e); if (p && M.dist(p.p, st.list[st.list.length - 1].p) > 100) { st.list.push(p); this.showPts(st.list, false); } return true; }
@@ -176,6 +206,13 @@ export class Tools3D {
   up(e) {
     const st = this.st; if (!st) return false;
     e.stopImmediatePropagation(); this.v.controls.enabled = true;
+    if (st.kind === "gmove") {
+      this.st = null; const [dx, dy] = st.d || [0, 0];
+      if (!dx && !dy) { this.host.hist.undo(); this.selChanged(); return true; }        // คลิกเฉย ๆ ไม่ได้ลาก = แค่เลือก
+      if (st.copy) { const clip = SEL.copyOf(this.doc, st.keys); this.restore(st); const ks = SEL.paste(this.doc, clip, 0, 0); this.sk.S.clear(); ks.forEach((x) => this.sk.S.add(x)); }
+      this.lastMove = { keys: new Set(this.sk.S), d: [dx, dy] };
+      this.host.onChange(); this.selChanged(); return true;
+    }
     if (st.kind === "item" || st.kind === "scale") { this.st = null; this.host.onChange(); return true; }
     if (st.kind === "free") {
       this.st = null; const L = st.list; this.sk.clearOver(); if (L.length < 2) return true;
@@ -210,7 +247,7 @@ export class Tools3D {
     if (t === "select") { if (!e.shiftKey) { this.itemSel.clear(); this.sk.sel.clear(); } this.itemSel.has(it.id) && e.shiftKey ? this.itemSel.delete(it.id) : this.itemSel.add(it.id); this.v.build(); return true; }
     if (t === "move" || t === "scale") {
       this.host.hist.commit(() => {}); const live = this.doc.items3d.find((x) => x.id === it.id);
-      this.itemSel = new Set([it.id]); this.v.canvas.setPointerCapture(e.pointerId);
+      this.itemSel = new Set([it.id]); cap(this.v.canvas, e.pointerId);
       if (t === "move") this.st = { kind: "item", it: live, orig: live.p.slice(), p0: toPlan(h.point), y: (live.z || 0) * MM };
       else this.st = { kind: "scale", items: [[live, live.s || 1]], masses: [], x0: e.clientX };
       return true;
@@ -218,21 +255,62 @@ export class Tools3D {
     return false;
   }
   erase(h) {
-    const key = { masses: "masses", items: "items3d", lines: "lines", texts3d: "texts3d", dims3d: "dims3d", sweeps: "sweeps" }[h.type];
-    if (!key) return this.host.status("ยางลบ: ลบได้ กล่อง/หน้า ชิ้นส่วน เส้น ข้อความ มิติ หน้าตัดกวาด (ผนัง/ประตู ลบในผัง 2D)");
-    const ids = h.type === "masses" ? new Set(this.sk.groupOf(h.id)) : new Set([h.id]);
-    this.commit((d) => (d[key] = d[key].filter((x) => !ids.has(x.id))), "ลบแล้ว (Ctrl+Z ย้อนได้)");
-    ids.forEach((id) => { this.sk.sel.delete(id); this.itemSel.delete(id); });
+    const ks = new Set(this.expand(this.keyOf(h))), what = SEL.describe(this.doc, [...ks][0]);
+    this.commit((d) => SEL.remove(d, ks), `ลบ ${what}${ks.has("roof:roof") ? " (หลังคา = ไม่มี · เปิดใหม่ที่ ข้อมูลวัตถุ)" : ""} · Ctrl+Z ย้อนได้`);
+    ks.forEach((k) => this.sk.S.delete(k)); this.selChanged();
   }
   tagObj(h) {
-    const tag = SETTINGS.curTag, key = h.type === "masses" ? "masses" : "sweeps", ids = h.type === "masses" ? new Set(this.sk.groupOf(h.id)) : new Set([h.id]);
-    this.commit((d) => d[key].forEach((x) => ids.has(x.id) && (x.tag = tag)), `ใส่ Tag "${tag}" แล้ว (เลือก Tag ปัจจุบันที่ถาด Tags)`);
+    const tag = SETTINGS.curTag, L = SEL.LIST[h.type];
+    if (!L || h.type === "walls" || h.type === "openings") return this.host.status("Tag: ใส่ได้กับ กล่อง โครงสร้าง ชิ้นส่วน หน้าตัดกวาด (ผนัง/ประตู/หลังคา มี Tag ของตัวเองแล้ว)");
+    const ids = h.type === "masses" ? new Set(this.sk.groupOf(h.id)) : new Set([h.id]);
+    this.commit((d) => d[L].forEach((x) => ids.has(x.id) && (x.tag = tag)), `ใส่ Tag "${tag}" แล้ว (เลือก Tag ปัจจุบันที่ถาด Tags)`);
   }
+  // ---------------------------------------------------------------- เลือก/ย้าย/หมุน ทุกชนิด
+  keyOf(h) { return SEL.key(h.type, h.id); }
+  /** คลิกชิ้นในกลุ่ม = ทั้งกลุ่ม */
+  expand(k) { const [t, id] = SEL.split(k); return t === "masses" ? this.sk.groupOf(id).map((x) => "masses:" + x) : [k]; }
+  selChanged() { this.clearHover(); this.sk.redeco(); this.host.onSelect3D && this.host.onSelect3D([...this.sk.S]); }
+  restore(st) { for (const [k, js] of st.orig) { const o = SEL.find(this.doc, k); if (!o) continue; const src = JSON.parse(js); for (const p of Object.keys(src)) o[p] = src[p]; } }
+  gmoveStart(e, h, k) {
+    if (!this.sk.S.has(k)) { this.sk.S.clear(); this.expand(k).forEach((x) => this.sk.S.add(x)); }
+    const keys = new Set([...this.sk.S].filter((x) => x !== "roof:roof"));
+    if (!keys.size) { this.v.controls.enabled = true; this.host.status("หลังคาย้ายเองไม่ได้ — หลังคาสร้างตามผนัง: ย้ายผนัง หรือแก้ทรง/ชายคาที่ ข้อมูลวัตถุ"); return true; }
+    this.host.hist.commit(() => {});
+    this.st = { kind: "gmove", keys, orig: new Map([...keys].map((x) => [x, JSON.stringify(SEL.find(this.doc, x))])), p0: toPlan(h.point), y: h.point.y, copy: e.ctrlKey };
+    cap(this.v.canvas, e.pointerId); this.clearHover(); this.v.build();
+    return true;
+  }
+  grotate(e, k) {
+    if (!this.sk.S.has(k)) { this.sk.S.clear(); this.expand(k).forEach((x) => this.sk.S.add(x)); }
+    const keys = new Set([...this.sk.S].filter((x) => !x.startsWith("roof:") && !x.startsWith("openings:")));
+    if (!keys.size) { this.host.status("หมุน: หลังคา/ประตู/หน้าต่างหมุนตามผนัง — เลือกผนังแทน"); return true; }
+    const deg = e.shiftKey ? -SETTINGS.rotStep : SETTINGS.rotStep, c = SEL.center(this.doc, keys);
+    this.commit((d) => SEL.rotate(d, keys, deg, c), `หมุน ${deg}° รอบจุดกลาง (Shift+คลิก = ทวนทาง · พิมพ์มุม + Enter = หมุนตามค่า)`); this.selChanged();
+    return true;
+  }
+  /** เมาส์ชี้ = ไฮไลต์ + บอกว่าเป็นอะไร (แบบ SketchUp) */
+  hover(e) {
+    const now = performance.now(); if (now - this._hovT < 40) return; this._hovT = now;
+    const h = this.hitAny(e, (u) => PICK.has(u.type)), k = h ? this.keyOf(h) : null;
+    if (this.tool === "select") this.v.canvas.style.cursor = k ? "pointer" : "default";
+    if (k === this.hovKey) return; this.hovKey = k;
+    this.hov.traverse((o) => o.geometry && o.geometry.dispose()); this.hov.clear(); this.v.invalidate();
+    if (!k) return;
+    const [t, id] = SEL.split(k), mat = new THREE.LineBasicMaterial({ color: 0x59a6ff, depthTest: false, transparent: true, opacity: 0.75 });
+    for (const o of this.v.model.children) {
+      const u = o.userData || {}; if (u.type !== t || (t !== "roof" && u.id !== id) || (u.helper && t !== "texts3d")) continue;
+      if (o.isGroup) { const bh = new THREE.BoxHelper(o, 0x59a6ff); bh.material.depthTest = false; this.hov.add(bh); continue; }
+      if (!o.isMesh) continue;
+      const ln = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 20), mat); ln.position.copy(o.position); ln.rotation.copy(o.rotation); ln.scale.copy(o.scale); ln.renderOrder = 4; this.hov.add(ln);
+    }
+    this.host.status(`${SEL.describe(this.doc, k)} — ${{ select: "คลิกเลือก · Shift = เพิ่ม/เอาออก", move: "ลากเพื่อย้าย · Ctrl = คัดลอก", rotate: "คลิก = หมุน", eraser: "คลิก = ลบ", paint: "คลิก = ทาวัสดุ", tagtool: "คลิก = ใส่ Tag", scale: "ลากซ้าย-ขวา = ย่อขยาย" }[this.tool] || ""}`);
+  }
+  clearHover() { this.hovKey = null; this.hov.traverse((o) => o.geometry && o.geometry.dispose()); this.hov.clear(); this.v.invalidate(); }
   scaleStart(e, h) {
     this.host.hist.commit(() => {}); this.sk.sel.has(h.id) || (this.sk.sel = new Set(this.sk.groupOf(h.id)));
     const ms = [...this.sk.sel].map((id) => this.doc.masses.find((m) => m.id === id)).filter(Boolean), all = ms.flatMap((m) => m.pts);
     const c = all.reduce((s, p) => [s[0] + p[0] / all.length, s[1] + p[1] / all.length], [0, 0]);
-    this.st = { kind: "scale", c, masses: ms.map((m) => [m, m.pts.map((p) => p.slice()), m.height, m.base || 0]), items: [], x0: e.clientX }; this.v.canvas.setPointerCapture(e.pointerId);
+    this.st = { kind: "scale", c, masses: ms.map((m) => [m, m.pts.map((p) => p.slice()), m.height, m.base || 0]), items: [], x0: e.clientX }; cap(this.v.canvas, e.pointerId);
     return true;
   }
   applyScale(st, k) {
@@ -307,6 +385,14 @@ export class Tools3D {
     if (t === "polygon" && /^\d+s$/i.test(s)) { SETTINGS.polySides = Math.max(3, Math.min(64, parseInt(s))); this.host.status(`หลายเหลี่ยม ${SETTINGS.polySides} ด้าน`); return true; }
     if (t === "follow" && /^\d+\s*[x*]\s*\d+$/i.test(s)) { const [w, h] = s.split(/[x*]/i).map(Number); Object.assign(SETTINGS, { sweepW: w, sweepH: h }); this.host.status(`Follow Me: หน้าตัด ${w}×${h} มม. — คลิกเส้น`); return true; }
     const v = Number(s); if (!isFinite(v)) return false;
+    if (t === "move" && this.lastMove && !this.pts.length) {                          // ย้ายตามระยะที่พิมพ์ (ทิศเดียวกับที่ลากล่าสุด)
+      const lm = this.lastMove, L = Math.hypot(...lm.d); if (!L) return false; const nd = [Math.round((lm.d[0] / L) * v), Math.round((lm.d[1] / L) * v)];
+      this.commit((d) => SEL.translate(d, lm.keys, nd[0] - lm.d[0], nd[1] - lm.d[1]), `ย้ายเป็นระยะ ${this.v.fmtLen(v / 1000)} พอดี`); lm.d = nd; this.selChanged(); return true;
+    }
+    if (t === "rotate" && this.sk.S.size) {
+      const keys = new Set([...this.sk.S].filter((x) => !x.startsWith("roof:") && !x.startsWith("openings:"))); if (!keys.size) return false;
+      const c = SEL.center(this.doc, keys); this.commit((d) => SEL.rotate(d, keys, v, c), `หมุน ${v}° รอบจุดกลาง`); this.selChanged(); return true;
+    }
     if (t === "scale") { const st = { c: null, masses: [], items: [] }; const ms = [...this.sk.sel].map((id) => this.doc.masses.find((m) => m.id === id)).filter(Boolean);
       if (!ms.length && !this.itemSel.size) return false; this.host.hist.commit(() => {}); const all = ms.flatMap((m) => m.pts); st.c = all.length ? all.reduce((a, p) => [a[0] + p[0] / all.length, a[1] + p[1] / all.length], [0, 0]) : [0, 0];
       st.masses = ms.map((m) => [m, m.pts.map((p) => p.slice()), m.height, m.base || 0]); st.items = this.doc.items3d.filter((x) => this.itemSel.has(x.id)).map((x) => [x, x.s || 1]); this.applyScale(st, v); this.host.onChange(); return true; }
@@ -332,25 +418,25 @@ export class Tools3D {
     cam.position.y = 1.65; tg.copy(cam.position).addScaledVector(dir, 0.3); tg.y = 1.6; this.v.controls.update();
   }
   copy(cut) {
-    const ms = this.doc.masses.filter((m) => this.sk.sel.has(m.id)), its = this.doc.items3d.filter((x) => this.itemSel.has(x.id));
-    if (!ms.length && !its.length) { this.host.status("เลือกกล่อง/ชิ้นส่วนก่อน (เครื่องมือ เลือก)"); return false; }
-    this.clip = JSON.parse(JSON.stringify({ ms, its }));
-    if (cut) { const a = new Set(ms.map((m) => m.id)), b = new Set(its.map((x) => x.id)); this.commit((d) => { d.masses = d.masses.filter((m) => !a.has(m.id)); d.items3d = d.items3d.filter((x) => !b.has(x.id)); }); this.sk.sel.clear(); this.itemSel.clear(); }
-    this.host.status(`${cut ? "ตัด" : "คัดลอก"} ${ms.length} กล่อง · ${its.length} ชิ้นส่วน — Ctrl+V วาง (ห่างเดิม 1 ม.)`); return true;
+    const keys = new Set(this.sk.S);
+    if (!keys.size) { this.host.status("เลือกวัตถุก่อน (เครื่องมือ เลือก · คลิกผนัง กล่อง ต้นไม้ ฯลฯ)"); return false; }
+    this.clip = SEL.copyOf(this.doc, keys);
+    if (cut) { this.commit((d) => SEL.remove(d, keys)); this.sk.S.clear(); this.selChanged(); }
+    this.host.status(`${cut ? "ตัด" : "คัดลอก"} ${this.clip.list.length} ชิ้น — Ctrl+V วาง (ห่างเดิม 1 ม. แล้วใช้ ย้าย ปรับ)`); return true;
   }
   paste() {
-    if (!this.clip) return this.host.status("ยังไม่ได้คัดลอก");
-    const off = 1000, gmap = new Map(), ms = this.clip.ms.map((m) => ({ ...JSON.parse(JSON.stringify(m)), id: M.uid("m"), gid: m.gid ? gmap.get(m.gid) || (gmap.set(m.gid, M.uid("g")), gmap.get(m.gid)) : undefined, pts: m.pts.map((p) => [p[0] + off, p[1] - off]) }));
-    const its = this.clip.its.map((x) => ({ ...x, id: M.uid("i"), p: [x.p[0] + off, x.p[1] - off] }));
-    this.commit((d) => { d.masses.push(...ms); d.items3d.push(...its); }, `วาง ${ms.length} กล่อง · ${its.length} ชิ้นส่วน (ห่างเดิม 1 ม. · ใช้ ย้าย ปรับตำแหน่ง)`);
-    this.sk.sel = new Set(ms.map((m) => m.id)); this.itemSel = new Set(its.map((x) => x.id)); this.clip = { ms: ms.map((m) => ({ ...m })), its: its.map((x) => ({ ...x })) };
+    if (!this.clip || !this.clip.list.length) return this.host.status("ยังไม่ได้คัดลอก");
+    let ks; this.commit((d) => { ks = SEL.paste(d, this.clip, 1000, -1000); }, `วาง ${this.clip.list.length} ชิ้น (ห่างเดิม 1 ม. · ใช้ ย้าย ปรับตำแหน่ง)`);
+    this.sk.S.clear(); ks.forEach((k) => this.sk.S.add(k)); this.selChanged();
   }
-  removeSel() { const b = new Set(this.itemSel); if (!b.size) return false; this.commit((d) => (d.items3d = d.items3d.filter((x) => !b.has(x.id))), `ลบ ${b.size} ชิ้นส่วน`); this.itemSel.clear(); return true; }
-  decorate() {
-    for (const o of this.v.model.children) if (o.isGroup && o.userData.type === "items" && this.itemSel.has(o.userData.id)) { const bh = new THREE.BoxHelper(o, 0x2f7bff); bh.material.depthTest = false; bh.renderOrder = 5; bh.userData.helper = true; this.v.model.add(bh); }
+  removeSel() {
+    const keys = new Set(this.sk.S); if (!keys.size) return false;
+    const n = keys.size, what = n === 1 ? SEL.describe(this.doc, [...keys][0]) : `${n} ชิ้น`;
+    this.commit((d) => SEL.remove(d, keys), `ลบ ${what} (Ctrl+Z ย้อนได้)`); this.sk.S.clear(); this.selChanged(); return true;
   }
+  decorate() {}
   selectedInfo() {
-    const its = this.doc.items3d.filter((x) => this.itemSel.has(x.id)); if (!its.length) return null;
+    const its = this.doc.items3d.filter((x) => this.itemSel.has(x.id)); if (!its.length || [...this.sk.S].some((k) => !k.startsWith("items:"))) return null;
     const it = its[0], k = KINDS.find((x) => x.k === it.kind);
     return { n: its.length, th: kindTh(it.kind), size: k ? k.size : "", s: it.s || 1, rot: it.rot || 0, tag: it.tag || "items", p: it.p };
   }

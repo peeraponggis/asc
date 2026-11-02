@@ -1,8 +1,9 @@
 // กระดานวาด 2D (SVG) ของตัวเขียนแบบ ASC Architect (โดย ลุงพี)
 // เครื่องมือ: เลือก/ย้าย · ผนัง · ห้อง · กล่อง (push-pull) · ประตู · หน้าต่าง · เส้น · มิติ · ข้อความ · สัญลักษณ์ · ลบ
 // จับจุด: กริด · ปลายผนัง/เส้น · ตั้งฉาก (Shift ปิด) · พิมพ์ระยะแล้ว Enter ระหว่างวาด (แบบ SketchUp)
-import * as M from "./model.js?v=0.23.0";
-import * as CAD from "./cadlayer.js?v=0.23.0";
+import * as M from "./model.js?v=0.24.0";
+import * as CAD from "./cadlayer.js?v=0.24.0";
+import * as ST from "./struct.js?v=0.24.0";
 
 const NS = "http://www.w3.org/2000/svg";
 const el = (tag, attrs, parent) => {
@@ -18,6 +19,7 @@ export class Plan2D {
     this.scale = 0.05; this.ox = 0; this.oy = 0;       // px ต่อ มม. · จุดกำเนิดบนจอ
     this.tool = "select"; this.grid = 100; this.ortho = true; this.snapOn = true;
     this.draft = null; this.sel = null; this.hover = null; this.drag = null; this.symbol = null;
+    this.level = null;                                  // ชั้นที่แสดง/วาด (null = ทุกชั้น)
     // ไฟล์ CAD นำเข้าวาดบน canvas ใต้ SVG (เส้นนับแสนเส้นยังลื่น) — SVG ใช้กับสิ่งที่แก้ไขได้
     this.cv = document.createElement("canvas"); this.cv.className = "cadcanvas";
     svg.parentNode.insertBefore(this.cv, svg);
@@ -27,6 +29,9 @@ export class Plan2D {
   }
 
   get doc() { return this.host.hist.doc; }
+  /** ระดับชั้นที่วาดอยู่ (ฐานผนัง/เสาใหม่) */
+  get lv() { return this.level || ST.levels(this.doc)[0]; }
+  on(t, o) { return ST.onLevel(this.doc, this.level, t, o); }
 
   // ---------------------------------------------------------------- พิกัด
   toScreen(p) { return [this.ox + p[0] * this.scale, this.oy - p[1] * this.scale]; }
@@ -61,9 +66,10 @@ export class Plan2D {
     const tol = 12 / this.scale;
     if (this.snapOn) {
       const pts = [];
-      this.doc.walls.forEach((w) => pts.push(w.a, w.b));
+      this.doc.walls.forEach((w) => { if (this.on("walls", w) || !this.level) pts.push(w.a, w.b); });
       this.doc.lines.forEach((l) => pts.push(...l.pts));
       this.doc.masses.forEach((m) => pts.push(...m.pts));
+      pts.push(...ST.snapPts(this.doc, this.level));
       if (this.draft && this.draft.pts) pts.push(...this.draft.pts.slice(0, -1));
       for (const q of this.host.cadSnap ? this.host.cadSnap(p, tol) : []) pts.push(q);
       for (const q of pts) { const d = M.dist(p, q); if (d < tol && (!best || d < best.d)) best = { p: q.slice(), d, kind: "จุดปลาย" }; }
@@ -86,8 +92,10 @@ export class Plan2D {
   // ---------------------------------------------------------------- เลือก
   hit(p) {
     const tol = 8 / this.scale, d = this.doc;
+    const so = ST.hit(d, p, tol, this.level);
+    if (so && so.kind !== "slab" && so.kind !== "footing") return { type: "struct", id: so.id };
     for (const o of d.openings) {
-      const w = d.walls.find((x) => x.id === o.wall); if (!w) continue;
+      const w = d.walls.find((x) => x.id === o.wall); if (!w || !this.on("walls", w)) continue;
       const c = M.add(w.a, M.mul(M.sub(w.b, w.a), o.t));
       if (M.dist(p, c) < Math.max(o.width / 2, tol)) return { type: "openings", id: o.id };
     }
@@ -95,10 +103,11 @@ export class Plan2D {
     for (const s of d.syms) if (M.dist(p, s.p) < Math.max(500 * (s.scale || 1), tol)) return { type: "syms", id: s.id };
     for (const x of d.dims) { const u = M.norm(M.sub(x.b, x.a)), n = M.mul(M.perp(u), x.offset ?? 600);
       if (M.projectOnSegment(p, M.add(x.a, n), M.add(x.b, n)).d < tol) return { type: "dims", id: x.id }; }
-    for (const w of d.walls) if (M.projectOnSegment(p, w.a, w.b).d < Math.max(w.thick / 2, tol)) return { type: "walls", id: w.id };
+    for (const w of d.walls) if (this.on("walls", w) && M.projectOnSegment(p, w.a, w.b).d < Math.max(w.thick / 2, tol)) return { type: "walls", id: w.id };
+    if (so) return { type: "struct", id: so.id };
     for (const l of d.lines) for (let i = 0; i < l.pts.length - (l.closed ? 0 : 1); i++)
       if (M.projectOnSegment(p, l.pts[i], l.pts[(i + 1) % l.pts.length]).d < tol) return { type: "lines", id: l.id };
-    for (const m of d.masses) if (M.pointInPolygon(p, m.pts)) return { type: "masses", id: m.id };
+    for (const m of d.masses) if (this.on("masses", m) && M.pointInPolygon(p, m.pts)) return { type: "masses", id: m.id };
     return null;
   }
   find(sel) { return sel ? (this.doc[sel.type] || []).find((x) => x.id === sel.id) : null; }
@@ -185,6 +194,11 @@ export class Plan2D {
       this.draft.to = s; return this.commitTwoPoint();
     }
     if (t === "door" || t === "window") return this.placeOpening(p, t);
+    if (t === "column" || t === "footing") return this.placeStruct(t, s);
+    if (t === "beam" || t === "slab" || t === "stair") {
+      if (!this.draft) { this.draft = { kind: t, from: s, to: s }; return this.render(); }
+      this.draft.to = s; return this.commitTwoPoint();
+    }
     if (t === "text") {
       const str = prompt("ข้อความ"); if (!str) return;
       this.host.hist.commit((d) => d.texts.push({ id: M.uid("t"), p: s, s: str, h: 250 }));
@@ -238,6 +252,7 @@ export class Plan2D {
       } else if (typ === "masses" || typ === "lines") obj.pts = o.pts.map(mv);
       else if (typ === "dims") { obj.a = mv(o.a); obj.b = mv(o.b); }
       else if (typ === "texts" || typ === "syms") obj.p = mv(o.p);
+      else if (typ === "struct") { if (o.a) { obj.a = mv(o.a); obj.b = mv(o.b); } if (o.p) obj.p = mv(o.p); if (o.pts) obj.pts = o.pts.map(mv); }
       else if (typ === "openings") {
         const w = this.doc.walls.find((x) => x.id === obj.wall);
         if (w) obj.t = M.projectOnSegment(p, w.a, w.b).t;
@@ -293,7 +308,7 @@ export class Plan2D {
         this.host.hist.commit((doc) => {
           if (d.kind === "wall") {
             for (let i = 0; i < P.length - (closed ? 0 : 1); i++)
-              doc.walls.push({ id: M.uid("w"), a: P[i], b: P[(i + 1) % P.length], thick: cfg.wallThick, height: cfg.wallHeight });
+              doc.walls.push({ id: M.uid("w"), a: P[i], b: P[(i + 1) % P.length], thick: cfg.wallThick, height: cfg.wallHeight, ...(this.lv.z ? { base: this.lv.z } : {}) });
           } else doc.lines.push({ id: M.uid("l"), pts: P, closed });
         });
         this.host.onChange();
@@ -308,19 +323,38 @@ export class Plan2D {
     const a = d.from, b = d.to, cfg = this.host.defaults();
     if (M.dist(a, b) < 1) return this.render();
     this.host.hist.commit((doc) => {
-      if (d.kind === "room") doc.walls.push(...M.rectWalls(a, b, cfg.wallThick, cfg.wallHeight));
-      else if (d.kind === "box") {
-        const [x0, x1] = [Math.min(a[0], b[0]), Math.max(a[0], b[0])], [y0, y1] = [Math.min(a[1], b[1]), Math.max(a[1], b[1])];
-        doc.masses.push({ id: M.uid("m"), pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], base: 0, height: cfg.massHeight, name: "กล่อง" });
-      } else if (d.kind === "dim") doc.dims.push({ id: M.uid("d"), a, b, offset: 600 });
+      const z = this.lv.z || 0, [x0, x1] = [Math.min(a[0], b[0]), Math.max(a[0], b[0])], [y0, y1] = [Math.min(a[1], b[1]), Math.max(a[1], b[1])];
+      if (d.kind === "room") doc.walls.push(...M.rectWalls(a, b, cfg.wallThick, cfg.wallHeight).map((w) => (z ? { ...w, base: z } : w)));
+      else if (d.kind === "box") doc.masses.push({ id: M.uid("m"), pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], base: z, height: cfg.massHeight, name: "กล่อง" });
+      else if (d.kind === "dim") doc.dims.push({ id: M.uid("d"), a, b, offset: 600 });
+      else if (d.kind === "beam") doc.struct.push({ id: M.uid("c"), kind: "beam", a, b, ...ST.DEF.beam, z: z || 0, mark: z ? ST.DEF.beam.mark : "GB1" });
+      else if (d.kind === "slab") doc.struct.push({ id: M.uid("c"), kind: "slab", pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], ...ST.DEF.slab, z });
+      else if (d.kind === "stair") { const L = M.dist(a, b), n = Math.max(3, Math.round(L / ST.DEF.stair.run)), lv = this.lv, L2 = ST.levels(doc), nx = L2[L2.indexOf(lv) + 1];
+        doc.struct.push({ id: M.uid("c"), kind: "stair", p: a, rot: Math.round((Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI), w: ST.DEF.stair.w, n, run: Math.round(L / n), base: z, rise: (nx ? nx.z : z + (lv.h || 3000)) - z, mark: ST.DEF.stair.mark }); }
     });
     this.host.onChange();
     this.render();
   }
 
+  /** วางเสา/ฐานราก: คลิกจุด (ฐานรากคลิกที่เสา = ตรงศูนย์เสา) */
+  placeStruct(kind, s) {
+    const d = this.doc, lv = this.lv, L = ST.levels(d), i = L.indexOf(lv), nx = L[i + 1];
+    const col = (d.struct || []).find((o) => o.kind === "column" && M.dist(o.p, s) < 400);
+    if (kind === "footing") {
+      const p = col ? col.p.slice() : s;
+      this.host.hist.commit((doc) => doc.struct.push({ id: M.uid("c"), kind: "footing", p, ...ST.DEF.footing }));
+      this.host.status(`วางฐานราก ${ST.DEF.footing.w}×${ST.DEF.footing.l} หนา ${ST.DEF.footing.t} หลังฐานที่ ${ST.DEF.footing.z} มม. — แก้ขนาด/เข็มที่ ข้อมูลวัตถุ`);
+    } else {
+      const ft = (d.struct || []).find((o) => o.kind === "footing" && M.dist(o.p, s) < 600), base = i === 0 ? (ft ? ft.z : ST.DEF.footing.z) : lv.z, top = nx ? nx.z : lv.z + (lv.h || 3000);
+      this.host.hist.commit((doc) => doc.struct.push({ id: M.uid("c"), kind: "column", p: ft ? ft.p.slice() : s, ...ST.DEF.column, base, top }));
+      this.host.status(`วางเสา ${ST.DEF.column.w}×${ST.DEF.column.l} จาก ${base} ถึง ${top} มม. — แก้ที่ ข้อมูลวัตถุ`);
+    }
+    this.host.onChange();
+  }
+
   placeOpening(p, kind) {
     let best = null;
-    for (const w of this.doc.walls) { const pr = M.projectOnSegment(p, w.a, w.b); if (pr.d < w.thick / 2 + 12 / this.scale && (!best || pr.d < best.pr.d)) best = { w, pr }; }
+    for (const w of this.doc.walls) { if (!this.on("walls", w)) continue; const pr = M.projectOnSegment(p, w.a, w.b); if (pr.d < w.thick / 2 + 12 / this.scale && (!best || pr.d < best.pr.d)) best = { w, pr }; }
     if (!best) return this.host.status("คลิกบนผนังเพื่อวาง" + (kind === "door" ? "ประตู" : "หน้าต่าง"));
     const cfg = Object.assign({}, M.DEFAULTS[kind], this.host.defaults()[kind] || {});
     const L = M.wallLength(best.w), half = cfg.width / 2;
@@ -360,15 +394,18 @@ export class Plan2D {
     const isSel = (type, id) => this.sel && this.sel.type === type && this.sel.id === id;
     // กล่อง (มวล push-pull)
     for (const m of d.masses) {
+      if (!this.on("masses", m)) continue;
       el("polygon", { points: m.pts.map(P).join(" "), class: "mass" + (isSel("masses", m.id) ? " sel" : "") }, L.main);
       const c = m.pts.reduce((a, q) => M.add(a, M.mul(q, 1 / m.pts.length)), [0, 0]);
       const [x, y] = this.toScreen(c);
       el("text", { x, y, class: "lbl" }, L.main).textContent = `${m.name || "กล่อง"} สูง ${Math.round(m.height).toLocaleString()}`;
     }
     // ผนัง
-    for (const w of d.walls) el("polygon", { points: M.wallPolygon(w).map(P).join(" "), class: "wall" + (isSel("walls", w.id) ? " sel" : "") }, L.main);
+    this._struct(P, isSel);
+    for (const w of d.walls) el("polygon", { points: M.wallPolygon(w).map(P).join(" "), class: "wall" + (isSel("walls", w.id) ? " sel" : "") + (this.on("walls", w) ? "" : " ghost") }, L.main);
     // ช่องเปิด
     for (const w of d.walls) {
+      if (!this.on("walls", w)) continue;
       const u = M.norm(M.sub(w.b, w.a)), n = M.mul(M.perp(u), w.thick / 2);
       for (const { o, s0, s1 } of M.openingSpans(d, w)) {
         const at = (k) => M.add(w.a, M.mul(u, k));
@@ -420,6 +457,8 @@ export class Plan2D {
             el("polygon", { points: M.wallPolygon({ a: dr.pts[i], b: dr.pts[i + 1], thick: th }).map(P).join(" "), class: "wall draft" }, L.draft);
         } else el("polyline", { points: dr.pts.map(P).join(" "), class: "line draft" }, L.draft);
       } else if (dr.kind === "dim") this._dim({ a: dr.from, b: dr.to, offset: 600 }, L.draft, false);
+      else if (dr.kind === "beam") el("polygon", { points: M.wallPolygon({ a: dr.from, b: dr.to, thick: ST.DEF.beam.w }).map(P).join(" "), class: "beam2d draft" }, L.draft);
+      else if (dr.kind === "stair") el("polyline", { points: [dr.from, dr.to].map(P).join(" "), class: "line draft" }, L.draft);
       else if (dr.kind === "calib") el("polyline", { points: [dr.from, dr.to].map(P).join(" "), class: "line draft calib" }, L.draft);
       else {
         const a = this.toScreen(dr.from), b = this.toScreen(dr.to);
@@ -431,6 +470,24 @@ export class Plan2D {
       el("circle", { cx: x, cy: y, r: this.cursor.kind === "จุดปลาย" ? 6 : 3, class: this.cursor.kind === "จุดปลาย" ? "snap end" : "snap" }, L.draft);
     }
     this._north();
+  }
+
+  /** โครงสร้างในผัง: ฐานราก (ประ) · พื้น (แรเงา) · คาน (เส้นประคู่) · บันได · เสา (ทึบ) · ป้ายรหัส */
+  _struct(P, isSel) {
+    const d = this.doc, g = this.layer.main, lv = this.level, L = ST.levels(d), i = lv ? L.indexOf(lv) : 0, lvTop = lv && L[i + 1] ? L[i + 1].z : 1e9;
+    const lbl = (p, t, cls = "smark") => { const [x, y] = this.toScreen(p); el("text", { x, y, class: cls }, g).textContent = t; };
+    const S = this.showStruct === false ? (d.struct || []).filter((o) => o.kind === "column" || o.kind === "stair") : d.struct || [], big = this.scale * 1000 > 28;
+    for (const o of S) if (o.kind === "slab" && this.on("struct", o)) { el("polygon", { points: o.pts.map(P).join(" "), class: "slab2d" + (isSel("struct", o.id) ? " sel" : "") }, g); const c = o.pts.reduce((a, q) => M.add(a, M.mul(q, 1 / o.pts.length)), [0, 0]); lbl(c, `${o.mark} หนา ${o.t}`, "smark slab"); }
+    for (const o of S) if (o.kind === "footing" && (!lv || i === 0)) { el("polygon", { points: ST.rectOf(o).map(P).join(" "), class: "ftg2d" + (isSel("struct", o.id) ? " sel" : "") }, g); if (big) lbl(M.add(o.p, [o.w / 2 + 120, -o.l / 2 - 120]), o.mark, "smark ftg"); }
+    for (const o of S) if (o.kind === "beam" && this.on("struct", o)) { el("polygon", { points: ST.beamPoly(o).map(P).join(" "), class: "beam2d" + (isSel("struct", o.id) ? " sel" : "") }, g); const m = M.mul(M.add(o.a, o.b), 0.5); if (M.dist(o.a, o.b) * this.scale > 120) lbl(M.add(m, M.mul(M.perp(M.norm(M.sub(o.b, o.a))), o.w / 2 + 180)), `${o.mark} ${o.w}×${o.d}`); }
+    for (const o of S) if (o.kind === "stair" && this.on("struct", o)) {
+      const r = ST.rectOf(o); el("polygon", { points: r.map(P).join(" "), class: "stair2d" + (isSel("struct", o.id) ? " sel" : "") }, g);
+      const u = M.norm(M.sub(r[1], r[0])), n = M.sub(r[3], r[0]);
+      for (let k = 1; k < o.n; k++) { const a = M.add(r[0], M.mul(u, k * o.run)), b = M.add(a, n), A = this.toScreen(a), B = this.toScreen(b); el("line", { x1: A[0], y1: A[1], x2: B[0], y2: B[1], class: "stairstep" }, g); }
+      const c0 = M.add(r[0], M.mul(n, 0.5)), c1 = M.add(c0, M.mul(u, o.n * o.run * 0.92)), A = this.toScreen(c0), B = this.toScreen(c1);
+      el("line", { x1: A[0], y1: A[1], x2: B[0], y2: B[1], class: "stairarrow", "marker-end": "url(#arr)" }, g); lbl(c0, "ขึ้น", "smark up");
+    }
+    for (const o of S) if (o.kind === "column" && (!lv || ((o.base ?? 0) < lvTop - 100 && (o.top ?? 3000) > lv.z + 100))) { el("polygon", { points: ST.rectOf(o).map(P).join(" "), class: "col2d" + (isSel("struct", o.id) ? " sel" : "") }, g); if (big) lbl(M.add(o.p, [o.w / 2 + 80, o.w / 2 + 80]), o.mark, "smark col"); }
   }
 
   _drawCad() {
@@ -463,6 +520,7 @@ export class Plan2D {
       for (let x = Math.floor(wx0 / k) * k; x <= wx1; x += k) { const X = this.toScreen([x, 0])[0]; el("line", { x1: X, y1: 0, x2: X, y2: this.h, class: cls }, g); }
       for (let y = Math.floor(wy0 / k) * k; y <= wy1; y += k) { const Y = this.toScreen([0, y])[1]; el("line", { x1: 0, y1: Y, x2: this.w, y2: Y, class: cls }, g); }
     }
+    if (!this.svg.querySelector("#arr")) { const df = el("defs", {}, this.svg), mk = el("marker", { id: "arr", viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, df); el("path", { d: "M0,0 L10,5 L0,10 z", class: "arrhead" }, mk); }
     const o = this.toScreen([0, 0]);
     el("line", { x1: o[0] - 10, y1: o[1], x2: o[0] + 30, y2: o[1], class: "axis x" }, g);
     el("line", { x1: o[0], y1: o[1] + 10, x2: o[0], y2: o[1] - 30, class: "axis y" }, g);
@@ -491,4 +549,9 @@ const HELP = {
   symbol: "เลือกสัญลักษณ์จากรายการซ้าย แล้วคลิกวาง",
   erase: "คลิกสิ่งที่ต้องการลบ",
   pan: "ลากเพื่อเลื่อนจอ",
+  column: "เสา: คลิกตำแหน่งเสา (จับจุดปลายผนัง/ศูนย์ฐานราก) · ขนาด/ระดับแก้ที่ ข้อมูลวัตถุ · ชั้น 1 เสาเริ่มจากหลังฐานราก",
+  beam: "คาน: คลิกศูนย์เสาต้นที่ 1 แล้วต้นที่ 2 (หรือพิมพ์ความยาว + Enter) · ระดับหลังคาน = ระดับพื้นของชั้นที่เลือก",
+  footing: "ฐานราก: คลิกที่เสา (วางตรงศูนย์เสา) หรือจุดใดก็ได้ · ขนาด/เข็มแก้ที่ ข้อมูลวัตถุ",
+  slab: "พื้น: คลิก 2 มุม (หรือพิมพ์ กว้าง,ยาว) · ระดับหลังพื้น = ระดับชั้นที่เลือก",
+  stair: "บันได: คลิกจุดเริ่มขั้นแรก แล้วคลิกปลายทาง (ทิศขึ้น) · จำนวนขั้นคิดจากความยาว ÷ ลูกนอน 250 มม.",
 };

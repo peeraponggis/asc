@@ -2,14 +2,17 @@
 // เลือก · push-pull ทุกหน้า (บน = สูง · ข้าง = ดันผนังของกล่องออก/เข้า) · สี่เหลี่ยมบนพื้น/บนหน้ากล่อง · ย้าย (Ctrl = คัดลอก) · หมุน 15°
 // · ทาสีวัสดุ · ตลับเมตร · รวมกลุ่ม — ทุกการแก้ผ่าน hist.commit (Ctrl+Z ได้)
 import * as THREE from "three";
-import * as M from "./model.js?v=0.23.0";
+import * as M from "./model.js?v=0.24.0";
+import { TypedSet } from "./sel3d.js?v=0.24.0";
 
 const MM = 0.001;
+const cap = (el, id) => { try { el.setPointerCapture(id); } catch (e) { /* ไม่มี pointer ที่กดอยู่จริง — ข้ามได้ */ } };
 const snap = (v, s) => Math.round(v / s) * s;
 
 export class Sketch3D {
   constructor(view, host) {
-    this.v = view; this.host = host; this.tool = "orbit"; this.sel = new Set(); this.mat = "white";
+    this.v = view; this.host = host; this.tool = "orbit"; this.mat = "white";
+    this.S = new Set(); this._ms = new TypedSet(this.S, "masses");             // ที่เลือกทุกชนิด ("ชนิด:id") · sel = เฉพาะกล่อง
     this.ray = new THREE.Raycaster(); this.ndc = new THREE.Vector2(); this.drag = null; this.tape = null;
     this.over = new THREE.Group(); this.over.name = "ตัวช่วย"; view.scene.add(this.over);
     this.label = document.createElement("div"); this.label.className = "tape-label"; this.label.hidden = true;
@@ -21,6 +24,8 @@ export class Sketch3D {
     view.onBuilt = () => this.decorate();
   }
   get doc() { return this.host.hist.doc; }
+  get sel() { return this._ms; }
+  set sel(v) { this.S.clear(); for (const id of v) this._ms.add(id); }
 
   setTool(t) {
     this.tool = t; this.drag = null; this.clearOver(); if (this.ext) { this.ext.reset(); this.ext.planeZ = null; }
@@ -57,7 +62,7 @@ export class Sketch3D {
     if (this.ext && this.ext.down(e)) return;
     if (e.button !== 0 || this.tool === "orbit") return;
     const t = this.tool;
-    const own = () => { e.stopImmediatePropagation(); this.v.controls.enabled = false; this.v.canvas.setPointerCapture(e.pointerId); };
+    const own = () => { e.stopImmediatePropagation(); this.v.controls.enabled = false; cap(this.v.canvas, e.pointerId); };
     if (t === "select") {
       const h = this.hit(e, ["masses"]);
       if (!h) { if (!e.shiftKey) { this.sel.clear(); if (this.ext) this.ext.itemSel.clear(); } this.v.build(); this.host.onSelect3D && this.host.onSelect3D([]); return; }
@@ -68,7 +73,13 @@ export class Sketch3D {
       return;
     }
     if (t === "pushpull") {
-      const h = this.hit(e, ["masses"]); if (!h) return;
+      const h = this.hit(e, ["masses", "walls"]); if (!h) return;
+      if (h.type === "walls") {                                          // ผนัง: ลากหน้าบน = ความสูงผนัง
+        const w = this.doc.walls.find((x) => x.id === h.id); if (!w || h.n.y < 0.9) { this.host.status("Push/Pull ผนัง: ลากที่หน้าบนของผนังเพื่อปรับความสูง"); return; }
+        own(); this.host.hist.commit(() => {});
+        const pl = new THREE.Plane().setFromNormalAndCoplanarPoint(new THREE.Vector3().subVectors(this.v.camera.position, h.point).setY(0).normalize(), h.point);
+        this.drag = { kind: "wtop", w, h0: w.height, y0: h.point.y, plane: pl }; return;
+      }
       const m = this.mass(h.id); if (!m) return; own();
       this.host.hist.commit(() => {});
       if (h.n.y > 0.9) {
@@ -140,7 +151,11 @@ export class Sketch3D {
     if (this.ext && this.ext.move(e)) return;
     const d = this.drag; if (!d) return;
     e.stopImmediatePropagation();
-    if (d.kind === "top") {
+    if (d.kind === "wtop") {
+      this.pick(e); const p = new THREE.Vector3(); if (!this.ray.ray.intersectPlane(d.plane, p)) return;
+      d.w.height = Math.max(100, snap(d.h0 + (p.y - d.y0) / MM, 50));
+      this.v.build(); this.host.status(`push-pull ผนัง: สูง ${d.w.height.toLocaleString()} มม. (หลังคาขยับตาม)`);
+    } else if (d.kind === "top") {
       this.pick(e); const p = new THREE.Vector3(); if (!this.ray.ray.intersectPlane(d.plane, p)) return;
       d.m.height = Math.max(50, snap(d.h0 + (p.y - d.y0) / MM, 50));
       this.v.build(); this.host.status(`push-pull: สูง ${d.m.height.toLocaleString()} มม.`);
@@ -208,12 +223,22 @@ export class Sketch3D {
     this.host.hist.commit((d) => (d.masses = d.masses.filter((m) => !ids.has(m.id))));
     this.host.onChange();
   }
+  /** กรอบสีน้ำเงินรอบทุกชิ้นที่เลือก (ผนัง หลังคา ประตู กล่อง โครงสร้าง ชิ้นส่วน ฯลฯ) */
+  /** วาดกรอบที่เลือกใหม่โดยไม่สร้างโมเดลใหม่ทั้งหลัง (เร็ว) */
+  redeco() {
+    for (const o of [...this.v.model.children]) if (o.userData.deco) { o.geometry && o.geometry.dispose(); o.removeFromParent(); }
+    this.decorate(); this.v.invalidate();
+  }
   decorate() {
-    for (const o of this.v.model.children) {
-      if (o.isMesh && o.userData.type === "masses" && this.sel.has(o.userData.id)) {
-        const e = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry), new THREE.LineBasicMaterial({ color: 0x2f7bff, depthTest: false }));
-        e.position.copy(o.position); e.rotation.copy(o.rotation); e.renderOrder = 5; this.v.model.add(e);
-      }
+    if (!this.S.size) return;
+    const mat = new THREE.LineBasicMaterial({ color: 0x2f7bff, depthTest: false, transparent: true, opacity: 0.95 });
+    for (const o of [...this.v.model.children]) {
+      const u = o.userData || {}; if (!u.type || u.helper && u.type !== "texts3d") continue;
+      const k = `${u.type}:${u.type === "roof" ? "roof" : u.id}`; if (!this.S.has(k)) continue;
+      if (o.isGroup) { const bh = new THREE.BoxHelper(o, 0x2f7bff); bh.material.depthTest = false; bh.renderOrder = 5; bh.userData = { helper: true, deco: true }; this.v.model.add(bh); continue; }
+      if (!o.isMesh) continue;
+      const e = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 20), mat);
+      e.position.copy(o.position); e.rotation.copy(o.rotation); e.scale.copy(o.scale); e.renderOrder = 5; e.userData = { helper: true, deco: true }; e.raycast = () => {}; this.v.model.add(e);
     }
   }
   clearOver() { this.over.traverse((o) => o.geometry && o.geometry.dispose()); this.over.clear(); }
