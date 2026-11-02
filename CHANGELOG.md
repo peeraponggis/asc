@@ -3,6 +3,19 @@
 
 ---
 
+## [4.6.0] — 2569-11-02
+### Pi monitor · ทะเบียนโปรแกรม + เพิ่ม Project Plan
+โดย ลุงพี
+
+#### เพิ่มใหม่
+- `supabase/presence-apps.sql` — ทะเบียน `presence_apps` (ASCS · ASCA · PI · PLAN) แทนเงื่อนไขตายตัวในคอลัมน์ `app_presence.app` (เปลี่ยนเป็น foreign key)
+  · รันที่ https://supabase.com/dashboard/project/rcaslesvgilknupqmwrp/sql/new (รันซ้ำได้) · โปรแกรมใหม่ = เพิ่มหนึ่งบรรทัดแล้วรันอีกครั้ง
+- `docs/asc-cloud.js` — `PRESENCE_APPS` ทะเบียนหน้าเว็บของโปรแกรมอื่นบนโดเมนเดียวกัน (Project Plan `/aisolar2/project_plan` = `PLAN`)
+  · `AscCloud.presence({ detail })` ให้หน้าที่ไม่ได้ใช้แท็บแบบ ASC ส่งชื่อเมนู/แท็บเองได้
+- `docs/pi-monitor.html` — ตัวกรอง "ทุกโปรแกรม" อ่านชื่อจากทะเบียน (มี Project Plan) · `asc-pimonitor.js` เพิ่ม `setAppLabels()`
+- เทสต์ `tests/presence.mjs` 16 ข้อ (เพิ่ม 3)
+- คู่กับ Project Plan 1.5.0 (repo aisolar2) ที่โหลด asc-cloud.js ใช้การล็อกอินของ ASC Enterprise
+
 ## [4.5.0] — 2569-11-01
 ### Pi monitor ขั้น 5 · หน้า Dashboard ผู้ดูแล
 โดย ลุงพี

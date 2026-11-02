@@ -135,6 +135,32 @@ t('Dashboard: เมนูเฉพาะผู้ดูแล · หน้า�
   assert.match(page, /<td class="page">\$\{esc\(r\.page\)\}<\/td>/);
 });
 
+// ── ทะเบียนโปรแกรม (ลุงพีสั่ง 2 พ.ย. 2569: เพิ่ม Project Plan) ──
+t('ทะเบียน: Project Plan (repo aisolar2) = PLAN · หน้าอื่นของ ASC ไม่เปลี่ยน', () => {
+  assert.deepEqual({ ...U.defaults('/aisolar2/project_plan_spa.html') }, { app: 'PLAN', base: 'Project Plan' });
+  assert.deepEqual({ ...U.defaults('/AISOLAR2/Project_Plan_SPA.html') }, { app: 'PLAN', base: 'Project Plan' });
+  assert.equal(U.defaults('/aisolar2/site-survey.html').app, 'ASCS');          // หน้าอื่นใน aisolar2 ยังไม่ได้ลงทะเบียน
+  assert.equal(U.defaults('/asc/pi-monitor.html').base, 'ASC Enterprise · Pi monitor');
+});
+t('Dashboard: ชื่อโปรแกรมจากทะเบียน presence_apps · โปรแกรมใหม่ขึ้นในตัวกรองเอง', () => {
+  assert.equal(PM.APP_LABEL.PLAN, 'Project Plan');
+  const list = PM.setAppLabels([{ code: 'PLAN', label: 'Project Plan' }, { code: 'NEWX', label: 'โปรแกรมใหม่' }]);
+  assert.equal(PM.APP_LABEL.NEWX, 'โปรแกรมใหม่');
+  assert.deepEqual([...list.map(a => a.code)], ['ASCA', 'ASCS', 'NEWX', 'PI', 'PLAN']);
+  assert.equal(PM.filterRows([R('d@proinventive.co.th', 'PLAN', 'active', 'web', '2026-11-02T03:00:00Z')], { app: 'PLAN' }).length, 1);
+  const page = readFileSync(new URL('../docs/pi-monitor.html', import.meta.url), 'utf8');
+  assert.match(page, /from\('presence_apps'\)\.select\('code,label'\)/);
+  assert.match(page, /<option value="\$\{esc\(a\.code\)\}">\$\{esc\(a\.label\)\}<\/option>/);   // ชื่อจากฐานข้อมูลผ่าน esc
+});
+const apps = readFileSync(new URL('../supabase/presence-apps.sql', import.meta.url), 'utf8');
+t('presence-apps.sql: ทะเบียนครบ 4 โปรแกรม · เปลี่ยนเงื่อนไขเดิมเป็น foreign key · อ่านได้อย่างเดียว', () => {
+  for (const [c, l] of [['ASCS', 'ASC Studio'], ['ASCA', 'ASC Architect'], ['PI', 'Pi-System'], ['PLAN', 'Project Plan']])
+    assert.match(apps, new RegExp(`\\('${c}', +'${l}'\\)`));
+  assert.match(apps, /pg_get_constraintdef\(oid\) like '%ASCS%'/);
+  assert.match(apps, /foreign key \(app\) references public\.presence_apps \(code\)/);
+  assert.match(apps, /revoke all on public\.presence_apps from anon, authenticated;\s+grant select on public\.presence_apps to authenticated;/);
+});
+
 t('asc-cloud.js: ไม่มีพิกัด/IP · ออกจากระบบแจ้งก่อน', () => {
   assert.doesNotMatch(src, /geolocation/);
   assert.match(src, /await presenceSend\(true\);\s+\/\/ แจ้งออกจากระบบ/);

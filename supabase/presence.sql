@@ -42,7 +42,7 @@ create table if not exists public.app_presence (
     session_id  text        primary key check (length(session_id) between 8 and 64),  -- สุ่มต่อแท็บ (sessionStorage)
     user_id     uuid        not null references auth.users(id) on delete cascade,
     email       text        not null,
-    app         text        not null check (app in ('ASCS', 'ASCA', 'PI')),
+    app         text        not null check (app in ('ASCS', 'ASCA', 'PI')),   -- presence-apps.sql เปลี่ยนเป็นทะเบียน presence_apps (เพิ่มโปรแกรมได้)
     platform    text        not null default 'web' check (platform in ('web', 'desktop', 'mobile')),
     version     text        not null default '',
     page        text        not null default '',

@@ -344,11 +344,19 @@
        "หน้า/เมนู" = ชื่อหน้า + หัวข้อหน้าต่างที่เปิด หรือแท็บที่เลือก (เป็นป้ายของโปรแกรม ไม่ใช่ข้อมูลลูกค้า)
        ไม่เก็บที่ตั้ง/IP · ยังไม่ได้รัน SQL = ฟังก์ชันไม่มี → หยุดส่งเงียบ ๆ ไม่รบกวนผู้ใช้                       */
     const PRESENCE_MS = 60 * 1000;
-    const presence = { app: '', platform: 'web', version: '', base: '', page: '', sid: '', sent: '', lastInput: Date.now(), started: false, off: false };
+    const presence = { app: '', platform: 'web', version: '', base: '', page: '', detail: null, sid: '', sent: '', lastInput: Date.now(), started: false, off: false };
+
+    /* ทะเบียนโปรแกรมอื่นของลุงพีบนโดเมนเดียวกัน (peeraponggis.github.io) ที่โหลดไฟล์นี้เพื่อรายงาน Pi monitor
+       เพิ่มโปรแกรม = หนึ่งบรรทัดที่นี่ + หนึ่งบรรทัดใน supabase/presence-apps.sql (ลุงพีสั่ง 2 พ.ย. 2569) */
+    const PRESENCE_APPS = [
+        { path: '/aisolar2/project_plan', app: 'PLAN', base: 'Project Plan' }
+    ];
 
     /* โปรแกรม + ชื่อหน้า จากที่อยู่หน้าเว็บ (หน้าที่ต้องการละเอียดกว่านี้เรียก AscCloud.presence()/presencePage()) */
     function presenceDefaults(path) {
         const p = String(path || '').toLowerCase();
+        const reg = PRESENCE_APPS.find(a => p.includes(a.path));
+        if (reg) return { app: reg.app, base: reg.base };
         if (p.includes('/architec/'))       return { app: 'ASCA', base: 'ASCA' };
         if (p.includes('/studio/report'))   return { app: 'ASCS', base: 'ASCS · รายงาน' };
         if (p.includes('/studio/'))         return { app: 'ASCS', base: 'ASCS · ออกแบบ' };
@@ -382,7 +390,9 @@
     }
 
     function presencePageNow() {
-        const d = presence.page || presenceDetail(document);
+        let own = '';
+        if (presence.detail) { try { own = presenceLabel(presence.detail()); } catch (e) { /* หน้าเปลี่ยนโครงสร้าง = ใช้วิธีปกติ */ } }
+        const d = presence.page || own || presenceDetail(document);
         return d ? presence.base + ' · ' + d : presence.base;
     }
 
@@ -433,11 +443,13 @@
         disabledReason : disabledReason,
         client         : sb,
 
-        /* ตั้งโปรแกรม/เวอร์ชัน/หน้า ให้ละเอียดกว่าค่าจากที่อยู่หน้าเว็บ · { app:'ASCS'|'ASCA', platform, version, base, page } */
+        /* ตั้งโปรแกรม/เวอร์ชัน/หน้า ให้ละเอียดกว่าค่าจากที่อยู่หน้าเว็บ · { app:'ASCS'|'ASCA'|'PLAN', platform, version, base, page, detail }
+           detail = ฟังก์ชันคืนชื่อเมนู/แท็บที่เปิดอยู่ (เรียกทุก 5 วินาที) — สำหรับหน้าที่ไม่ได้ใช้แท็บแบบ ASC */
         presence(opts) {
             Object.keys(opts || {}).forEach(k => {
                 if (['app', 'platform', 'version', 'base', 'page'].includes(k) && opts[k] != null) presence[k] = String(opts[k]);
             });
+            if (opts && typeof opts.detail === 'function') presence.detail = opts.detail;
             presenceStart();
             presenceSend(false);
         },

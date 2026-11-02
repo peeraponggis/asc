@@ -19,7 +19,8 @@
 (function (root) {
     'use strict';
 
-    const APP_LABEL      = { ASCS: 'ASC Studio', ASCA: 'ASC Architect', PI: 'Pi-System' };
+    // ค่าตั้งต้น · หน้า Pi monitor เติมจากทะเบียน presence_apps (supabase/presence-apps.sql) ด้วย setAppLabels()
+    const APP_LABEL      = { ASCS: 'ASC Studio', ASCA: 'ASC Architect', PI: 'Pi-System', PLAN: 'Project Plan' };
     const PLATFORM_LABEL = { web: 'เว็บ', mobile: 'มือถือ', desktop: 'เครื่อง (desktop)' };
     const STATUS_LABEL   = { active: '🟢 ใช้งานอยู่', idle: '🟡 เปิดทิ้งไว้', offline: '⚫ ออฟไลน์' };
     const STATUS_ORDER   = { active: 0, idle: 1, offline: 2 };
@@ -79,7 +80,13 @@
         return '';
     }
 
-    const api = { APP_LABEL, PLATFORM_LABEL, STATUS_LABEL, summarize, filterRows, sortRows, ago, timeTh, checkSettings };
+    /* แถวจากตาราง presence_apps [{ code, label }] → เติม/แก้ APP_LABEL · คืนรายการเรียงตามรหัส (ใช้สร้างตัวกรอง) */
+    function setAppLabels(list) {
+        for (const a of list || []) if (a && a.code) APP_LABEL[String(a.code)] = String(a.label || a.code);
+        return Object.keys(APP_LABEL).sort().map(code => ({ code, label: APP_LABEL[code] }));
+    }
+
+    const api = { APP_LABEL, PLATFORM_LABEL, STATUS_LABEL, summarize, filterRows, sortRows, ago, timeTh, checkSettings, setAppLabels };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     else root.AscPiMonitor = api;
 })(typeof window !== 'undefined' ? window : globalThis);

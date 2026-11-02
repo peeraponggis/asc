@@ -59,7 +59,7 @@
 </head>
 <body>
 <header>
-  <div><h1>📊 Pi monitor</h1><div class="sub">สถานะการใช้งาน ASCS · ASCA · Pi-System (เว็บ + เครื่อง) — ผู้ใช้ @proinventive.co.th</div></div>
+  <div><h1>📊 Pi monitor</h1><div class="sub">สถานะการใช้งาน ASCS · ASCA · Pi-System · Project Plan (เว็บ + เครื่อง) — ผู้ใช้ @proinventive.co.th</div></div>
   <div class="right">
     <span id="updated">—</span>
     <label>รีเฟรชทุก
@@ -83,7 +83,7 @@
     </div>
 
     <div class="filters">
-      <select id="f-app"><option value="">ทุกโปรแกรม</option><option value="ASCS">ASC Studio</option><option value="ASCA">ASC Architect</option><option value="PI">Pi-System</option></select>
+      <select id="f-app"><option value="">ทุกโปรแกรม</option><option value="ASCS">ASC Studio</option><option value="ASCA">ASC Architect</option><option value="PI">Pi-System</option><option value="PLAN">Project Plan</option></select>
       <select id="f-status"><option value="">ทุกสถานะ</option><option value="active">🟢 ใช้งานอยู่</option><option value="idle">🟡 เปิดทิ้งไว้</option><option value="offline">⚫ ออฟไลน์</option></select>
       <select id="f-platform"><option value="">ทุกช่องทาง</option><option value="web">เว็บ</option><option value="mobile">มือถือ</option><option value="desktop">เครื่อง (desktop)</option></select>
       <input id="f-q" type="search" placeholder="ค้นหาอีเมล หรือหน้า/เมนู">
@@ -166,6 +166,16 @@
         timer = setInterval(() => { if (!document.hidden) load(); }, sec * 1000);
     }
 
+    /* ตัวกรอง "ทุกโปรแกรม" จากทะเบียน presence_apps · ยังไม่ได้รัน presence-apps.sql = ใช้รายการในหน้าเดิม */
+    async function loadApps() {
+        const { data, error } = await AC.client.from('presence_apps').select('code,label');
+        if (error || !data || !data.length) return;
+        const keep = $('f-app').value;
+        $('f-app').innerHTML = '<option value="">ทุกโปรแกรม</option>' +
+            M.setAppLabels(data).map(a => `<option value="${esc(a.code)}">${esc(a.label)}</option>`).join('');
+        $('f-app').value = keep;
+    }
+
     async function loadSettings() {
         const { data, error } = await AC.client.from('monitor_settings').select('*').eq('id', 1).maybeSingle();
         if (error || !data) { $('s-msg').textContent = 'อ่านค่าตั้งไม่ได้ — รัน supabase/presence.sql และ pi-monitor-telegram.sql ก่อน'; return; }
@@ -201,7 +211,7 @@
         $('s-save').addEventListener('click', saveSettings);
         document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
         setInterval(render, 30000);                                   // "x นาทีที่แล้ว" เดินเองระหว่างรอบ
-        await Promise.all([load(), loadSettings()]);
+        await Promise.all([load(), loadSettings(), loadApps()]);
         schedule();
     }
 
