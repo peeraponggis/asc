@@ -2491,7 +2491,8 @@ async function allowlistRemove(email) {
 const APP_MENUS = [
     { key: 'project_plan',  label: 'Project Plan',  icon: 'fa-diagram-project', url: 'https://peeraponggis.github.io/aisolar2/project_plan_spa.html' },
     { key: 'asc_architect', label: 'ASC Architect', icon: 'fa-compass-drafting', url: 'architec/index.html' },
-    { key: 'pi_system',     label: 'Pi-System',     icon: 'fa-building',        url: 'https://pi-system.pages.dev/' },
+    // hint = คำอธิบายบนช่องติ๊ก · pi_system ยังเปิดเมนู CRM-Pi ใน ASC Studio ด้วย (ASC Studio 0.136.0 · supabase/device-menus.sql)
+    { key: 'pi_system',     label: 'Pi-System',     icon: 'fa-building',        url: 'https://pi-system.pages.dev/', hint: 'รวมเมนู CRM-Pi ใน ASC Studio (เว็บ + เครื่องที่ผูกบัญชี)' },
     // Pi monitor ขั้น 5 (1 พ.ย. 2569) · adminOnly = ไม่มีช่องติ๊กให้ผู้ใช้ทั่วไป (มุมมอง presence_status ให้แอดมินเห็นทุกคนเท่านั้น)
     { key: 'pi_monitor',    label: 'Pi monitor',    icon: 'fa-chart-line',      url: 'pi-monitor.html', adminOnly: true }
 ];
@@ -2528,7 +2529,7 @@ function accessChips(x) {
     const self = SESSION && x.email.toLowerCase() === String(SESSION.username).toLowerCase();
     const menus = APP_MENUS.filter(m => !m.adminOnly).map(m => chip(x.isAdmin || x.menus.includes(m.key), m.label,
         `onclick="accessToggleMenu('${id}','${m.key}')"` + (x.isAdmin ? ' disabled' : ''),
-        x.isAdmin ? 'ผู้ดูแลระบบเห็นทุกเมนูอยู่แล้ว' : 'เปิด/ปิดเมนู ' + m.label));
+        x.isAdmin ? 'ผู้ดูแลระบบเห็นทุกเมนูอยู่แล้ว' : 'เปิด/ปิดเมนู ' + m.label + (m.hint ? ' — ' + m.hint : '')));
     const admin = `<button type="button" onclick="accessToggleAdmin('${id}')" ${self && x.isAdmin ? 'disabled' : ''}
         title="${self ? 'ถอดสิทธิ์ผู้ดูแลระบบของตัวเองไม่ได้' : 'ตั้ง/ถอดผู้ดูแลระบบ (เห็นทุกเมนู ทุกโครงการ และแก้รายชื่อนี้ได้)'}"
         class="text-[11px] px-2 py-0.5 rounded border transition disabled:cursor-not-allowed ${x.isAdmin
