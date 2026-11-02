@@ -4,17 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>เขียนแบบ · ASC Architect</title>
-<link rel="icon" href="../favicon.ico">
-<link rel="stylesheet" href="editor.css?v=0.17.0">
-<script src="../mode.js?v=0.17.0"></script>
+<link rel="icon" href="../favicon.ico?v=0.23.0">
+<link rel="stylesheet" href="editor.css?v=0.23.0">
+<script src="../mode.js?v=0.23.0"></script>
 <script type="importmap">
 { "imports": { "three": "../vendor/three/build/three.module.min.js", "three/addons/": "../vendor/three/examples/jsm/" } }
 </script>
-<link rel="stylesheet" href="../ai/assistant.css?v=0.17.0">
+<link rel="stylesheet" href="../ai/assistant.css?v=0.23.0">
+<script src="../brand.js?v=0.23.0"></script>
 </head>
 <body>
+<div class="appbrand" data-brand="line"></div>
 <header class="bar">
-  <a href="../" class="home" title="กลับหน้าหลัก"><img src="../logo.png" alt="" width="28" height="28"></a>
+  <a href="../" class="home" title="กลับหน้าหลัก"><img src="../logo.png?v=0.23.0" alt="" width="28" height="28"></a>
   <input id="doc-name" class="docname" value="แบบใหม่" aria-label="ชื่อแบบ">
   <div class="grp">
     <button data-act="new" title="แบบใหม่">ใหม่</button>
@@ -43,6 +45,25 @@
   </div>
   <span id="saved" class="muted"></span>
 </header>
+<nav class="menubar" id="menubar" aria-label="เมนู"></nav>
+<div class="toolbars" id="toolbars">
+  <div class="tgrp" id="tgStd" aria-label="มาตรฐาน (Standard)"></div>
+  <div class="tgrp sun3d" id="tgShadow" title="วันที่และเวลา → ตำแหน่งดวงอาทิตย์จริงตามพิกัดโครงการ">
+    <button type="button" class="sk" id="skShadow" title="เปิด/ปิดเงา (Shadows)"></button>
+    <div class="slid month"><div class="ticks"><span>ม</span><span>ก</span><span>ม</span><span>เ</span><span>พ</span><span>ม</span><span>ก</span><span>ส</span><span>ก</span><span>ต</span><span>พ</span><span>ธ</span></div><input type="range" id="skMonth" min="0" max="11" step="1" value="5" aria-label="เดือน"></div>
+    <div class="slid"><div class="ticks"><span>06:00</span><span>เที่ยง</span><span>19:00</span></div><input type="range" id="skTime" min="6" max="19" step="0.25" value="10" aria-label="เวลา"></div>
+    <span class="mono muted" id="skTimeLbl"></span>
+    <input type="date" id="sun-date" aria-label="วันที่"> <input type="time" id="sun-time" value="10:00" step="900" aria-label="เวลา">
+  </div>
+  <div class="tgrp" id="skStyles" aria-label="รูปแบบ (Styles)"></div>
+  <div class="tgrp" id="tgLoc" aria-label="ตำแหน่ง (Location)"></div>
+  <div class="tgrp" id="skViews" aria-label="มุมมอง (Views)"></div>
+  <div class="tgrp" id="tgSect">
+    <label title="ระดับระนาบตัด (Section Plane)">ตัด <input type="range" id="section" min="0" max="12000" step="100" value="12000"></label>
+    <select id="scenes" title="ฉาก (Scenes): มุมกล้องที่บันทึกไว้"><option value="">มุมกล้อง…</option></select><button type="button" data-act="scene-add" title="บันทึกมุมกล้องนี้เป็นฉาก">＋</button>
+  </div>
+  <select id="mat3d" hidden aria-hidden="true"></select>
+</div>
 
 <div class="main">
   <nav class="tools" id="tools">
@@ -68,26 +89,20 @@
         <label><input type="checkbox" id="snap" checked> จับจุด</label>
         <select id="grid" title="กริด"><option value="10">กริด 10</option><option value="50">50</option><option value="100" selected>100</option><option value="500">500</option><option value="0">ไม่จับกริด</option></select></div>
     </div>
-    <div class="pane" id="pane3d"><canvas id="c3d" aria-label="มุมมอง 3D"></canvas>
-      <div class="corner c3d">
-        <div class="tools3d" id="tools3d">
-          <button data-t3="orbit" class="on" title="หมุนมุมมอง (O)">🔄</button><button data-t3="select" title="เลือก (Space)">⬚</button>
-          <button data-t3="pushpull" title="push-pull (P)">⇕</button><button data-t3="rect" title="สี่เหลี่ยมบนพื้น/บนหน้า (R)">▭</button>
-          <button data-t3="move" title="ย้าย · Ctrl = คัดลอก (M)">✥</button><button data-t3="rotate" title="หมุน 15° (Q)">⟳</button>
-          <button data-t3="paint" title="ทาสี (B)">🪣</button><button data-t3="tape" title="ตลับเมตร (T)">📏</button>
-          <select id="mat3d" title="วัสดุ"></select>
-          <button data-act="group3d" title="รวมกลุ่มที่เลือก">⧉</button><button data-act="ungroup3d" title="แยกกลุ่ม">⧈</button><button data-act="del3d" title="ลบกล่องที่เลือก">🗑</button>
-          <button data-act="fit3d" title="ดูทั้งหมด">⤢</button>
-        </div>
-        <div class="sun3d">
-          <label title="วันที่และเวลา → ตำแหน่งดวงอาทิตย์จริงตามพิกัดโครงการ">☀ <input type="date" id="sun-date"> <input type="time" id="sun-time" value="10:00" step="900"></label>
-          <label title="ตัดหน้าแนวนอน">ตัดหน้า <input type="range" id="section" min="0" max="12000" step="100" value="12000"></label>
-          <select id="scenes" title="มุมกล้องที่บันทึกไว้"><option value="">มุมกล้อง…</option></select><button data-act="scene-add" title="บันทึกมุมกล้องนี้">＋</button>
-        </div></div>
+    <div class="pane" id="pane3d">
+      <nav class="big tools3d" id="tools3d" aria-label="ชุดเครื่องมือใหญ่ (Large Tool Set)"></nav>
+      <div class="vp"><canvas id="c3d" aria-label="มุมมอง 3D"></canvas>
+        <div class="vlabel" id="vlabel"></div>
+        <img id="matchImg" class="matchimg" alt="" hidden>
+      </div>
     </div>
   </section>
 
-  <aside class="props" id="props">
+  <aside class="props tray" id="props">
+    <header class="trayh"><span>ถาดเครื่องมือ (Default Tray)</span><button type="button" id="trayX" title="ซ่อนถาด (เปิดใหม่: หน้าต่าง → ถาดเครื่องมือ)">×</button></header>
+    <div class="traybody" id="trayBody"></div>
+    <div class="ascah">ASCA · ผัง 2D · หลังคา · โซลาร์</div>
+    <div class="ascatray">
     <div id="sel-box"></div>
     <details open><summary>ค่าเริ่มต้นเครื่องมือ</summary>
       <div class="form">
@@ -118,11 +133,13 @@
       <div id="sym-list" class="symlist"></div>
     </details>
     <div id="summary" class="summary"></div>
+    </div>
   </aside>
 </div>
 <footer class="status">
   <span id="status">พร้อม</span>
   <label class="vcb">ระยะ <input id="vcb" autocomplete="off" placeholder="พิมพ์แล้ว Enter"></label>
+  <button type="button" class="rbtn" id="renderBtn" title="ภาพนิ่งความละเอียดสูงสำหรับงานนำเสนอ (จากมุมที่เห็นอยู่)">📷 Render ภาพนำเสนอ</button>
 </footer>
 <div id="plot-dlg" class="dlg" hidden>
   <div class="dlg-box">
@@ -151,7 +168,7 @@
   </div>
 </div>
 <div id="toast" class="toast" hidden></div>
-<script type="module" src="main.js?v=0.17.0"></script>
-<script type="module" src="../ai/assistant.js?v=0.17.0"></script>
+<script type="module" src="main.js?v=0.23.0"></script>
+<script type="module" src="../ai/assistant.js?v=0.23.0"></script>
 </body>
 </html>

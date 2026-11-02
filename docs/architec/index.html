@@ -4,21 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ASC Architect</title>
-<link rel="icon" href="favicon.ico">
-<link rel="stylesheet" href="style.css?v=0.17.0">
+<link rel="icon" href="favicon.ico?v=0.23.0">
+<link rel="stylesheet" href="style.css?v=0.23.0">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
 <script src="../supabase-config.js" onerror="void 0"></script>
 <script src="../asc-cloud.js" onerror="void 0"></script>
-<script src="mode.js?v=0.17.0"></script>
-<link rel="stylesheet" href="ai/assistant.css?v=0.17.0">
+<script src="mode.js?v=0.23.0"></script>
+<link rel="stylesheet" href="ai/assistant.css?v=0.23.0">
+<script src="brand.js?v=0.23.0"></script>
 </head>
 <body>
 <header class="top">
-  <img src="logo.png" alt="" class="logo" width="36" height="36">
-  <div class="brand"><b>ASC Architect</b><span>ASCA · Design · Structure · Single line diagrams · ProInventive</span></div>
+  <img src="logo.png?v=0.23.0" alt="" class="logo" width="36" height="36">
+  <div class="brand" data-brand="block"><b>Auto Structure Co-pilot Architect (ASC Architect)</b><span>ASCA · Design · Structure · Single line diagrams</span></div>
   <span id="mode" class="badge">…</span>
   <span id="ver" class="ver"></span>
   <span id="user" class="ver"></span>
+  <span id="presence" class="ver" hidden></span>
 </header>
 <nav class="tabs" id="tabs">
   <button data-tab="home" class="on">หน้าแรก</button>
@@ -31,6 +33,7 @@
   <button data-tab="templates">แม่แบบ &amp; โปรแกรม</button>
 </nav>
 <main id="main">
+<div id="update-bar" class="panel warn local-only" hidden></div>
 
 <section id="tab-home" class="tab on">
   <h1>ภาพรวม</h1>
@@ -162,8 +165,8 @@
 </section>
 </main>
 <div id="toast" class="toast" hidden></div>
-<script src="strings.js?v=0.17.0"></script>
-<script src="app.js?v=0.17.0"></script>
-<script type="module" src="ai/assistant.js?v=0.17.0"></script>
+<script src="strings.js?v=0.23.0"></script>
+<script src="app.js?v=0.23.0"></script>
+<script type="module" src="ai/assistant.js?v=0.23.0"></script>
 </body>
 </html>

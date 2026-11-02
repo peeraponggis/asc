@@ -1,9 +1,11 @@
 // CAD 2D ของ ASC Architect — เปิด/แก้/บันทึก DWG·DXF แบบ AutoCAD (โดย ลุงพี)
 // เอกสารจริงอยู่ฝั่ง server (ezdxf) · หน้านี้ถือสำเนาวัตถุใน model space + จดสิ่งที่เปลี่ยน แล้วส่งไปตอนบันทึก
-import * as G from "./geom.js?v=0.17.0";
-import * as H from "./geom2.js?v=0.17.0";
-import { aciColor } from "../editor/cadlayer.js?v=0.17.0";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.17.0";
+import * as G from "./geom.js?v=0.23.0";
+import * as H from "./geom2.js?v=0.23.0";
+import * as SY from "./symbols.js?v=0.23.0";
+import * as UI from "./ribbon.js?v=0.23.0";
+import { aciColor } from "../editor/cadlayer.js?v=0.23.0";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.23.0";
 
 const $ = (s) => document.querySelector(s);
 const CLOUD = window.PA_MODE === "cloud";
@@ -15,8 +17,11 @@ const S = {
   sel: new Set(), undo: [], redo: [], touched: new Set(), layerCh: new Map(), dirty: false,
   view: { s: 1, ox: 0, oy: 0, dpr: 1, w: 0, h: 0 }, cursor: [0, 0], snap: null,
   osnap: true, ortho: false, seq: 0, cache: null, index: null, cmd: null, req: null, lastCmd: null, preview: null, win: null,
+  grid: !!UI.store.get("grid", false), gsnap: !!UI.store.get("gsnap", false), gridMM: Number(UI.store.get("gridMM", 500)) || 500,
+  anno: Number(UI.store.get("anno", 50)) || 50, symKey: null, dropPt: null, clip: null, clickSnap: null,
 };
 const isTemp = (h) => h.startsWith("~");
+const RO_MSG = "ไฟล์ใหญ่เปิดแบบดูก่อน — กด ✂ แก้บางส่วน แล้วเลือก layer/พื้นที่ที่จะแก้";
 const ink = () => getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#e6e9ed";
 
 function toast(m) { const t = $("#toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => (t.hidden = true), 3500); }
@@ -30,15 +35,46 @@ function load(d) {
   S.clayer = S.layers.has(d.clayer) ? d.clayer : "0";
   for (const e of d.entities) { e.orig = true; S.ents.set(e.h, e); S.order.push(e.h); }
   S.dirty = false; S.cache = null; S.index = null; S.fitted = false; S.ro = !!d.readonly;
-  $("#docname").textContent = d.name + (d.source === "dwg" ? " (DWG)" : "") + (S.ro ? " · ดูอย่างเดียว" : "") + (d.asc ? " · ASC Studio" : "");
+  $("#docname").textContent = d.name + (d.source === "dwg" ? " (DWG)" : "") + (S.ro ? " · ดูก่อน (ไฟล์ใหญ่)" : "") + (d.partial ? " · แก้บางส่วน" : "") + (d.asc ? " · ASC Studio" : "");
+  $("#b-partial").hidden = !d.partial_ok;
   document.title = d.name + " · CAD 2D";
   $("#units").textContent = ({ 0: "หน่วย: ไม่ระบุ", 1: "นิ้ว", 2: "ฟุต", 4: "มม.", 5: "ซม.", 6: "ม." })[d.insunits] || `หน่วย ${d.insunits}`;
   $("#info").innerHTML = `ไฟล์: ${esc(d.file || "(ยังไม่บันทึก)")}<br>รุ่น DXF: ${d.version}<br>วัตถุใน model space: ${d.entities.length.toLocaleString()}<br>block: ${d.blocks.length}<br>` +
     `ตรวจไฟล์: แก้ ${d.audit.fixes} · ผิดพลาด ${d.audit.errors}<br>เปิดใช้เวลา ${d.seconds} วินาที` +
+    (d.objects ? `<br>วัตถุทั้งไฟล์: ${d.objects.toLocaleString()}` : "") + (d.partial ? `<br>โหลดมาแก้: ${d.partial.count.toLocaleString()} วัตถุ (RAM ~${d.partial.ram_mb} MB)` : "") +
     (d.asc ? "<br>ไฟล์ของ ASC Studio — บันทึกเป็นสำเนาใน out/asc_studio/ (ไม่แก้ต้นฉบับ)" : "") + (d.note ? `<br><b>${esc(d.note)}</b>` : "");
   savedLabel(); renderLayers(); renderProps(); zoomExtents();
-  log(`เปิด ${d.name}: ${d.entities.length.toLocaleString()} ${S.ro ? "กลุ่มเส้น" : "วัตถุ"} · ${d.layers.length} layer`);
+  log(`เปิด ${d.name}: ${d.entities.length.toLocaleString()} ${S.ro ? "กลุ่มเส้น" : "วัตถุ"} · ${d.layers.length} layer` + (d.cached ? " (จากแคช)" : ""));
   if (d.note) { log(d.note); if (S.ro) toast(d.note); }
+  if (d.bin) fillView(d);
+}
+
+// ไฟล์ใหญ่: พิกัดเส้นมาเป็นไฟล์ไบนารี (float32) ถอดใน worker → ใส่ให้กลุ่มเส้นแต่ละกลุ่มตามลำดับ (subarray ไม่คัดลอก)
+function viewBin(url) {
+  return new Promise((res, rej) => {
+    const w = new Worker("./viewbin.worker.js?v=0.23.0");
+    w.onmessage = (m) => { w.terminate(); m.data.error ? rej(new Error(m.data.error)) : res(m.data); };
+    w.onerror = (e) => { w.terminate(); rej(new Error(e.message || "โหลดเส้นไม่ได้")); };
+    w.postMessage({ url });
+  });
+}
+async function fillView(d) {
+  const t0 = performance.now();
+  prompt("กำลังโหลดเส้น…");
+  try {
+    const { counts, flags, xy, bytes } = await viewBin(d.bin);
+    if (S.doc !== d) return;                                // เปิดไฟล์อื่นไปแล้ว
+    let p = 0, o = 0;
+    for (const e of d.entities) {
+      if (e.n == null) continue;
+      const arr = new Array(e.n);
+      for (let k = 0; k < e.n; k++, p++) { const c = counts[p]; arr[k] = [xy.subarray(o, o + c), flags[p], e.c]; o += c; }
+      e.d = arr; e.bb = null;
+    }
+    S.cache = null; S.index = null; S.loaded = performance.now() - t0; draw();
+    log(`โหลดเส้น ${p.toLocaleString()} เส้น (${(bytes / 1048576).toFixed(1)} MB) ใน ${((performance.now() - t0) / 1000).toFixed(1)} วินาที`);
+  } catch (e) { toast(e.message); log(e.message); }
+  if (!S.cmd) prompt("คำสั่ง:");
 }
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 function savedLabel() { $("#saved").textContent = S.dirty ? "● ยังไม่บันทึก" : S.doc && S.doc.file ? "บันทึกแล้ว" : ""; }
@@ -73,9 +109,9 @@ async function openDialog() {
     const r = await api("/api/cad/files");
     const conv = Object.keys(r.converters);
     $("#dlg-note").textContent = conv.length ? `ตัวแปลง DWG: ${conv.join(", ")}` : "ยังไม่มีตัวแปลง DWG — เปิดได้เฉพาะ DXF (ดู INSTALL-APPS.md)";
-    const big = 50 * 1048576;
+    const big = r.edit_limit || 50 * 1048576;
     const btn = (f, label) => `<button data-path="${esc(f.path)}" data-q="${esc(f.path.toLowerCase())}"><span>${f.kind === "dwg" ? "📐" : "📄"} ${esc(label)}` +
-      `${f.dxf ? ' <small class="muted">(มี DXF ที่แปลงไว้)</small>' : ""}</span><small class="muted">${(f.size / 1048576).toFixed(1)} MB${f.kind === "dxf" && f.size > big ? " · ดูอย่างเดียว" : ""}</small></button>`;
+      `${f.dxf ? ' <small class="muted">(มี DXF ที่แปลงไว้)</small>' : ""}</span><small class="muted">${(f.size / 1048576).toFixed(1)} MB${f.kind === "dxf" && f.size > big ? " · ไฟล์ใหญ่: ดูก่อน แก้บางส่วนได้" : ""}</small></button>`;
     const own = r.files.filter((f) => !f.library && !f.asc), groups = new Map();
     for (const f of r.files.filter((x) => x.asc)) { if (!groups.has(f.asc)) groups.set(f.asc, []); groups.get(f.asc).push(f); }
     body.lastElementChild.outerHTML = '<input id="dlg-q" type="search" placeholder="ค้นชื่อไฟล์…" style="width:100%;margin:6px 0">' +
@@ -95,29 +131,34 @@ $("#dlg-close").onclick = closeDlg;
 
 // ---------------------------------------------------------------- บันทึก
 function buildChanges() {
-  const ch = { layers: [...S.layerCh.values()], clayer: S.clayer, deleted: [], modified: [], copies: [], added: [] }, temps = { added: [], copies: [] };
+  const ch = { layers: [...S.layerCh.values()], clayer: S.clayer, deleted: [], modified: [], copies: [], added: [] }, temps = { added: [], copies: [] }, defs = new Map();
   for (const h of S.touched) {
     const e = S.ents.get(h);
     if (isTemp(h)) {
       if (!e) continue;
       if (e.mk) { ch.makeblocks = ch.makeblocks || []; ch.makeblocks.push({ ...e.mk, l: e.l }); continue; }
-      if (e.from) { ch.copies.push({ from: e.from, m: e.m, l: e.l, c: e.c }); temps.copies.push(h); }
-      else { ch.added.push({ t: e.t, l: e.l, c: e.c, g: e.g }); temps.added.push(h); }
+      if (e.from) { ch.copies.push({ from: e.from, m: e.m, l: e.l, c: e.c, ...(attrsOf(e) ? { attrs: attrsOf(e) } : {}) }); temps.copies.push(h); }
+      else {
+        ch.added.push({ t: e.t, l: e.l, c: e.c, g: e.g, ...(e.attrs ? { attrs: e.attrs } : {}) }); temps.added.push(h);
+        if (e.def) defs.set(e.def.name, e.def);                 // สัญลักษณ์จากคลัง: สร้าง block ครั้งเดียวต่อไฟล์
+      }
     } else if (!e) ch.deleted.push(h);
     else {
       const m = { h, l: e.l, c: e.c };
       if (e.explode) m.explode = true;
       if (e.g && e.t !== "INSERT") m.g = e.g;
       if (e.m && (!e.g || e.t === "INSERT")) m.m = e.m;
+      if (e.attrs) m.attrs = e.attrs;
       ch.modified.push(m);
     }
   }
+  if (defs.size) ch.blockdefs = [...defs.values()];
   return { ch, temps };
 }
 
 async function save(asNew) {
   if (!S.doc) return;
-  if (S.ro) return toast("ไฟล์ใหญ่เปิดแบบดูอย่างเดียว — บันทึกไม่ได้");
+  if (S.ro) return toast(RO_MSG);
   let target = null, fmt = null;
   if (asNew || !S.doc.file) {
     const def = (S.doc.file || "out/แบบใหม่.dwg").replace(/^asc\//, "out/asc_studio/").replace(/\.(dwg|dxf)$/i, "");
@@ -128,7 +169,9 @@ async function save(asNew) {
     fmt = $("#sv-fmt").value; target = $("#sv-name").value.trim() + "." + fmt;
   }
   const { ch, temps } = buildChanges();
-  dlgMsg("กำลังบันทึก…"); log("กำลังบันทึก…");
+  const dwg = (fmt || (S.doc.file || "").split(".").pop().toLowerCase()) === "dwg";
+  const slow = dwg && S.doc.partial ? " (DWG ของไฟล์ใหญ่ใช้หลายนาที — แปลงแล้วตรวจซ้ำ เช่น 190 MB ~4 นาที)" : "";
+  dlgMsg("กำลังบันทึก…" + slow); log("กำลังบันทึก…" + slow);
   try {
     const r = await api("/api/cad/save", { id: S.doc.id, changes: ch, target, format: fmt });
     await synced(r, temps);
@@ -137,6 +180,7 @@ async function save(asNew) {
     $("#docname").textContent = S.doc.name; closeDlg(); savedLabel(); S.cache = null; draw();
     log(`บันทึก ${r.saved} (${r.via})` + (r.backup ? ` · สำรองไฟล์เดิมไว้ที่ ${r.backup}` : ""));
     toast(`บันทึก ${r.saved} แล้ว (${r.via})`);
+    if (r.warn) { log("⚠ " + r.warn); toast("⚠ " + r.warn); }
     history.replaceState(null, "", "?file=" + encodeURIComponent(r.saved));
   } catch (e) { dlgMsg("บันทึกไม่สำเร็จ: " + e.message); log("บันทึกไม่สำเร็จ: " + e.message); if ($("#dlg").hidden) toast("บันทึกไม่สำเร็จ: " + e.message); }
 }
@@ -149,19 +193,21 @@ async function synced(r, temps) {
   for (const [tmp, real] of remap) { const e = S.ents.get(tmp); S.ents.delete(tmp); e.h = real; e.orig = true; delete e.from; S.ents.set(real, e); }
   S.order = S.order.map((h) => remap.get(h) || h);
   S.sel = new Set([...S.sel].map((h) => remap.get(h) || h));
-  for (const e of S.ents.values()) if (e.m) e.m = null;
+  for (const e of S.ents.values()) { if (e.m) e.m = null; if (e.def) delete e.def; }
   S.touched.clear(); S.layerCh.clear(); S.undo = []; S.redo = [];
+  if (S.clip && S.clip.cut && !S.clip.used) { S.clip = null; log("ล้างคลิปบอร์ดที่ตัดไว้ (บันทึกแล้ว)"); }
   if (r.refresh) {                                       // แตก block / สร้าง block → อ่านรายการวัตถุจาก server ใหม่ (คงมุมมองเดิม)
     const v = { ...S.view }, lst = await api("/api/cad/listing", { id: S.doc.id });
+    const faint = S.order.map((h) => S.ents.get(h)).filter((e) => e && e.ro);   // แก้บางส่วน: ส่วนจางไม่ได้อยู่ในเอกสารฝั่ง server
     S.ents.clear(); S.order = []; S.sel.clear();
-    for (const e of lst.entities) { e.orig = true; S.ents.set(e.h, e); S.order.push(e.h); }
+    for (const e of [...faint, ...lst.entities]) { e.orig = true; S.ents.set(e.h, e); S.order.push(e.h); }
     S.doc.blocks = lst.blocks; S.view = v; S.index = null;
   }
 }
 
 // ---------------------------------------------------------------- Plot PDF (ขั้นที่ 4)
 function plotDialog() {
-  if (S.ro) { toast("ไฟล์ใหญ่เปิดแบบดูอย่างเดียว — plot ไม่ได้ (พิมพ์จาก AutoCAD/ZWCAD)"); return Promise.resolve(null); }
+  if (S.ro || S.doc.partial) { toast("ไฟล์ใหญ่ (ดูก่อน/แก้บางส่วน) — plot ทั้งแบบไม่ได้ (พิมพ์จาก AutoCAD/ZWCAD)"); return Promise.resolve(null); }
   showDlg("🖨 Plot เป็น PDF", "กระดาษแนวนอน + กรอบแบบ/กรอบชื่อ กฟน./กฟภ. · แบบอยู่ในพื้นที่ซ้ายของคอลัมน์กรอบชื่อ · PDF เวกเตอร์เก็บที่ out\\plots");
   const title = (S.doc.name || "แบบใหม่").replace(/\.(dwg|dxf)$/i, "");
   $("#dlg-body").innerHTML = plotFormHTML([["all", "ทั้งแบบ (extents)"], ["view", "เท่าที่เห็นบนจอ"], ["window", "เลือกกรอบ 2 จุด…"]], { DWG_TITLE: title })
@@ -188,7 +234,9 @@ async function doPlot(o) {
 
 // ---------------------------------------------------------------- แก้เอกสาร (ทุกการแก้ผ่านที่นี่ → undo ได้)
 function commit(label, changes, layerChange) {
-  if (S.ro) { toast("ไฟล์นี้เปิดแบบดูอย่างเดียว (ไฟล์ใหญ่) — แก้ไม่ได้"); return; }
+  if (S.ro) { toast(RO_MSG); return; }
+  changes = changes.filter(([h]) => !(S.ents.get(h) || {}).ro);     // ส่วนจาง (ไม่ได้โหลดมาแก้) แก้/ลบไม่ได้เด็ดขาด
+  if (!changes.length && !layerChange) return;
   const before = new Map(), after = new Map();
   for (const [h, e] of changes) { if (!before.has(h)) before.set(h, S.ents.get(h) || null); after.set(h, e); }
   apply(after);
@@ -249,21 +297,21 @@ function paintImage(e) {
 }
 
 function buildCache() {
-  const groups = new Map(), texts = [], images = [];
+  const solid = new Map(), faint = new Map(), texts = [], images = [];
   S.fills = new Map();
   for (const h of S.order) {
     const e = S.ents.get(h); if (!e || !visible(e)) continue;
     if (e.img) images.push(e);
-    const col = colorOf(e);
+    const col = colorOf(e), groups = e.ro ? faint : solid;          // ro = ส่วนที่ไม่ได้โหลดมาแก้ (วาดจาง)
     let p = groups.get(col); if (!p) { p = new Path2D(); groups.set(col, p); }
     for (const [f, cl, sc, fill] of e.d) {
       if (fill) { let fp = S.fills.get(col); if (!fp) S.fills.set(col, (fp = new Path2D())); fp.moveTo(f[0], f[1]); for (let i = 2; i < f.length; i += 2) fp.lineTo(f[i], f[i + 1]); fp.closePath(); continue; }
       const pp = sc && sc !== 256 && sc !== 0 && sc !== e.c ? subPath(groups, aciColor(Math.abs(sc), ink())) : p;
       pp.moveTo(f[0], f[1]); for (let i = 2; i < f.length; i += 2) pp.lineTo(f[i], f[i + 1]); if (cl) pp.closePath();
     }
-    for (const t of e.x || []) texts.push([t, col, h]);
+    for (const t of e.x || []) texts.push([t, col, h, e.ro]);
   }
-  S.cache = { groups, texts, images };
+  S.cache = { groups: solid, faint, texts, images };
 }
 function subPath(groups, col) { let p = groups.get(col); if (!p) { p = new Path2D(); groups.set(col, p); } return p; }
 
@@ -292,7 +340,9 @@ function extents() {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const e of S.ents.values()) { if (!visible(e)) continue; const b = e.bb || (e.bb = G.bboxOf(e));
     if (b[0] < x0) x0 = b[0]; if (b[1] < y0) y0 = b[1]; if (b[2] > x1) x1 = b[2]; if (b[3] > y1) y1 = b[3]; }
-  return isFinite(x0) ? [x0, y0, x1, y1] : [0, 0, 1000, 1000];
+  if (isFinite(x0)) return [x0, y0, x1, y1];
+  const k = S.anno * SY.unitFactor(S.doc && S.doc.insunits);          // แบบว่าง: ดูพื้นที่เท่ากระดาษ A3 ตามมาตราส่วนสัญลักษณ์
+  return [0, 0, 420 * k, 297 * k];
 }
 
 function resize() {
@@ -322,15 +372,19 @@ function paint() {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
   if (!S.doc) return;
   if (!S.cache) buildCache();
+  if (S.grid) drawGrid();
   ctx.setTransform(v.s * v.dpr, 0, 0, -v.s * v.dpr, v.ox * v.dpr, v.oy * v.dpr);
   ctx.lineWidth = 1 / v.s; ctx.lineJoin = ctx.lineCap = "round";
   for (const e of S.cache.images) paintImage(e);
   for (const [col, p] of S.fills || []) { ctx.fillStyle = col; ctx.globalAlpha = 0.85; ctx.fill(p, "evenodd"); ctx.globalAlpha = 1; }
+  ctx.globalAlpha = 0.3;
+  for (const [col, p] of S.cache.faint) { ctx.strokeStyle = col; ctx.stroke(p); }
+  ctx.globalAlpha = 1;
   for (const [col, p] of S.cache.groups) { ctx.strokeStyle = col; ctx.stroke(p); }
-  for (const [[x, y, h, rot, s], col] of S.cache.texts) {
+  for (const [[x, y, h, rot, s], col, , ro] of S.cache.texts) {
     if (h * v.s < 2.5) continue;
     ctx.save(); ctx.translate(x, y); ctx.rotate((rot * Math.PI) / 180); ctx.scale(1, -1);
-    ctx.fillStyle = col; ctx.font = `${h * 1.35}px Tahoma, sans-serif`;
+    ctx.globalAlpha = ro ? 0.3 : 1; ctx.fillStyle = col; ctx.font = `${h * 1.35}px Tahoma, sans-serif`;
     s.split("\n").forEach((line, i) => ctx.fillText(line, 0, i * h * 1.6));
     ctx.restore();
   }
@@ -362,8 +416,21 @@ function paint() {
     else if (S.snap.kind === "near") { ctx.moveTo(x - 7, y - 7); ctx.lineTo(x + 7, y - 7); ctx.lineTo(x - 7, y + 7); ctx.lineTo(x + 7, y + 7); ctx.closePath(); }
     else { ctx.moveTo(x - 7, y); ctx.lineTo(x, y - 7); ctx.lineTo(x + 7, y); ctx.lineTo(x, y + 7); ctx.closePath(); }
     ctx.stroke(); }
-  const [cx, cy] = toS(S.cursor); ctx.strokeStyle = ink(); ctx.globalAlpha = 0.5; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(cx - 14, cy); ctx.lineTo(cx + 14, cy); ctx.moveTo(cx, cy - 14); ctx.lineTo(cx, cy + 14); ctx.stroke(); ctx.globalAlpha = 1;
+  if (S.hover) { const [cx, cy] = toS(S.cursor); UI.drawCursor(ctx, cx, cy, v.w, v.h, ink(), !S.req || S.req.kind === "select" || S.req.kind === "pick"); }
+}
+/** กริดบนจอ (F7) — ระยะตามช่องกริดที่แถบล่าง (มม. × หน่วยแบบ) · ถี่เกินจะขยายทีละ ×5 */
+function drawGrid() {
+  const v = S.view; let step = S.gridMM * SY.unitFactor(S.doc && S.doc.insunits); if (!(step > 0) || !(v.s > 0)) return;
+  while (step * v.s < 10) step *= 5;
+  const a = toW(0, v.h), b = toW(v.w, 0), css = getComputedStyle(document.documentElement);
+  ctx.setTransform(v.dpr, 0, 0, v.dpr, 0, 0); ctx.lineWidth = 1;
+  for (const [st, al] of [[step, 0.07], [step * 5, 0.14]]) {
+    ctx.strokeStyle = ink(); ctx.globalAlpha = al; ctx.beginPath();
+    for (let x = Math.floor(a[0] / st) * st; x <= b[0]; x += st) { const sx = Math.round(toS([x, 0])[0]) + 0.5; ctx.moveTo(sx, 0); ctx.lineTo(sx, v.h); }
+    for (let y = Math.floor(a[1] / st) * st; y <= b[1]; y += st) { const sy = Math.round(toS([0, y])[1]) + 0.5; ctx.moveTo(0, sy); ctx.lineTo(v.w, sy); }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1; void css;
 }
 function strokeEnt(e) {
   for (const [f, cl] of e.d) { ctx.beginPath(); ctx.moveTo(f[0], f[1]); for (let i = 2; i < f.length; i += 2) ctx.lineTo(f[i], f[i + 1]); if (cl) ctx.closePath(); ctx.stroke(); }
@@ -376,7 +443,7 @@ function osnapAt(p, skip) {
   const tol = 12 / S.view.s; let best = null;
   const consider = (q, kind, rank) => { const d = Math.hypot(q[0] - p[0], q[1] - p[1]); if (d < tol && (!best || rank < best.rank || (rank === best.rank && d < best.d))) best = { p: q, kind, d, rank }; };
   const ents = near(p, tol).map((h) => S.ents.get(h)).filter((e) => e && visible(e) && e.h !== skip).slice(0, 60);
-  for (const e of ents) for (const sp of G.snapPoints(e)) consider(sp.p, sp.kind, sp.kind === "end" ? 0 : sp.kind === "mid" || sp.kind === "center" ? 1 : 2);
+  for (const e of ents) { for (const sp of G.snapPoints(e)) consider(sp.p, sp.kind, sp.kind === "end" ? 0 : sp.kind === "mid" || sp.kind === "center" ? 1 : 2); for (const q of pinsOf(e)) consider(q, "pin", -1); }
   if (!best || best.rank > 0) for (let i = 0; i < ents.length; i++) for (const q of H.intersections(ents[i], ents.slice(i + 1, i + 12))) consider(q, "int", 0.5);
   const R = S.req;
   if (!best && R && R.base) for (const e of ents) for (const q of H.perpendicular(e, R.base)) consider(q, "perp", 3);
@@ -388,7 +455,7 @@ function pick(p) {
   for (const h of near(p, tol)) { const e = S.ents.get(h); if (!e || locked(e)) continue; const d = G.distTo(e, p); if (d <= tol && (!best || d < best.d)) best = { h, d }; }
   return best && best.h;
 }
-const locked = (e) => (S.layers.get(e.l) || {}).locked;
+const locked = (e) => e.ro || (S.layers.get(e.l) || {}).locked;
 function windowSelect(a, b) {
   const [x0, x1] = [Math.min(a[0], b[0]), Math.max(a[0], b[0])], [y0, y1] = [Math.min(a[1], b[1]), Math.max(a[1], b[1])], cross = b[0] < a[0];
   const out = [];
@@ -413,7 +480,8 @@ const ask = {
 };
 const ln = (a, b) => ({ d: [[[...a, ...b], 0]], x: [] });
 const ALIAS = { L: "LINE", PL: "PLINE", REC: "RECTANG", C: "CIRCLE", A: "ARC", T: "TEXT", DT: "TEXT", M: "MOVE", CO: "COPY", CP: "COPY", RO: "ROTATE",
-  SC: "SCALE", CAL: "CAL", MI: "MIRROR", E: "ERASE", ZE: "ZE", Z: "ZE", U: "U", OPEN: "OPEN", NEW: "NEW", SAVE: "SAVE", SAVEAS: "SAVEAS", REDO: "REDO", LA: "LAYER" };
+  SC: "SCALE", CAL: "CAL", MI: "MIRROR", E: "ERASE", ZE: "ZE", Z: "ZE", U: "U", OPEN: "OPEN", NEW: "NEW", SAVE: "SAVE", SAVEAS: "SAVEAS", REDO: "REDO", LA: "LAYER",
+  PARTIALOPEN: "PARTIAL", PARTIALLOAD: "PARTIAL" };
 
 const CMDS = {
   *LINE() {
@@ -490,7 +558,53 @@ const CMDS = {
     if (String(keep).toUpperCase().startsWith("Y")) transformSel(m, false, "สะท้อน"); else transformSel(m, true, "สะท้อน (คัดลอก)");
   },
   *LAYER() { const n = yield ask.text("ชื่อ layer ใหม่:"); if (n) addLayer(n); },
+  // ไฟล์ใหญ่: เลือก layer และ/หรือพื้นที่ → โหลดเฉพาะส่วนนั้นมาแก้ (แบบ Partial Open ของ AutoCAD) · ส่วนอื่นจางและล็อก
+  *PARTIAL() {
+    if (!S.doc || !S.doc.partial_ok) { log(S.doc && S.doc.partial ? "อยู่ในโหมดแก้บางส่วนแล้ว — เลือกส่วนใหม่: บันทึก แล้วเปิดไฟล์อีกครั้ง" : "แก้บางส่วนใช้กับไฟล์ใหญ่ (DWG/DXF) ที่เปิดดูอยู่"); return; }
+    const pick = yield ask.wait(partialDialog(), "เลือก layer และ/หรือพื้นที่ในกล่องข้อความ…");
+    if (!pick) return;
+    let area = null;
+    if (pick.area) {
+      const a = yield ask.point("มุมแรกของพื้นที่ที่จะแก้:"); if (!a || typeof a === "string") return;
+      const b = yield ask.point("มุมตรงข้าม:", a, (c) => [rectDisp(a, c)]); if (!b || typeof b === "string") return;
+      area = [a[0], a[1], b[0], b[1]];
+    }
+    let r = yield ask.wait(partialLoad(pick.layers, area, false), "กำลังโหลดส่วนที่เลือกมาแก้…");
+    if (r && r.tooBig) {
+      if (!confirm(r.tooBig.error + "\n\nโหลดต่อ?")) return log("ยกเลิกแก้บางส่วน");
+      r = yield ask.wait(partialLoad(pick.layers, area, true), "กำลังโหลดส่วนที่เลือกมาแก้…");
+    }
+    if (!r || !r.id) return;
+    const v = { ...S.view };
+    load(r); S.view = v; S.fitted = true; draw();
+    toast(`แก้บางส่วน: ${r.partial.count.toLocaleString()} วัตถุ — ส่วนอื่นจางและล็อก`);
+  },
 };
+async function partialLoad(layers, area, force) {
+  const r = await fetch("/api/cad/partial", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: S.doc.id, layers, area, force }) });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 409 && j.too_big) return { tooBig: j };
+  if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+  return j;
+}
+function partialDialog() {
+  showDlg("✂ แก้บางส่วน", "เลือก layer ที่จะแก้ แล้วโหลดทั้ง layer หรือลากกรอบพื้นที่บนแบบ (ไม่เลือก layer + ลากกรอบ = ทุก layer ในกรอบ) · ส่วนที่ไม่ได้เลือกแสดงจางและล็อก · บันทึกแล้วส่วนอื่นคงเดิมทุกไบต์");
+  const lays = [...S.layers.values()].filter((L) => L.n).sort((a, b) => a.name.localeCompare(b.name));
+  $("#dlg-body").innerHTML = '<input id="pa-q" type="search" placeholder="ค้นชื่อ layer…" style="width:100%;margin:6px 0">' +
+    `<div id="pa-list" style="max-height:45vh;overflow:auto">${lays.map((L) => `<label class="row small" data-q="${esc(L.name.toLowerCase())}"><input type="checkbox" value="${esc(L.name)}"> ` +
+      `<i style="display:inline-block;width:10px;height:10px;background:${aciColor(L.color, ink())}"></i> ${esc(L.name)} <span class="muted">(${L.n.toLocaleString()})</span></label>`).join("")}</div>` +
+    '<p class="small muted" id="pa-sum">ยังไม่ได้เลือก layer</p><div class="row"><button id="pa-area">▭ ลากกรอบพื้นที่บนแบบ…</button><button id="pa-go" class="go">โหลด layer ที่เลือกมาแก้</button></div>';
+  const chosen = () => [...$("#dlg-body").querySelectorAll("#pa-list input:checked")].map((c) => c.value);
+  $("#pa-q").oninput = (e) => { const q = e.target.value.trim().toLowerCase(); $("#dlg-body").querySelectorAll("#pa-list label").forEach((l) => (l.hidden = q && !l.dataset.q.includes(q))); };
+  $("#pa-list").onchange = () => { const c = chosen(), n = c.reduce((t, x) => t + ((S.layers.get(x) || {}).n || 0), 0);
+    $("#pa-sum").textContent = c.length ? `เลือก ${c.length} layer · ${n.toLocaleString()} วัตถุ` : "ยังไม่ได้เลือก layer (ลากกรอบ = ทุก layer ในกรอบ)"; };
+  return new Promise((res) => {
+    const close = $("#dlg-close"), prev = close.onclick, done = (v) => { close.onclick = prev; closeDlg(); res(v); };
+    $("#pa-area").onclick = () => done({ layers: chosen(), area: true });
+    $("#pa-go").onclick = () => { const c = chosen(); if (!c.length) return dlgMsg("เลือก layer อย่างน้อย 1 อัน หรือกด ลากกรอบพื้นที่"); done({ layers: c, area: false }); };
+    close.onclick = () => done(null);
+  });
+}
 function* xform(name, copy) {
   if (!S.sel.size) { const ok = yield ask.select(`${name} เลือกวัตถุ แล้ว Enter:`); if (!ok) return; }
   const base = yield ask.point("จุดฐาน:"); if (!base) return;
@@ -706,6 +820,337 @@ Object.assign(CMDS, {
     }
   },
 });
+// ---------------------------------------------------------------- คลังสัญลักษณ์ · สายไฟ · คลิปบอร์ด (0.21.0)
+Object.assign(ALIAS, { WI: "WIRE", SYM: "SYM", PASTECLIP: "PASTE" });
+function ensureLayer(name) {
+  if (S.layers.has(name)) return;
+  const L = { name, color: SY.LAYER_COLORS[name] || 7, on: true, frozen: false, locked: false };
+  S.layers.set(name, L); S.layerCh.set(name, { ...L }); renderLayers(); log(`เพิ่ม layer ${name}`);
+}
+/** ตัวคูณขนาดสัญลักษณ์: แผนผัง = มาตราส่วน × หน่วยแบบ · ขนาดจริง = หน่วยแบบ */
+function symScale(en) { const f = SY.unitFactor(S.doc && S.doc.insunits); return (en.sym ? (en.real ? 1 : S.anno) : en.paper ? S.anno : 1) * f; }
+const libCache = new Map();
+function libGeom(en) { if (!libCache.has(en.key)) libCache.set(en.key, api("/api/cad/libblock", { lib: en.lib, name: en.name }).catch((e) => { libCache.delete(en.key); throw e; })); return libCache.get(en.key); }
+const attrsOf = (e) => e.attrs || (e.g && e.g.attrs) || null;
+function nextTag(pre) {
+  if (!pre) return ""; let n = 0;
+  for (const e of S.ents.values()) { const t = (attrsOf(e) || {}).TAG; if (t && t.startsWith(pre)) { const m = t.slice(pre.length).match(/^-?(\d+)$/); if (m) n = Math.max(n, +m[1]); } }
+  return pre + (n + 1);
+}
+/** ขั้วต่อของสัญลักษณ์ ASCA_* ในแบบ (พิกัดจริง) — ใช้จับจุดตอนลากสาย */
+function pinsOf(e) {
+  if (e.t !== "INSERT" || !e.g || !e.g.name || !e.g.name.startsWith("ASCA_")) return [];
+  const s = SY.SYMS[e.g.name.slice(5)]; if (!s) return [];
+  const g = e.g, r = (g.rot * Math.PI) / 180, c = Math.cos(r), sn = Math.sin(r);
+  return s.pins.map(([x, y]) => { const lx = x * g.sx, ly = y * g.sy; return [g.p[0] + lx * c - ly * sn, g.p[1] + lx * sn + ly * c]; });
+}
+Object.assign(CMDS, {
+  /** วางสัญลักษณ์จากคลัง (S.symKey) — คลิกได้หลายครั้ง · R หมุน · F กลับด้าน · สัญลักษณ์มีขั้ว: จุดจับ = ขั้วแรก */
+  *SYM() {
+    const en = UI.ENTRIES.get(S.symKey); if (!en) return log("ไม่พบสัญลักษณ์");
+    let proto;
+    if (en.sym) proto = SY.symDisplay(en.sym, en.sym.tag ? "\u0000TAG" : "");
+    else { const g = yield ask.wait(libGeom(en), "กำลังโหลดสัญลักษณ์จากคลัง…"); if (!g) return; proto = { d: g.d, x: g.x }; }
+    const k = symScale(en), anchor = en.sym && !en.sym.real && en.sym.pins.length ? en.sym.pins[0] : [0, 0];
+    const name = en.sym ? SY.blockName(en.sym) : en.name, pre = en.sym ? en.sym.tag : "";
+    let rot = 0, flip = false;
+    const make = (p, tag) => {
+      const local = G.mul(G.rotateAt(rot, [0, 0]), [flip ? -k : k, 0, 0, k, 0, 0]), a = G.ap(local, anchor);
+      const x = proto.x.map((t) => (t[4] === "\u0000TAG" ? [...t.slice(0, 4), tag || "", ...t.slice(5)] : t)).filter((t) => t[4] !== "");
+      const n = G.transformEntity({ t: "INSERT", g: { name, p: [0, 0], sx: 1, sy: 1, rot: 0 }, d: proto.d, x }, G.mul(G.translate(p[0] - a[0], p[1] - a[1]), local));
+      delete n.m; return n;
+    };
+    const place = (p) => {
+      const tag = nextTag(pre), n = make(p, tag), L = en.layer || "0";
+      ensureLayer(L);
+      Object.assign(n, { h: tempH(), l: L, c: 256, orig: false, layerColor: (S.layers.get(L) || {}).color, def: en.sym ? SY.blockDef(en.sym) : { name: en.name, lib: en.lib } });
+      if (tag) n.attrs = { TAG: tag }; else if (en.attrs && en.attrs.length) n.attrs = {};
+      commit(`วาง ${en.short}${tag ? " " + tag : ""}`, [[n.h, n]]); UI.noteRecent(en.key);
+    };
+    if (S.dropPt) { const p = S.dropPt; S.dropPt = null; place(p); return; }
+    if (S.pendingPt) { place(S.pendingPt); S.pendingPt = null; }
+    for (;;) {
+      const tg = nextTag(pre), req = ask.point(`วาง ${en.th} · R หมุน 90° · F กลับด้าน · Enter จบ:`, null, (q) => [make(q, tg)]);
+      req.keys = (key) => { if (key === "r") { rot = (rot + 90) % 360; return true; } if (key === "f") { flip = !flip; return true; } return false; };
+      const p = yield req;
+      if (p === "R") { rot = (rot + 90) % 360; continue; }
+      if (p === "F") { flip = !flip; continue; }
+      if (!p || typeof p === "string") return;
+      place(p);
+    }
+  },
+  /** วางจากคลิปบอร์ด (Ctrl+V) — ตัด (Ctrl+X) แล้ววางครั้งแรก = ย้ายของเดิม */
+  *PASTE() {
+    const C = S.clip; if (!C) return log("คลิปบอร์ดว่าง — เลือกวัตถุแล้วกด Ctrl+C หรือ Ctrl+X ก่อน");
+    const mv = (q) => G.translate(q[0] - C.base[0], q[1] - C.base[1]);
+    const p = yield ask.point(`วาง ${C.ents.length} วัตถุ — คลิกตำแหน่ง:`, C.base, (q) => C.ents.slice(0, 400).map((e) => G.transformEntity(e, mv(q))));
+    if (!p || typeof p === "string") return;
+    const m = mv(p), ch = [];
+    for (const e of C.ents) {
+      const n = G.transformEntity(e, m);
+      if (!(C.cut && !C.used)) { n.h = tempH(); n.orig = false; if (!e.g || e.t === "INSERT") n.from = e.orig ? e.h : e.from; if (n.g && e.t !== "INSERT") delete n.from; }
+      ch.push([n.h, n]);
+    }
+    const restore = C.cut && !C.used; C.used = true;
+    commit(`วาง ${ch.length} วัตถุ`, ch); S.sel = new Set(ch.map(([h]) => h));
+    if (restore) C.ents = ch.map(([, n]) => ({ ...n }));              // วางครั้งต่อไป = คัดลอกจากชิ้นที่วางแล้ว
+    renderProps(); draw();
+  },
+});
+// ---------------------------------------------------------------- เครื่องมือวาดตามหน้าตัวอย่าง (0.22.1): ผนัง · ห้อง · หลายเหลี่ยม · สาย/บัส/จุดต่อ · ท่อตามชนิด · ท่อลม · TAG · เรียงเลข · ตาราง
+Object.assign(CMDS, {
+  /** ป้ายชี้ (Leader): ปลายลูกศร → จุดวางข้อความ → พิมพ์ข้อความ · ลูกศรทึบ + เส้นชี้ + MTEXT บน G-ANNO */
+  *LEADER() {
+    const tip = yield ask.point("LEADER ป้ายชี้ — คลิกปลายลูกศร:"); if (!tip || typeof tip === "string") return;
+    const at = yield ask.point("คลิกตำแหน่งข้อความ:", tip, (q) => [newEntity("LINE", { a: tip, b: q })]); if (!at || typeof at === "string") return;
+    const s = yield ask.text("ข้อความ:"); if (!s) return;
+    const k = annoK(), h = 2.5 * k, dir = at[0] >= tip[0] ? 1 : -1, land = [at[0] + dir * 3 * k, at[1]];
+    ensureLayer("G-ANNO");
+    const ln = newEntity("LWPOLYLINE", { pts: [[...tip, 0], [...at, 0], [...land, 0]], closed: false, w: 0 }); ln.l = "G-ANNO";
+    const a = (Math.atan2(at[1] - tip[1], at[0] - tip[0])), L = 3 * k, W = 0.9 * k, b = [tip[0] + L * Math.cos(a), tip[1] + L * Math.sin(a)];
+    const g = { pts: [tip, [b[0] - W * Math.sin(a), b[1] + W * Math.cos(a)], [b[0] + W * Math.sin(a), b[1] - W * Math.cos(a)]], pattern: "SOLID", scale: 1, angle: 0 }, hd = newEntity("HATCH", g); hd.d = hatchDisplay(g, 0); hd.l = "G-ANNO";
+    const tp = [land[0] + dir * 1 * k, land[1]], tx = newEntity("MTEXT", { p: dir > 0 ? tp : [tp[0] - s.length * h * 0.75, tp[1]], h, rot: 0, s, ap: 4 }); tx.l = "G-ANNO";
+    tx.x = [[tx.g.p[0], tx.g.p[1] - h * 0.45, h, 0, s, 256]];
+    commit(`ป้ายชี้: ${s}`, [[ln.h, ln], [hd.h, hd], [tx.h, tx]]);
+  },
+});
+Object.assign(ALIAS, { LE: "LEADER", LEADER: "LEADER", QLEADER: "LEADER", TB: "BOM", TABLE: "BOM", ZI: "ZIN", ZO: "ZOUT" });
+Object.assign(ALIAS, { WA: "WALL", WALL: "WALL", RM: "ROOM", POL: "POLYGON", BUS: "BUS", JD: "DOT", DOT: "DOT", PP: "PIPE", DU: "DUCT", TAG: "TAG", AN: "AUTONUM",
+  BOM: "BOM", SENS: "SENSLIST", PCW: "PCW", PHW: "PHW", PS: "PS", PW: "PW", PV: "PV", PRD: "PRD", PSIG: "PSIG", PWL: "PWL" });
+/** ตัวคูณ: มม. บนกระดาษ × มาตราส่วนสัญลักษณ์ → หน่วยของแบบ */
+const annoK = () => S.anno * SY.unitFactor(S.doc && S.doc.insunits);
+const mmK = () => SY.unitFactor(S.doc && S.doc.insunits);
+const LT = { DASHED: [12.7, -6.35], HIDDEN: [6.35, -3.175], DASHDOT: [12.7, -6.35, 0, -6.35], DOT: [0, -6.35], CENTER: [31.75, -6.35, 6.35, -6.35], PHANTOM: [31.75, -6.35, 6.35, -6.35, 6.35, -6.35] };
+const ROUTES = {
+  WIRE: { th: "สายไฟ", layer: "E-WIRE", dots: true },
+  BUS: { th: "บัสบาร์", layer: "E-POWR", w: 0.8, dots: true },
+  PIPE: { th: "ท่อ (P&ID)", layer: "P-PIPE" },
+  PCW: { th: "ท่อน้ำดี (น้ำเย็น)", lab: "CW", layer: "P-DOMW", lt: "DASHED" },
+  PHW: { th: "ท่อน้ำร้อน", lab: "HW", layer: "P-HOTW", lt: "DASHDOT" },
+  PS: { th: "ท่อโสโครก (จากส้วม)", lab: "S", layer: "P-SANR", w: 0.5 },
+  PW: { th: "ท่อน้ำทิ้ง", lab: "W", layer: "P-SANR" },
+  PV: { th: "ท่ออากาศ", lab: "V", layer: "P-VENT", lt: "HIDDEN" },
+  PRD: { th: "ท่อน้ำฝน", lab: "RD", layer: "P-STRM", lt: "PHANTOM" },
+  PSIG: { th: "สายสัญญาณ", layer: "I-SENS", lt: "DASHED" },
+  PWL: { th: "สัญญาณไร้สาย", layer: "I-SENS", lt: "DOT" },
+};
+/** เส้นประสำหรับแสดงผล (ไฟล์จริงใช้ linetype ของ DXF) */
+function dashDisp(pts, pat, k) {
+  const P = pat.map((v) => v * k), out = []; let i = 0, rem = Math.abs(P[0]) || 0.4 * k, on = P[0] >= 0;
+  for (let s = 1; s < pts.length; s++) {
+    const a = pts[s - 1], b = pts[s], L = Math.hypot(b[0] - a[0], b[1] - a[1]); let t = 0;
+    while (t < L - 1e-9 && out.length < 5000) {
+      const st = Math.min(rem, L - t);
+      if (on) { const f0 = t / L, f1 = (t + st) / L; out.push([[a[0] + (b[0] - a[0]) * f0, a[1] + (b[1] - a[1]) * f0, a[0] + (b[0] - a[0]) * f1, a[1] + (b[1] - a[1]) * f1], 0, 256]); }
+      t += st; rem -= st;
+      if (rem <= 1e-9) { i = (i + 1) % P.length; rem = Math.abs(P[i]) || 0.4 * k; on = P[i] >= 0; }
+    }
+  }
+  return out;
+}
+/** แถบหนา (บัส/ท่อโสโครก) แสดงเป็นสี่เหลี่ยมทึบต่อช่วง */
+function bandDisp(pts, w) {
+  const out = [];
+  for (let s = 1; s < pts.length; s++) {
+    const a = pts[s - 1], b = pts[s], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, n = [(-(b[1] - a[1]) / L) * w / 2, ((b[0] - a[0]) / L) * w / 2];
+    out.push([[a[0] + n[0], a[1] + n[1], b[0] + n[0], b[1] + n[1], b[0] - n[0], b[1] - n[1], a[0] - n[0], a[1] - n[1]], 1, 256, 1]);
+  }
+  return out;
+}
+function routeEntity(R, pts) {
+  const g = { pts: pts.map((p) => [p[0], p[1], 0]), closed: false, w: R.w ? R.w * annoK() : 0, ...(R.lt ? { lt: R.lt, lts: annoK() } : {}) };
+  const e = newEntity("LWPOLYLINE", g); e.l = R.layer;
+  if (R.lt) e.d = dashDisp(pts, LT[R.lt], annoK());
+  else if (R.w) e.d = bandDisp(pts, g.w);
+  return e;
+}
+/** ป้ายชนิดท่อกลางช่วงที่ยาวที่สุด (MTEXT มีพื้นหลัง → เส้นขาดตรงป้ายใน AutoCAD) */
+function routeLabel(R, pts) {
+  let bi = 1, bl = 0; for (let i = 1; i < pts.length; i++) { const l = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); if (l > bl) { bl = l; bi = i; } }
+  const h = 2.2 * annoK(); if (bl < h * 5) return null;
+  const a = pts[bi - 1], b = pts[bi]; let rot = angle(a, b); if (rot > 90.01 || rot <= -90) rot += 180;
+  const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  const e = newEntity("MTEXT", { p: m, h, rot, s: R.lab, ap: 5, bg: true }); e.l = R.layer;
+  const w = R.lab.length * h * 0.75; e.x = [[m[0] - (w / 2) * Math.cos((rot * Math.PI) / 180), m[1] - (w / 2) * Math.sin((rot * Math.PI) / 180) - h * 0.45, h, rot, R.lab, 256]];
+  return e;
+}
+/** จุดต่อสาย (วงกลมทึบ) */
+function dotEntity(p, layer) {
+  const r = 0.7 * annoK(), pts = []; for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2; pts.push([p[0] + r * Math.cos(a), p[1] + r * Math.sin(a)]); }
+  const g = { pts, pattern: "SOLID", scale: 1, angle: 0 }, e = newEntity("HATCH", g); e.d = hatchDisplay(g, 0); e.l = layer; return e;
+}
+/** ปลายสายที่ไปชนกลางสาย/บัสเส้นอื่น → ต้องมีจุดต่อ */
+function needDot(p, layers) {
+  const tolD = 1 / S.view.s;
+  for (const e of S.ents.values()) {
+    if (e.t !== "LWPOLYLINE" || !layers.includes(e.l) || !e.g) continue;
+    const ps = e.g.pts;
+    for (let i = 1; i < ps.length; i++) {
+      const a = ps[i - 1], b = ps[i], ab = [b[0] - a[0], b[1] - a[1]], L2 = ab[0] ** 2 + ab[1] ** 2 || 1, t = ((p[0] - a[0]) * ab[0] + (p[1] - a[1]) * ab[1]) / L2;
+      if (t <= 0.001 || t >= 0.999) continue;
+      if (Math.hypot(a[0] + ab[0] * t - p[0], a[1] + ab[1] * t - p[1]) < tolD * 2) return true;
+    }
+  }
+  return false;
+}
+function* routeCmd(key) {
+  const R = ROUTES[key];
+  const p0 = yield ask.point(`${R.th} — คลิกจุดเริ่ม (ขั้วอุปกรณ์ ◇ หรือปลายเส้น):`); if (!p0 || typeof p0 === "string") return;
+  const pts = [p0]; let vfirst = false;
+  const route = (a, b) => (Math.abs(a[0] - b[0]) < 1e-9 || Math.abs(a[1] - b[1]) < 1e-9 ? [b] : vfirst ? [[a[0], b[1]], b] : [[b[0], a[1]], b]);
+  for (;;) {
+    const last = pts[pts.length - 1];
+    const req = ask.point("จุดถัดไป (หักมุมฉากเอง · Tab สลับแนว · คลิกขั้ว ◇ = จบ) [U=ย้อน · Enter=จบ]:", last, (c) => [{ d: [[[...pts.flat(), ...route(last, c).flat()], 0]], x: [] }]);
+    req.keys = (k) => { if (k === "Tab") { vfirst = !vfirst; return true; } return false; };
+    const q = yield req;
+    if (q === "U") { if (pts.length > 1) pts.pop(); continue; }
+    if (!q || typeof q === "string") break;
+    pts.push(...route(last, q));
+    if (S.clickSnap && S.clickSnap.kind === "pin") break;
+  }
+  if (pts.length < 2) return;
+  ensureLayer(R.layer);
+  const ch = [], e = routeEntity(R, pts); ch.push([e.h, e]);
+  if (R.lab) { const lb = routeLabel(R, pts); if (lb) ch.push([lb.h, lb]); }
+  if (R.dots) for (const p of [pts[0], pts[pts.length - 1]]) if (needDot(p, ["E-WIRE", "E-POWR"])) { const d = dotEntity(p, R.layer); ch.push([d.h, d]); }
+  commit(`${R.th} ${pts.length - 1} ช่วง`, ch);
+}
+/** เส้นขอบผนัง/ท่อลม: offset ทางเดิน ± ครึ่งความหนา (มุมต่อแบบ miter) */
+function offsetPath(pts, d, closed) {
+  const n = pts.length, out = [], nrm = (a, b) => { const v = [b[0] - a[0], b[1] - a[1]], l = Math.hypot(...v) || 1; return [-v[1] / l, v[0] / l]; };
+  for (let i = 0; i < n; i++) {
+    const prev = i > 0 ? pts[i - 1] : closed ? pts[n - 1] : null, next = i < n - 1 ? pts[i + 1] : closed ? pts[0] : null;
+    if (!prev) { const m = nrm(pts[i], next); out.push([pts[i][0] + m[0] * d, pts[i][1] + m[1] * d]); continue; }
+    if (!next) { const m = nrm(prev, pts[i]); out.push([pts[i][0] + m[0] * d, pts[i][1] + m[1] * d]); continue; }
+    const n1 = nrm(prev, pts[i]), n2 = nrm(pts[i], next), m = [n1[0] + n2[0], n1[1] + n2[1]], ml = Math.hypot(...m);
+    if (ml < 1e-6) { out.push([pts[i][0] + n1[0] * d, pts[i][1] + n1[1] * d]); continue; }
+    const u = [m[0] / ml, m[1] / ml], k = d / Math.max(0.2, u[0] * n1[0] + u[1] * n1[1]);
+    out.push([pts[i][0] + u[0] * k, pts[i][1] + u[1] * k]);
+  }
+  return out;
+}
+function* bandCmd(kind) {
+  const isWall = kind === "WALL", key = isWall ? "wallTh" : "ductW";
+  const th = yield ask.num(isWall ? "WALL ความหนาผนัง:" : "DUCT ความกว้างท่อลม:", lastNum(key, (isWall ? 200 : 400) * mmK())); if (!(th > 0)) return; S[key] = th;
+  const pts = []; const p0 = yield ask.point(isWall ? "จุดเริ่มแนวผนัง (แนวกึ่งกลาง):" : "จุดเริ่มแนวท่อลม:"); if (!p0 || typeof p0 === "string") return; pts.push(p0);
+  let closed = false;
+  const shape = (ps, cl) => { const L = offsetPath(ps, th / 2, cl), Rr = offsetPath(ps, -th / 2, cl); return cl ? [L, Rr] : [[...L, ...Rr.reverse()]]; };
+  for (;;) {
+    const req = ask.point(`จุดถัดไป (พิมพ์ระยะได้) [C=ปิดรอบ · U=ย้อน · Enter=จบ]:`, pts[pts.length - 1], (c) => shape([...pts, c], false).map((r) => ({ d: [[r.flat(), 1]], x: [] })));
+    const q = yield req;
+    if (q === "U") { if (pts.length > 1) pts.pop(); continue; }
+    if (q === "C") { if (pts.length > 2) closed = true; break; }
+    if (!q || typeof q === "string") break;
+    pts.push(q);
+  }
+  if (pts.length < 2) return;
+  const layer = isWall ? "A-WALL" : "M-HVAC"; ensureLayer(layer);
+  const ch = shape(pts, closed).map((r) => { const e = newEntity("LWPOLYLINE", { pts: r.map((p) => [p[0], p[1], 0]), closed: true, w: 0 }); e.l = layer; return [e.h, e]; });
+  if (!isWall) { const c = newEntity("LWPOLYLINE", { pts: (closed ? [...pts, pts[0]] : pts).map((p) => [p[0], p[1], 0]), closed: false, w: 0, lt: "CENTER", lts: annoK() }); c.l = layer; c.d = dashDisp(closed ? [...pts, pts[0]] : pts, LT.CENTER, annoK()); ch.push([c.h, c]); }
+  commit(`${isWall ? "ผนัง" : "ท่อลม"} หนา ${fmt(th)} · ${pts.length - (closed ? 0 : 1)} ช่วง`, ch);
+}
+function pointIn(p, poly) { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { if ((poly[i][1] > p[1]) !== (poly[j][1] > p[1]) && p[0] < ((poly[j][0] - poly[i][0]) * (p[1] - poly[i][1])) / (poly[j][1] - poly[i][1]) + poly[i][0]) c = !c; } return c; }
+function textEnt(p, s, h, layer) { const e = newEntity("TEXT", { p, h, rot: 0, s, ha: 0, va: 0 }); e.l = layer; return e; }
+/** ตาราง (เส้น + ข้อความ) วางที่มุมซ้ายบน p */
+function placeTable(p, head, rows, cols, label) {
+  const k = annoK(), h = 2.5 * k, rh = 6 * k, cw = cols.map((c) => c * k), W = cw.reduce((a, b) => a + b, 0), n = rows.length + 1, ch = [];
+  ensureLayer("G-ANNO");
+  const ln = (a, b) => { const e = newEntity("LINE", { a, b }); e.l = "G-ANNO"; ch.push([e.h, e]); };
+  for (let i = 0; i <= n; i++) ln([p[0], p[1] - i * rh], [p[0] + W, p[1] - i * rh]);
+  let x = p[0]; for (let j = 0; j <= cw.length; j++) { ln([x, p[1]], [x, p[1] - n * rh]); x += cw[j] || 0; }
+  const cell = (i, j, s) => { const x0 = p[0] + cw.slice(0, j).reduce((a, b) => a + b, 0); const t = textEnt([x0 + 1.5 * k, p[1] - i * rh - rh / 2 - h * 0.4], String(s), h, "G-ANNO"); ch.push([t.h, t]); };
+  head.forEach((s, j) => cell(0, j, s)); rows.forEach((r, i) => r.forEach((s, j) => cell(i + 1, j, s)));
+  commit(`${label} ${rows.length} แถว`, ch);
+}
+function tableDialog(title, head, rows, note) {
+  showDlg(title, note || "");
+  $("#dlg-body").innerHTML = `<div style="max-height:52vh;overflow:auto"><table class="k"><tr>${head.map((h) => `<th>${esc(h)}</th>`).join("")}</tr>${rows.map((r) => `<tr>${r.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</table></div>
+    <div class="row"><button id="tbl-put" class="go">วางตารางลงแบบ</button><button id="tbl-csv">คัดลอกเป็น CSV (วางใน Excel)</button></div>`;
+  return new Promise((res) => {
+    const close = $("#dlg-close"), prev = close.onclick, done = (v) => { close.onclick = prev; closeDlg(); res(v); };
+    $("#tbl-put").onclick = () => done(true); close.onclick = () => done(null);
+    $("#tbl-csv").onclick = () => { const csv = [head, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n"); navigator.clipboard.writeText(csv).then(() => dlgMsg("คัดลอกแล้ว — วางใน Excel ได้เลย"), () => dlgMsg("คัดลอกไม่ได้ในเบราว์เซอร์นี้")); };
+  });
+}
+const symName = (n) => (n.startsWith("ASCA_") && SY.SYMS[n.slice(5)] ? SY.SYMS[n.slice(5)].th : (UI.ENTRIES.get("L:" + n) || {}).th || n);
+Object.assign(CMDS, {
+  *WIRE() { yield* routeCmd("WIRE"); }, *BUS() { yield* routeCmd("BUS"); }, *PIPE() { yield* routeCmd("PIPE"); },
+  *PCW() { yield* routeCmd("PCW"); }, *PHW() { yield* routeCmd("PHW"); }, *PS() { yield* routeCmd("PS"); }, *PW() { yield* routeCmd("PW"); },
+  *PV() { yield* routeCmd("PV"); }, *PRD() { yield* routeCmd("PRD"); }, *PSIG() { yield* routeCmd("PSIG"); }, *PWL() { yield* routeCmd("PWL"); },
+  *WALL() { yield* bandCmd("WALL"); }, *DUCT() { yield* bandCmd("DUCT"); },
+  *DOT() {
+    for (;;) { const p = yield ask.point("DOT จุดต่อสาย — คลิกจุด [Enter=จบ]:"); if (!p || typeof p === "string") return; ensureLayer("E-WIRE"); const d = dotEntity(p, "E-WIRE"); commit("จุดต่อสาย", [[d.h, d]]); }
+  },
+  *POLYGON() {
+    const n = Math.round(yield ask.num("POLYGON จำนวนด้าน:", lastNum("polyN", 6))); if (!(n >= 3 && n <= 128)) return; S.polyN = n;
+    const c = yield ask.point("จุดศูนย์กลาง:"); if (!c || typeof c === "string") return;
+    const mk = (q) => { const r = Math.hypot(q[0] - c[0], q[1] - c[1]), a0 = Math.atan2(q[1] - c[1], q[0] - c[0]); return Array.from({ length: n }, (_, i) => [c[0] + r * Math.cos(a0 + (i * 2 * Math.PI) / n), c[1] + r * Math.sin(a0 + (i * 2 * Math.PI) / n)]); };
+    const q = yield ask.point("จุดยอด (หรือพิมพ์รัศมี):", c, (p) => [{ d: [[mk(p).flat(), 1]], x: [] }]); if (!q || typeof q === "string") return;
+    addPline(mk(q), true);
+  },
+  *ROOM() {
+    const p = yield ask.point("ROOM คลิกในห้อง (ในรูปปิด/ผนังรอบห้อง):"); if (!p || typeof p === "string") return;
+    let best = null;
+    for (const e of S.ents.values()) { if (!visible(e) || !(e.t === "LWPOLYLINE" || e.t === "CIRCLE")) continue; const b = H.closedBoundary(e, tol()); if (!b || !pointIn(p, b)) continue; const a = Math.abs(H.polyArea(b)); if (!best || a < best.a) best = { a, b }; }
+    const name = yield ask.text("ชื่อห้อง:", "ห้อง"); if (!name) return;
+    const k = annoK(), f = mmK(), ch = [];
+    const t1 = textEnt([p[0], p[1]], name, 3 * k, "G-ANNO"); ch.push([t1.h, t1]);
+    const t2 = textEnt([p[0], p[1] - 4.5 * k], best ? `${(best.a / (f * f) / 1e6).toFixed(2)} ตร.ม.` : "— ตร.ม.", 2.2 * k, "G-ANNO"); ch.push([t2.h, t2]);
+    ensureLayer("G-ANNO"); commit(`ป้ายห้อง ${name}`, ch);
+    if (!best) log("ไม่พบรูปปิดรอบจุดที่คลิก — พื้นที่ใส่ไม่ได้ (วาดผนัง/โพลีไลน์ปิดรอบห้องก่อน)");
+  },
+  *TAG() {
+    for (;;) {
+      const r = yield ask.pick("TAG คลิกสัญลักษณ์ที่จะตั้งชื่ออุปกรณ์ [Enter=จบ]:"); const e = pickE(r); if (!e) return;
+      const at = attrsOf(e); if (e.t !== "INSERT" || !at || !("TAG" in at)) { log("สัญลักษณ์นี้ไม่มีช่องชื่ออุปกรณ์ (TAG)"); continue; }
+      const v = yield ask.text(`ชื่ออุปกรณ์ใหม่ (ตอนนี้ ${at.TAG}):`, at.TAG); if (v == null) return;
+      const x = (e.x || []).map((t) => (t[4] === at.TAG ? [...t.slice(0, 4), v, ...t.slice(5)] : t));
+      commit(`TAG ${at.TAG} → ${v}`, [[e.h, { ...e, attrs: { ...at, TAG: v }, x }]]);
+    }
+  },
+  *AUTONUM() {
+    const groups = new Map();
+    for (const e of S.ents.values()) { const at = attrsOf(e); if (e.t !== "INSERT" || !at || !at.TAG || locked(e)) continue; const pre = (at.TAG.match(/^[^\d]*[^\d-]/) || [""])[0]; if (!pre) continue; if (!groups.has(pre)) groups.set(pre, []); groups.get(pre).push(e); }
+    const ch = [];
+    for (const [pre, arr] of groups) {
+      arr.sort((a, b) => (b.g.p[1] - a.g.p[1]) || (a.g.p[0] - b.g.p[0]));
+      arr.forEach((e, i) => { const old = attrsOf(e).TAG, v = pre + (i + 1); if (old === v) return; ch.push([e.h, { ...e, attrs: { ...attrsOf(e), TAG: v }, x: (e.x || []).map((t) => (t[4] === old ? [...t.slice(0, 4), v, ...t.slice(5)] : t)) }]); });
+    }
+    if (!ch.length) return log("ชื่ออุปกรณ์เรียงเลขอยู่แล้ว (บน→ล่าง ซ้าย→ขวา)");
+    commit(`เรียงเลขอุปกรณ์ใหม่ ${ch.length} ตัว (บน→ล่าง ซ้าย→ขวา)`, ch);
+  },
+  *BOM() {
+    const m = new Map();
+    for (const e of S.ents.values()) { if (e.t !== "INSERT" || !e.g || !visible(e)) continue; const r = m.get(e.g.name) || { n: 0, tags: [] }; r.n++; const t = (attrsOf(e) || {}).TAG; if (t) r.tags.push(t); m.set(e.g.name, r); }
+    const rows = [...m.entries()].sort((a, b) => b[1].n - a[1].n).map(([n, r]) => [symName(n), r.n, r.tags.slice(0, 6).join(", ") + (r.tags.length > 6 ? " …" : "")]);
+    if (!rows.length) return log("ยังไม่มีสัญลักษณ์ (Block) ในแบบ");
+    const go = yield ask.wait(tableDialog("ตารางสรุปอุปกรณ์ (BOM)", ["อุปกรณ์", "จำนวน", "ชื่อในแบบ"], rows, "นับจาก Block ในแบบโดยตรง"), "ตาราง BOM ในหน้าต่าง…"); if (!go) return;
+    const p = yield ask.point("มุมซ้ายบนของตาราง:"); if (!p || typeof p === "string") return;
+    placeTable(p, ["อุปกรณ์", "จำนวน", "ชื่อในแบบ"], rows, [70, 18, 60], "ตาราง BOM");
+  },
+  *SENSLIST() {
+    const rows = [];
+    for (const e of S.ents.values()) {
+      if (e.t !== "INSERT" || !e.g || !e.g.name.startsWith("ASCA_S_")) continue; const s = SY.SYMS[e.g.name.slice(5)]; if (!s) continue;
+      const lab = s.prims.filter((q) => q[0] === "T").map((q) => q[4]);
+      rows.push([(attrsOf(e) || {}).TAG || "-", s.th, lab[1] || "", SY.CATS[s.cat].t.replace("เซนเซอร์", ""), `${fmt(e.g.p[0])}, ${fmt(e.g.p[1])}`]);
+    }
+    rows.sort((a, b) => a[0].localeCompare(b[0], "en", { numeric: true }));
+    if (!rows.length) return log("ยังไม่มีเซนเซอร์ในแบบ — วางจากแท็บ เซนเซอร์");
+    const head = ["TAG", "จุดวัด", "ค่าที่วัด", "กลุ่ม", "X, Y"];
+    const go = yield ask.wait(tableDialog("ตารางจุดตรวจวัด (เซนเซอร์)", head, rows, `${rows.length} จุด · ใช้เป็นรายการติดตั้ง/จุดต่อ Dashboard`), "ตารางจุดวัดในหน้าต่าง…"); if (!go) return;
+    const p = yield ask.point("มุมซ้ายบนของตาราง:"); if (!p || typeof p === "string") return;
+    placeTable(p, head, rows, [20, 62, 20, 22, 40], "ตารางจุดวัด");
+  },
+});
+function clipCopy(cut) {
+  const ents = [...S.sel].map((h) => S.ents.get(h)).filter((e) => e && !locked(e));
+  if (!ents.length) return log("เลือกวัตถุก่อน แล้วกด Ctrl+C / Ctrl+X");
+  const b = ents.map((e) => e.bb || (e.bb = G.bboxOf(e))).reduce((a, c) => [Math.min(a[0], c[0]), Math.min(a[1], c[1]), Math.max(a[2], c[2]), Math.max(a[3], c[3])]);
+  S.clip = { ents: ents.map((e) => ({ ...e })), base: [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2], cut, used: false };
+  if (cut) { commit(`ตัด ${ents.length} วัตถุ`, ents.map((e) => [e.h, null])); S.sel.clear(); renderProps(); }
+  else log(`คัดลอก ${ents.length} วัตถุ (Ctrl+V วาง)`);
+}
 function* dimCmd(aligned) {
   const a = yield ask.point(`${aligned ? "DIMALIGNED" : "DIMLINEAR"} จุดแรก:`); if (!a) return;
   const b = yield ask.point("จุดที่สอง:", a, (q) => [ln(a, q)]); if (!b || typeof b === "string") return;
@@ -729,30 +1174,35 @@ function logArea(pts) {
 function drawingSize() { const e = extents(); return Math.max(e[2] - e[0], e[3] - e[1], 1); }
 function await_(promise) { return promise; }
 
+/** ซูมเข้า/ออกรอบกลางจอ (k > 1 = เข้า) */
+function zoomBy(k) { const v = S.view, cx = v.w / 2, cy = v.h / 2; v.ox = cx - (cx - v.ox) * k; v.oy = cy - (cy - v.oy) * k; v.s *= k; draw(); }
 function runCommand(name) {
   name = ALIAS[name.toUpperCase()] || name.toUpperCase();
   if (name === "U") return undo();
   if (name === "REDO") return redo();
   if (name === "ZE") return zoomExtents();
+  if (name === "ZIN") return zoomBy(1.4);
+  if (name === "ZOUT") return zoomBy(1 / 1.4);
   if (name === "OPEN") return openDialog();
   if (name === "NEW") return newDoc();
   if (name === "SAVE") return save(false);
   if (name === "SAVEAS") return save(true);
   if (!CMDS[name]) return log(`ไม่รู้จักคำสั่ง "${name}"`);
   if (!S.doc) return toast("เปิดไฟล์หรือสร้างแบบใหม่ก่อน");
-  cancel(true);
-  S.lastCmd = name; S.cmd = CMDS[name](); log("คำสั่ง: " + name);
+  cancel(true); S.pendingPt = null;
+  S.lastCmd = name; S.cmd = CMDS[name](); log("คำสั่ง: " + (name === "SYM" ? "วางสัญลักษณ์" : name));
+  UI.setActive(name === "SYM" ? "SYM:" + S.symKey : name);
   step(undefined);
 }
 function step(value) {
   if (!S.cmd) return;
   const r = S.cmd.next(value);
-  if (r.done) { S.cmd = null; S.req = null; S.preview = null; prompt("คำสั่ง:"); draw(); return; }
+  if (r.done) { S.cmd = null; S.req = null; S.preview = null; prompt("คำสั่ง:"); UI.setActive(null); $("#dyn").hidden = true; draw(); return; }
   S.req = r.value; prompt(r.value.msg + (r.value.def != null ? ` <${r.value.def}>` : ""));
   S.preview = null; draw();
   if (r.value.kind === "wait") { const pr = r.value.promise; pr.then((v) => { if (S.req === r.value) step(v); }, (e) => { log(e.message); if (S.req === r.value) step(null); }); }
 }
-function cancel(silent) { if (S.cmd) { S.cmd.return(); S.cmd = null; S.req = null; S.preview = null; prompt("คำสั่ง:"); if (!silent) log("*ยกเลิก*"); draw(); } }
+function cancel(silent) { if (S.cmd) { S.cmd.return(); S.cmd = null; S.req = null; S.preview = null; prompt("คำสั่ง:"); UI.setActive(null); $("#dyn").hidden = true; if (!silent) log("*ยกเลิก*"); draw(); } }
 
 function feedText(txt) {
   const t = txt.trim(), R = S.req;
@@ -773,6 +1223,7 @@ function inputPoint(raw) {
   let p = S.snap ? S.snap.p.slice() : raw;
   const R = S.req;
   if (S.ortho && R && R.base && !S.snap) { const dx = p[0] - R.base[0], dy = p[1] - R.base[1]; p = Math.abs(dx) > Math.abs(dy) ? [p[0], R.base[1]] : [R.base[0], p[1]]; }
+  if (S.gsnap && !S.snap) { const st = S.gridMM * SY.unitFactor(S.doc && S.doc.insunits); p = [Math.round(p[0] / st) * st, Math.round(p[1] / st) * st]; }   // จับกริด (F9)
   return p;
 }
 cv.addEventListener("pointerdown", (e) => {
@@ -780,6 +1231,8 @@ cv.addEventListener("pointerdown", (e) => {
   const r = cv.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
   if (e.button === 1 || e.button === 2) { drag = { pan: true, x: sx, y: sy, ox: S.view.ox, oy: S.view.oy }; return; }
   const w = toW(sx, sy), R = S.req;
+  S.clickSnap = S.snap;
+  if (R && R.kind === "wait") { S.pendingPt = inputPoint(w); return; }        // คลิกระหว่างรอโหลด (เช่น สัญลักษณ์จากคลังเดิม) → ใช้เป็นจุดวางแรก
   if (R && (R.kind === "point" || R.kind === "num")) { const p = inputPoint(w); return step(R.kind === "num" ? numFromPoint(R, p) : p); }
   if (R && R.kind === "pick") { const hh = pick(w); if (hh) step({ h: hh, p: w }); else log("ไม่โดนวัตถุ"); return; }
   if (!R && gripDown(w)) return;
@@ -795,6 +1248,10 @@ cv.addEventListener("pointermove", (e) => {
   if (S.grip) { gripMove(S.snap ? S.snap.p : S.cursor); draw(); return; }
   const p = S.req ? inputPoint(S.cursor) : S.cursor;
   $("#coords").textContent = `${fmt(p[0])}, ${fmt(p[1])}` + (S.req && S.req.base ? `   ระยะ ${fmt(Math.hypot(p[0] - S.req.base[0], p[1] - S.req.base[1]))}  มุม ${fmt(angle(S.req.base, p))}°` : "");
+  S.hover = true;
+  const dyn = $("#dyn"), showDyn = UI.CURSOR.dyn && S.req && S.req.base && (S.req.kind === "point" || S.req.kind === "num");
+  dyn.hidden = !showDyn;
+  if (showDyn) { dyn.textContent = `ยาว ${fmt(Math.hypot(p[0] - S.req.base[0], p[1] - S.req.base[1]))} · ${fmt(((angle(S.req.base, p) % 360) + 360) % 360)}°`; dyn.style.left = sx + 18 + "px"; dyn.style.top = sy + 16 + "px"; }
   if (drag && drag.win) S.win = [drag.a, [sx, sy]];
   S.preview = S.req && S.req.preview ? S.req.preview(p) : null;
   draw();
@@ -819,6 +1276,7 @@ cv.addEventListener("wheel", (e) => {
   S.view.ox = sx - w[0] * S.view.s; S.view.oy = sy + w[1] * S.view.s; draw();
 }, { passive: false });
 cv.addEventListener("dblclick", (e) => { if (e.button === 1) zoomExtents(); });
+cv.addEventListener("pointerleave", () => { S.hover = false; $("#dyn").hidden = true; draw(); });
 cv.addEventListener("contextmenu", (e) => e.preventDefault());
 new ResizeObserver(resize).observe(cv);
 const fmt = (v) => (Math.round(v * 1000) / 1000).toLocaleString("en-US", { maximumFractionDigits: 3 });
@@ -826,28 +1284,57 @@ const fmt = (v) => (Math.round(v * 1000) / 1000).toLocaleString("en-US", { maxim
 const cmd = $("#cmd");
 cmd.addEventListener("keydown", (e) => {
   if (e.key === "Enter" || (e.key === " " && !(S.req && S.req.kind === "text"))) { e.preventDefault(); const v = cmd.value; cmd.value = ""; feedText(v); }
-  else if (e.key === "Escape") { cmd.value = ""; cancel(); S.sel.clear(); renderProps(); draw(); }
+  else if (e.key === "Escape") { cmd.value = ""; if (!S.cmd && UI.closeWins()) return; cancel(); S.sel.clear(); renderProps(); draw(); }
 });
 document.addEventListener("keydown", (e) => {
   if (e.target !== cmd && e.target.matches("input, select, textarea")) return;
   if (e.ctrlKey || e.metaKey) {
     const k = e.key.toLowerCase();
-    if (k === "z") { e.preventDefault(); undo(); } else if (k === "y") { e.preventDefault(); redo(); }
+    if (e.key === "F1") { e.preventDefault(); UI.uiAction("UI:RIBBON"); }
+    else if (k === "z") { e.preventDefault(); e.shiftKey ? redo() : undo(); } else if (k === "y") { e.preventDefault(); redo(); }
     else if (k === "s") { e.preventDefault(); save(false); } else if (k === "o") { e.preventDefault(); openDialog(); }
+    else if (k === "n") { e.preventDefault(); newDoc(); }
     else if (k === "p") { e.preventDefault(); runCommand("PLOT"); }
-    else if (k === "a") { e.preventDefault(); S.sel = new Set([...S.ents.keys()].filter((h) => visible(S.ents.get(h)))); renderProps(); draw(); }
+    else if (k === "a") { e.preventDefault(); S.sel = new Set([...S.ents.keys()].filter((h) => visible(S.ents.get(h)) && !locked(S.ents.get(h)))); renderProps(); draw(); }
+    else if (e.target === cmd && cmd.value && (k === "c" || k === "x" || k === "v")) return;   // คัดลอก/วางข้อความในบรรทัดคำสั่งตามปกติ
+    else if (k === "c") { e.preventDefault(); clipCopy(false); }
+    else if (k === "x") { e.preventDefault(); clipCopy(true); }
+    else if (k === "v") { e.preventDefault(); runCommand("PASTE"); }
+    else if (k === "d") { e.preventDefault(); if (!S.sel.size) return log("เลือกวัตถุก่อน แล้วกด Ctrl+D"); clipCopy(false); runCommand("PASTE"); }
     return;
   }
+  if (e.key === "F1") { e.preventDefault(); UI.showKeys(); return; }
   if (e.key === "F3") { e.preventDefault(); toggle("osnap"); return; }
+  if (e.key === "F7") { e.preventDefault(); toggle("grid"); return; }
+  if (e.key === "F9") { e.preventDefault(); toggle("gsnap"); return; }
   if (e.key === "F8") { e.preventDefault(); toggle("ortho"); return; }
+  if (S.req && S.req.keys && !e.altKey && !(e.target === cmd && cmd.value)) {   // ปุ่มเฉพาะคำสั่ง เช่น R/F ตอนวางสัญลักษณ์ · Tab ตอนลากสาย
+    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (S.req.keys(key)) { e.preventDefault(); S.preview = S.req.preview ? S.req.preview(inputPoint(S.cursor)) : null; draw(); return; }
+  }
   if (e.target === cmd) return;
   if (e.key === "Delete" && S.sel.size && !S.cmd) { runCommand("ERASE"); return; }
-  if (e.key === "Escape") { cancel(); S.sel.clear(); renderProps(); draw(); return; }
+  if (e.key === "Escape") { if (!S.cmd && UI.closeWins()) return; cancel(); S.sel.clear(); renderProps(); draw(); return; }
   if (e.key === "Enter" || e.key === " ") { e.preventDefault(); feedText(""); return; }
   if (e.key.length === 1 && !e.altKey) { cmd.focus(); }      // พิมพ์ที่ไหนก็ได้ → ไปที่บรรทัดคำสั่ง (แบบ AutoCAD)
 });
-function toggle(k) { S[k] = !S[k]; $("#t-" + k).classList.toggle("on", S[k]); log(`${k.toUpperCase()} ${S[k] ? "เปิด" : "ปิด"}`); }
-$("#t-osnap").onclick = () => toggle("osnap"); $("#t-ortho").onclick = () => toggle("ortho");
+const TOG = { osnap: "OSNAP", ortho: "ORTHO", grid: "GRID", gsnap: "SNAP" };
+function toggle(k) { S[k] = !S[k]; $("#t-" + k).classList.toggle("on", S[k]); log(`${TOG[k]} ${S[k] ? "เปิด" : "ปิด"}`); if (k === "grid" || k === "gsnap") UI.store.set(k, S[k]); UI.refresh(); draw(); }
+for (const k of Object.keys(TOG)) { $("#t-" + k).onclick = () => toggle(k); $("#t-" + k).classList.toggle("on", !!S[k]); }
+$("#grid-mm").value = String(S.gridMM); $("#grid-mm").onchange = (e) => { S.gridMM = Number(e.target.value); UI.store.set("gridMM", S.gridMM); draw(); };
+/** Layer ปัจจุบัน (แถบล่าง + Ribbon หน้าแรก): มีวัตถุที่เลือก = ย้ายวัตถุไป layer นั้นด้วย (แบบ AutoCAD) */
+function setLayer(n) {
+  if (!S.layers.has(n)) return;
+  const sel = [...S.sel].map((h) => S.ents.get(h)).filter((e) => e && !locked(e));
+  if (sel.length) commit(`ย้าย ${sel.length} วัตถุไป layer ${n}`, sel.map((e) => [e.h, { ...e, l: n }]));
+  S.clayer = n; S.dirty = true; savedLabel(); renderLayers(); syncLayerSel();
+}
+function syncLayerSel() {
+  const html = [...S.layers.keys()].sort((a, b) => a.localeCompare(b)).map((n) => `<option ${n === S.clayer ? "selected" : ""}>${esc(n)}</option>`).join("");
+  for (const id of ["#layer-sel", "#layer-rib"]) { const el = $(id); if (el && el.innerHTML !== html) el.innerHTML = html; if (el) el.value = S.clayer; }
+}
+$("#layer-sel").onchange = (e) => setLayer(e.target.value);
+document.addEventListener("change", (e) => { if (e.target.id === "layer-rib") setLayer(e.target.value); });
 document.body.addEventListener("click", (e) => { const b = e.target.closest("button[data-cmd]"); if (b) { runCommand(b.dataset.cmd); cmd.focus(); } });
 
 
@@ -917,8 +1404,17 @@ function renderProps() {
     return `<label>${lab}<input data-g="${k}" data-kind="${kind}" value="${esc(kind === "pt" ? v.map(fmt).join(", ") : kind === "n" ? fmt(v) : v)}"></label>`;
   }).join("");
   if (one && !one.g) html += '<p class="muted small">วัตถุนี้แก้ค่าโดยตรงยังไม่ได้ (ย้าย/หมุน/ย่อ/สะท้อน/ลบ/เปลี่ยน layer ได้) — ส่วนอื่นคงเดิมตอนบันทึก</p>';
-  if (one && one.t === "INSERT") html += `<label>Block<span>${esc(one.g.name)}</span></label>`;
+  if (one && one.t === "INSERT") {
+    const sym = one.g.name.startsWith("ASCA_") && SY.SYMS[one.g.name.slice(5)], at = attrsOf(one) || {};
+    html += `<label>Block<span>${esc(one.g.name)}${sym ? " · " + esc(sym.th) : ""}</span></label>` +
+      Object.entries(at).map(([k, v]) => `<label>${k === "TAG" ? "ชื่ออุปกรณ์ (TAG)" : esc(k)}<input data-attr="${esc(k)}" value="${esc(v)}"></label>`).join("");
+  }
   box.innerHTML = html;
+  box.querySelectorAll("[data-attr]").forEach((inp) => inp.addEventListener("change", () => {
+    const k = inp.dataset.attr, old = (attrsOf(one) || {})[k], v = inp.value;
+    const x = (one.x || []).map((t) => (t[4] === old ? [...t.slice(0, 4), v, ...t.slice(5)] : t));
+    commit(`แก้ ${k} = ${v}`, [[one.h, { ...one, attrs: { ...(attrsOf(one) || {}), [k]: v }, x }]]);
+  }));
   box.querySelectorAll("[data-k]").forEach((inp) => inp.addEventListener("change", () => {
     const k = inp.dataset.k; let v = inp.value;
     if (k === "c") { v = /^bylayer$/i.test(v) ? 256 : /^byblock$/i.test(v) ? 0 : Number(v); if (!(v >= 0 && v <= 256)) return toast("สี: ByLayer หรือ 1–255"); }
@@ -937,6 +1433,7 @@ function renderProps() {
 
 // ---------------------------------------------------------------- Layer
 function renderLayers() {
+  setTimeout(syncLayerSel, 0);
   const q = $("#layer-q").value.trim().toLowerCase();
   const list = [...S.layers.values()].filter((L) => !q || L.name.toLowerCase().includes(q)).sort((a, b) => a.name.localeCompare(b.name));
   $("#layers").innerHTML = list.map((L) => `<div class="layer ${L.name === S.clayer ? "cur" : ""}" data-n="${esc(L.name)}">
@@ -978,19 +1475,41 @@ window.ascaAI = {
   page: () => "cad",
   pageName: () => "CAD 2D",
   facts: () => ({ "ไฟล์": S.doc ? (S.doc.file ? "เปิดไฟล์อยู่" : "แบบใหม่ ยังไม่บันทึก") : "ยังไม่เปิด", "วัตถุ": S.ents.size, "layer": S.layers.size,
-    "หน่วย": $("#units").textContent, "ดูอย่างเดียว": S.ro ? "ใช่ (ไฟล์ใหญ่)" : "ไม่", "แก้แล้วยังไม่บันทึก": S.dirty ? "ใช่" : "ไม่", "OSNAP": S.osnap ? "เปิด" : "ปิด", "ORTHO": S.ortho ? "เปิด" : "ปิด" }),
+    "หน่วย": $("#units").textContent, "โหมด": S.ro ? "ดูก่อน (ไฟล์ใหญ่ — แก้บางส่วนได้)" : S.doc && S.doc.partial ? `แก้บางส่วน ${S.doc.partial.count} วัตถุ` : "แก้ได้ทั้งไฟล์", "แก้แล้วยังไม่บันทึก": S.dirty ? "ใช่" : "ไม่", "OSNAP": S.osnap ? "เปิด" : "ปิด", "ORTHO": S.ortho ? "เปิด" : "ปิด",
+    "มาตราส่วนสัญลักษณ์": "1:" + S.anno, "สัญลักษณ์ในคลัง": UI.ENTRIES.size }),
   next() {
     const opened = !!(S.doc && (S.doc.file || S.ents.size)), unitless = S.doc && !S.doc.insunits;
     const steps = [
       { done: opened, say: "เปิดไฟล์ DWG / DXF / PDF จาก CAD (หรือวาดใหม่ด้วย L, PL, REC)", act: { tool: "press", key: "OPEN", label: "เปิด" } },
       ...(opened && unitless ? [{ done: false, say: "ไฟล์ไม่ระบุหน่วย — ตรวจขนาดด้วย DI (วัดระยะ) ถ้าไม่ตรงใช้ CAL ตั้งระยะจากเส้นที่รู้ระยะ", act: { tool: "press", key: "CAL", label: "ตั้งระยะ" } }] : []),
-      { done: !S.dirty && opened, say: S.ro ? "ไฟล์ใหญ่เปิดแบบดูอย่างเดียว — ใช้ Plot หรือเปิดใน AutoCAD/ZWCAD เพื่อแก้" : "แก้แบบแล้วบันทึก (Ctrl+S) หรือ บันทึกเป็น… DWG/DXF", act: S.ro ? null : { tool: "press", key: "SAVE", label: "บันทึก" } },
+      ...(S.ro && S.doc.partial_ok ? [{ done: false, say: "ไฟล์ใหญ่เปิดแบบดูก่อน — กด ✂ แก้บางส่วน เลือก layer หรือลากกรอบพื้นที่ที่จะแก้", act: { tool: "press", key: "PARTIAL", label: "✂ แก้บางส่วน" } }] : []),
+      { done: !S.dirty && opened && !S.ro, say: S.ro ? "ไฟล์ใหญ่: แก้บางส่วนก่อน แล้วจึงบันทึก" : "แก้แบบแล้วบันทึก (Ctrl+S) หรือ บันทึกเป็น… DWG/DXF", act: S.ro ? null : { tool: "press", key: "SAVE", label: "บันทึก" } },
       { done: false, say: "Plot เป็น PDF พร้อมกรอบชื่อ (Ctrl+P)", act: { tool: "press", key: "PLOT", label: "🖨 Plot PDF" } },
     ];
     return [...steps.filter((x) => x.done).slice(-1), ...steps.filter((x) => !x.done).slice(0, 3)];
   },
   sets: {},
 };
+
+// เมนู Ribbon + แถบลอย + คลังสัญลักษณ์
+UI.initUI({
+  place: (key) => { S.symKey = key; runCommand("SYM"); },
+  state: (k) => S[{ OSNAP: "osnap", ORTHO: "ortho", GRID: "grid", SNAP: "gsnap" }[k] || k.toLowerCase()],
+  toggle,
+  redraw: draw,
+  log,
+  layersChanged: syncLayerSel,
+  select: () => { cancel(); S.sel.clear(); renderProps(); draw(); log("โหมดเลือก: คลิกวัตถุ หรือลากกรอบ"); },
+  dropAt: (key, clientX, clientY) => {
+    const r = cv.getBoundingClientRect(); let p = toW(clientX - r.left, clientY - r.top);
+    const sn = osnapAt(p); if (sn) p = sn.p;
+    S.dropPt = p; S.symKey = key; runCommand("SYM");
+  },
+});
+const annoSel = $("#anno");
+annoSel.value = String(S.anno); if (annoSel.value !== String(S.anno)) annoSel.value = "50";
+annoSel.onchange = () => { S.anno = Number(annoSel.value); UI.store.set("anno", S.anno); log(`มาตราส่วนสัญลักษณ์ 1:${S.anno} (ใช้กับชิ้นที่วางต่อจากนี้)`); };
+Object.assign(window.__cadDbg, { clipCopy, pinsOf, buildChanges, nextTag });
 
 const qf = new URLSearchParams(location.search).get("file");
 resize();

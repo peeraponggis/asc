@@ -4,80 +4,55 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CAD 2D · ASC Architect</title>
-<link rel="icon" href="../favicon.ico">
-<link rel="stylesheet" href="cad.css?v=0.17.0">
-<script src="../mode.js?v=0.17.0"></script>
-<link rel="stylesheet" href="../ai/assistant.css?v=0.17.0">
+<link rel="icon" href="../favicon.ico?v=0.23.0">
+<link rel="stylesheet" href="cad.css?v=0.23.0">
+<script src="../mode.js?v=0.23.0"></script>
+<link rel="stylesheet" href="../ai/assistant.css?v=0.23.0">
+<script src="../brand.js?v=0.23.0"></script>
 </head>
 <body>
-<header class="bar">
-  <a href="../" class="home" title="กลับหน้าหลัก"><img src="../logo.png" alt="" width="26" height="26"></a>
+<div class="appbrand" data-brand="line"></div>
+<header class="qat">
+  <a href="../" class="home" title="กลับหน้าหลัก"><img src="../logo.png?v=0.23.0" alt="" width="24" height="24"></a>
+  <button type="button" class="qb" data-cmd="SAVE" title="บันทึก (Ctrl+S)" data-ic="SAVE"></button>
+  <button type="button" class="qb" data-cmd="U" title="ย้อน (Ctrl+Z)" data-ic="U"></button>
+  <button type="button" class="qb" data-cmd="REDO" title="ทำซ้ำ (Ctrl+Y)" data-ic="REDO"></button>
   <b id="docname" class="docname">CAD 2D</b>
-  <div class="grp">
-    <button data-cmd="NEW" title="แบบใหม่">ใหม่</button>
-    <button data-cmd="OPEN" title="เปิด DWG / DXF (Ctrl+O)">เปิด</button>
-    <button data-cmd="SAVE" title="บันทึก (Ctrl+S)">บันทึก</button>
-    <button data-cmd="SAVEAS" title="บันทึกเป็น DWG / DXF">บันทึกเป็น…</button>
-    <button data-cmd="PLOT" title="Plot เป็น PDF: กระดาษ A4–A0 + กรอบชื่อ + มาตราส่วน (Ctrl+P)">🖨 Plot PDF</button>
-  </div>
-  <div class="grp">
-    <button data-cmd="U" title="ย้อน (Ctrl+Z)">↶</button>
-    <button data-cmd="REDO" title="ทำซ้ำ (Ctrl+Y)">↷</button>
-    <button data-cmd="ZE" title="ดูทั้งหมด (Z E)">⤢</button>
-  </div>
+  <button type="button" data-cmd="PARTIAL" id="b-partial" class="partial" hidden title="ไฟล์ใหญ่: เลือก layer/พื้นที่มาแก้เฉพาะส่วน (แบบ Partial Open ของ AutoCAD) · ส่วนอื่นคงเดิมทุกไบต์">✂ แก้บางส่วน</button>
   <span id="saved" class="muted"></span>
+  <span class="sp"></span>
+  <button type="button" class="qb" data-ui="UI:MOUSE" title="ตั้งค่าเมาส์ / เคอร์เซอร์" data-ic="mouse"></button>
+  <button type="button" class="qb" data-ui="UI:KEYS" title="คีย์ลัด (F1)" data-ic="keys"></button>
 </header>
+<nav class="tabs" id="tabs"></nav>
+<div class="ribbon" id="ribbon"></div>
 <div class="main">
-  <nav class="tools" id="tools">
-    <div class="tl">วาด</div>
-    <button data-cmd="LINE" title="LINE (L)">╱<span>เส้น</span></button>
-    <button data-cmd="PLINE" title="PLINE (PL)">⌇<span>โพลีไลน์</span></button>
-    <button data-cmd="RECTANG" title="RECTANG (REC)">▭<span>สี่เหลี่ยม</span></button>
-    <button data-cmd="CIRCLE" title="CIRCLE (C)">◯<span>วงกลม</span></button>
-    <button data-cmd="ARC" title="ARC (A) 3 จุด">◜<span>โค้ง</span></button>
-    <button data-cmd="TEXT" title="TEXT (T)">T<span>ข้อความ</span></button>
-    <div class="tl">แก้</div>
-    <button data-cmd="MOVE" title="MOVE (M)">✥<span>ย้าย</span></button>
-    <button data-cmd="COPY" title="COPY (CO)">⧉<span>คัดลอก</span></button>
-    <button data-cmd="ROTATE" title="ROTATE (RO)">⟳<span>หมุน</span></button>
-    <button data-cmd="SCALE" title="SCALE (SC)">⤡<span>ย่อขยาย</span></button>
-    <button data-cmd="MIRROR" title="MIRROR (MI)">⇋<span>สะท้อน</span></button>
-    <button data-cmd="ERASE" title="ERASE (E / Delete)">✕<span>ลบ</span></button>
-    <button data-cmd="OFFSET" title="OFFSET (O)">⫴<span>offset</span></button>
-    <button data-cmd="TRIM" title="TRIM (TR)">✂<span>ตัด</span></button>
-    <button data-cmd="EXTEND" title="EXTEND (EX)">⟼<span>ยืด</span></button>
-    <button data-cmd="FILLET" title="FILLET (F)">◟<span>fillet</span></button>
-    <button data-cmd="ARRAY" title="ARRAY (AR)">⣿<span>array</span></button>
-    <button data-cmd="EXPLODE" title="EXPLODE (X)">✸<span>แตก</span></button>
-    <div class="tl">ใส่</div>
-    <button data-cmd="DIMLINEAR" title="DIMLINEAR (DLI)">↔<span>มิติ</span></button>
-    <button data-cmd="DIMALIGNED" title="DIMALIGNED (DAL)">⤢<span>มิติเอียง</span></button>
-    <button data-cmd="HATCH" title="HATCH (H)">▨<span>hatch</span></button>
-    <button data-cmd="BLOCK" title="BLOCK (B)">▣<span>block</span></button>
-    <button data-cmd="INSERT" title="INSERT (I)">⊕<span>insert</span></button>
-    <div class="tl">วัด</div>
-    <button data-cmd="DIST" title="DIST (DI)">📏<span>ระยะ</span></button>
-    <button data-cmd="CAL" title="ตั้งระยะ (CAL): คลิก 2 จุดบนระยะที่รู้ แล้วพิมพ์ระยะจริง → ย่อขยายทั้งแบบ (หรือเฉพาะที่เลือก) · ใช้กับ PDF/ภาพที่ไม่รู้มาตราส่วน">📐<span>ตั้งระยะ</span></button>
-    <button data-cmd="AREA" title="AREA (AA)">⬠<span>พื้นที่</span></button>
-    <button data-cmd="MATCHPROP" title="MATCHPROP (MA)">🖌<span>match</span></button>
-  </nav>
   <section class="canvaswrap" id="wrap">
     <canvas id="cv"></canvas>
     <div class="ucs">Y↑ X→</div>
+    <div class="dyn" id="dyn" hidden></div>
   </section>
   <aside class="side">
-    <details open><summary>คุณสมบัติ</summary><div id="props" class="props"></div></details>
-    <details open><summary>Layer <button class="mini" id="layer-add" title="เพิ่ม layer">＋</button></summary>
-      <input id="layer-q" class="q" placeholder="ค้นหา layer">
-      <div id="layers" class="layers"></div></details>
-    <details><summary>ข้อมูลไฟล์</summary><div id="info" class="muted small"></div></details>
+    <div class="stabs"><button type="button" data-st="sym">สัญลักษณ์</button><button type="button" data-st="props">คุณสมบัติ · Layer</button></div>
+    <div id="symdock" class="sbody"></div>
+    <div id="propdock" class="sbody" hidden>
+      <details open><summary>คุณสมบัติ</summary><div id="props" class="props"></div></details>
+      <details open><summary>Layer <button class="mini" id="layer-add" title="เพิ่ม layer">＋</button></summary>
+        <input id="layer-q" class="q" placeholder="ค้นหา layer">
+        <div id="layers" class="layers"></div></details>
+      <details><summary>ข้อมูลไฟล์</summary><div id="info" class="muted small"></div></details>
+    </div>
   </aside>
 </div>
 <footer class="cmdline">
   <div id="history" class="history"></div>
-  <div class="cmdrow"><span id="prompt" class="prompt">คำสั่ง:</span><input id="cmd" autocomplete="off" spellcheck="false" placeholder="พิมพ์คำสั่ง (L, PL, C, M, CO, RO…) หรือพิกัด x,y · @dx,dy · @ยาว<มุม"></div>
+  <div class="cmdrow"><span id="prompt" class="prompt">คำสั่ง:</span><input id="cmd" autocomplete="off" spellcheck="false" placeholder="พิมพ์คำสั่ง (L, PL, C, M, CO, RO, WI…) หรือพิกัด x,y · @dx,dy · @ยาว<มุม"></div>
   <div class="status"><span id="coords">0, 0</span>
-    <button class="tog on" id="t-osnap" title="OSNAP (F3)">OSNAP</button><button class="tog" id="t-ortho" title="ORTHO (F8)">ORTHO</button>
+    <button class="tog" id="t-grid" title="แสดงกริด (F7)">GRID</button><button class="tog" id="t-gsnap" title="จับกริด (F9)">SNAP</button><button class="tog on" id="t-osnap" title="OSNAP (F3)">OSNAP</button><button class="tog" id="t-ortho" title="ORTHO (F8)">ORTHO</button>
+    <label class="muted" title="ระยะกริด (มม. จริง)">กริด <select id="grid-mm"><option value="10">10</option><option value="50">50</option><option value="100">100</option><option value="250">250</option><option value="500">500</option><option value="1000">1000</option></select></label>
+    <label class="muted">Layer <select id="layer-sel"></select></label>
+    <label class="muted" title="สัญลักษณ์แผนผัง (ไฟฟ้า ท่อ เซนเซอร์ เครื่องหมาย) ขยายตามมาตราส่วนนี้ · ประตู เฟอร์นิเจอร์ แผงโซลาร์ เป็นขนาดจริงเสมอ">สัญลักษณ์ <select id="anno">
+      <option value="1">1:1 (แบบ SLD บนกระดาษ)</option><option value="20">1:20</option><option value="50">1:50</option><option value="100">1:100</option><option value="200">1:200</option></select></label>
     <span id="units" class="muted"></span><span id="count" class="muted"></span></div>
 </footer>
 <div id="dlg" class="dlg" hidden><div class="dlg-box">
@@ -87,7 +62,7 @@
   <div class="dlg-foot"><span id="dlg-msg" class="muted small"></span><button id="dlg-close">ปิด</button></div>
 </div></div>
 <div id="toast" class="toast" hidden></div>
-<script type="module" src="app.js?v=0.17.0"></script>
-<script type="module" src="../ai/assistant.js?v=0.17.0"></script>
+<script type="module" src="app.js?v=0.23.0"></script>
+<script type="module" src="../ai/assistant.js?v=0.23.0"></script>
 </body>
 </html>

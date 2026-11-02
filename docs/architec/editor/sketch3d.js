@@ -2,7 +2,7 @@
 // เลือก · push-pull ทุกหน้า (บน = สูง · ข้าง = ดันผนังของกล่องออก/เข้า) · สี่เหลี่ยมบนพื้น/บนหน้ากล่อง · ย้าย (Ctrl = คัดลอก) · หมุน 15°
 // · ทาสีวัสดุ · ตลับเมตร · รวมกลุ่ม — ทุกการแก้ผ่าน hist.commit (Ctrl+Z ได้)
 import * as THREE from "three";
-import * as M from "./model.js?v=0.17.0";
+import * as M from "./model.js?v=0.23.0";
 
 const MM = 0.001;
 const snap = (v, s) => Math.round(v / s) * s;
@@ -23,8 +23,8 @@ export class Sketch3D {
   get doc() { return this.host.hist.doc; }
 
   setTool(t) {
-    this.tool = t; this.drag = null; this.clearOver();
-    this.v.canvas.style.cursor = t === "orbit" ? "grab" : t === "paint" ? "cell" : "crosshair";
+    this.tool = t; this.drag = null; this.clearOver(); if (this.ext) { this.ext.reset(); this.ext.planeZ = null; }
+    this.v.canvas.style.cursor = t === "orbit" ? "grab" : t === "paint" ? "cell" : t === "select" ? "default" : "crosshair";
     this.host.status(HELP[t] || "");
     if (t !== "tape") this.label.hidden = true;
   }
@@ -54,12 +54,13 @@ export class Sketch3D {
 
   // ---------------------------------------------------------------- เมาส์
   down(e) {
+    if (this.ext && this.ext.down(e)) return;
     if (e.button !== 0 || this.tool === "orbit") return;
     const t = this.tool;
     const own = () => { e.stopImmediatePropagation(); this.v.controls.enabled = false; this.v.canvas.setPointerCapture(e.pointerId); };
     if (t === "select") {
       const h = this.hit(e, ["masses"]);
-      if (!h) { if (!e.shiftKey) this.sel.clear(); this.v.build(); this.host.onSelect3D && this.host.onSelect3D([]); return; }
+      if (!h) { if (!e.shiftKey) { this.sel.clear(); if (this.ext) this.ext.itemSel.clear(); } this.v.build(); this.host.onSelect3D && this.host.onSelect3D([]); return; }
       const ids = this.groupOf(h.id);
       if (!e.shiftKey) this.sel.clear();
       ids.forEach((id) => (e.shiftKey && this.sel.has(id) ? this.sel.delete(id) : this.sel.add(id)));
@@ -136,6 +137,7 @@ export class Sketch3D {
   }
 
   move(e) {
+    if (this.ext && this.ext.move(e)) return;
     const d = this.drag; if (!d) return;
     e.stopImmediatePropagation();
     if (d.kind === "top") {
@@ -165,6 +167,7 @@ export class Sketch3D {
   }
 
   up(e) {
+    if (this.ext && this.ext.up(e)) return;
     const d = this.drag; if (!d) return;
     e.stopImmediatePropagation(); this.drag = null; this.v.controls.enabled = true; this.clearOver();
     if (d.kind === "rect") {
@@ -219,7 +222,7 @@ export class Sketch3D {
     this.over.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]), new THREE.LineBasicMaterial({ color: 0xffcc00, depthTest: false })));
     const dist = a.distanceTo(b) / MM, mid = a.clone().add(b).multiplyScalar(0.5).project(this.v.camera);
     const r = this.v.canvas.getBoundingClientRect();
-    this.label.textContent = `${Math.round(dist).toLocaleString()} มม. (${(dist / 1000).toFixed(3)} ม.)`;
+    this.label.textContent = this.v.fmtLen ? this.v.fmtLen(dist / 1000) : `${Math.round(dist).toLocaleString()} มม. (${(dist / 1000).toFixed(3)} ม.)`;
     this.label.style.left = `${((mid.x + 1) / 2) * r.width}px`; this.label.style.top = `${((1 - mid.y) / 2) * r.height}px`;
     this.label.hidden = false;
     this.host.status(`ตลับเมตร: ${Math.round(dist).toLocaleString()} มม. · ΔZ ${Math.round((b.y - a.y) / MM).toLocaleString()} มม.`);

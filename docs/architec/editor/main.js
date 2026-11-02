@@ -1,15 +1,16 @@
 // ตัวเขียนแบบ ASC Architect — เชื่อมผัง 2D · 3D · แผงคุณสมบัติ · บันทึก/ส่งออก (โดย ลุงพี)
-import * as M from "./model.js?v=0.17.0";
-import { Plan2D } from "./plan2d.js?v=0.17.0";
-import { View3D } from "./view3d.js?v=0.17.0";
-import { toDXF } from "./dxf.js?v=0.17.0";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.17.0";
-import * as CAD from "./cadlayer.js?v=0.17.0";
-import { Sketch3D } from "./sketch3d.js?v=0.17.0";
-import { PALETTE } from "./materials.js?v=0.17.0";
-import { sunPosition } from "./sun.js?v=0.17.0";
-import { readDXF, decodeDXF } from "./dxfread.js?v=0.17.0";
-import * as LS from "./localstore.js?v=0.17.0";
+import * as M from "./model.js?v=0.23.0";
+import { Plan2D } from "./plan2d.js?v=0.23.0";
+import { View3D } from "./view3d.js?v=0.23.0";
+import { toDXF } from "./dxf.js?v=0.23.0";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.23.0";
+import * as CAD from "./cadlayer.js?v=0.23.0";
+import { Sketch3D } from "./sketch3d.js?v=0.23.0";
+import { PALETTE } from "./materials.js?v=0.23.0";
+import { sunPosition } from "./sun.js?v=0.23.0";
+import { initSkUI } from "./skui.js?v=0.23.0";
+import { readDXF, decodeDXF } from "./dxfread.js?v=0.23.0";
+import * as LS from "./localstore.js?v=0.23.0";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -140,13 +141,25 @@ $("#views").addEventListener("click", (e) => {
   const b = e.target.closest("button[data-view]"); if (!b) return;
   $$("#views button").forEach((x) => x.classList.toggle("on", x === b));
   $("#viewarea").className = "views " + ({ "2d": "v2d", "3d": "v3d", split: "split" }[b.dataset.view]);
+  document.body.dataset.view = b.dataset.view;
   setTimeout(() => { plan.resize(); view.resize(); }, 30);
 });
+let ui = null;
 const KEYS = { v: "select", h: "pan", w: "wall", r: "room", d: "door", n: "window", b: "box", l: "line", m: "dim", t: "text", s: "symbol", e: "erase", k: "calib" };
 document.addEventListener("keydown", (e) => {
   const inField = e.target.matches("input, select, textarea") && e.target.id !== "vcb";
+  if (e.key === "F1" && ui) { e.preventDefault(); ui.keysDlg(); return; }
   if ((e.ctrlKey || e.metaKey) && !inField) {
     const k = e.key.toLowerCase();
+    if (over3d && ui) {
+      if (k === "c") { e.preventDefault(); ui.ext.copy(false); return; }
+      if (k === "x") { e.preventDefault(); ui.ext.copy(true); return; }
+      if (k === "v") { e.preventDefault(); ui.ext.paste(); return; }
+      if (k === "a") { e.preventDefault(); ui.selectAll(); return; }
+    }
+    if (k === "n") { e.preventDefault(); act("new"); return; }
+    if (k === "o") { e.preventDefault(); $("#open-file").click(); return; }
+    if (k === "p") { e.preventDefault(); act("plot"); return; }
     if (k === "z") { e.preventDefault(); act(e.shiftKey ? "redo" : "undo"); return; }
     if (k === "y") { e.preventDefault(); act("redo"); return; }
     if (k === "s") { e.preventDefault(); act("save"); return; }
@@ -157,16 +170,21 @@ document.addEventListener("keydown", (e) => {
   if (plan.key(e)) { e.preventDefault(); return; }
   if (e.target.id === "vcb") return;
   if (over3d && !e.ctrlKey && !e.metaKey && !e.altKey) {
-    const k3 = { o: "orbit", " ": "select", p: "pushpull", r: "rect", m: "move", q: "rotate", b: "paint", t: "tape" }[e.key.toLowerCase()];
+    if (e.key === "Escape") { if (!ui.ext.cancel()) setTool3d("select"); return; }
+    if (e.key === "Enter") { if (ui.ext.busy()) { e.preventDefault(); ui.ext.finish(); } return; }
+    if (e.key === "Z" && e.shiftKey) { e.preventDefault(); view.fit(); return; }
+    if (sk.tool === "walk" && /^(w|a|s|d|arrow\w+)$/i.test(e.key)) return;
+    const k3 = { o: "orbit", " ": "select", p: "pushpull", r: "rect", m: "move", q: "rotate", b: "paint", t: "tape", h: "pan", z: "zoom", l: "line", c: "circle", a: "arc", e: "eraser", s: "scale", f: "offset" }[e.key.toLowerCase()];
     if (k3) { e.preventDefault(); setTool3d(k3); return; }
-    if (e.key === "Delete") { sk.remove(); return; }
+    if (e.key === "Delete") { ui.ext.removeSel(); sk.remove(); return; }
   }
   if (!e.ctrlKey && !e.metaKey && !e.altKey && KEYS[e.key.toLowerCase()]) setTool(KEYS[e.key.toLowerCase()]);
 });
 document.addEventListener("keyup", (e) => plan.key(e));
 let over3d = false;
-$("#pane3d").addEventListener("pointerenter", () => (over3d = true)); $("#pane3d").addEventListener("pointerleave", () => (over3d = false));
+$("#pane3d").addEventListener("pointerenter", () => (over3d = true)); $("#pane3d").addEventListener("pointerleave", (e) => { if (!e.relatedTarget || e.relatedTarget.id !== "vcb") over3d = false; });
 $("#vcb").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && ui && (over3d || ui.ext.busy()) && ui.ext.typed($("#vcb").value)) { e.preventDefault(); $("#vcb").value = ""; $("#vcb").blur(); return; }
   if (e.key === "Enter") { e.preventDefault(); plan.key(e); $("#vcb").blur(); }
   if (e.key === "Escape") { $("#vcb").value = ""; $("#vcb").blur(); plan.key(e); }
 });
@@ -175,7 +193,7 @@ $("#snap").addEventListener("change", (e) => (plan.snapOn = e.target.checked));
 $("#grid").addEventListener("change", (e) => { plan.grid = Number(e.target.value); plan.render(); });
 // ---------------------------------------------------------------- เครื่องมือ 3D (SketchUp)
 let sk;
-function setTool3d(t) { $$("#tools3d [data-t3]").forEach((b) => b.classList.toggle("on", b.dataset.t3 === t)); sk.setTool(t); }
+function setTool3d(t) { $$("#tools3d [data-t3]").forEach((b) => b.classList.toggle("on", b.dataset.t3 === t)); sk.setTool(t); if (ui) ui.refresh(); }
 $("#tools3d").addEventListener("click", (e) => { const b = e.target.closest("[data-t3]"); if (b) setTool3d(b.dataset.t3); });
 $("#mat3d").innerHTML = PALETTE.map((p) => `<option value="${p.key}">${p.th}</option>`).join("");
 $("#mat3d").addEventListener("change", (e) => { sk.mat = e.target.value; setTool3d("paint"); });
@@ -232,13 +250,7 @@ async function act(a) {
   if (a === "plot-go") return doPlot();
   if (a === "dxf") return output(safe(d.name) + ".dxf", new Blob([toDXF(d)], { type: "application/dxf" }), "plan.dxf");
   if (a === "glb") return output(safe(d.name) + ".glb", await view.exportGLB(), "model.glb");
-  if (a === "render") {
-    status("กำลัง render…");
-    const url = view.renderStill(1920, 1080);
-    const blob = await (await fetch(url)).blob();
-    await output(safe(d.name) + "_render.png", blob, "render_editor.png");
-    return status("render เสร็จ 1920×1080");
-  }
+  if (a === "render") return ui.renderDlg();
   if (a === "yield") {
     const s = M.summary(d), asc = d.imported && d.imported.summary;
     let kwp = s.pvKwp, tilt = s.pvTilt, az = s.pvAzimuth;
@@ -431,12 +443,16 @@ async function start() {
   }
   let saved = null; try { saved = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) { /* */ }
   if (saved && saved.app === "pee_architec-drawing" && confirm("มีแบบที่ยังไม่ได้บันทึกจากครั้งก่อน — เปิดต่อหรือไม่?")) doc = saved;
-  if (!doc) doc = demoDoc();
+  let firstScene = false;
+  if (!doc) { doc = demoDoc(); firstScene = true; }
   hist.doc = M.normalize(doc);
   if (hist.doc.imported) hist.doc.imported = Object.assign({ outlines: [] }, hist.doc.imported);
   refresh(); plan.fit(); view.fit(); showProps(null);
   attachImported();
   renderScenes(); sunNow();
+  ui = initSkUI({ view, sk, hist, M, status, sunNow, act, setTool3d, onChange: host.onChange,      // หน้าตาแบบ SketchUp ของมุมมอง 3D (ตามหน้าตัวอย่าง 0.23.0)
+    demo: openDemo, saveImage: (blob, suffix) => output(safe(hist.doc.name) + suffix, blob, "render_editor.png") });
+  if (firstScene && hist.doc.scenes && hist.doc.scenes[0]) { const s0 = hist.doc.scenes[0]; view.camera.position.fromArray(s0.pos); view.controls.target.fromArray(s0.target); view.controls.update(); $("#sun-date").value = s0.sun.date; $("#sun-time").value = s0.sun.time; sunNow(); }
   for (const ref of hist.doc.cads) loadCad(ref, false);
   setTool("select");
   loadSymbols();
@@ -538,7 +554,7 @@ async function traceLocal(f) {
 function parseDxfLocal(buf, name) {
   return new Promise((res, rej) => {
     let w;
-    try { w = new Worker(new URL("./dxfworker.js?v=0.17.0", import.meta.url), { type: "module" }); } catch (err) { w = null; }
+    try { w = new Worker(new URL("./dxfworker.js?v=0.23.0", import.meta.url), { type: "module" }); } catch (err) { w = null; }
     if (!w) { try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } return; }
     w.onmessage = (ev) => { w.terminate(); ev.data.error ? rej(new Error(ev.data.error)) : res(ev.data.data); };
     w.onerror = (ev) => { w.terminate(); try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } ev.preventDefault(); };
@@ -667,19 +683,47 @@ $("#cad-list").addEventListener("click", (e) => {
 });
 
 /** แบบตัวอย่างตอนเปิดครั้งแรก: บ้านชั้นเดียว 10 × 8 ม. — ลบได้ด้วยปุ่ม "ใหม่" */
+/** แบบตัวอย่าง: บ้าน 12×8 ม. + ลานหิน สระว่ายน้ำ โรงจอดรถ รถ ต้นไม้ เตียงอาบแดด รั้วหิน + ฉาก 3 มุม (ภาพนำเสนอแบบหน้าตัวอย่าง) */
 function demoDoc() {
-  const d = M.newDoc("บ้านตัวอย่าง 10×8 ม.");
-  d.walls = M.rectWalls([0, 0], [10000, 8000], 200, 3000);
-  d.walls.push({ id: M.uid("w"), a: [5000, 0], b: [5000, 8000], thick: 120, height: 3000 });
-  d.openings.push({ id: M.uid("o"), wall: d.walls[0].id, kind: "door", t: 0.25, width: 900, height: 2100, sill: 0 });
-  d.openings.push({ id: M.uid("o"), wall: d.walls[0].id, kind: "window", t: 0.72, width: 1800, height: 1200, sill: 900 });
-  d.openings.push({ id: M.uid("o"), wall: d.walls[1].id, kind: "window", t: 0.5, width: 1200, height: 1100, sill: 900 });
-  d.openings.push({ id: M.uid("o"), wall: d.walls[4].id, kind: "door", t: 0.5, width: 800, height: 2100, sill: 0 });
-  d.dims.push({ id: M.uid("d"), a: [0, 0], b: [10000, 0], offset: -1200 });
-  d.dims.push({ id: M.uid("d"), a: [10000, 0], b: [10000, 8000], offset: -1200 });
-  d.texts.push({ id: M.uid("t"), p: [1500, 4000], s: "ห้องนั่งเล่น", h: 300 }, { id: M.uid("t"), p: [6600, 4000], s: "ห้องนอน", h: 300 });
-  d.masses.push({ id: M.uid("m"), name: "โรงจอดรถ", pts: [[11000, 0], [14000, 0], [14000, 5500], [11000, 5500]], base: 0, height: 2600 });
+  const d = M.newDoc("บ้านตัวอย่างพร้อมสระ 12×8 ม."), rect = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+  const mass = (name, pts, height, mat, tag, base = 0) => d.masses.push({ id: M.uid("m"), name, pts, base, height, mat, tag });
+  const item = (kind, x, y, rot = 0, s = 1, z = 0) => d.items3d.push({ id: M.uid("i"), kind, p: [x, y], z, rot, s });
+  d.walls = M.rectWalls([0, 0], [12000, 8000], 200, 3200);
+  ["white", "stone", "white", "wood"].forEach((m, i) => (d.walls[i].mat = m));
+  d.walls.push({ id: M.uid("w"), a: [6000, 0], b: [6000, 8000], thick: 120, height: 3200, mat: "interior" });
+  const op = (w, kind, t, width, height, sill) => d.openings.push({ id: M.uid("o"), wall: d.walls[w].id, kind, t, width, height, sill });
+  op(0, "door", 0.12, 1000, 2400, 0); op(0, "window", 0.38, 3600, 2500, 200); op(0, "window", 0.78, 3000, 2500, 200);
+  op(1, "window", 0.5, 1800, 1400, 900); op(2, "window", 0.3, 1500, 1200, 1000); op(2, "window", 0.75, 1500, 1200, 1000); op(3, "door", 0.6, 900, 2200, 0); op(4, "door", 0.5, 900, 2200, 0);
+  Object.assign(d.roof, { type: "hip", pitch: 22, overhang: 900, mat: "metal" });
+  d.dims.push({ id: M.uid("d"), a: [0, 0], b: [12000, 0], offset: -1500 }, { id: M.uid("d"), a: [12000, 0], b: [12000, 8000], offset: -1500 });
+  d.texts.push({ id: M.uid("t"), p: [3000, 4000], s: "ห้องนั่งเล่น", h: 300 }, { id: M.uid("t"), p: [9000, 4000], s: "ห้องนอน", h: 300 });
+  mass("ลานหินแกรนิต", rect(-1000, -4200, 13000, 0), 120, "granite", "land");
+  mass("ทางเข้าคอนกรีต", rect(13600, -14000, 18600, 6500), 100, "concrete", "land");
+  for (const [x, y] of [[13900, 300], [18100, 300], [13900, 6000], [18100, 6000]]) mass("เสาโรงจอดรถ", rect(x - 80, y - 80, x + 80, y + 80), 2800, "alu", "masses", 100);
+  mass("หลังคาโรงจอดรถ", rect(13600, 0, 18600, 6400), 200, "white2", "masses", 2900);
+  mass("ขอบสระ", rect(-1000, -12000, 11000, -11400), 300, "granite", "pool"); mass("ขอบสระ", rect(-1000, -6100, 11000, -5500), 300, "granite", "pool");
+  mass("ขอบสระ", rect(-1000, -11400, -400, -6100), 300, "granite", "pool"); mass("ขอบสระ", rect(10400, -11400, 11000, -6100), 300, "granite", "pool");
+  mass("พื้นสระ", rect(-400, -11400, 10400, -6100), 20, "pooltile", "pool"); mass("น้ำในสระ", rect(-400, -11400, 10400, -6100), 230, "water", "pool");
+  mass("พื้นไม้รอบสระ", rect(11000, -12000, 13200, -5500), 120, "deck", "pool");
+  mass("รั้วหินด้านหลัง", rect(-7000, 14000, 23000, 14350), 1800, "stone", "land"); mass("รั้วหินด้านข้าง", rect(-7000, -15000, -6650, 14000), 1800, "stone", "land");
+  item("car", 16100, 3100, 90);
+  for (const [x, y, s] of [[-4200, 10500, 1.15], [-4800, -2500, 1.3], [21000, 10500, 1.2], [21000, -8500, 1], [-4000, -13800, 0.95], [8000, 11500, 0.9]]) item("tree", x, y, (x * 7 + y) % 360, s);
+  item("palm", 12300, -4900, 0, 1); item("palm", -2200, -5000, 40, 0.9);
+  for (let i = 0; i < 8; i++) item("shrub", 200 + i * 1550, -4600, i * 40, 0.9 + (i % 3) * 0.1);
+  for (let i = 0; i < 5; i++) item("shrub", 12900, 1000 + i * 1300, i * 70, 0.8);
+  item("lounger", 11600, -9400, 0, 1, 120); item("lounger", 12500, -9400, 0, 1, 120); item("table", 9000, -2200, 0, 1, 120); item("lamp", 13300, -1000); item("lamp", 13300, -6800);
+  d.texts3d.push({ id: M.uid("x"), kind: "label", s: "สระว่ายน้ำ 10.8 × 5.3 ม.", p: [5000, -8750], z: 230, at: [5600, -8750], atz: 1400, h: 250 });
+  d.dims3d.push({ id: M.uid("n"), a: [-400, -11400, 300], b: [10400, -11400, 300], off: 400, h: 250 });
+  const y = new Date().getFullYear(), sc = (name, pos, target, time) => ({ name, pos, target, sun: { date: `${y}-04-15`, time } });
+  d.scenes = [sc("มุมสูงหน้าบ้าน", [26, 11, 27], [6, 1.2, 3], "09:30"), sc("ริมสระว่ายน้ำ", [-5.5, 2.2, 16], [7, 1.6, 4], "15:30"), sc("พลบค่ำ", [21, 3.2, 19], [6, 2, 1], "18:15")];
   return d;
+}
+function openDemo() {
+  if (dirty && !confirm("แบบปัจจุบันยังไม่บันทึก — เปิดแบบตัวอย่าง (บ้านพร้อมสระ)?")) return;
+  hist.replace(demoDoc()); plan.select(null); host.onChange(); renderScenes(); plan.fit();
+  const s = hist.doc.scenes[0]; view.camera.position.fromArray(s.pos); view.controls.target.fromArray(s.target); view.controls.update();
+  $("#sun-date").value = s.sun.date; $("#sun-time").value = s.sun.time; sunNow(); view.setStyle("render"); ui.refresh();
+  status("แบบตัวอย่าง: บ้านพร้อมสระ · ลองคลิกฉากในถาด ฉาก หรือ 📷 Render ภาพนำเสนอ");
 }
 
 // ---------------------------------------------------------------- ผู้ช่วย AI piBot: สถานะหน้า (ตัวเลขจากโค้ด) + ต่อไปทำอะไร + ช่องที่ผู้ช่วยตั้งค่าได้ (หลังผู้ใช้ยืนยัน)

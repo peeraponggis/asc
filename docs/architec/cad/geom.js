@@ -30,7 +30,8 @@ export function textRot(r, m) {
 
 // ------------------------------------------------------------------ แปลงวัตถุทั้งชิ้น (เรขาคณิตที่แก้ได้ + เส้นแสดงผล)
 export function transformEntity(e, m) {
-  const out = { ...e, d: e.d.map(([f, cl, col]) => { const g = new Array(f.length); for (let i = 0; i < f.length; i += 2) { const q = ap(m, [f[i], f[i + 1]]); g[i] = r4(q[0]); g[i + 1] = r4(q[1]); } return [g, cl, col]; }),
+  // คงสี + ธงทึบ (hatch ทึบ / สัญลักษณ์ที่มีส่วนทึบ) ไว้ทุกช่อง
+  const out = { ...e, d: e.d.map(([f, cl, ...rest]) => { const g = new Array(f.length); for (let i = 0; i < f.length; i += 2) { const q = ap(m, [f[i], f[i + 1]]); g[i] = r4(q[0]); g[i + 1] = r4(q[1]); } return [g, cl, ...rest]; }),
     x: (e.x || []).map(([x, y, h, rot, s, col]) => { const q = ap(m, [x, y]); return [r4(q[0]), r4(q[1]), r4(h * scaleOf(m)), textRot(rot, m), s, col]; }) };
   const flip = det(m) < 0, k = scaleOf(m), rot = angleOf(m);
   if (e.g) {

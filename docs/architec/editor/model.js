@@ -17,13 +17,14 @@ export function newDoc(name) {
     app: "pee_architec-drawing", version: 1, name: name || "แบบใหม่", units: "mm",
     site: { lat: null, lon: null, north: 0 },
     walls: [], openings: [], masses: [], lines: [], dims: [], texts: [], syms: [], trees: [], cads: [], backdrop: null,
+    items3d: [], texts3d: [], dims3d: [], sweeps: [],
     roof: Object.assign({}, DEFAULTS.roof), pv: Object.assign({}, DEFAULTS.pv),
   };
 }
 
 export function normalize(doc) {
   const d = Object.assign(newDoc(), doc || {});
-  for (const k of ["walls", "openings", "masses", "lines", "dims", "texts", "syms", "trees", "cads"]) d[k] = Array.isArray(d[k]) ? d[k] : [];
+  for (const k of ["walls", "openings", "masses", "lines", "dims", "texts", "syms", "trees", "cads", "items3d", "texts3d", "dims3d", "sweeps"]) d[k] = Array.isArray(d[k]) ? d[k] : [];
   d.roof = Object.assign({}, DEFAULTS.roof, d.roof || {});
   d.pv = Object.assign({}, DEFAULTS.pv, d.pv || {});
   d.site = Object.assign({ lat: null, lon: null, north: 0 }, d.site || {});
@@ -115,6 +116,8 @@ export function bounds(doc) {
   doc.walls.forEach((w) => wallPolygon(w).forEach(addp));
   doc.masses.forEach((m) => m.pts.forEach(addp));
   doc.lines.forEach((l) => l.pts.forEach(addp));
+  (doc.items3d || []).forEach((t) => { addp([t.p[0] - 1500, t.p[1] - 1500]); addp([t.p[0] + 1500, t.p[1] + 1500]); });
+  (doc.sweeps || []).forEach((l) => l.pts.forEach(addp));
   doc.dims.forEach((d) => { addp(d.a); addp(d.b); });
   doc.texts.forEach((t) => addp(t.p));
   doc.trees.forEach((t) => { addp([t.p[0] - t.r, t.p[1] - t.r]); addp([t.p[0] + t.r, t.p[1] + t.r]); });

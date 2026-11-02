@@ -48,6 +48,65 @@
     sets: {},
   };
 
+  // ---------------------------------------------------------------- Pi monitor ขั้น 4 (รุ่นในเครื่อง · ลุงพีสั่ง 1 พ.ย. 2569)
+  // เครื่องผูกกับบัญชี ASC (รหัสเดียวกับติดตั้งผู้ช่วย AI · server/asc_link.py) → ส่งแท็บ/หน้าต่างที่เปิดทุก 60 วินาที
+  // ยังไม่ผูก = ไม่ส่งอะไร มีแค่ป้าย "🔗 ผูกเครื่อง" ให้กด · รุ่นออนไลน์ใช้ asc-cloud.js ส่งเองหลังล็อกอิน
+  function presencePage() {
+    var h = document.querySelector("dialog[open] h2, dialog[open] h3");
+    var t = h ? h.textContent : (document.querySelector("#tabs button.on") || {}).textContent;
+    t = String(t || "").replace(/\s+/g, " ").trim();
+    if (t.length > 40) t = t.slice(0, 39) + "…";
+    return t ? "ASCA · " + t : "ASCA";
+  }
+  var presence = { started: false, sid: "", sent: "", lastInput: Date.now() };
+  function presenceSend(closed) {
+    var page = presencePage();
+    var body = { session: presence.sid, page: page, active: !document.hidden && Date.now() - presence.lastInput < 65000, closed: !!closed };
+    if (closed) { if (navigator.sendBeacon) navigator.sendBeacon("/api/presence/ping", new Blob([JSON.stringify(body)], { type: "application/json" })); return; }
+    api("/api/presence/ping", body).then(function () { presence.sent = page; }).catch(function () { /* server ปิด = รอบหน้า */ });
+  }
+  function presenceStart() {
+    if (presence.started) return;
+    presence.started = true;
+    try {
+      presence.sid = sessionStorage.getItem("pa.presence.sid") || "";
+      if (!presence.sid) { presence.sid = String(window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/-/g, "").slice(0, 32); sessionStorage.setItem("pa.presence.sid", presence.sid); }
+    } catch (e) { presence.sid = Date.now().toString(36) + Math.random().toString(36).slice(2); }
+    ["pointerdown", "keydown", "wheel", "mousemove", "touchstart"].forEach(function (ev) {
+      addEventListener(ev, function () { presence.lastInput = Date.now(); }, { passive: true, capture: true });
+    });
+    setInterval(function () { presenceSend(false); }, 60000);
+    setInterval(function () { if (presencePage() !== presence.sent) presenceSend(false); }, 5000);
+    document.addEventListener("visibilitychange", function () { presenceSend(false); });
+    addEventListener("pagehide", function () { presenceSend(true); });
+    presenceSend(false);
+  }
+  function presenceBadge(s) {
+    var b = $("#presence");
+    b.hidden = false;
+    b.style.cursor = "pointer";
+    b.textContent = s && s.linked ? "🔗 " + s.email : "🔗 ผูกเครื่อง";
+    b.title = s && s.linked ? "เครื่องนี้ผูกกับบัญชีนี้ — รายงานการใช้งาน (Pi monitor) · คลิกเพื่อผูกบัญชีอื่น"
+      : "ผูกเครื่องนี้กับบัญชี ASC เพื่อรายงานการใช้งาน (Pi monitor)";
+  }
+  function presenceLocal() {
+    api("/api/presence").then(function (s) {
+      presenceBadge(s);
+      if (s.linked) presenceStart();
+    }).catch(function () { /* server รุ่นเก่า = ไม่มีป้าย */ });
+    $("#presence").addEventListener("click", function () {
+      var code = prompt("ผูกเครื่องนี้กับบัญชี ASC (รายงานการใช้งาน Pi monitor)\n" +
+        "รหัส: เปิด https://peeraponggis.github.io/asc/studio/ (ล็อกอินเมลบริษัท) → ปุ่ม ผู้ช่วย AI แถบบน → ติดตั้งในเครื่องนี้ → สร้างรหัสติดตั้ง → คัดลอก\n\nใส่รหัส ASC-XXXX-XXXX");
+      if (!code) return;
+      api("/api/presence/link", { code: code }).then(function (r) {
+        if (!r.ok) { toast(r.error || "ผูกเครื่องไม่สำเร็จ", true); return; }
+        toast("ผูกเครื่องนี้กับบัญชี " + (r.email || "") + " แล้ว");
+        presenceBadge({ linked: true, email: r.email });
+        presenceStart();
+      }).catch(function (e) { toast(e.message, true); });
+    });
+  }
+
   // ---------------------------------------------------------------- เริ่ม
   function init() {
     document.body.classList.toggle("cloud", CLOUD);
@@ -58,9 +117,11 @@
       homeCards();
     } else {
       api("/api/health").then(function (h) { $("#ver").textContent = "v" + h.version + " · " + (h.updated || ""); }).catch(function () {});
+      checkUpdate(false);
       refreshStatus();
       loadProjects();
       loadDesignAuto();
+      presenceLocal();
     }
     loadCatalog();
     var last = null; try { last = localStorage.getItem("pa.tab"); } catch (e) { /* */ }
@@ -69,6 +130,41 @@
     if (last && $("#tab-" + last)) showTab(last);
     if (q.get("kwp")) prefillYield(q);
   }
+
+  // ---------------------------------------------------------------- อัปเดตโปรแกรม (เครื่องที่ติดตั้งด้วย ASCA-Setup.exe) — ถามผู้ใช้ก่อนทุกครั้ง
+  function checkUpdate(force) {
+    api("/api/update/check" + (force ? "?force=1" : "")).then(function (u) {
+      var bar = $("#update-bar");
+      if (force && !u.available) toast(u.mode === "git" ? "ติดตั้งจาก git — อัปเดตด้วย git pull" : u.error || "ใช้รุ่นล่าสุดอยู่แล้ว (v" + u.current + ")");
+      if (!u.available) { bar.hidden = true; return; }
+      var skip = null; try { skip = localStorage.getItem("asca.update.skip"); } catch (e) { /* */ }
+      if (skip === u.latest && !force) return;
+      var notes = (u.notes || []).slice(0, 6).map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("");
+      bar.innerHTML = "<b>🔔 มีรุ่นใหม่ v" + esc(u.latest) + "</b> (เครื่องนี้ v" + esc(u.current) + ")" + (notes ? "<ul>" + notes + "</ul>" : "") +
+        (u.full ? '<p>รุ่นนี้ต้องติดตั้งชุดเต็ม — ดาวน์โหลด ASCA-Setup.exe ใหม่แล้วติดตั้งทับ (งานเดิมไม่หาย)' + (u.setup_url ? ' · <a href="' + esc(u.setup_url) + '" target="_blank" rel="noopener">ดาวน์โหลด</a>' : "") + "</p>"
+          : '<p><button class="primary" id="upd-go">อัปเดตตอนนี้' + (u.size ? " (" + (u.size / 1048576).toFixed(1) + " MB)" : "") + '</button> <button class="btn" id="upd-later">ไว้ทีหลัง</button>' +
+            ' <span class="small muted">โปรแกรมจะปิดแล้วเปิดใหม่เองภายใน 1 นาที · งานและโครงการไม่หาย · บันทึกงานที่เปิดค้างก่อนกด</span></p>');
+      bar.hidden = false;
+      var go = $("#upd-go"), later = $("#upd-later");
+      if (later) later.onclick = function () { try { localStorage.setItem("asca.update.skip", u.latest); } catch (e) { /* */ } bar.hidden = true; };
+      if (go) go.onclick = function () {
+        go.disabled = true; go.textContent = "กำลังดาวน์โหลด…";
+        api("/api/update/apply", {}).then(function (r) {
+          bar.innerHTML = "<b>⏳ " + esc(r.message) + "</b>";
+          var t0 = Date.now();
+          (function wait() {                                  // รอรุ่นใหม่ขึ้นแล้วโหลดหน้าใหม่ (รุ่นเดิมย้อนกลับเองถ้าเปิดไม่ขึ้น)
+            fetch("/api/health").then(function (x) { return x.json(); }).then(function (h) {
+              if (h.version === r.version) return location.reload();
+              if (Date.now() - t0 < 120000) setTimeout(wait, 2000); else bar.innerHTML = "<b>อัปเดตไม่สำเร็จ — โปรแกรมกลับไปรุ่นเดิม ลองใหม่ภายหลัง</b>";
+            }).catch(function () { setTimeout(wait, 2000); });
+          })();
+        }).catch(function (e) { go.disabled = false; go.textContent = "ลองอีกครั้ง"; toast(e.message, true); });
+      };
+    }).catch(function () { /* ไม่มีเน็ต — เงียบ */ });
+  }
+  $("#ver").title = "คลิกเพื่อตรวจหารุ่นใหม่";
+  $("#ver").style.cursor = "pointer";
+  $("#ver").addEventListener("click", function () { if (!CLOUD) checkUpdate(true); });
 
   function cloudAuth() {
     // รุ่นออนไลน์วางใต้ ASC Cloud: ใช้ล็อกอินเดียวกับ Dashboard (window.AscCloud) — ไม่มีก็ใช้แบบไม่ล็อกอิน (เครื่องมือคงที่)

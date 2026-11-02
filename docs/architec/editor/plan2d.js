@@ -1,8 +1,8 @@
 // กระดานวาด 2D (SVG) ของตัวเขียนแบบ ASC Architect (โดย ลุงพี)
 // เครื่องมือ: เลือก/ย้าย · ผนัง · ห้อง · กล่อง (push-pull) · ประตู · หน้าต่าง · เส้น · มิติ · ข้อความ · สัญลักษณ์ · ลบ
 // จับจุด: กริด · ปลายผนัง/เส้น · ตั้งฉาก (Shift ปิด) · พิมพ์ระยะแล้ว Enter ระหว่างวาด (แบบ SketchUp)
-import * as M from "./model.js?v=0.17.0";
-import * as CAD from "./cadlayer.js?v=0.17.0";
+import * as M from "./model.js?v=0.23.0";
+import * as CAD from "./cadlayer.js?v=0.23.0";
 
 const NS = "http://www.w3.org/2000/svg";
 const el = (tag, attrs, parent) => {
@@ -387,6 +387,16 @@ export class Plan2D {
       }
     }
     for (const l of d.lines) el(l.closed ? "polygon" : "polyline", { points: l.pts.map(P).join(" "), class: "line" + (isSel("lines", l.id) ? " sel" : "") }, L.main);
+    // ชิ้นส่วน 3D (ต้นไม้ รถ ของตกแต่ง) + หน้าตัดกวาด — แสดงในผังเป็นสัญลักษณ์อ้างอิง (แก้ในมุมมอง 3D)
+    const IR = { tree: 1600, palm: 1400, shrub: 650, lamp: 200 }, IB = { car: [1850, 4600], pv: [1130, 2280], lounger: [700, 1900], sofa: [3200, 1000], table: [1600, 1700] };
+    for (const it of d.items3d || []) {
+      const [x, y] = this.toScreen(it.p), sc = it.s || 1;
+      if (IR[it.kind]) el("circle", { cx: x, cy: y, r: Math.max(2, IR[it.kind] * sc * s), class: it.kind === "lamp" ? "item3d" : "ascTree" }, L.main);
+      else { const [w, h] = IB[it.kind] || [800, 800], r = ((it.rot || 0) * Math.PI) / 180, c = Math.cos(r), sn = Math.sin(r);
+        const pts = [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]].map(([u, v]) => P([it.p[0] + (u * c - v * sn) * sc, it.p[1] + (u * sn + v * c) * sc]));
+        el("polygon", { points: pts.join(" "), class: "item3d" }, L.main); }
+    }
+    for (const sw of d.sweeps || []) el(sw.closed ? "polygon" : "polyline", { points: sw.pts.map(P).join(" "), class: "sweep2d", "stroke-width": Math.max(1.5, sw.w * s) }, L.main);
     for (const x of d.dims) this._dim(x, L.main, isSel("dims", x.id));
     for (const t of d.texts) {
       const [x, y] = this.toScreen(t.p);
