@@ -1,6 +1,6 @@
 // หน้าต่าง ⚡ โซลาร์ + SLD: จากแผงที่วางบนหลังคาจริงในแบบ → ผลผลิตไฟฟ้า (pvlib) · จัดสตริง · Single Line Diagram DXF/PDF (โดย ลุงพี)
 // ทุกตัวเลขคำนวณที่เซิร์ฟเวอร์ (pvlib_solar · server/core/sld.py) — หน้านี้แสดงผลและส่งค่าเท่านั้น
-import * as M from "./model.js?v=0.24.0";
+import * as M from "./model.js?v=0.24.3";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmt = (v, d = 0) => Number(v).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d });

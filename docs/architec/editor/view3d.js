@@ -12,10 +12,10 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
 import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import * as M from "./model.js?v=0.24.0";
-import { material } from "./materials.js?v=0.24.0";
-import { buildItem, kindTh } from "./props3d.js?v=0.24.0";
-import * as ST from "./struct.js?v=0.24.0";
+import * as M from "./model.js?v=0.24.3";
+import { material } from "./materials.js?v=0.24.3";
+import { buildItem, kindTh } from "./props3d.js?v=0.24.3";
+import * as ST from "./struct.js?v=0.24.3";
 
 const MM = 0.001;
 const v3 = (p, z = 0) => new THREE.Vector3(p[0] * MM, z * MM, -p[1] * MM);

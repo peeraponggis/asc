@@ -1,7 +1,7 @@
 // แผง ข้อมูลวัตถุ (Entity Info) รวมของ 2D/3D — แก้ค่าได้ทุกชนิด · ค่าที่พิมพ์ใช้ตามนั้น (ผิดกติกาเตือน ไม่บีบค่า) (โดย ลุงพี)
-import * as M from "./model.js?v=0.24.0";
-import * as SEL from "./sel3d.js?v=0.24.0";
-import { PALETTE } from "./materials.js?v=0.24.0";
+import * as M from "./model.js?v=0.24.3";
+import * as SEL from "./sel3d.js?v=0.24.3";
+import { PALETTE } from "./materials.js?v=0.24.3";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const ROOF = [["none", "ไม่มี"], ["flat", "เรียบ"], ["shed", "เพิง"], ["gable", "จั่ว"], ["hip", "ปั้นหยา"], ["curved", "โค้ง"]];
