@@ -4,18 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ASC Architect</title>
-<link rel="icon" href="favicon.ico?v=0.24.3">
-<link rel="stylesheet" href="style.css?v=0.24.3">
+<link rel="icon" href="favicon.ico?v=0.25.0">
+<link rel="stylesheet" href="style.css?v=0.25.0">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
 <script src="../supabase-config.js" onerror="void 0"></script>
 <script src="../asc-cloud.js" onerror="void 0"></script>
-<script src="mode.js?v=0.24.3"></script>
-<link rel="stylesheet" href="ai/assistant.css?v=0.24.3">
-<script src="brand.js?v=0.24.3"></script>
+<script src="mode.js?v=0.25.0"></script>
+<link rel="stylesheet" href="ai/assistant.css?v=0.25.0">
+<script src="brand.js?v=0.25.0"></script>
 </head>
 <body>
 <header class="top">
-  <img src="logo.png?v=0.24.3" alt="" class="logo" width="36" height="36">
+  <img src="logo.png?v=0.25.0" alt="" class="logo" width="36" height="36">
   <div class="brand" data-brand="block"><b>Auto Structure Co-pilot Architect (ASC Architect)</b><span>ASCA · Design · Structure · Single line diagrams</span></div>
   <span id="mode" class="badge">…</span>
   <span id="ver" class="ver"></span>
@@ -27,50 +27,26 @@
   <a class="tablink" href="editor/">✏️ เขียนแบบ 2D/3D</a>
   <a class="tablink" href="cad/">📐 CAD 2D (DWG)</a>
   <button data-tab="projects">โครงการ</button>
-  <button data-tab="yield">ผลผลิตไฟฟ้า</button>
-  <button data-tab="strings">จัดสตริง</button>
-  <button data-tab="library">คลังสัญลักษณ์</button>
-  <button data-tab="templates">แม่แบบ &amp; โปรแกรม</button>
+  <div class="tabdd" id="dd-solar"><button type="button" class="ddt" aria-haspopup="true" aria-expanded="false" title="งานออกแบบโซลาร์เซลล์: ผลผลิตไฟฟ้า · จัดสตริง · Single Line Diagram">☀ ออกแบบโซลาร์ ▾</button>
+    <div class="ddmenu" role="menu" hidden>
+      <button data-tab="yield" role="menuitem"><b>ผลผลิตไฟฟ้า</b><small>pvlib · PVGIS/NASA รายชั่วโมง · PR รายเดือน</small></button>
+      <button data-tab="strings" role="menuitem"><b>จัดสตริง</b><small>แผงต่อสตริงตามอุณหภูมิไทย · MPPT</small></button>
+      <a href="editor/?start=draft&amp;act=solar" role="menuitem" id="dd-sld"><b>Single Line Diagram</b><small>จากแผงบนหลังคาในแบบ · เบรกเกอร์ สาย Vd · DXF + PDF</small></a>
+    </div></div>
+  <div class="tabdd" id="dd-lib"><button type="button" class="ddt" aria-haspopup="true" aria-expanded="false" title="คลังสัญลักษณ์ CAD · แม่แบบงาน · โปรแกรมเสริม">คลัง &amp; แม่แบบ ▾</button>
+    <div class="ddmenu" role="menu" hidden>
+      <button data-tab="library" role="menuitem"><b>คลังสัญลักษณ์</b><small>สัญลักษณ์ไฟฟ้า น้ำ เซนเซอร์ · DXF</small></button>
+      <button data-tab="templates" role="menuitem"><b>แม่แบบ &amp; โปรแกรม</b><small>แม่แบบงาน · CadCraft · Blender · QElectroTech</small></button>
+    </div></div>
 </nav>
 <main id="main">
 <div id="update-bar" class="panel warn local-only" hidden></div>
 
 <section id="tab-home" class="tab on">
-  <div class="hero">
-    <div class="hero-txt">
-      <span class="kicker">ASC Architect 0.24 · ออกแบบ · โครงสร้าง · ระบบไฟฟ้าโซลาร์ ในโปรแกรมเดียว</span>
-      <h1>จากผังบ้าน → โครงสร้าง คสล. → แบบไฟฟ้าโซลาร์ → ชุดแบบยื่นขออนุญาต</h1>
-      <p>วาดผัง 2D หลายชั้น เห็นโมเดล 3D แบบ SketchUp ทันที · สร้างเสา คาน ฐานรากจากผนังและตรวจขนาดเบื้องต้น (WSD) · วางแผงบนหลังคาจริงแล้วออก <b>Single Line Diagram</b> พร้อมขนาดเบรกเกอร์ สาย และแรงดันตก · ส่งออก DWG/DXF · PDF A3 กรอบชื่อ กฟน./กฟภ. · ภาพนำเสนอ</p>
-      <p class="cta"><a class="primary bigbtn" href="editor/?start=demo">▶ เปิดแบบตัวอย่าง: บ้าน 2 ชั้น คสล. + โซลาร์ 7.7 kWp</a>
-        <a class="bigbtn ghostbtn" href="editor/?start=new">＋ เริ่มแบบใหม่</a>
-        <a class="bigbtn ghostbtn" href="cad/">📐 เปิดไฟล์ DWG / DXF</a></p>
-      <p class="muted small" id="home-intro">ใช้งานได้ทั้งในเครื่อง (ออฟไลน์) และออนไลน์ผ่าน ASC Cloud · ข้อมูลโครงการอยู่ในเครื่องของคุณ</p>
-      <p class="muted small local-only" id="remote-links" hidden></p>
-    </div>
-    <div class="hero-flow" aria-label="ขั้นตอนงาน">
-      <div><b>1</b><span>✏️ ผัง 2D หลายชั้น</span><small>ผนัง ห้อง ประตู หน้าต่าง · พิมพ์ระยะได้</small></div>
-      <div><b>2</b><span>🧊 โมเดล 3D</span><small>Push/Pull · วัสดุ PBR · เงาตามวันเวลา</small></div>
-      <div><b>3</b><span>🏗 โครงสร้าง คสล.</span><small>เสา คาน ฐานรากเข็ม · ตรวจขนาด · ตาราง</small></div>
-      <div><b>4</b><span>⚡ โซลาร์ + SLD</span><small>pvlib · จัดสตริง · เบรกเกอร์ สาย Vd</small></div>
-      <div><b>5</b><span>📑 ชุดแบบ + Plot</span><small>PDF A3 · DXF/DWG · IFC · Render</small></div>
-    </div>
-  </div>
-  <div class="features">
-    <a href="editor/?start=demo" class="feat"><i>🧊</i><b>เขียนแบบ 2D/3D แบบ SketchUp</b><span>เครื่องมือ 37 ปุ่ม · เลือก ย้าย หมุน คัดลอก ได้ทุกชิ้น · ผัง 2D กับ 3D ตรงกันเสมอ</span></a>
-    <a href="editor/?start=demo" class="feat"><i>🏗</i><b>โครงสร้างจริง</b><span>ชั้นอาคาร · เสา คาน ฐานราก พื้น บันได · ตรวจ WSD (fc' 240 · SD40) · ปริมาณคอนกรีต/เหล็ก</span></a>
-    <a href="editor/?start=demo" class="feat"><i>⚡</i><b>Single Line Diagram โซลาร์</b><span>จากแผงบนหลังคา → สตริงตามอุณหภูมิไทย → DC/AC · ฟิวส์ · MCB · สาย · SPD → DXF + PDF</span></a>
-    <a href="cad/" class="feat"><i>📐</i><b>CAD 2D เปิด/แก้ DWG</b><span>Ribbon แบบ AutoCAD · ท่อ/สายตามชนิด · สัญลักษณ์ไฟฟ้า น้ำ เซนเซอร์ 298 ตัว</span></a>
-    <button type="button" data-tab="yield" class="feat"><i>☀</i><b>ผลผลิตไฟฟ้า (pvlib)</b><span>ข้อมูลอากาศ PVGIS/NASA รายชั่วโมง · เงาขอบฟ้า · PR รายเดือน</span></button>
-    <button type="button" data-tab="templates" class="feat"><i>🎬</i><b>ภาพนำเสนอ + Blender</b><span>Render ในโปรแกรม 1080p–4K · ส่ง GLB ไป Blender Cycles</span></button>
-  </div>
+  <div id="home-smart" class="hsmart"><div class="hhero"><span class="hkick">ASC Architect</span><h1>กำลังโหลดงานล่าสุด…</h1></div></div>
   <div class="cards" id="home-cards"></div>
-  <h2>ขั้นตอนงานโซลาร์รูฟท็อป</h2>
-  <ol class="steps">
-    <li><b>ASC Studio</b> วางแผง → <i>ส่งออกทั้งหมด</i> (ได้ 3d.glb · roof_*.dxf · SLD ร่าง)</li>
-    <li><b>โครงการ</b> → นำเข้างาน ASC Studio มาเป็นโครงการ (ไฟล์ทั้งหมดอยู่ในโฟลเดอร์เดียว)</li>
-    <li><b>ผลผลิตไฟฟ้า</b> → คำนวณด้วย pvlib จากแคช PVGIS เดียวกับ ASC Studio → ได้ไฟล์ส่ง ASC</li>
-    <li><b>แม่แบบ &amp; โปรแกรม</b> → เปิด DXF ใน CadCraft · render ภาพด้วย Blender · วาด SLD ใน QElectroTech</li>
-  </ol>
+  <p class="muted small" id="home-intro">ใช้งานได้ทั้งในเครื่อง (ออฟไลน์) และออนไลน์ผ่าน ASC Cloud · ข้อมูลโครงการอยู่ในเครื่องของคุณ</p>
+  <p class="muted small local-only" id="remote-links" hidden></p>
 </section>
 
 <section id="tab-projects" class="tab">
@@ -103,7 +79,7 @@
     <div id="project-list" class="list"></div>
   </div>
   <div class="cloud-only panel">
-    <p>รุ่นออนไลน์เก็บโครงการเป็นไฟล์ JSON — กด <b>บันทึกไฟล์โครงการ</b> ในแท็บผลผลิตไฟฟ้า แล้วนำไปเปิดในรุ่นในเครื่องได้</p>
+    <p>รุ่นออนไลน์เก็บแบบไว้ในเบราว์เซอร์ — ในตัวเขียนแบบกด <b>ส่งออก ▾ → JSON — ไฟล์แบบ ASC Architect</b> แล้วนำไฟล์ไปเปิดในรุ่นในเครื่องได้ (คำนวณผลผลิตไฟฟ้า pvlib ใช้ได้เฉพาะรุ่นในเครื่อง)</p>
     <label class="filebtn">เปิดไฟล์โครงการ (.json)<input type="file" id="open-json" accept=".json,application/json"></label>
   </div>
 </section>
@@ -187,8 +163,9 @@
 </section>
 </main>
 <div id="toast" class="toast" hidden></div>
-<script src="strings.js?v=0.24.3"></script>
-<script src="app.js?v=0.24.3"></script>
-<script type="module" src="ai/assistant.js?v=0.24.3"></script>
+<script src="strings.js?v=0.25.0"></script>
+<script src="app.js?v=0.25.0"></script>
+<script type="module" src="home.js?v=0.25.0"></script>
+<script type="module" src="ai/assistant.js?v=0.25.0"></script>
 </body>
 </html>

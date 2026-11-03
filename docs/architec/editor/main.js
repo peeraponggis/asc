@@ -1,19 +1,22 @@
 // ตัวเขียนแบบ ASC Architect — เชื่อมผัง 2D · 3D · แผงคุณสมบัติ · บันทึก/ส่งออก (โดย ลุงพี)
-import * as M from "./model.js?v=0.24.3";
-import { Plan2D } from "./plan2d.js?v=0.24.3";
-import { View3D } from "./view3d.js?v=0.24.3";
-import { toDXF } from "./dxf.js?v=0.24.3";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.24.3";
-import * as CAD from "./cadlayer.js?v=0.24.3";
-import { Sketch3D } from "./sketch3d.js?v=0.24.3";
-import { PALETTE } from "./materials.js?v=0.24.3";
-import { sunPosition } from "./sun.js?v=0.24.3";
-import { initSkUI } from "./skui.js?v=0.24.3";
-import { readDXF, decodeDXF } from "./dxfread.js?v=0.24.3";
-import * as LS from "./localstore.js?v=0.24.3";
-import * as ST from "./struct.js?v=0.24.3";
-import { openStruct } from "./structui.js?v=0.24.3";
-import { openSolar } from "./solarui.js?v=0.24.3";
+import * as M from "./model.js?v=0.25.0";
+import { Plan2D } from "./plan2d.js?v=0.25.0";
+import { View3D } from "./view3d.js?v=0.25.0";
+import { toDXF } from "./dxf.js?v=0.25.0";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.25.0";
+import * as CAD from "./cadlayer.js?v=0.25.0";
+import { Sketch3D } from "./sketch3d.js?v=0.25.0";
+import { PALETTE } from "./materials.js?v=0.25.0";
+import { sunPosition } from "./sun.js?v=0.25.0";
+import { initSkUI } from "./skui.js?v=0.25.0";
+import { readDXF, decodeDXF } from "./dxfread.js?v=0.25.0";
+import * as LS from "./localstore.js?v=0.25.0";
+import * as ST from "./struct.js?v=0.25.0";
+import { openStruct } from "./structui.js?v=0.25.0";
+import { openSolar } from "./solarui.js?v=0.25.0";
+import * as WF from "./workflowui.js?v=0.25.0";
+import { analyze as wfAnalyze } from "./workflow.js?v=0.25.0";
+import { openStandards, printStandards } from "./standardsui.js?v=0.25.0";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -84,6 +87,17 @@ function refresh() {
   syncRoofInputs();
   if (plan.level && !ST.levels(hist.doc).some((l) => l.id === plan.level.id)) plan.level = null;
   if ($("#levelSel").options.length !== ST.levels(hist.doc).length + (ST.levels(hist.doc).length > 1 ? 1 : 0)) syncLevels();
+  try { WF.badge(hist.doc); } catch (e) { console.warn("ตรวจลำดับงาน:", e); }
+}
+/** ปุ่มในหน้าต่าง ตรวจลำดับงาน → เปิดหน้าต่าง/เลือกวัตถุที่ต้องแก้ */
+function wfRun(a) {
+  if (a.startsWith("select:")) {
+    const k = a.slice(7), t = k.slice(0, k.indexOf(":")), id = k.slice(k.indexOf(":") + 1), o = (hist.doc[t] || []).find((x) => x.id === id);
+    if (o && plan.level && !ST.onLevel(hist.doc, plan.level, t, o)) { plan.level = null; syncLevels(); }   // วัตถุอยู่ชั้นอื่น → แสดงทุกชั้น
+    plan.sel = { type: t, id }; if (sk) { sk.S.clear(); sk.S.add(k); sk.redeco(); } plan.render(); showProps(); status("เลือกแล้ว — แก้ค่าได้ที่ถาด ข้อมูลวัตถุ"); return;
+  }
+  if (a.startsWith("info:")) return ui && ui.modelInfo(a.slice(5));
+  return act(a);
 }
 
 // ---------------------------------------------------------------- แผงคุณสมบัติของสิ่งที่เลือก
@@ -151,7 +165,7 @@ let ui = null;
 const KEYS = { v: "select", h: "pan", w: "wall", r: "room", d: "door", n: "window", b: "box", l: "line", m: "dim", t: "text", s: "symbol", e: "erase", k: "calib", c: "column", g: "beam", f: "footing" };
 document.addEventListener("keydown", (e) => {
   const inField = !!(e.target.matches && e.target.matches("input, select, textarea")) && e.target.id !== "vcb";
-  if (e.key === "F1" && ui) { e.preventDefault(); ui.keysDlg(); return; }
+  if (e.key === "F1" && e.shiftKey && ui) { e.preventDefault(); ui.keysDlg(); return; }   // F1 เฉย ๆ = โหมดช่วยเหลือ (ai/help.js)
   if ((e.ctrlKey || e.metaKey) && !inField) {
     const k = e.key.toLowerCase();
     if (over3d && ui) {
@@ -183,6 +197,7 @@ document.addEventListener("keydown", (e) => {
     if (k3) { e.preventDefault(); setTool3d(k3); return; }
     if (e.key === "Delete") { ui.ext.removeSel(); return; }
   }
+  if (sk && sk.tool === "walk" && /^(w|a|s|d)$/i.test(e.key)) return;     // กำลังเดินใน 3D: W/A/S/D ไม่สลับเครื่องมือผัง 2D (แม้เมาส์อยู่นอกช่อง 3D)
   if (!e.ctrlKey && !e.metaKey && !e.altKey && KEYS[e.key.toLowerCase()]) setTool(KEYS[e.key.toLowerCase()]);
 });
 document.addEventListener("keyup", (e) => plan.key(e));
@@ -236,7 +251,7 @@ async function act(a) {
   if (a === "fit2d") return plan.fit();
   if (a === "struct") return openStruct({ hist, onChange: host.onChange, status, output, levelsChanged: () => { syncLevels(); plan.render(); }, select: (k) => { sk.S.clear(); sk.S.add(k); ui.ext.selChanged(); $("#struct-dlg").hidden = true; } });
   if (a === "struct-close") { $("#struct-dlg").hidden = true; return; }
-  if (a === "solar") return openSolar({ hist, status, CLOUD });
+  if (a === "solar") return openSolar({ hist, status, CLOUD, onChange: host.onChange });
   if (a === "solar-close") { $("#solar-dlg").hidden = true; return; }
   if (a === "level-add") {
     const L = ST.levels(d), l = L[L.length - 1], z = Number(prompt(`ระดับพื้นชั้น ${L.length + 1} (มม. จาก ±0.00)`, String(l.z + (l.h || 3000))));
@@ -260,11 +275,16 @@ async function act(a) {
   if (a === "cad-close") { $("#cad-dlg").hidden = true; return; }
   if (a === "plot") return plotDialog();
   if (a === "plot-close") { $("#plot-dlg").hidden = true; return; }
+  if (a === "workflow") return WF.openWorkflow({ hist, onChange: host.onChange, run: wfRun });
+  if (a === "wf-close") { $("#wf-dlg").hidden = true; return; }
+  if (a === "standards") { $("#wf-dlg").hidden = true; return openStandards({ hist, select: (k) => wfRun("select:" + k) }); }
+  if (a === "std-close") { $("#std-dlg").hidden = true; return; }
+  if (a === "std-print") return printStandards(hist.doc);
   if (a === "drawset") return drawsetDialog();
-  if (a === "set-go") return makeDrawset();
+  if (a === "set-go") { if (!WF.guard(hist.doc, "สร้างชุดแบบ")) return; return makeDrawset(); }
   if (a === "set-close") { $("#set-dlg").hidden = true; return; }
   if (a === "set-open") return openDrawset();
-  if (a === "plot-go") return doPlot();
+  if (a === "plot-go") { if (!WF.guard(hist.doc, "Plot PDF")) return; return doPlot(); }
   if (a === "dxf") return output(safe(d.name) + (plan.level ? "_" + plan.level.name : "") + ".dxf", new Blob([toDXF(d, { level: plan.level })], { type: "application/dxf" }), "plan.dxf");
   if (a === "glb") return output(safe(d.name) + ".glb", await view.exportGLB(), "model.glb");
   if (a === "render") return ui.renderDlg();
@@ -297,6 +317,7 @@ async function doPlot() {
     a.href = j.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = "📄 เปิด PDF";
     $("#plot-msg").textContent = `เสร็จ ${j.scale} · ${j.pdf}` + (j.clipped ? " · ⚠ ผังใหญ่กว่ากระดาษ ส่วนเกินถูกตัด" : "") + " · ";
     $("#plot-msg").append(a);
+    hist.commit((dd) => { dd.plotRec = { at: new Date().toISOString().slice(0, 16), pdf: j.pdf }; }); host.onChange();   // ตรวจลำดับงาน: ขั้น 5
   } catch (e) { $("#plot-msg").textContent = "Plot ไม่สำเร็จ: " + e.message; }
 }
 
@@ -357,7 +378,12 @@ async function save() {
   dirty = false; $("#saved").textContent = "บันทึกแล้ว " + new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
   try { localStorage.removeItem(DRAFT_KEY); } catch (e) { /* ไม่มี storage */ }
 }
-function draft() { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(serialize(hist.doc))); } catch (e) { /* ไม่มี storage ก็ข้าม */ } }
+function draft() {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(serialize(hist.doc)));
+    localStorage.setItem("pa.editor.last", JSON.stringify({ key: DRAFT_KEY, project: PROJECT || "", name: hist.doc.name, at: new Date().toISOString() }));   // หน้าแรก: งานที่เปิดล่าสุด
+  } catch (e) { /* ไม่มี storage ก็ข้าม */ }
+}
 /** ตัดของที่สร้างขณะเปิดออกก่อนบันทึก: ภาพมุมบน (dataURL) · url ของไฟล์โครงการ (เก็บแค่ชื่อไฟล์) */
 function serialize(doc) {
   const d = JSON.parse(JSON.stringify(doc));
@@ -375,7 +401,7 @@ async function attachImported() {
   if (d.backdrop && d.backdrop.img) {                                        // ภาพลอกแบบของรุ่นออนไลน์ (เก็บในเบราว์เซอร์)
     const blob = await LS.get("img:" + d.backdrop.img);
     if (blob) { d.backdrop.url = URL.createObjectURL(blob); view.setBackdrop(d.backdrop); }
-    else toast(`ไม่พบภาพลอกแบบ ${d.backdrop.name || ""} ในเบราว์เซอร์นี้ — นำเข้าภาพใหม่ด้วยปุ่ม 🖼 ภาพลอกแบบ`);
+    else toast(`ไม่พบภาพลอกแบบ ${d.backdrop.name || ""} ในเบราว์เซอร์นี้ — นำเข้าภาพใหม่ที่เมนู ไฟล์ → ภาพลอกแบบ…`);
   }
   if (d.imported && d.imported.glb && PROJECT && !CLOUD) {
     status("กำลังโหลดโมเดล 3D จาก ASC Studio…");
@@ -459,8 +485,9 @@ async function start() {
     if (p && !doc) { doc = M.newDoc(p.name); doc.site.lat = p.lat ?? null; doc.site.lon = p.lon ?? null; }
   }
   let saved = null; try { saved = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) { /* */ }
-  const START = params.get("start");                   // ?start=demo · ?start=new (จากหน้าแรก)
+  const START = params.get("start");                   // ?start=demo · ?start=new · ?start=draft (หน้าแรก: ทำงานล่าสุดต่อ ไม่ต้องถาม)
   if (!doc && START === "new") doc = M.newDoc("แบบใหม่");
+  if (!doc && START === "draft" && saved && saved.app === "pee_architec-drawing") doc = saved;
   if (!doc && START !== "demo" && saved && saved.app === "pee_architec-drawing" && confirm("มีแบบที่ยังไม่ได้บันทึกจากครั้งก่อน — เปิดต่อหรือไม่?")) doc = saved;
   let firstScene = false;
   if (!doc) { doc = demoDoc(); firstScene = true; }
@@ -475,9 +502,13 @@ async function start() {
   for (const ref of hist.doc.cads) loadCad(ref, false);
   syncLevels();
   let m0 = "split"; try { m0 = localStorage.getItem("ascaEditor.mode") || "split"; } catch (e) { /* */ }
+  if (["2d", "split", "3d"].includes(params.get("view"))) m0 = params.get("view");   // หน้าแรก: ขั้นงาน → เปิดโหมดที่ตรงขั้น
   setMode(m0);
   setTool("select"); setTool3d("select");
   loadSymbols();
+  const A0 = params.get("act");                        // หน้าแรก/เมนูออกแบบโซลาร์: เปิดหน้าต่างของขั้นนั้นทันที
+  if (["struct", "solar", "drawset", "plot", "workflow", "standards"].includes(A0)) setTimeout(() => act(A0), 300);
+  if (A0 === "import3d") setTimeout(() => { $('[data-menu="ไฟล์"] > button')?.click(); $('#ddm [data-menu^="ไฟล์/นำเข้า 3D"]')?.click(); }, 300);   // = เมนู ไฟล์ → นำเข้า 3D SketchUp
 }
 
 // ---------------------------------------------------------------- นำเข้าไฟล์ CAD
@@ -513,7 +544,7 @@ $("#cad-files").addEventListener("click", (e) => { const b = e.target.closest("b
 async function aiDraft() {
   if (CLOUD) return toast("AI ร่างแบบต้องใช้รุ่นในเครื่อง (ASC Architect ในเครื่อง)");
   const k = hist.doc.backdrop;
-  if (!k || !k.sketch) return toast("นำเข้าภาพก่อน — ปุ่ม 🖼 ภาพลอกแบบ แล้วกด 🤖 ร่างด้วย AI");
+  if (!k || !k.sketch) return toast("นำเข้าภาพก่อน — เมนู ไฟล์ → ภาพลอกแบบ… แล้วเลือก ร่างกล่องอาคารด้วย AI ที่เมนู ส่วนเสริม");
   if (aiDraft.busy) return toast("AI กำลังร่างอยู่ — รอสักครู่");
   const st = await (await fetch("/api/sketch/ai")).json();
   if (!st.ok) return toast(st.message);
@@ -576,7 +607,7 @@ async function traceLocal(f) {
 function parseDxfLocal(buf, name) {
   return new Promise((res, rej) => {
     let w;
-    try { w = new Worker(new URL("./dxfworker.js?v=0.24.3", import.meta.url), { type: "module" }); } catch (err) { w = null; }
+    try { w = new Worker(new URL("./dxfworker.js?v=0.25.0", import.meta.url), { type: "module" }); } catch (err) { w = null; }
     if (!w) { try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } return; }
     w.onmessage = (ev) => { w.terminate(); ev.data.error ? rej(new Error(ev.data.error)) : res(ev.data.data); };
     w.onerror = (ev) => { w.terminate(); try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } ev.preventDefault(); };
@@ -805,7 +836,166 @@ function openDemo(which) {
   status(which === "pool" ? "แบบตัวอย่าง: บ้านพร้อมสระ · ลองคลิกฉากในถาด ฉาก หรือ 📷 Render ภาพนำเสนอ" : "แบบตัวอย่าง: บ้าน 2 ชั้น คสล. — ลองเปลี่ยน ชั้น ที่แถบผัง 2D · 🏗 โครงสร้าง = ตรวจขนาด + ตาราง · ⚡ โซลาร์ + SLD = แบบไฟฟ้าจริง");
 }
 
-// ---------------------------------------------------------------- ผู้ช่วย AI piBot: สถานะหน้า (ตัวเลขจากโค้ด) + ต่อไปทำอะไร + ช่องที่ผู้ช่วยตั้งค่าได้ (หลังผู้ใช้ยืนยัน)
+// ---------------------------------------------------------------- ผู้ช่วย AI piBot: คำสั่งที่ทำได้จริง (ai/actions.js ตรวจชนิด/ช่วงค่าก่อน · ผู้ใช้กดยืนยันการ์ดก่อนทุกครั้ง)
+// ทุกฟังก์ชันคืน { ok, msg, keys } — ตัวเลขใน msg มาจากโค้ดของโปรแกรม (M.summary · ST.check · ST.quantities · workflow) ไม่ใช่จาก AI
+const aiKey = (o) => "struct:" + o.id;
+function aiRun(name, p = {}) {
+  const d = hist.doc, lv = plan.level || ST.levels(d)[0], z = lv.z || 0;
+  const done = (msg, keys) => ({ ok: true, msg, keys: keys || [] }), fail = (msg) => ({ ok: false, msg });
+  const sameMark = (o, kind) => o.kind === kind && String(o.mark || "").toUpperCase() === String(p.mark).toUpperCase();
+  switch (name) {
+    case "wall.draw":
+      if (document.body.dataset.view === "3d") setMode("split");
+      setTool(p.tool === "room" ? "room" : "wall");
+      return done(p.tool === "room" ? "เลือกเครื่องมือห้องแล้ว — คลิก 2 มุมในผัง 2D หรือคลิกมุมแรกแล้วพิมพ์ 4000,3000 Enter" : "เลือกเครื่องมือผนังแล้ว — คลิกจุดในผัง 2D หรือพิมพ์ระยะแล้ว Enter");
+    case "room.add": {
+      const W = p.w * 1000, D = p.d * 1000, cfg = host.defaults(), ws = d.walls.filter((w) => ST.onLevel(d, plan.level, "walls", w));
+      let x0 = 0, y0 = 0;
+      if (p.x != null || p.y != null) { x0 = (p.x || 0) * 1000; y0 = (p.y || 0) * 1000; }
+      else if (ws.length) { x0 = Math.max(...ws.flatMap((w) => [w.a[0], w.b[0]])); y0 = Math.min(...ws.flatMap((w) => [w.a[1], w.b[1]])); }   // ต่อจากผนังเดิมทางขวา
+      const onOld = (pt) => ws.some((w) => M.projectOnSegment(pt, w.a, w.b).d < 1);
+      const nw = M.rectWalls([x0, y0], [x0 + W, y0 + D], cfg.wallThick, cfg.wallHeight).map((w) => (z ? { ...w, base: z } : w)).filter((w) => !(onOld(w.a) && onOld(w.b)));   // ผนังที่ทับผนังเดิม ไม่ซ้ำ
+      hist.commit((dd) => dd.walls.push(...nw)); host.onChange(); if (plan.w > 200 && plan.h > 200) plan.fit();   // ผัง 2D ซ่อน/เล็กมาก = ไม่ซูม
+      return done(`เพิ่มห้อง ${p.w} × ${p.d} ม. = ผนัง ${nw.length} ช่วง (หนา ${cfg.wallThick} มม. สูง ${cfg.wallHeight} มม.)${ST.levels(d).length > 1 ? " ที่" + lv.name : ""}`, nw.map((w) => "walls:" + w.id));
+    }
+    case "struct.autoframe": {
+      if (!d.walls.length) return fail("ยังไม่มีผนัง — วาดผนัง/ห้องก่อน");
+      const S = ST.autoFrame(d), n = (k) => S.filter((o) => o.kind === k).length;
+      if (!S.length) return fail("ไม่พบผนังรอบนอกหนา ≥ 150 มม. ที่ชั้น 1 — สร้างโครงจากผนังไม่ได้");
+      hist.commit((dd) => { dd.struct = (dd.struct || []).filter((o) => o.kind === "slab" || o.kind === "stair").concat(S); }); host.onChange();
+      return done(`สร้างโครงจากผนัง: เสา ${n("column")} ต้น · ฐานราก ${n("footing")} · คาน ${n("beam")} ช่วง — กด ✅ ตรวจงาน เพื่อดูผลตรวจขนาด`, S.filter((o) => o.kind === "column").map(aiKey));
+    }
+    case "struct.check": { const c = aiChecks(); return done(c.structText, c.failKeys); }
+    case "workflow.check": { const c = aiChecks(); return done(c.wfText, c.wfKeys); }
+    case "bom.summary": return done(aiBom());
+    case "struct.open": act("struct"); return done("เปิดหน้าต่าง 🏗 โครงสร้างแล้ว");
+    case "beam.resize": case "column.resize": {
+      const kind = name === "beam.resize" ? "beam" : "column", hit = (d.struct || []).filter((o) => sameMark(o, kind));
+      if (!hit.length) return fail(`ไม่พบ${ST.KINDS[kind]}รหัส ${p.mark} ในแบบ`);
+      hist.commit((dd) => { for (const o of dd.struct) if (sameMark(o, kind)) { if (p.w != null) o.w = p.w; if (kind === "beam" && p.d != null) o.d = p.d; if (kind === "column" && p.l != null) o.l = p.l; } });
+      host.onChange();
+      const o = hist.doc.struct.find((x) => sameMark(x, kind));
+      return done(`${ST.KINDS[kind]} ${p.mark} ${hit.length} ชิ้น → ${kind === "beam" ? `${o.w}×${o.d}` : `${o.w}×${o.l || o.w}`} มม. — กด ✅ ตรวจงาน เพื่อตรวจใหม่`, hit.map(aiKey));
+    }
+    case "level.add": {
+      const L = ST.levels(d), l = L[L.length - 1], zz = p.z != null ? p.z : l.z + (l.h || 3000), h = p.h || 3000;
+      if (L.some((x) => Math.abs(x.z - zz) < 1)) return fail(`มีชั้นที่ระดับ ${zz.toLocaleString()} มม. อยู่แล้ว`);
+      hist.commit((dd) => { dd.levels = JSON.parse(JSON.stringify(L)); dd.levels.push({ id: M.uid("L"), name: `ชั้น ${L.length + 1}`, z: zz, h }); });
+      plan.level = ST.levels(hist.doc)[L.length]; host.onChange(); syncLevels();
+      return done(`เพิ่มชั้น ${L.length + 1} ที่ระดับ ${zz.toLocaleString()} มม. สูง ${h.toLocaleString()} มม. — ผนัง/เสา/คานที่วาดต่อจากนี้อยู่ชั้นนี้`);
+    }
+    case "roof.set":
+      hist.commit((dd) => { if (p.type) dd.roof.type = p.type; if (p.pitch != null) dd.roof.pitch = p.pitch; if (p.overhang != null) dd.roof.overhang = p.overhang; }); host.onChange();
+      return done(`หลังคา${hist.doc.roof.type === "none" ? ": ไม่มี" : ROOF_TH[hist.doc.roof.type] || hist.doc.roof.type} · ชัน ${hist.doc.roof.pitch}° · ชายคา ${hist.doc.roof.overhang} มม.${d.walls.length ? "" : " (ยังไม่มีผนัง หลังคาจะขึ้นเมื่อวาดผนัง)"}`);
+    case "pv.set": {
+      hist.commit((dd) => { if (p.on != null) dd.pv.enabled = p.on; if (p.watt != null) dd.pv.watt = p.watt; }); host.onChange();
+      const s = M.summary(hist.doc);
+      return done(`แผงโซลาร์อัตโนมัติ: ${hist.doc.pv.enabled ? "เปิด" : "ปิด"} · แผง ${hist.doc.pv.watt} W · ตอนนี้วางได้ ${s.pvCount} แผง = ${s.pvKwp} kWp (โปรแกรมคำนวณ)`);
+    }
+    case "solar.sld": act("solar"); return done("เปิดหน้าต่าง ⚡ โซลาร์ + SLD แล้ว — กด 📐 สร้าง Single Line Diagram ในหน้าต่าง (ขนาดสาย ฟิวส์ เบรกเกอร์ โปรแกรมคำนวณ)");
+    case "plot.open": act("plot"); return done("เปิดหน้าต่าง 🖨 Plot PDF แล้ว");
+    case "drawset.open": act("drawset"); return done("เปิดหน้าต่าง 📑 ชุดแบบก่อสร้างแล้ว");
+    case "view.set": setMode(p.mode); return done(`มุมมอง ${{ "2d": "2D", split: "2D+3D", "3d": "3D" }[p.mode]}`);
+    case "undo": if (!hist.past.length) return fail("ไม่มีขั้นให้ย้อน"); act("undo"); return done("ย้อน 1 ขั้นแล้ว");
+  }
+  return fail(`หน้านี้ทำคำสั่ง ${name} ไม่ได้`);
+}
+/** ดูบนผัง: เลือก + ไฮไลต์วัตถุ ("walls:<id>" · "struct:<id>" · [หลายชิ้น] · { kind, mark }) · ไม่มีวัตถุ = false */
+function aiFocus(t) {
+  const d = hist.doc;
+  let keys = Array.isArray(t) ? t : typeof t === "string" ? [t] : t && t.mark ? (d.struct || []).filter((o) => (!t.kind || o.kind === t.kind) && String(o.mark || "").toUpperCase() === String(t.mark).toUpperCase()).map(aiKey) : [];
+  keys = keys.filter((k) => { const i = k.indexOf(":"); return i > 0 && (d[k.slice(0, i)] || []).some((x) => x.id === k.slice(i + 1)); });
+  if (!keys.length) return false;
+  if (document.body.dataset.view === "3d") setMode("split");
+  wfRun("select:" + keys[0]);                                                     // เปลี่ยนชั้นให้ถ้าวัตถุอยู่ชั้นอื่น + ข้อมูลวัตถุ
+  if (sk && keys.length > 1) { for (const k of keys) sk.S.add(k); sk.redeco(); }
+  return true;
+}
+/** ผลตรวจจริง: โครงสร้าง (ST.check) + ลำดับงาน (workflow.analyze) → ข้อความ + ตัวย่อสำหรับ prompt + วัตถุที่ต้องแก้ */
+function aiChecks() {
+  const d = hist.doc, S = d.struct || [], wf = wfAnalyze(d), f1 = (v) => (v / 1000).toFixed(1), pct = (a, b) => Math.round((a / Math.max(1, b)) * 100);
+  const LV = { hi: "สำคัญ", md: "ควรแก้", lo: "แนะนำ" };
+  const out = { failKeys: [], wfKeys: [], fails: 0, items: [] };
+  if (S.length) {
+    const c = ST.check(d), m = (r) => r.o.mark || "-";
+    const rows = [
+      ...c.beams.map((r) => ({ r, key: aiKey(r.o), u: pct(r.M, r.Mc), t: `คาน ${m(r)} ${r.o.w}×${r.o.d} ช่วง ${r.L.toFixed(2)} ม.: น้ำหนัก ${r.w.toLocaleString()} กก./ม. → M ${r.M.toLocaleString()} / Mc ${r.Mc.toLocaleString()} กก.-ม. (ใช้ ${pct(r.M, r.Mc)}%) · V ${r.V.toLocaleString()} กก. · เหล็กล่าง ${r.bars}` })),
+      ...c.columns.map((r) => ({ r, key: aiKey(r.o), u: pct(r.P, r.Pa), t: `เสา ${m(r)} ${r.o.w}×${r.o.l || r.o.w}: P ${f1(r.P)} / รับได้ ${f1(r.Pa)} ตัน (ใช้ ${pct(r.P, r.Pa)}%)` })),
+      ...c.footings.map((r) => ({ r, key: aiKey(r.o), u: pct(r.P, r.cap), t: `ฐานราก ${m(r)} ${r.o.w}×${r.o.l}: P ${f1(r.P)} / รับได้ ${f1(r.cap)} ตัน (ใช้ ${pct(r.P, r.cap)}%)` })),
+      ...c.slabs.map((r) => ({ r, key: aiKey(r.o), u: pct(r.tmin, r.o.t), t: `พื้น ${m(r)} หนา ${r.o.t} มม. ช่อง ${r.span}: ต้องหนาอย่างน้อย ${r.tmin} มม.` })),
+    ];
+    const bad = rows.filter((x) => !x.r.ok), top = rows.filter((x) => x.r.ok).sort((a, b) => b.u - a.u)[0];
+    const grp = new Map(); for (const x of bad) { const g = grp.get(x.t + x.r.msg); if (g) g.n++; else grp.set(x.t + x.r.msg, { ...x, n: 1 }); }   // ชิ้นเหมือนกัน (รหัส ขนาด ช่วง ผลเท่ากัน) รวมเป็น ×n
+    const G = [...grp.values()].map((x) => ({ ...x, t: x.n > 1 ? `${x.t} ×${x.n} ชิ้น` : x.t }));
+    out.fails = bad.length; out.failKeys = bad.map((x) => x.key); out.items = G;
+    out.structText = `ตรวจโครงสร้างเบื้องต้น (WSD · ตัวเลขจากโปรแกรม): คาน ${c.beams.length} · เสา ${c.columns.length} · ฐานราก ${c.footings.length} · พื้น ${c.slabs.length} → ` +
+      (bad.length ? `ไม่ผ่าน ${bad.length} ชิ้น\n` + G.slice(0, 6).map((x) => `• ${x.t} → ${x.r.msg}`).join("\n") + (G.length > 6 ? `\n• … อีก ${G.length - 6} รายการ (ดูตารางใน 🏗 โครงสร้าง)` : "")
+        : `ผ่านทุกชิ้น${top ? `\nชิ้นที่รับแรงมากสุด: ${top.t}` : ""}`);
+    out.structShort = `โครงสร้าง: คาน ${c.beams.length} เสา ${c.columns.length} ฐานราก ${c.footings.length} พื้น ${c.slabs.length} · ไม่ผ่าน ${bad.length}` + G.slice(0, 4).map((x) => ` | ${x.t} → ${x.r.msg}`).join("");
+  } else {
+    out.structText = "ยังไม่มีโครงสร้าง (เสา คาน ฐานราก) — สั่ง “สร้างเสา คาน” หรือเปิด 🏗 โครงสร้าง กด ⚙ สร้างโครงจากผนัง";
+    out.structShort = "โครงสร้าง: ยังไม่มี";
+  }
+  for (const w of wf.warns) for (const a of w.actions) if (a.act.startsWith("select:")) out.wfKeys.push(a.act.slice(7));
+  out.wfText = `ตรวจลำดับงาน: ${wf.steps.map((s, i) => `${s.state === "done" ? "✓" : i + 1} ${s.name}`).join(" → ")}\n` +
+    (wf.warns.length ? `ข้อเตือน ${wf.warns.length} ข้อ (สำคัญ ${wf.hi})\n` + wf.warns.slice(0, 6).map((w) => `• [${LV[w.level]}] ${w.title} — ${w.detail}`).join("\n") : "ไม่มีข้อเตือน — ลำดับงานและข้อมูลในแบบตรงกัน");
+  out.wfShort = `ลำดับงาน: ${wf.steps.map((s) => `${s.name}=${s.state}`).join(", ")} · เตือน ${wf.warns.length} (สำคัญ ${wf.hi})` + wf.warns.slice(0, 4).map((w) => ` | ${w.title}`).join("");
+  out.wf = wf;
+  return out;
+}
+/** อธิบายผลตรวจ: ทีละข้อ ตัวเลขจริง + สาเหตุ + วิธีแก้ (ข้อความวิธีแก้มาจากตัวตรวจของโปรแกรม) */
+function aiExplain() {
+  const c = aiChecks(), lines = [];
+  if (!(hist.doc.struct || []).length && !c.wf.warns.length) return { text: "ยังไม่มีผลตรวจให้อธิบาย — วาดผนัง แล้วสร้างโครงสร้าง จากนั้นกด ✅ ตรวจงาน", keys: [] };
+  if (c.fails) {
+    lines.push(`โครงสร้างไม่ผ่าน ${c.fails} ชิ้น:`);
+    for (const x of c.items.slice(0, 4)) {
+      const k = x.r.o.kind;
+      const why = k === "beam" ? "แรงดัดจากน้ำหนักพื้น + ผนัง + น้ำหนักคาน (M = wL²/8) มากกว่ากำลังที่หน้าตัดรับได้ (Mc)" : k === "column" ? "น้ำหนักจากปลายคานทุกชั้นที่ลงเสามากกว่าที่หน้าตัดเสารับได้" : k === "footing" ? "น้ำหนักจากเสามากกว่าที่ดิน/เข็มใต้ฐานรับได้" : "พื้นบางกว่าความหนาต่ำสุดตาม ว.ส.ท.";
+      lines.push(`• ${x.t}\n  สาเหตุ: ${why}\n  วิธีแก้: ${x.r.msg}`);
+    }
+  } else if ((hist.doc.struct || []).length) lines.push("โครงสร้างผ่านการตรวจเบื้องต้นทุกชิ้น (ยังต้องให้วิศวกรตรวจรับรองก่อนก่อสร้าง)");
+  if (c.wf.warns.length) {
+    lines.push(`ลำดับงานมีข้อเตือน ${c.wf.warns.length} ข้อ:`);
+    for (const w of c.wf.warns.slice(0, 4)) lines.push(`• ${w.title}: ${w.detail}${w.actions.length ? ` → ${w.actions.map((a) => a.label).join(" / ")}` : ""}`);
+  }
+  return { text: lines.join("\n"), keys: [...c.failKeys, ...c.wfKeys] };
+}
+/** สรุปวัสดุ/ปริมาณงาน (ST.quantities + M.summary — ค่าประมาณเพื่อประเมินราคา ไม่ใช่ BBS) */
+function aiBom() {
+  const d = hist.doc, s = M.summary(d), q = ST.quantities(d);
+  const wallA = d.walls.reduce((a, w) => a + M.wallLength(w) * (w.height || 0), 0) / 1e6, openA = d.openings.reduce((a, o) => a + (o.width || 0) * (o.height || 0), 0) / 1e6;
+  const f = (v, n = 2) => Number(v).toLocaleString(undefined, { maximumFractionDigits: n, minimumFractionDigits: n });
+  const L = [`สรุปวัสดุ (โปรแกรมคำนวณจากแบบ · ค่าประมาณ ไม่ใช่ BBS):`,
+    `• ผนัง ${s.walls} ช่วง ยาวรวม ${f(s.wallLengthM)} ม. · พื้นที่ผนังประมาณ ${f(Math.max(0, wallA - openA), 1)} ตร.ม. (หักช่องเปิด ${f(openA, 1)} ตร.ม.)`,
+    `• ประตู ${s.doors} · หน้าต่าง ${s.windows} · พื้นที่ตามกรอบผนัง ${f(s.footprintM2)} ตร.ม. · ${s.levels} ชั้น`];
+  if (q.rows.length) {
+    L.push(`• คอนกรีตโครงสร้าง ${f(q.concrete)} ลบ.ม. · เหล็กเสริมประมาณ ${Math.round(q.steel).toLocaleString()} กก. · ไม้แบบประมาณ ${f(q.formwork, 1)} ตร.ม.`);
+    for (const r of q.rows.slice(0, 8)) L.push(`  – ${ST.KINDS[r.kind]} ${r.mark} ${r.size} ×${r.n} = ${f(r.v)} ลบ.ม.`);
+    if (q.rows.length > 8) L.push(`  – … อีก ${q.rows.length - 8} รายการ (ตารางเต็ม: 🏗 โครงสร้าง → ⬇ CSV)`);
+  } else L.push("• ยังไม่มีโครงสร้าง — ปริมาณคอนกรีต/เหล็กยังคิดไม่ได้");
+  L.push(s.pvCount ? `• แผงโซลาร์ ${s.pvCount} แผง × ${d.pv.watt} W = ${s.pvKwp} kWp` : "• ไม่มีแผงโซลาร์");
+  return L.join("\n");
+}
+/** ออกแบบอัตโนมัติ 5 ขั้น (ตามขั้นของตรวจลำดับงาน) — แต่ละขั้นเสนอคำสั่งจากสถานะจริงของแบบ ผู้ใช้กด ทำ/ข้าม/หยุด เอง */
+function aiAutoPlan() {
+  const d = hist.doc, wf = wfAnalyze(d), s = M.summary(d), S = d.struct || [], walls = d.walls.length > 0;
+  const fails = wf.warns.some((w) => w.id === "struct-fail"), need = "ต้องมีผนังก่อน — วาดห้องในผัง (หรือพิมพ์ เช่น “วาดห้อง 4x5”) แล้วกด ทำขั้นต่อไป";
+  const plan5 = [
+    walls ? { say: `มีผนังแล้ว ${d.walls.length} ช่วง (${s.wallLengthM} ม.) — วาดเพิ่มได้ หรือข้ามไปขั้นต่อไป`, actions: [] }
+      : { say: "ยังไม่มีผนัง — เลือกเครื่องมือห้อง แล้วคลิก 2 มุมในผัง (หรือพิมพ์ในแชท เช่น “วาดห้อง 4x5”)", actions: [{ name: "wall.draw", params: { tool: "room" } }] },
+    !walls ? { say: need, actions: [] } : d.roof.type === "none" ? { say: `ใส่หลังคาจั่ว (ความชันตามค่าในแบบ ${d.roof.pitch}°) แล้วเปิดมุมมอง 2D+3D`, actions: [{ name: "roof.set", params: { type: "gable" } }, { name: "view.set", params: { mode: "split" } }] }
+      : { say: `มีหลังคา${ROOF_TH[d.roof.type] || ""} ${d.roof.pitch}° แล้ว — เปิดมุมมอง 2D+3D ดูโมเดล`, actions: [{ name: "view.set", params: { mode: "split" } }] },
+    !walls ? { say: need, actions: [] } : !S.length ? { say: "สร้างเสา คาน ฐานรากจากผนัง แล้วตรวจขนาดเบื้องต้น", actions: [{ name: "struct.autoframe", params: {} }, { name: "struct.check", params: {} }] }
+      : fails ? { say: "ตรวจโครงสร้างไม่ผ่าน — เปิดหน้าต่างโครงสร้างดูตาราง แล้วแก้ขนาดชิ้นที่ไม่ผ่าน (หรือพิมพ์ เช่น “คาน B1 20x50”)", actions: [{ name: "struct.check", params: {} }, { name: "struct.open", params: {} }] }
+        : { say: "มีโครงสร้างแล้ว — ตรวจขนาดอีกครั้ง", actions: [{ name: "struct.check", params: {} }] },
+    !walls ? { say: need, actions: [] } : !d.pv.enabled ? { say: "เปิดวางแผงโซลาร์อัตโนมัติบนหลังคา แล้วเปิดหน้าต่าง โซลาร์ + SLD (กดสร้าง SLD ในหน้าต่าง)", actions: [{ name: "pv.set", params: { on: true } }, { name: "solar.sld", params: {} }] }
+      : { say: `แผง ${s.pvCount} แผง (${s.pvKwp} kWp) — เปิดหน้าต่าง โซลาร์ + SLD แล้วกด 📐 สร้าง SLD`, actions: [{ name: "solar.sld", params: {} }] },
+    !walls ? { say: need, actions: [] } : { say: CLOUD ? "Plot PDF / ส่งออกแบบ" : "สร้างชุดแบบก่อสร้าง A3 (ผังพื้น รูปด้าน รูปตัด ตาราง) หรือ Plot PDF", actions: [{ name: CLOUD ? "plot.open" : "drawset.open", params: {} }] },
+  ];
+  return wf.steps.map((st, i) => ({ n: i + 1, total: wf.steps.length, name: st.name, state: st.state, info: st.info, warn: st.warn, ...plan5[i] }));
+}
+
 window.ascaAI = {
   page: () => "editor",
   pageName: () => "ตัวเขียนแบบ 2D/3D",
@@ -839,6 +1029,15 @@ window.ascaAI = {
     "pv-edge": { label: "ระยะห่างขอบแผง (มม.)" }, "north": { label: "ทิศเหนือของแบบ (°)" }, "d-thick": { label: "ผนังหนา (มม.) ค่าเริ่มต้น" },
     "d-height": { label: "ผนังสูง (มม.) ค่าเริ่มต้น" }, "d-door": { label: "ประตูกว้าง (มม.)" }, "d-win": { label: "หน้าต่างกว้าง (มม.)" }, "d-mass": { label: "กล่องสูง (มม.)" },
   },
+  // ผู้ช่วยสั่งงานจริง (ai/assistant.js เรียกหลังผู้ใช้กด ทำเลย) · เลิกทำ = คืนสภาพแบบก่อนกด ทำเลย
+  run: (name, p) => aiRun(name, p),
+  snapshot: () => JSON.stringify(hist.doc),
+  restore(s) { hist.replace(JSON.parse(s)); plan.select(null); host.onChange(); syncLevels(); status("piBot: เลิกทำแล้ว — แบบกลับเป็นเหมือนก่อนกด ทำเลย"); },
+  focus: (t) => aiFocus(t),
+  checks: () => aiChecks(),
+  explain: () => aiExplain(),
+  bom: () => aiBom(),
+  autoPlan: () => aiAutoPlan(),
 };
 
 start();

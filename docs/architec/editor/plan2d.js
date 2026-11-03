@@ -1,9 +1,10 @@
 // กระดานวาด 2D (SVG) ของตัวเขียนแบบ ASC Architect (โดย ลุงพี)
 // เครื่องมือ: เลือก/ย้าย · ผนัง · ห้อง · กล่อง (push-pull) · ประตู · หน้าต่าง · เส้น · มิติ · ข้อความ · สัญลักษณ์ · ลบ
 // จับจุด: กริด · ปลายผนัง/เส้น · ตั้งฉาก (Shift ปิด) · พิมพ์ระยะแล้ว Enter ระหว่างวาด (แบบ SketchUp)
-import * as M from "./model.js?v=0.24.3";
-import * as CAD from "./cadlayer.js?v=0.24.3";
-import * as ST from "./struct.js?v=0.24.3";
+import * as M from "./model.js?v=0.25.0";
+import * as CAD from "./cadlayer.js?v=0.25.0";
+import * as ST from "./struct.js?v=0.25.0";
+import { footprint, modelLabel } from "./import3d-core.js?v=0.25.0";
 
 const NS = "http://www.w3.org/2000/svg";
 const el = (tag, attrs, parent) => {
@@ -48,7 +49,8 @@ export class Plan2D {
     const b = M.bounds(this.doc);
     if (!b) { this.scale = 0.05; this.ox = this.w * 0.15; this.oy = this.h * 0.85; return this.render(); }
     const pad = 60, bw = Math.max(b.x1 - b.x0, 1000), bh = Math.max(b.y1 - b.y0, 1000);
-    this.scale = Math.min((this.w - 2 * pad) / bw, (this.h - 2 * pad) / bh);
+    if (this.w <= 2 * pad || this.h <= 2 * pad) return this.render();   // ผังซ่อนอยู่ (โหมด 3D อย่างเดียว) — ไม่มีขนาดให้จัด คงมาตราส่วนเดิม
+    this.scale =Math.min((this.w - 2 * pad) / bw, (this.h - 2 * pad) / bh);
     this.ox = pad + (this.w - 2 * pad - bw * this.scale) / 2 - b.x0 * this.scale;
     this.oy = this.h - pad - (this.h - 2 * pad - bh * this.scale) / 2 + b.y0 * this.scale;
     this.render();
@@ -214,7 +216,7 @@ export class Plan2D {
   /** ตั้งระยะภาพลอกแบบ: คลิกจุดแรก → จุดที่สอง → พิมพ์ระยะจริง → ย่อ/ขยายภาพรอบจุดแรก (ไม่จับกริด เพื่อให้ตรงเส้นในภาพ) */
   calibrate(p) {
     const k = this.doc.backdrop;
-    if (!k || !k.sketch) return this.host.status("นำเข้าภาพก่อน — ปุ่ม 🖼 ภาพลอกแบบ");
+    if (!k || !(k.sketch || k.img || k.url)) return this.host.status("นำเข้าภาพก่อน — เมนู ไฟล์ → ภาพลอกแบบ…");   // รุ่นออนไลน์เก็บภาพเป็น img
     if (!this.draft) { this.draft = { kind: "calib", from: p, to: p }; return this.render(); }
     const a = this.draft.from, b = p, now = M.dist(a, b);
     this.draft = null; this.render();
@@ -290,7 +292,8 @@ export class Plan2D {
       const a = this.draft.from, b = this.draft.to;
       const sx = Math.sign(b[0] - a[0]) || 1, sy = Math.sign(b[1] - a[1]) || 1;
       const w = nums[0], h = nums.length > 1 ? nums[1] : nums[0];
-      this.draft.to = this.draft.kind === "dim" ? M.add(a, M.mul(M.len(M.sub(b, a)) ? M.norm(M.sub(b, a)) : [1, 0], w)) : [a[0] + sx * w, a[1] + sy * h];
+      const linear = ["dim", "beam", "stair"].includes(this.draft.kind) && nums.length === 1;   // เส้น (มิติ/คาน/บันได) พิมพ์ความยาวเดียว = ตามแนวที่ชี้เมาส์
+      this.draft.to = linear ? M.add(a, M.mul(M.len(M.sub(b, a)) ? M.norm(M.sub(b, a)) : [1, 0], w)).map((x) => Math.round(x)) : [a[0] + sx * w, a[1] + sy * h];
       this.commitTwoPoint();
     }
     this.host.vcb("");
@@ -429,6 +432,10 @@ export class Plan2D {
     for (const it of d.items3d || []) {
       const [x, y] = this.toScreen(it.p), sc = it.s || 1;
       if (IR[it.kind]) el("circle", { cx: x, cy: y, r: Math.max(2, IR[it.kind] * sc * s), class: it.kind === "lamp" ? "item3d" : "ascTree" }, L.main);
+      else if (it.kind === "model") {                                   // โมเดลนำเข้า (นำเข้า 3D SketchUp): รอยฐานตามขนาดจริง + ป้ายชื่อ ขนาด ม.
+        el("polygon", { points: footprint(it).map(P).join(" "), class: "item3d" }, L.main);
+        el("text", { x, y, class: "txt", "text-anchor": "middle", "font-size": Math.max(9, Math.min(200, Math.max(it.w || 0, it.d || 0) * (Number(it.s) || 1) * 0.07) * s * 1.35) }, L.main).textContent = modelLabel(it);
+      }
       else { const [w, h] = IB[it.kind] || [800, 800], r = ((it.rot || 0) * Math.PI) / 180, c = Math.cos(r), sn = Math.sin(r);
         const pts = [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]].map(([u, v]) => P([it.p[0] + (u * c - v * sn) * sc, it.p[1] + (u * sn + v * c) * sc]));
         el("polygon", { points: pts.join(" "), class: "item3d" }, L.main); }
@@ -513,7 +520,7 @@ export class Plan2D {
   _grid() {
     const g = this.layer.bg, s = this.scale;
     el("rect", { x: 0, y: 0, width: this.w, height: this.h, class: "paper" }, g);
-    let step = 100; while (step * s < 8) step *= 10;
+    let step = 100; while (s > 0 && step * s < 8 && step < 1e9) step *= 10;   // ผัง 2D ซ่อนอยู่ (โหมด 3D) → fit() ได้ scale ≤ 0 → เดิมวนไม่จบ หน้าค้าง
     for (const [k, cls] of [[step, "g1"], [step * 10, "g2"]]) {
       const [wx0, wy1] = this.toWorld(0, 0), [wx1, wy0] = this.toWorld(this.w, this.h);
       if ((wx1 - wx0) / k > 400) continue;
@@ -546,7 +553,7 @@ const HELP = {
   line: "เส้นช่วย: คลิกต่อเนื่อง · ดับเบิลคลิกจบ",
   dim: "เส้นบอกระยะ: คลิก 2 จุด",
   text: "คลิกตำแหน่งแล้วพิมพ์ข้อความ",
-  symbol: "เลือกสัญลักษณ์จากรายการซ้าย แล้วคลิกวาง",
+  symbol: "เลือกสัญลักษณ์จากรายการในถาดด้านขวา แล้วคลิกวาง",
   erase: "คลิกสิ่งที่ต้องการลบ",
   pan: "ลากเพื่อเลื่อนจอ",
   column: "เสา: คลิกตำแหน่งเสา (จับจุดปลายผนัง/ศูนย์ฐานราก) · ขนาด/ระดับแก้ที่ ข้อมูลวัตถุ · ชั้น 1 เสาเริ่มจากหลังฐานราก",

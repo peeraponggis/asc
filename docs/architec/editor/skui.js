@@ -1,13 +1,14 @@
 // หน้าตาแบบ SketchUp ของมุมมอง 3D ในตัวเขียนแบบ (0.23.0 · ตามหน้าตัวอย่างที่ลุงพีอนุมัติ · โดย ลุงพี)
-// เมนู 9 หมวด · แถบเครื่องมือ (มาตรฐาน · เงา · รูปแบบ · ตำแหน่ง · มุมมอง · ตัด/ฉาก) · ชุดเครื่องมือใหญ่ 39 ปุ่ม · ถาดเครื่องมือ 11 แผง (ติดขวา)
+// เมนู 10 หมวด · แถบเครื่องมือ (มาตรฐาน · เงา · รูปแบบ · ตำแหน่ง · มุมมอง · ตัด/ฉาก) · ชุดเครื่องมือใหญ่ 37 ปุ่ม · ถาดเครื่องมือ 11 แผง (ติดขวา)
 // ข้อมูลโมเดล 11 หน้า · แถบเครื่องมือ (ติ๊กเลือก) · Render ภาพนำเสนอ · ช่องเดิมของ main.js (#sun-date #sun-time #section #scenes #mat3d) ยังใช้ร่วม
 import * as THREE from "three";
-import { STYLES, TAGS } from "./view3d.js?v=0.24.3";
-import { PALETTE, swatch } from "./materials.js?v=0.24.3";
-import { KINDS } from "./props3d.js?v=0.24.3";
-import { entityHTML, applyField } from "./entity.js?v=0.24.3";
-import * as SEL from "./sel3d.js?v=0.24.3";
-import { Tools3D, SETTINGS } from "./tools3d.js?v=0.24.3";
+import { STYLES, TAGS } from "./view3d.js?v=0.25.0";
+import { PALETTE, swatch } from "./materials.js?v=0.25.0";
+import { KINDS } from "./props3d.js?v=0.25.0";
+import { entityHTML, applyField } from "./entity.js?v=0.25.0";
+import * as SEL from "./sel3d.js?v=0.25.0";
+import { Tools3D, SETTINGS } from "./tools3d.js?v=0.25.0";
+import { openImport3d } from "./import3d.js?v=0.25.0";
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -85,7 +86,7 @@ const TOOLS2D = {
 const BIG2 = [["select", "pan"], ["wall", "room"], ["door", "window"], ["box", "line"], ["dim", "text"], ["symbol", "erase"], "งานโครงสร้าง", ["column", "beam"], ["footing", "slab"], ["stair", "calib"]];
 const icon = (k) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${IC[k] || IC.info}</svg>`;
 
-// ------------------------------------------------------------------ เครื่องมือ 39 ปุ่ม (ชุดเครื่องมือใหญ่ · Large Tool Set) — [ชื่อไทย, อังกฤษ, คีย์, คำแนะนำ]
+// ------------------------------------------------------------------ เครื่องมือ 37 ปุ่ม (ชุดเครื่องมือใหญ่ · Large Tool Set) — [ชื่อไทย, อังกฤษ, คีย์, คำแนะนำ]
 const TOOLS = {
   select: ["เลือก", "Select", "Space", "คลิกกล่อง/ชิ้นส่วนเพื่อเลือก · Shift = เพิ่ม/เอาออก · ข้อมูลอยู่ที่ถาด ข้อมูลวัตถุ"], component: ["สร้าง Component (รวมกลุ่ม)", "Make Component", "", "เลือกกล่องอย่างน้อย 2 ชิ้น (Shift+คลิก) แล้วกดปุ่มนี้ = รวมเป็นชิ้นเดียว"],
   paint: ["ถังสี", "Paint Bucket", "B", "เลือกวัสดุในถาด วัสดุ แล้วคลิกผนัง/กล่อง/หลังคา/หน้าตัดกวาด"], eraser: ["ยางลบ", "Eraser", "E", "คลิกวัตถุที่จะลบ: กล่อง/หน้า ชิ้นส่วน เส้น ข้อความ มิติ (Ctrl+Z ย้อน)"],
@@ -113,6 +114,7 @@ const BIG = [["select", "component"], ["paint", "eraser"], ["tagtool", null], "-
   ["move", "pushpull"], ["rotate", "follow"], ["scale", "offset"], "-", ["tape", "dim"], ["protractor", "text"], ["axes", "text3d"], "-", ["orbit", "pan"], ["zoom", "zoomwin"], ["extents", "previous"], "-", ["poscam", "look"], ["walk", "section"]];
 const ICK = { pushpull: "push" };
 const UNITS = Object.assign({ format: "decimal", len: "mm", prec: 0, snap: true, ang: 15 }, store.get("units", {}));
+SETTINGS.rotStep = UNITS.ang || 15;                                     // ข้อมูลโมเดล → หน่วย → จับมุมทุก (องศา) = มุมหมุนต่อคลิก (เดิมบันทึกแต่ไม่ได้ใช้)
 const MI = Object.assign({ trans: true, transSec: 1.5, delay: 2, res: "1920x1080", textColor: "#1d2733" }, store.get("mi", {}));
 Object.assign(SETTINGS, store.get("settings", {}));
 const saveSettings = () => { store.set("settings", SETTINGS); store.set("mi", MI); };
@@ -204,7 +206,7 @@ export function initSkUI(opts) {
     if (t === "look" || t === "walk") { view.prevView = [view.camera.position.clone(), view.controls.target.clone()]; if (t === "walk") ext.startWalk(); else { const dir = view.controls.target.clone().sub(view.camera.position).normalize(); view.controls.target.copy(view.camera.position.clone().add(dir.multiplyScalar(0.3))); } }
     view.canvas.style.cursor = t === "pan" ? "grab" : t === "zoom" ? "zoom-in" : view.canvas.style.cursor;
     const d = TOOLS[t]; if (d && d[3]) status(`${d[0]} (${d[1]}): ${d[3]}`);
-    if (t === "place") status(`วาง${(KINDS.find((k) => k.k === ext.placing) || {}).th || "ชิ้นส่วน"}: คลิกบนพื้น/หน้าบนกล่อง (วางหลายครั้งได้ · Esc จบ)`);
+    if (t === "place") status(`วาง${ext.placing === "model" && ext.placeTpl ? " " + ext.placeTpl.name : (KINDS.find((k) => k.k === ext.placing) || {}).th || "ชิ้นส่วน"}: คลิกบนพื้น/หน้าบนกล่อง (วางหลายครั้งได้ · Esc จบ)`);
     renderTray("instructor"); renderTray("components");
   };
   // ตั้งกล้อง: คลิก (ไม่ลาก) บนพื้น/กล่อง
@@ -224,7 +226,7 @@ export function initSkUI(opts) {
   let mode = "split";
   const MENUS = [
     ["ไฟล์", [["ใหม่", "Ctrl+N", () => act("new")], ["เปิด…", "Ctrl+O", () => $("#open-file").click()], ["บันทึก", "Ctrl+S", () => act("save")], ["เปิดแบบตัวอย่าง: บ้าน 2 ชั้น คสล. + โซลาร์ (งานจริง)", "", () => opts.demo()], ["เปิดแบบตัวอย่าง: บ้านพร้อมสระ (ภาพนำเสนอ)", "", () => opts.demo("pool")], "-",
-      ["นำเข้าไฟล์ CAD (DXF/DWG/PDF)…", "", () => act("cad")], ["ภาพลอกแบบ…", "", () => $("#trace-file").click()], "-",
+      ["นำเข้าไฟล์ CAD (DXF/DWG/PDF)…", "", () => act("cad")], ["นำเข้า 3D SketchUp (.skp, .dae)…", "", () => openImport3d({ hist, view, ext, status, setTool3d: opts.setTool3d, onChange: opts.onChange })], ["ภาพลอกแบบ…", "", () => $("#trace-file").click()], "-",
       ["ส่งออกภาพ (Render)…", "", () => renderDlg()], ["ส่งออก GLB → Blender", "", () => act("glb")], ["ส่งออก DXF (ผัง 2D)", "", () => act("dxf")], ["Plot PDF…", "Ctrl+P", () => act("plot")], ["ชุดแบบก่อสร้าง A3…", "", () => act("drawset")]]],
     ["แก้ไข", [["ย้อน", "Ctrl+Z", () => act("undo")], ["ทำซ้ำ", "Ctrl+Y", () => act("redo")], "-", ["ตัด", "Ctrl+X", () => ext.copy(true)], ["คัดลอก", "Ctrl+C", () => ext.copy(false)], ["วาง", "Ctrl+V", () => ext.paste()], ["ลบที่เลือก", "Delete", STD.erase], "-",
       ["เลือกทั้งหมด", "Ctrl+A", () => selectAll(), "3d"], ["ยกเลิกเลือก", "Esc", () => { sk.S.clear(); ext.selChanged(); }], "-", ["รวมกลุ่ม (Make Group)", "", () => sk.group()], ["แยกกลุ่ม", "", () => sk.ungroup()]]],
@@ -236,16 +238,16 @@ export function initSkUI(opts) {
       ["บันทึกมุมนี้เป็นฉาก…", "", () => act("scene-add")]]],
     ["วาด", [...["wall", "room", "door", "window", "box", "line", "dim", "text", "symbol"].map((t) => [`ผัง: ${TOOLS2D[t][0]}`, TOOLS2D[t][1], T2(t), "2d"]), "-",
       ...["line", "freehand", "rect", "rrect", "circle", "polygon", "arc", "arc2", "arc3", "pie"].map((t) => [`3D: ${TOOLS[t][0]}`, TOOLS[t][2], T3(t), "3d"])]],
-    ["โครงสร้าง", [["ชั้นอาคาร · ตรวจขนาด · ตาราง…", "", () => act("struct")], "-", ...["column", "beam", "footing", "slab", "stair"].map((t) => [TOOLS2D[t][0], TOOLS2D[t][1], T2(t), "2d"]), "-",
+    ["โครงสร้าง", [["ชั้นอาคาร · ตรวจขนาด · ตาราง…", "", () => act("struct")], ["ตรวจลำดับงาน…", "", () => act("workflow")], ["ตรวจตามมาตรฐาน…", "", () => act("standards")], "-", ...["column", "beam", "footing", "slab", "stair"].map((t) => [TOOLS2D[t][0], TOOLS2D[t][1], T2(t), "2d"]), "-",
       ["แสดงเฉพาะโครงสร้าง (ซ่อนผนัง หลังคา)", "", () => { for (const k of ["walls", "openings", "roof", "pv"]) view.setTagVisible(k, view.hiddenTags.has("struct") ? true : !view.hiddenTags.has(k) ? false : true); view.setTagVisible("struct", true); renderTray("tags"); status("สลับมุมมองโครงสร้าง (ถาด Tags เปิด/ปิดทีละกลุ่มได้)"); }, "3d"]]],
     ["เครื่องมือ", [...["select", "pan", "erase", "calib"].map((t) => [`ผัง: ${TOOLS2D[t][0]}`, TOOLS2D[t][1], T2(t), "2d"]), "-",
       ...["select", "component", "eraser", "tagtool", "paint", "move", "rotate", "scale", "offset", "pushpull", "follow"].map((t) => [TOOLS[t][0], TOOLS[t][2], ACTS.has(t) ? () => doAct(t) : T3(t), "3d"]), "-",
       ...["tape", "dim", "protractor", "text", "axes", "text3d"].map((t) => [TOOLS[t][0], TOOLS[t][2], T3(t), "3d"]), "-", ["ระนาบตัด (Section Plane)", "", () => doAct("section"), "3d"]]],
-    ["หน้าต่าง", [["ข้อมูลโมเดล (Model Info)", "", () => modelInfo("units")], ["ถาดเครื่องมือ (Default Tray)", "", () => toggleTray(true)], ["ชิ้นส่วน (Components)", "", () => openPanel("components")], ["จับคู่ภาพถ่าย (Match Photo)", "", () => openPanel("match")],
+    ["หน้าต่าง", [["ข้อมูลโมเดล (Model Info)", "", () => modelInfo("units")], ["ถาดเครื่องมือ (Default Tray)", "", () => toggleTray(true)], ["ชิ้นส่วน (Components)", "", () => openPanel("components"), "3d"], ["จับคู่ภาพถ่าย (Match Photo)", "", () => openPanel("match"), "3d"],
       ["โครงสร้างโมเดล (Outliner)", "", () => openPanel("outliner")], "-", ["สลับธีม สว่าง/มืด", "", () => { const r = document.documentElement, cur = r.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); r.dataset.theme = cur === "dark" ? "light" : "dark"; store.set("theme", r.dataset.theme); }]]],
     ["ส่วนเสริม", [["ASCA: โซลาร์ — ผลผลิต + สตริง + Single Line Diagram", "", () => act("solar")], ["ASCA: โครงสร้าง — ตรวจขนาด + ตาราง", "", () => act("struct")], ["ASCA: ผลผลิตไฟฟ้าโซลาร์ (หน้าหลัก pvlib)", "", () => act("yield")], ["ASCA: ชุดแบบก่อสร้าง + IFC", "", () => act("drawset")], ["ASCA: ร่างกล่องอาคารด้วย AI", "", () => act("ai-draft")],
       ["ASCA: Render สมจริงด้วย Blender", "", () => { act("glb"); status("ส่งออก GLB แล้ว → เปิดหน้าหลัก แท็บ Render (Blender) เพื่อ render แบบ path tracing"); }]]],
-    ["ช่วยเหลือ", [["คีย์ลัด", "F1", () => keysDlg()], ["ผู้แนะนำ (Instructor)", "", () => openPanel("instructor")], ["เกี่ยวกับ ASC Architect", "", () => modelInfo("credits")]]],
+    ["ช่วยเหลือ", [["โหมดช่วยเหลือ (ชี้ปุ่มไหนก็ได้)", "F1", () => window.ascaHelp?.setMode(true)], ["คู่มือ ASC Architect", "", () => open("../manual/", "_blank")], ["คีย์ลัด", "Shift+F1", () => keysDlg()], ["ผู้แนะนำ (Instructor)", "", () => openPanel("instructor"), "3d"], ["เกี่ยวกับ ASC Architect", "", () => modelInfo("credits")]]],
   ];
   const mb = $("#menubar");
   MENUS.forEach(([name, items]) => {
@@ -254,7 +256,7 @@ export function initSkUI(opts) {
       e.stopPropagation(); const was = w.classList.contains("open"); closeMenus(); if (was && e.type === "click") return; w.classList.add("open");
       const r = b.getBoundingClientRect(), dd = document.createElement("div"); dd.className = "dd"; dd.id = "ddm";
       const vis = items.filter((it) => it === "-" || !it[3] || mode === "split" || it[3] === mode);
-      vis.forEach((it, i) => { if (it === "-") { if (i && vis[i - 1] !== "-" && i < vis.length - 1) dd.append(document.createElement("hr")); return; } const x = document.createElement("button"); x.type = "button"; x.innerHTML = `${esc(it[0])}${it[1] ? `<kbd>${esc(it[1])}</kbd>` : ""}`; x.onclick = (ev) => { ev.stopPropagation(); closeMenus(); it[2](); }; dd.append(x); });
+      vis.forEach((it, i) => { if (it === "-") { if (i && vis[i - 1] !== "-" && i < vis.length - 1) dd.append(document.createElement("hr")); return; } const x = document.createElement("button"); x.type = "button"; x.dataset.menu = `${name}/${it[0]}`; x.innerHTML = `${esc(it[0])}${it[1] ? `<kbd>${esc(it[1])}</kbd>` : ""}`; x.onclick = (ev) => { ev.stopPropagation(); closeMenus(); it[2](); }; dd.append(x); });
       document.body.append(dd); dd.style.left = Math.max(4, Math.min(r.left, innerWidth - dd.offsetWidth - 8)) + "px"; dd.style.top = r.bottom + 2 + "px";
     };
     b.onclick = openMenu; b.onmouseenter = (e) => { if ($("#ddm")) openMenu(e); };
@@ -314,7 +316,7 @@ export function initSkUI(opts) {
         ${row(`หลังคา ${esc(d.roof.type || "-")} · แผงโซลาร์ ${s2.pvCount || 0}`, sk.S.has("roof:roof"), 'data-okey="roof:roof"', 1)}
         ${grp("โครงสร้าง", d.struct || [], "struct", (o) => `${SEL.STRUCT_TH[o.kind] || ""} ${o.mark || ""}`)}
         ${d.masses.length ? row(`▾ กล่อง / หน้า <small>${d.masses.length}</small>`) + [...gs.values()].map((ms) => ms.length > 1 ? row(`▸ กลุ่ม ${ms.length} ชิ้น`, ms.every((m) => sk.sel.has(m.id)), `data-okey="masses:${ms[0].id}"`, 2) : one("masses", ms[0], ms[0].name || "กล่อง")).join("") : ""}
-        ${grp("ชิ้นส่วน", d.items3d, "items", (it) => (KINDS.find((x) => x.k === it.kind) || { th: it.kind }).th)}
+        ${grp("ชิ้นส่วน", d.items3d, "items", (it) => (it.kind === "model" ? `โมเดล 3D: ${it.name || ""}` : (KINDS.find((x) => x.k === it.kind) || { th: it.kind }).th))}
         ${grp("เส้น", d.lines, "lines", (l, i) => `เส้น ${i + 1}`)}${grp("หน้าตัดกวาด", d.sweeps, "sweeps", (x, i) => `Follow Me ${i + 1}`)}
         ${grp("ข้อความ 3D", d.texts3d, "texts3d", (x) => x.s)}${grp("มิติ 3D", d.dims3d, "dims3d", (x, i) => `มิติ ${i + 1}`)}
         ${row(`โมเดล ASC Studio <small>${view.asc.children.length ? "มี" : "-"}</small>`)}</div>`;
@@ -430,7 +432,7 @@ export function initSkUI(opts) {
     const wire = (p) => {
       const set = (k, v) => { UNITS[k] = v; store.set("units", UNITS); $("#miS").innerHTML = sec("units"); wire("units"); renderTray(); view.buildNotes(); };
       const on = (id, ev, fn) => { const el = $("#" + id); if (el) el[ev] = () => fn(el); };
-      on("uFmt", "onchange", (el) => set("format", el.value)); on("uLen", "onchange", (el) => set("len", el.value)); on("uPrec", "onchange", (el) => set("prec", Number(el.value))); on("uAng", "onchange", (el) => set("ang", Number(el.value)));
+      on("uFmt", "onchange", (el) => set("format", el.value)); on("uLen", "onchange", (el) => set("len", el.value)); on("uPrec", "onchange", (el) => set("prec", Number(el.value))); on("uAng", "onchange", (el) => { set("ang", Number(el.value)); SETTINGS.rotStep = Number(el.value); });
       on("rAA", "onchange", (el) => (view.smaa.enabled = el.checked)); on("rAO", "onchange", (el) => { view.aoOn = el.checked; view.applyStyle(); }); on("rFog", "onchange", (el) => view.setFog(el.checked)); on("rRes", "onchange", (el) => { MI.res = el.value; saveSettings(); });
       const geo = () => { hist.commit((dd2) => { const la = $("#gLat").value, lo = $("#gLon").value; dd2.site.lat = la === "" ? null : Number(la); dd2.site.lon = lo === "" ? null : Number(lo); dd2.site.north = Number($("#gNorth").value) || 0; }); opts.onChange(); sunNow(); };
       on("gLat", "onchange", geo); on("gLon", "onchange", geo); on("gNorth", "onchange", geo);

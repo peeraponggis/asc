@@ -1,6 +1,6 @@
 // การเลือกรวมของ 2D/3D + งานแก้ทั่วไป (ย้าย หมุน ลบ คัดลอก) ได้ทุกชนิดวัตถุ (โดย ลุงพี)
 // กุญแจ = "ชนิด:id" เช่น "walls:w1" · หลังคาทั้งผืน = "roof:roof" · ไม่มี DOM/three (ทดสอบด้วย node ได้)
-import * as M from "./model.js?v=0.24.3";
+import * as M from "./model.js?v=0.25.0";
 
 /** มุมมองของชุดที่เลือกเฉพาะชนิดเดียว (ให้โค้ดเดิมที่ใช้ sk.sel / ext.itemSel ทำงานต่อได้) */
 export class TypedSet {
@@ -123,6 +123,7 @@ export function describe(doc, k, fmt = (m) => `${(m / 1000).toFixed(2)} ม.`) {
   if (t === "openings") return `${o.kind === "door" ? "ประตู" : "หน้าต่าง"} ${o.width}×${o.height} มม.${o.mark ? ` (${o.mark})` : ""}`;
   if (t === "roof") return `หลังคา${{ gable: "จั่ว", hip: "ปั้นหยา", flat: "เรียบ", shed: "เพิง", curved: "โค้ง" }[o.type] || ""} ลาด ${o.pitch}° · ชายคา ${o.overhang} มม.`;
   if (t === "masses") return `${o.name || "กล่อง"} สูง ${fmt(o.height)} · พื้นที่ ${(Math.abs(M.polygonArea(o.pts)) / 1e6).toFixed(2)} ตร.ม.`;
+  if (t === "items" && o.kind === "model") { const s = Number(o.s) || 1, m = (v) => ((v * s) / 1000).toFixed(2); return `โมเดล 3D ${o.name || ""} · ${m(o.w)} × ${m(o.d)} × ${m(o.h)} ม.`; }
   if (t === "struct") return `${STRUCT_TH[o.kind] || "โครงสร้าง"} ${o.mark || ""} ${o.kind === "beam" ? `${o.w}×${o.d} มม. ยาว ${fmt(M.dist(o.a, o.b))}` : o.kind === "footing" ? `${o.w}×${o.l}×${o.t} มม.` : o.kind === "stair" ? `กว้าง ${o.w} มม. · ${o.n} ขั้น` : `${o.w}×${o.l || o.w} มม. สูง ${fmt((o.top || 0) - (o.base || 0))}`}`.trim();
   return NAME[t] || t;
 }

@@ -1,6 +1,6 @@
 // หน้าต่าง ⚡ โซลาร์ + SLD: จากแผงที่วางบนหลังคาจริงในแบบ → ผลผลิตไฟฟ้า (pvlib) · จัดสตริง · Single Line Diagram DXF/PDF (โดย ลุงพี)
 // ทุกตัวเลขคำนวณที่เซิร์ฟเวอร์ (pvlib_solar · server/core/sld.py) — หน้านี้แสดงผลและส่งค่าเท่านั้น
-import * as M from "./model.js?v=0.24.3";
+import * as M from "./model.js?v=0.25.0";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmt = (v, d = 0) => Number(v).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d });
@@ -42,6 +42,7 @@ export function openSolar(ctx) {
     const g = e.target.dataset.g; if (!g) return; const [grp, k] = g.split("."), v = e.target.tagName === "SELECT" ? Number(e.target.value) : Number(e.target.value);
     if (!(v > 0)) { status("ค่าต้องมากกว่า 0 — ไม่ได้เปลี่ยน"); return; }
     ({ mod, inv, sys })[grp][k] = v; store.set(grp, ({ mod, inv, sys })[grp]);
+    if (grp === "mod" && k === "pmax") { hist.commit((dd) => { dd.pv.watt = v; }); ctx.onChange && ctx.onChange(); status(`แผง ${v} W — kWp ในแบบคำนวณใหม่แล้ว`); }   // Pmax = วัตต์แผงของแบบ (เดิมถูกเขียนทับทุกครั้งที่เปิด)
   };
   body.onclick = async (e) => {
     const b = e.target.closest("[data-sol]"); if (!b) return;
@@ -58,6 +59,11 @@ export function openSolar(ctx) {
           <div class="row"><a class="btn accent" href="${r.pdf}" target="_blank">📄 เปิด PDF (A3 + กรอบชื่อ)</a><a class="btn" href="${r.dxf}">⬇ DXF</a><a class="btn" href="../cad/?file=${encodeURIComponent(r.cad)}" target="_blank">📐 แก้ต่อใน CAD 2D</a></div>
           <p class="note">ไฟล์อยู่ที่ out\\sld\\${esc(r.folder)}\\ (SLD.dxf · SLD.pdf · SLD.svg) · แบบร่างให้วิศวกรไฟฟ้าตรวจ/ลงนามก่อนยื่นการไฟฟ้า</p></section>`;
         status(`สร้าง SLD ${fmt(x.kwp, 2)} kWp แล้ว — PDF/DXF ใน out\\sld\\${r.folder}`);
+        hist.commit((dd) => {                                // ตรวจลำดับงาน (SLD ตรงกับแผงไหม) + ตรวจมาตรฐานไฟฟ้า (ค่าจากเซิร์ฟเวอร์ ไม่คำนวณซ้ำ)
+          dd.sldRec = { count: n, kwp: x.kwp, at: new Date().toISOString().slice(0, 16), folder: r.folder, phase: sys.phase, voc_cold: x.voc_cold, vdc_limit: x.limits && x.limits.vdc_limit,
+            i_str: x.i_str, dc_cable: x.dc_cable, dc_amp: x.dc_amp, vd_dc: x.vd_dc, i_ac: x.i_ac, ac_breaker: x.ac_breaker, ac_cable: x.ac_cable, ac_amp: x.ac_amp, vd_ac: x.vd_ac, dc_ac: x.dc_ac, inverter: inv.name || "" };
+        });
+        ctx.onChange && ctx.onChange();
       } else {
         if (d.site.lat == null) throw new Error("ยังไม่มีพิกัดโครงการ — ตั้งที่ ข้อมูลโมเดล → ตำแหน่งที่ตั้ง");
         const r = await (await fetch("/api/yield", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lat: d.site.lat, lon: d.site.lon, kwp, tilt: s.pvTilt ?? 10, azimuth: s.pvAzimuth ?? 180, name: d.name }) })).json();

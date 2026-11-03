@@ -3,9 +3,10 @@
 // แก้: ยางลบ Tag ย่อขยาย Offset Follow Me (กวาดหน้าตัดตามเส้น) · ใส่ข้อมูล: มิติ 3D ไม้โปรแทรกเตอร์ ข้อความชี้ แกน ข้อความ 3D
 // กล้อง: ซูมกรอบ เดิน (WASD/ลูกศร) · ชิ้นส่วน: วางต้นไม้ รถ ฯลฯ · คัดลอก/ตัด/วาง · ทุกการแก้ผ่าน hist.commit (Ctrl+Z ได้)
 import * as THREE from "three";
-import * as M from "./model.js?v=0.24.3";
-import { kindTh, KINDS } from "./props3d.js?v=0.24.3";
-import * as SEL from "./sel3d.js?v=0.24.3";
+import * as M from "./model.js?v=0.25.0";
+import { kindTh, KINDS } from "./props3d.js?v=0.25.0";
+import * as SEL from "./sel3d.js?v=0.25.0";
+import { makeModelItem, modelLabel } from "./import3d-core.js?v=0.25.0";
 
 /** ชนิดที่คลิกเลือกได้ใน 3D (ทุกอย่างที่เห็น ยกเว้นพื้นดิน/แผงโซลาร์อัตโนมัติ) */
 const PICK = new Set(["walls", "openings", "roof", "masses", "items", "lines", "texts3d", "dims3d", "sweeps", "struct"]);
@@ -145,8 +146,10 @@ export class Tools3D {
     }
     if (t === "place") {
       const p = this.point(e); this.planeZ = null; if (!p) return true; own();
-      const kind = this.placing, it = { id: M.uid("i"), kind, p: p.p, z: p.z, rot: SETTINGS.compRandom ? Math.round(Math.random() * 360) : 0, s: +(SETTINGS.compScale * (SETTINGS.compRandom ? 0.9 + Math.random() * 0.25 : 1)).toFixed(2) };
-      this.commit((d) => d.items3d.push(it), `วาง${kindTh(kind)}แล้ว — คลิกวางต่อได้ · Esc จบ`);
+      const kind = this.placing, tpl = kind === "model" && this.placeTpl;       // โมเดลนำเข้า (import3d.js): ขนาดจริง ไม่สุ่ม · ระดับไม่ต่ำกว่าชั้นที่เลือก
+      const it = tpl ? makeModelItem(tpl, { id: M.uid("i"), p: p.p, z: Math.max(p.z, tpl.z || 0) })
+        : { id: M.uid("i"), kind, p: p.p, z: p.z, rot: SETTINGS.compRandom ? Math.round(Math.random() * 360) : 0, s: +(SETTINGS.compScale * (SETTINGS.compRandom ? 0.9 + Math.random() * 0.25 : 1)).toFixed(2) };
+      this.commit((d) => d.items3d.push(it), tpl ? `วาง ${modelLabel(it)} แล้ว — คลิกวางต่อได้ · Esc จบ` : `วาง${kindTh(kind)}แล้ว — คลิกวางต่อได้ · Esc จบ`);
       return true;
     }
     if (["line", "rrect", "circle", "polygon", "arc", "arc2", "arc3", "pie", "dim", "protractor", "axes"].includes(t)) {
@@ -197,7 +200,7 @@ export class Tools3D {
       e.stopImmediatePropagation(); const P = this.planeAt(e, st.y); if (!P) return true;
       const q = toPlan(P), c = st.m.pts.reduce((s, p) => [s[0] + p[0] / st.m.pts.length, s[1] + p[1] / st.m.pts.length], [0, 0]);
       st.d = snap(M.dist(q, c) - M.dist(st.p0, c), 10); st.poly = offsetPoly(st.m.pts, st.d);
-      this.showPts(st.poly.map((p) => ({ p, z: Math.round(st.y / MM) })), true); this.host.status(`Offset ${st.d > 0 ? "ออก" : "เข้า"} ${Math.abs(st.d).toLocaleString()} มม. (พิมพ์ระยะ + Enter ได้)`); return true;
+      this.showPts(st.poly.map((p) => ({ p, z: Math.round(st.y / MM) })), true); this.host.status(`Offset ${st.d > 0 ? "ออก" : "เข้า"} ${Math.abs(st.d).toLocaleString()} มม. (ปล่อยเมาส์แล้วพิมพ์ระยะ + Enter ได้)`); return true;
     }
     if (st && st.kind === "zoom") { e.stopImmediatePropagation(); const r = this.v.canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top; Object.assign(this.zbox.style, { left: Math.min(x, st.x0) + "px", top: Math.min(y, st.y0) + "px", width: Math.abs(x - st.x0) + "px", height: Math.abs(y - st.y0) + "px" }); this.zbox.hidden = false; st.x1 = x; st.y1 = y; return true; }
     if (this.pts.length && ["line", "rrect", "circle", "polygon", "arc", "arc2", "arc3", "pie", "dim", "protractor", "axes"].includes(t)) { const p = this.point(e); if (p) this.preview(t, p); return true; }
@@ -222,7 +225,8 @@ export class Tools3D {
     if (st.kind === "offset") {
       this.st = null; this.sk.clearOver(); if (!st.poly || !st.d) return true;
       const m = st.m, f = { id: M.uid("m"), name: "หน้า Offset", pts: st.poly, base: (m.base || 0) + m.height, height: 1, mat: m.mat };
-      this.commit((d) => d.masses.push(f), `Offset ${st.d} มม. → หน้าใหม่บนกล่อง (ใช้ Push/Pull ดึงขึ้น/กดลงได้)`); return true;
+      this.lastOffset = { src: m.id, face: f.id, sign: Math.sign(st.d) || 1 };                 // พิมพ์ระยะ + Enter ต่อได้ (แก้หน้าล่าสุด)
+      this.commit((d) => d.masses.push(f), `Offset ${st.d} มม. → หน้าใหม่บนกล่อง · พิมพ์ระยะ + Enter เพื่อแก้ระยะให้พอดี`); return true;
     }
     if (st.kind === "zoom") {
       this.st = null; this.zbox.hidden = true; if (st.x1 == null || Math.abs(st.x1 - st.x0) < 8) return true;
@@ -388,6 +392,11 @@ export class Tools3D {
     if (t === "move" && this.lastMove && !this.pts.length) {                          // ย้ายตามระยะที่พิมพ์ (ทิศเดียวกับที่ลากล่าสุด)
       const lm = this.lastMove, L = Math.hypot(...lm.d); if (!L) return false; const nd = [Math.round((lm.d[0] / L) * v), Math.round((lm.d[1] / L) * v)];
       this.commit((d) => SEL.translate(d, lm.keys, nd[0] - lm.d[0], nd[1] - lm.d[1]), `ย้ายเป็นระยะ ${this.v.fmtLen(v / 1000)} พอดี`); lm.d = nd; this.selChanged(); return true;
+    }
+    if (t === "offset" && this.lastOffset && !this.st) {                              // Offset ตามระยะที่พิมพ์ (ทิศเข้า/ออกเดียวกับที่ลากล่าสุด · ลบ = กลับทิศ)
+      const lo = this.lastOffset, src = this.doc.masses.find((x) => x.id === lo.src); if (!src || !this.doc.masses.some((x) => x.id === lo.face)) return false;
+      const dd = Math.abs(v) * (v < 0 ? -lo.sign : lo.sign), poly = offsetPoly(src.pts, dd);
+      this.commit((d) => { const f = d.masses.find((x) => x.id === lo.face); if (f) f.pts = poly; }, `Offset ${dd > 0 ? "ออก" : "เข้า"} ${Math.abs(dd).toLocaleString()} มม. พอดี`); return true;
     }
     if (t === "rotate" && this.sk.S.size) {
       const keys = new Set([...this.sk.S].filter((x) => !x.startsWith("roof:") && !x.startsWith("openings:"))); if (!keys.size) return false;

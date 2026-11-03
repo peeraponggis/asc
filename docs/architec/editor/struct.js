@@ -1,7 +1,7 @@
 // งานโครงสร้างคอนกรีตเสริมเหล็ก: เสา คาน ฐานราก พื้น บันได + ชั้นอาคาร + ตรวจขนาดเบื้องต้น (WSD) + ตาราง (โดย ลุงพี)
 // ไม่มี DOM/three — ผัง 2D/3D เรียกฟังก์ชันวาดของตัวเอง · ทดสอบด้วย node ได้
 // หน่วย มม. · ระดับ z = ระดับจริงจาก ±0.00 (หลังพื้นชั้น 1) · น้ำหนัก กก. · หน่วยแรง กก./ตร.ซม. (ksc)
-import * as M from "./model.js?v=0.24.3";
+import * as M from "./model.js?v=0.25.0";
 
 export const KINDS = { column: "เสา", beam: "คาน", footing: "ฐานราก", slab: "พื้น", stair: "บันได" };
 export const DEF = {
@@ -115,7 +115,7 @@ function tribWidth(beams, b, slabs) {
   return tw;
 }
 export function check(doc, D0) {
-  const D = Object.assign({}, DESIGN, D0 || {}), W = wsd(D), S = doc.struct || [];
+  const D = Object.assign({}, DESIGN, doc.design || {}, D0 || {}), W = wsd(D), S = doc.struct || [];   // doc.design = ค่าที่แก้ในหน้าต่างโครงสร้าง (บันทึกไปกับแบบ)
   const beams = S.filter((o) => o.kind === "beam"), slabs = S.filter((o) => o.kind === "slab"), cols = S.filter((o) => o.kind === "column"), fts = S.filter((o) => o.kind === "footing");
   const topZ = Math.max(...levels(doc).map((l) => l.z), 0);
   const out = { beams: [], columns: [], footings: [], slabs: [], D, W };

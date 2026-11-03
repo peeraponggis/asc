@@ -12,10 +12,11 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
 import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import * as M from "./model.js?v=0.24.3";
-import { material } from "./materials.js?v=0.24.3";
-import { buildItem, kindTh } from "./props3d.js?v=0.24.3";
-import * as ST from "./struct.js?v=0.24.3";
+import * as M from "./model.js?v=0.25.0";
+import { material } from "./materials.js?v=0.25.0";
+import { buildItem, kindTh } from "./props3d.js?v=0.25.0";
+import { modelItem } from "./import3d.js?v=0.25.0";
+import * as ST from "./struct.js?v=0.25.0";
 
 const MM = 0.001;
 const v3 = (p, z = 0) => new THREE.Vector3(p[0] * MM, z * MM, -p[1] * MM);
@@ -204,7 +205,7 @@ export class View3D {
   // ---------------------------------------------------------------- สร้างโมเดลจากแบบ
   build() {
     const g = this.model, d = this.doc;
-    g.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+    g.traverse((o) => { if (o.geometry && !o.userData.shared) o.geometry.dispose(); });   // shared = โมเดลนำเข้าที่จำไว้ (ใช้ซ้ำทุกครั้งที่วาดฉาก)
     g.clear();
     const add = (mesh, name, data, tag) => { mesh.castShadow = mesh.receiveShadow = true; mesh.name = name; mesh.userData = { ...(data || {}), tag: tag || (data && data.type) }; g.add(mesh); return mesh; };
     // พื้น
@@ -280,11 +281,13 @@ export class View3D {
       }
     }
     // ชิ้นส่วน (ต้นไม้ รถ ของตกแต่ง)
+    const mlabels = [];
     for (const it of d.items3d || []) {
-      const grp = buildItem(it); grp.position.copy(v3(it.p, it.z || 0)); grp.rotation.y = ((it.rot || 0) * Math.PI) / 180;
+      const grp = it.kind === "model" ? modelItem(it, () => this.build()) : buildItem(it); grp.position.copy(v3(it.p, it.z || 0)); grp.rotation.y = ((it.rot || 0) * Math.PI) / 180;
       grp.userData = { type: "items", id: it.id, tag: it.tag || "items" };
       grp.traverse((o) => { if (o.isMesh) o.userData = { ...o.userData, type: "items", id: it.id, tag: it.tag || "items", name: kindTh(it.kind) }; });
       g.add(grp);
+      if (grp.label) { grp.label.position.add(grp.position); mlabels.push(grp.label); }   // ป้ายชื่อ + ขนาดของโมเดลนำเข้า → ชั้นบน (หลัง buildNotes)
     }
     // กวาดหน้าตัดตามเส้น (Follow Me): กล่องต่อกันทีละช่วง
     for (const sw of d.sweeps || []) {
@@ -296,7 +299,7 @@ export class View3D {
         add(mesh, "หน้าตัดกวาดตามเส้น", { type: "sweeps", id: sw.id }, sw.tag || "land");
       }
     }
-    this.buildNotes();
+    this._mlabels = mlabels; this.buildNotes();
     // หลังคา + แผง
     const rf = M.roofFaces(d);
     for (const f of rf.faces) {
@@ -368,6 +371,7 @@ export class View3D {
       const ls = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(seg), dm); ls.renderOrder = 6; ls.userData = { type: "dims3d", id: m.id, tag: "notes" }; g.add(ls);
       const sp = sprite(fmt(L), (m.h || this.dimText || 250) * MM * 1.4, "#b5522b"); sp.position.copy(a2.clone().add(b2).multiplyScalar(0.5)); sp.userData = ls.userData; g.add(sp);
     }
+    for (const s of this._mlabels || []) g.add(s);                   // ป้ายโมเดลนำเข้า (import3d.js)
     const ax = d.axes3d; this.axes.position.copy(ax ? v3(ax.o, ax.o[2] || 0) : new THREE.Vector3()); this.axes.rotation.y = ax ? ((ax.rot || 0) * Math.PI) / 180 : 0;
     g.visible = !this.hiddenTags.has("notes");
   }

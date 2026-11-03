@@ -2,8 +2,8 @@
 // เลือก · push-pull ทุกหน้า (บน = สูง · ข้าง = ดันผนังของกล่องออก/เข้า) · สี่เหลี่ยมบนพื้น/บนหน้ากล่อง · ย้าย (Ctrl = คัดลอก) · หมุน 15°
 // · ทาสีวัสดุ · ตลับเมตร · รวมกลุ่ม — ทุกการแก้ผ่าน hist.commit (Ctrl+Z ได้)
 import * as THREE from "three";
-import * as M from "./model.js?v=0.24.3";
-import { TypedSet } from "./sel3d.js?v=0.24.3";
+import * as M from "./model.js?v=0.25.0";
+import { TypedSet } from "./sel3d.js?v=0.25.0";
 
 const MM = 0.001;
 const cap = (el, id) => { try { el.setPointerCapture(id); } catch (e) { /* ไม่มี pointer ที่กดอยู่จริง — ข้ามได้ */ } };

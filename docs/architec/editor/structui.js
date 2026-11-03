@@ -1,6 +1,6 @@
 // หน้าต่าง 🏗 โครงสร้าง: ชั้นอาคาร · สร้างโครงจากผนัง · ตรวจขนาดเบื้องต้น · ตารางเสา คาน ฐานราก + ปริมาณงาน (โดย ลุงพี)
-import * as M from "./model.js?v=0.24.3";
-import * as ST from "./struct.js?v=0.24.3";
+import * as M from "./model.js?v=0.25.0";
+import * as ST from "./struct.js?v=0.25.0";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const f1 = (v, d = 1) => Number(v).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d });
@@ -24,7 +24,7 @@ export function openStruct(ctx) {
           <div class="kv"><span>ฐานราก</span><b>${n("footing")}</b><span>เสา</span><b>${n("column")}</b><span>คาน</span><b>${n("beam")}</b><span>พื้น</span><b>${n("slab")}</b><span>บันได</span><b>${n("stair")}</b></div>
           <div class="row"><button type="button" class="accent" data-s="auto" title="วางเสา + ฐานรากที่มุม/จุดตัดผนังรอบนอก และคานตามแนวผนังทุกชั้น (คานคอดิน · คานชั้น · คานหลังคา)">⚙ สร้างโครงจากผนัง</button><button type="button" data-s="clear" ${n("column") + n("beam") + n("footing") ? "" : "disabled"}>ลบโครงสร้างทั้งหมด</button></div>
           <p class="note">หรือวาดเองในผัง 2D: เครื่องมือ <b>เสา · คาน · ฐานราก · พื้น · บันได</b> (คอลัมน์ซ้าย) · ขนาด เหล็กเสริม เข็ม แก้ที่ ข้อมูลวัตถุ</p>
-          <div class="kv"><span>คอนกรีต fc'</span><input type="number" data-d="fc" value="${ST.DESIGN.fc}"><span>เหล็ก fy</span><input type="number" data-d="fy" value="${ST.DESIGN.fy}"><span>น้ำหนักจร</span><input type="number" data-d="live" value="${ST.DESIGN.live}"><span>ดินรับได้ (กก./ตร.ม.)</span><input type="number" data-d="qa" value="${ST.DESIGN.qa}"></div></section>
+          <div class="kv"><span>คอนกรีต fc'</span><input type="number" data-d="fc" value="${ck.D.fc}"><span>เหล็ก fy</span><input type="number" data-d="fy" value="${ck.D.fy}"><span>น้ำหนักจร</span><input type="number" data-d="live" value="${ck.D.live}"><span>ดินรับได้ (กก./ตร.ม.)</span><input type="number" data-d="qa" value="${ck.D.qa}"></div></section>
       </div>
       <section class="card"><h4>3 · ตรวจขนาดเบื้องต้น ${(d.struct || []).length ? badge(ck.ok) : ""}</h4>
         ${(d.struct || []).length ? `
@@ -48,7 +48,7 @@ export function openStruct(ctx) {
   body.onchange = (e) => {
     const t = e.target;
     if (t.dataset.lv != null) { const i = Number(t.dataset.lv), k = t.dataset.k; setLv((d) => { d.levels[i][k] = k === "name" ? t.value : Number(t.value) || 0; }); return; }
-    if (t.dataset.d) { const v = Number(t.value); if (v > 0) { ST.DESIGN[t.dataset.d] = v; draw(); } else status("ค่าต้องมากกว่า 0 — ไม่ได้เปลี่ยน"); }
+    if (t.dataset.d) { const v = Number(t.value); if (v > 0) { hist.commit((d) => { d.design = Object.assign({}, d.design, { [t.dataset.d]: v }); }); onChange(); draw(); } else status("ค่าต้องมากกว่า 0 — ไม่ได้เปลี่ยน"); }   // บันทึกไปกับแบบ
   };
   body.onclick = (e) => {
     const b = e.target.closest("button"); if (!b) return;

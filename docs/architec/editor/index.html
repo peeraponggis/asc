@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>เขียนแบบ · ASC Architect</title>
-<link rel="icon" href="../favicon.ico?v=0.24.3">
-<link rel="stylesheet" href="editor.css?v=0.24.3">
-<script src="../mode.js?v=0.24.3"></script>
+<link rel="icon" href="../favicon.ico?v=0.25.0">
+<link rel="stylesheet" href="editor.css?v=0.25.0">
+<script src="../mode.js?v=0.25.0"></script>
 <script type="importmap">
 { "imports": { "three": "../vendor/three/build/three.module.min.js", "three/addons/": "../vendor/three/examples/jsm/" } }
 </script>
-<link rel="stylesheet" href="../ai/assistant.css?v=0.24.3">
-<script src="../brand.js?v=0.24.3"></script>
+<link rel="stylesheet" href="../ai/assistant.css?v=0.25.0">
+<script src="../brand.js?v=0.25.0"></script>
 </head>
 <body data-view="split">
 <div class="appbrand" data-brand="line"></div>
 <header class="bar">
-  <a href="../" class="home" title="กลับหน้าหลัก ASC Architect"><img src="../logo.png?v=0.24.3" alt="" width="30" height="30"></a>
+  <a href="../" class="home" title="กลับหน้าหลัก ASC Architect"><img src="../logo.png?v=0.25.0" alt="" width="30" height="30"></a>
   <div class="docbox"><input id="doc-name" class="docname" value="แบบใหม่" aria-label="ชื่อแบบ"><span id="saved" class="muted"></span></div>
   <div class="grp seg modeseg" id="views" role="tablist" aria-label="โหมดมุมมอง">
     <button data-view="2d" title="ผัง 2D อย่างเดียว — ปุ่มเฉพาะงานผัง/เขียนแบบ">ผัง 2D</button>
@@ -25,6 +25,7 @@
   </div>
   <span class="sp"></span>
   <div class="grp acts">
+    <button data-act="workflow" class="pill" title="ตรวจลำดับงาน: เตือนเมื่อทำข้ามขั้นหรือข้อมูลในแบบไม่ตรงกัน (SLD ไม่ตรงจำนวนแผง · ผนังชั้นบนไม่มีคาน · บันไดไม่ถึงชั้น · ตรวจโครงสร้างไม่ผ่าน …)">ตรวจลำดับงาน <b id="wfN" class="wfn">…</b></button>
     <button data-act="struct" class="pill" title="โครงสร้าง: ชั้นอาคาร · สร้างเสา/คาน/ฐานรากจากผนัง · ตรวจขนาดเบื้องต้น (WSD) · ตารางเสา คาน ฐานราก + ปริมาณคอนกรีต/เหล็ก">🏗 โครงสร้าง</button>
     <button data-act="solar" class="pill" title="ระบบโซลาร์: ผลผลิตไฟฟ้า (pvlib) · จัดสตริง · Single Line Diagram (DXF/PDF) จากแผงบนหลังคาจริง">⚡ โซลาร์ + SLD</button>
     <button data-act="drawset" class="pill" title="ชุดแบบก่อสร้าง A3: ผังพื้น · รูปด้าน 4 ด้าน · รูปตัด · 3D · ตารางประตูหน้าต่างห้อง + ไฟล์ IFC (ConstructCAD · รุ่นในเครื่อง)">📑 ชุดแบบ</button>
@@ -154,8 +155,39 @@
   <div class="dlg-foot"><span class="muted">ผลเป็นการตรวจเบื้องต้นวิธีหน่วยแรงใช้งาน (WSD) สำหรับออกแบบร่าง — ไม่แทนรายการคำนวณที่วิศวกรโยธาลงนาม</span><button data-act="struct-close">ปิด</button></div></div></div>
 <div id="solar-dlg" class="dlg" hidden><div class="dlg-box wide"><h3>⚡ ระบบโซลาร์ — ผลผลิตไฟฟ้า · สตริง · Single Line Diagram</h3><div class="dlg-body" id="solar-body"></div>
   <div class="dlg-foot"><span class="muted" id="solar-msg"></span><button data-act="solar-close">ปิด</button></div></div></div>
+<div id="wf-dlg" class="dlg" hidden><div class="dlg-box wide"><h3>ตรวจลำดับงาน — เตือนเมื่อทำข้ามขั้นหรือข้อมูลไม่ตรงกัน</h3><div class="dlg-body" id="wf-body"></div>
+  <div class="dlg-foot"><span class="muted">ตรวจจากข้อมูลจริงในแบบ · ไม่แทนการตรวจแบบของวิศวกร/สถาปนิก</span><span><button data-act="standards">ตรวจตามมาตรฐาน</button> <button data-act="wf-close">ปิด</button></span></div></div></div>
+<div id="std-dlg" class="dlg" hidden><div class="dlg-box wide"><h3 id="std-print-head">ตรวจตามมาตรฐาน — อาคาร · ไฟฟ้า · ขนานโครงข่าย · โครงสร้าง</h3><div class="dlg-body" id="std-body"></div>
+  <div class="dlg-foot"><span class="muted">ตรวจเฉพาะข้อที่วัดเป็นตัวเลขได้จากแบบ</span><span><button data-act="std-print" class="accent">ออกรายงาน PDF</button> <button data-act="std-close">ปิด</button></span></div></div></div>
+<div id="imp3d-dlg" class="dlg" hidden><div class="dlg-box imp3d"><h3>นำเข้า 3D SketchUp (.skp, .dae)</h3>
+  <div class="imp3d-cols">
+    <div class="imp3d-left">
+      <ol class="imp3d-steps">
+        <li><b>1</b><span>ดาวน์โหลดโมเดลลงเครื่องเองก่อน (เช่น จาก 3D Warehouse ด้วยบัญชีของคุณ) เป็น .skp หรือ .dae</span></li>
+        <li><b>2</b><span>กดปุ่มด้านล่าง หรือลากไฟล์มาวาง (ไฟล์ .zip แตกให้เอง)</span></li>
+        <li><b>3</b><span>ตรวจขนาดจริงเป็นเมตร เลือกชั้น แล้วกด วางในแบบ</span></li>
+      </ol>
+      <label class="imp3d-pick" title="เลือกไฟล์โมเดล 3D จากเครื่อง: .skp .dae .kmz .glb .gltf .obj .stl หรือ .zip">นำเข้า 3D SketchUp (.skp, .dae)<input type="file" id="imp3d-file" hidden></label>
+      <table class="imp3d-fmt"><thead><tr><th>ไฟล์ที่รับ</th><th>ใช้ได้กับ</th></tr></thead><tbody id="imp3d-fmt"></tbody></table>
+      <p class="imp3d-lic">ใช้ประกอบงานออกแบบได้ ห้ามแจกหรือขายไฟล์โมเดลต่อ · ASCA ไม่มีลิงก์ไปหรือดาวน์โหลดจาก 3D Warehouse เอง</p>
+      <div class="imp3d-lib"><b>คลังชิ้นส่วนของฉัน</b><div id="imp3d-lib"></div></div>
+    </div>
+    <div class="imp3d-right">
+      <div class="imp3d-drop" id="imp3d-drop" title="ลากไฟล์มาวางที่นี่ · ลากซ้าย-ขวาบนภาพ = หมุนดู"><canvas id="imp3d-cv"></canvas><span>ลากไฟล์ .skp .dae .glb .obj .stl หรือ .zip มาวางที่นี่</span></div>
+      <div class="imp3d-info mono" id="imp3d-info"></div>
+      <div class="imp3d-size" id="imp3d-size"></div>
+      <div id="imp3d-warn"></div>
+      <div class="imp3d-form">
+        <label>ชื่อป้าย<input id="imp3d-name" placeholder="ตามชื่อไฟล์"></label>
+        <label>หน่วยในไฟล์<select id="imp3d-unit" title="ตรวจจากไฟล์ให้อัตโนมัติ — ขนาดไม่ตรงความจริงให้เปลี่ยนตรงนี้"></select></label>
+        <label>วางที่ชั้น<select id="imp3d-level"></select></label>
+        <label>เก็บไว้ใช้ซ้ำ<select id="imp3d-keep"><option value="lib">คลังชิ้นส่วนของฉัน</option><option value="job">เฉพาะงานนี้</option></select></label>
+      </div>
+    </div>
+  </div>
+  <div class="dlg-foot"><span id="imp3d-msg" class="muted"></span><span><button type="button" data-i3="cancel">ยกเลิก</button> <button type="button" class="accent" id="imp3d-go" disabled>วางในแบบ</button></span></div></div></div>
 <div id="toast" class="toast" hidden></div>
-<script type="module" src="main.js?v=0.24.3"></script>
-<script type="module" src="../ai/assistant.js?v=0.24.3"></script>
+<script type="module" src="main.js?v=0.25.0"></script>
+<script type="module" src="../ai/assistant.js?v=0.25.0"></script>
 </body>
 </html>

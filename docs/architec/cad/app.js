@@ -1,11 +1,11 @@
 // CAD 2D ของ ASC Architect — เปิด/แก้/บันทึก DWG·DXF แบบ AutoCAD (โดย ลุงพี)
 // เอกสารจริงอยู่ฝั่ง server (ezdxf) · หน้านี้ถือสำเนาวัตถุใน model space + จดสิ่งที่เปลี่ยน แล้วส่งไปตอนบันทึก
-import * as G from "./geom.js?v=0.24.3";
-import * as H from "./geom2.js?v=0.24.3";
-import * as SY from "./symbols.js?v=0.24.3";
-import * as UI from "./ribbon.js?v=0.24.3";
-import { aciColor } from "../editor/cadlayer.js?v=0.24.3";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.24.3";
+import * as G from "./geom.js?v=0.25.0";
+import * as H from "./geom2.js?v=0.25.0";
+import * as SY from "./symbols.js?v=0.25.0";
+import * as UI from "./ribbon.js?v=0.25.0";
+import { aciColor } from "../editor/cadlayer.js?v=0.25.0";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.25.0";
 
 const $ = (s) => document.querySelector(s);
 const CLOUD = window.PA_MODE === "cloud";
@@ -52,7 +52,7 @@ function load(d) {
 // ไฟล์ใหญ่: พิกัดเส้นมาเป็นไฟล์ไบนารี (float32) ถอดใน worker → ใส่ให้กลุ่มเส้นแต่ละกลุ่มตามลำดับ (subarray ไม่คัดลอก)
 function viewBin(url) {
   return new Promise((res, rej) => {
-    const w = new Worker("./viewbin.worker.js?v=0.24.3");
+    const w = new Worker("./viewbin.worker.js?v=0.25.0");
     w.onmessage = (m) => { w.terminate(); m.data.error ? rej(new Error(m.data.error)) : res(m.data); };
     w.onerror = (e) => { w.terminate(); rej(new Error(e.message || "โหลดเส้นไม่ได้")); };
     w.postMessage({ url });
@@ -1180,6 +1180,8 @@ function runCommand(name) {
   name = ALIAS[name.toUpperCase()] || name.toUpperCase();
   if (name === "U") return undo();
   if (name === "REDO") return redo();
+  if (name === "CUTCLIP" || name === "COPYCLIP") { if (!S.sel.size) return log("เลือกวัตถุก่อน"); return clipCopy(name === "CUTCLIP"); }   // ปุ่ม Ribbon ตัด/คัดลอก (เดิมขึ้น "ไม่รู้จักคำสั่ง")
+  if (name === "SELALL") { S.sel = new Set([...S.ents.keys()].filter((h) => visible(S.ents.get(h)) && !locked(S.ents.get(h)))); renderProps(); return draw(); }
   if (name === "ZE") return zoomExtents();
   if (name === "ZIN") return zoomBy(1.4);
   if (name === "ZOUT") return zoomBy(1 / 1.4);
@@ -1275,7 +1277,7 @@ cv.addEventListener("wheel", (e) => {
   S.view.s *= Math.exp(-e.deltaY * 0.0015);
   S.view.ox = sx - w[0] * S.view.s; S.view.oy = sy + w[1] * S.view.s; draw();
 }, { passive: false });
-cv.addEventListener("dblclick", (e) => { if (e.button === 1) zoomExtents(); });
+cv.addEventListener("auxclick", (e) => { if (e.button === 1 && e.detail === 2) zoomExtents(); });   // ดับเบิลคลิกล้อ = ดูทั้งหมด (dblclick ไม่เกิดกับปุ่มกลาง)
 cv.addEventListener("pointerleave", () => { S.hover = false; $("#dyn").hidden = true; draw(); });
 cv.addEventListener("contextmenu", (e) => e.preventDefault());
 new ResizeObserver(resize).observe(cv);
@@ -1303,7 +1305,7 @@ document.addEventListener("keydown", (e) => {
     else if (k === "d") { e.preventDefault(); if (!S.sel.size) return log("เลือกวัตถุก่อน แล้วกด Ctrl+D"); clipCopy(false); runCommand("PASTE"); }
     return;
   }
-  if (e.key === "F1") { e.preventDefault(); UI.showKeys(); return; }
+  if (e.key === "F1" && e.shiftKey) { e.preventDefault(); UI.showKeys(); return; }   // F1 เฉย ๆ = โหมดช่วยเหลือ (ai/help.js)
   if (e.key === "F3") { e.preventDefault(); toggle("osnap"); return; }
   if (e.key === "F7") { e.preventDefault(); toggle("grid"); return; }
   if (e.key === "F9") { e.preventDefault(); toggle("gsnap"); return; }
@@ -1489,6 +1491,13 @@ window.ascaAI = {
     return [...steps.filter((x) => x.done).slice(-1), ...steps.filter((x) => !x.done).slice(0, 3)];
   },
   sets: {},
+  // ผู้ช่วยสั่งงาน (ai/actions.js ตรวจชื่อคำสั่งกับรายการนี้ก่อน · ผู้ใช้กด ทำเลย บนการ์ดก่อนทุกครั้ง) · NEW ไม่ให้ผู้ช่วยสั่ง
+  commands: () => [...new Set([...Object.keys(CMDS), ...Object.keys(ALIAS), "OPEN", "SAVE", "SAVEAS", "U", "REDO", "ZE", "ZIN", "ZOUT"])].filter((c) => c !== "NEW"),
+  run(name, p = {}) {
+    if (name === "file.open") { runCommand("OPEN"); return { ok: true, msg: "เปิดหน้าต่างเลือกไฟล์แล้ว" }; }
+    if (name === "cad.command") { runCommand(p.name); return { ok: true, msg: `เริ่มคำสั่ง ${String(p.name).toUpperCase()} — ทำต่อที่บรรทัดคำสั่ง หรือคลิกในแบบ` }; }
+    return { ok: false, msg: `หน้านี้ทำคำสั่ง ${name} ไม่ได้` };
+  },
 };
 
 // เมนู Ribbon + แถบลอย + คลังสัญลักษณ์

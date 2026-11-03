@@ -1,17 +1,20 @@
 {
  "app": "ASC Architect",
- "version": "0.24.3",
+ "version": "0.25.0",
  "runtime": "py312-66bd077d",
  "published": "2026-11-03",
  "notes": [
-  "คืนไฟล์จากแบบ D (31 ต.ค. 2569 · commit d704d68): asc_architect.ico · web\\favicon.ico · web\\logo.png · web\\icon-512.png · scripts\\brand\\asca_logo.png …",
-  "แบบบ้านโซลาร์นีออน (0.21.1–0.24.2) ยกเลิก · กฎบันทึกใน CLAUDE.md ของ repo",
-  "laptop/เครื่องที่ติดตั้งแล้ว: รัน scripts\\make-shortcut.ps1 ให้ไอคอนบน Desktop เปลี่ยน (ล้างแคชไอคอนให้เอง)"
+  "ช่วยเหลือตามตำแหน่ง (Help ?) web\\ai\\help.js ทุกหน้า: F1 / ปุ่ม ช่วยเหลือ = ทุกปุ่มขึ้น ? ชี้/คลิกแล้วขึ้นกล่องอธิบาย (คีย์ลัด · ขั้นตอน · ต้องมีก่อน · ต่อไป …",
+  "คู่มือทีละเมนู ทีละปุ่ม web\\manual\\ (เมนู ช่วยเหลือ → คู่มือ): 472 หัวข้อเขียนจากโค้ดจริง (knowledge\\help\\.json → scripts\\build_help.py) + บทความเดิม · ค้นได้ …",
+  "piBot ครบแบบ ASC Studio (web\\ai\\actions.js ใหม่ · assistant.js): คำสั่งงาน 22 ชนิดตรวจค่าก่อนทำ · ตัวแยกคำสั่งไทยในเครื่องก่อนถาม AI (วาดห้อง 4x5 · คาน GB1 …",
+  "ตรวจลำดับงาน (workflow.js · workflowui.js · ปุ่มที่แถบบนพร้อมตัวเลข): SLD ไม่ตรงจำนวนแผง · ผนังชั้นบนไม่มีคาน · บันไดไม่ถึงชั้น · ประตูล้นผนัง …",
+  "ตรวจตามมาตรฐาน (standards.js · standardsui.js · เมนู โครงสร้าง): อาคาร (บันได ความสูงห้อง ระยะแนวเขต) · ไฟฟ้า (เบรกเกอร์ สาย แรงดันตก จาก SLD) · ขนานโครงข่าย …",
+  "นำเข้าโมเดล 3D SketchUp (import3d.js · เมนู ไฟล์): .dae .kmz .glb .gltf .obj .stl .zip ในเบราว์เซอร์ · ตรวจหน่วยเอง · ขนาดจริงเป็นเมตร · ลดรูปเมื่อเกิน 60,000 …"
  ],
  "package": {
-  "file": "asca-app-0.24.3.bin",
-  "size": 11834203,
-  "sha256": "da2b674fc51fceaeb8263bb31dbcb2abf9247a3d4ba1aa30dc1d49da561ade91"
+  "file": "asca-app-0.25.0.bin",
+  "size": 16130726,
+  "sha256": "6aa0b2a2139a2d57cd71994dc36e8791af6c69edb19215f6e4fee20aa63d8468"
  },
  "setup_url": null,
  "constructcad": "0.8.0"

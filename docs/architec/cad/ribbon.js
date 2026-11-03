@@ -1,6 +1,6 @@
 // เมนูแบบ Ribbon + แถบเครื่องมือลอย + คลังสัญลักษณ์ + ตั้งค่าเมาส์ ของหน้า CAD 2D (โดย ลุงพี)
 // ปุ่มคำสั่งใช้ data-cmd (app.js รันเอง) · ปุ่มสัญลักษณ์ data-sym · ปุ่มหน้าตา data-ui · จำค่าใน localStorage (ascaCad.*)
-import { CATS, SYMS, LIB_CAT, LIB_PAPER, symSVG } from "./symbols.js?v=0.24.3";
+import { CATS, SYMS, LIB_CAT, LIB_PAPER, symSVG } from "./symbols.js?v=0.25.0";
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -129,7 +129,7 @@ export const ENTRIES = new Map();
 for (const s of Object.values(SYMS)) ENTRIES.set("s:" + s.id, { key: "s:" + s.id, cat: s.cat, short: s.short, th: s.th, std: s.std, sym: s, real: s.real, layer: s.layer });
 async function loadLibrary() {
   try {
-    const r = await fetch("../library/catalog.json?v=0.24.3"); if (!r.ok) return;
+    const r = await fetch("../library/catalog.json?v=0.25.0"); if (!r.ok) return;
     const c = await r.json();
     for (const it of c.symbols || []) {
       const cat = LIB_CAT[it.group]; if (!cat) continue;
@@ -340,10 +340,10 @@ export function showKeys() {
   const rows = [
     ["ทั่วไป", [["Ctrl+N / O / S / P", "ใหม่ · เปิด · บันทึก · Plot PDF"], ["Ctrl+Z / Ctrl+Y", "ย้อน · ทำซ้ำ (Ctrl+Shift+Z ก็ได้)"], ["Ctrl+C / X / V", "คัดลอก · ตัด · วาง (คลิกตำแหน่งวาง)"],
       ["Ctrl+A", "เลือกทั้งหมด"], ["Ctrl+D", "ทำสำเนาที่เลือก (คลิกตำแหน่งวาง)"], ["Delete", "ลบที่เลือก"], ["Esc", "ยกเลิกคำสั่ง / ยกเลิกเลือก / ปิดหน้าต่าง"],
-      ["Enter / Space", "จบคำสั่ง · ว่างอยู่ = ทำคำสั่งล่าสุดซ้ำ"], ["Ctrl+F1", "ย่อ/ขยายแถบเมนู Ribbon"], ["F1", "หน้าต่างนี้"]]],
+      ["Enter / Space", "จบคำสั่ง · ว่างอยู่ = ทำคำสั่งล่าสุดซ้ำ"], ["Ctrl+F1", "ย่อ/ขยายแถบเมนู Ribbon"], ["F1", "โหมดช่วยเหลือ: ชี้ปุ่มไหนก็ได้"], ["Shift+F1", "หน้าต่างนี้"], ["Shift ค้าง + ชี้ปุ่ม", "คำอธิบายสั้นทันที"]]],
     ["ช่วยวาด", [["F3", "จับจุด OSNAP"], ["F7", "แสดงกริด GRID"], ["F8", "ล็อกแนวฉาก ORTHO"], ["F9", "จับกริด SNAP (ระยะกริดเลือกที่แถบล่าง)"], ["R / F", "ขณะวางสัญลักษณ์: หมุน 90° · กลับด้าน"]]],
     ["เมาส์", [["ล้อเมาส์", "ซูมตรงตำแหน่งเมาส์"], ["กดล้อ/ปุ่มขวาค้างลาก", "เลื่อนจอ"], ["คลิกที่วัตถุ", "เลือก (Shift = เอาออก)"], ["ลากกรอบ", "ซ้าย→ขวา เต็มกรอบ · ขวา→ซ้าย แตะกรอบ"]]],
-    ["พิมพ์คำสั่ง (แบบ AutoCAD)", Object.entries(KEY).filter(([, k]) => !k.startsWith("Ctrl") && !k.startsWith("F")).map(([c, k]) => [k, LABEL[c] || c])],
+    ["พิมพ์คำสั่ง (แบบ AutoCAD)", Object.entries(KEY).filter(([, k]) => !k.startsWith("Ctrl") && !/^F\d/.test(k)).map(([c, k]) => [k, LABEL[c] || c])],
   ];
   openWin("keys", "คีย์ลัดและคำสั่ง", `<table class="k">${rows.map(([h, r]) => `<tr><th colspan="2">${h}</th></tr>` + r.map(([k, d]) => `<tr><td>${esc(k)}</td><td>${esc(d)}</td></tr>`).join("")).join("")}</table>`);
 }

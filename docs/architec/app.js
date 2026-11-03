@@ -19,13 +19,23 @@
 
   // ---------------------------------------------------------------- แท็บ
   function showTab(name) {
-    $$("#tabs button").forEach(function (b) { b.classList.toggle("on", b.dataset.tab === name); });
+    $$("#tabs [data-tab]").forEach(function (b) { b.classList.toggle("on", b.dataset.tab === name); });
+    $$("#tabs .tabdd").forEach(function (d) { d.classList.toggle("on", !!d.querySelector('[data-tab="' + name + '"]')); });   // เมนูย่อยที่มีแท็บนี้ = ไฮไลต์หัวเมนู
     $$(".tab").forEach(function (s) { s.classList.toggle("on", s.id === "tab-" + name); });
     try { localStorage.setItem("pa.tab", name); } catch (e) { /* ไม่มี storage ก็ไม่เป็นไร */ }
     if (name === "library") loadCatalog();
   }
-  $("#tabs").addEventListener("click", function (e) { if (e.target.dataset.tab) showTab(e.target.dataset.tab); });
-document.addEventListener("click", function (e) { var b = e.target.closest && e.target.closest(".feat[data-tab]"); if (b) showTab(b.dataset.tab); });
+  // เมนูย่อยของแถบ (☀ ออกแบบโซลาร์ ▾ · คลัง & แม่แบบ ▾) — คลิกเปิด/ปิด · เลือกแล้ว/คลิกนอก/Esc = ปิด
+  function closeDD() { $$("#tabs .tabdd").forEach(function (d) { d.querySelector(".ddmenu").hidden = true; d.querySelector(".ddt").setAttribute("aria-expanded", "false"); }); }
+  $("#tabs").addEventListener("click", function (e) {
+    var t = e.target.closest && e.target.closest(".ddt");
+    if (t) { var m = t.parentNode.querySelector(".ddmenu"), open = m.hidden; closeDD(); m.hidden = !open; t.setAttribute("aria-expanded", String(open)); e.stopPropagation(); return; }
+    var b = e.target.closest && e.target.closest("[data-tab]");
+    if (b) { closeDD(); showTab(b.dataset.tab); }
+  });
+  document.addEventListener("click", function (e) { if (!(e.target.closest && e.target.closest(".tabdd"))) closeDD(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeDD(); });
+document.addEventListener("click", function (e) { var b = e.target.closest && e.target.closest(".feat[data-tab], #home-smart [data-tab]"); if (b) showTab(b.dataset.tab); });
   // ผู้ช่วย AI piBot: แท็บที่เปิดอยู่ = หน้าของผู้ช่วย · ต่อไปทำอะไร ตามแท็บ
   var TABS = { home: "หน้าแรก", projects: "โครงการ", yield: "ผลผลิตไฟฟ้า", strings: "จัดสตริง", library: "คลังสัญลักษณ์", templates: "แม่แบบ & โปรแกรม" };
   function curTab() { var b = document.querySelector("#tabs button.on"); return b ? b.dataset.tab : "home"; }
@@ -40,13 +50,18 @@ document.addEventListener("click", function (e) { var b = e.target.closest && e.
       if (t === "strings") return [{ done: false, say: "กรอกจำนวนแผง + สเปกแผงและอินเวอร์เตอร์ (ช่องว่าง = ค่าเริ่มต้น) แล้วกด หาแบบจัดสตริง" }];
       if (t === "projects") return [
         { done: n > 0 || cloud, say: "นำเข้างาน ASC Studio (กด นำเข้า ในกล่อง ASC Studio — ทุกโฟลเดอร์) หรือสร้างโครงการเปล่า" },
-        { done: false, say: n ? "เลือกโครงการ → ✏️ เขียนแบบ หรือ คำนวณผลผลิต" : "หลังมีโครงการ: ✏️ เขียนแบบ / คำนวณผลผลิต", act: n ? { tool: "press", key: "yield", label: "ไปแท็บผลผลิตไฟฟ้า" } : null }];
+        { done: false, say: n ? "เลือกโครงการ → ✏️ เขียนแบบ หรือ คำนวณผลผลิต" : "หลังมีโครงการ: ✏️ เขียนแบบ / คำนวณผลผลิต", act: n ? { tool: "press", key: "yield", label: "ไปเมนู ☀ ออกแบบโซลาร์ → ผลผลิตไฟฟ้า" } : null }];
       return [
         { done: false, say: "เขียนแบบบ้าน/อาคาร → ✏️ เขียนแบบ 2D/3D (ลิงก์ด้านบน)" },
         { done: false, say: "แก้แบบ DWG/DXF/PDF ของลูกค้า → 📐 CAD 2D" + (cloud ? " (รุ่นในเครื่อง)" : "") },
         { done: n > 0 || cloud, say: "งานโซลาร์รูฟท็อป → นำเข้างาน ASC Studio ที่แท็บ โครงการ", act: { tool: "press", key: "projects", label: "ไปแท็บโครงการ" } }];
     },
     sets: {},
+    // ผู้ช่วยสั่งงาน (หลังผู้ใช้กด ทำเลย บนการ์ด · ai/actions.js ตรวจชื่อแท็บก่อน)
+    run: function (name, p) {
+      if (name === "tab.set" && p && TABS[p.tab]) { showTab(p.tab); return { ok: true, msg: "เปิดแท็บ " + TABS[p.tab] + " แล้ว" }; }
+      return { ok: false, msg: "หน้านี้ทำคำสั่ง " + name + " ไม่ได้" };
+    },
   };
 
   // ---------------------------------------------------------------- Pi monitor ขั้น 4 (รุ่นในเครื่อง · ลุงพีสั่ง 1 พ.ย. 2569)
@@ -262,6 +277,9 @@ document.addEventListener("click", function (e) { var b = e.target.closest && e.
       b.disabled = false; b.textContent = "Render (Blender)";
       if (j.state === "done") { toast("render เสร็จ → render.png"); loadProjects(); }
       else toast("render ไม่สำเร็จ: " + (j.log || "").slice(-300), true);
+    }).catch(function (e) {                                              // เซิร์ฟเวอร์ตอบไม่ได้ → ไม่ให้ปุ่มค้าง "กำลัง render…"
+      b.disabled = false; b.textContent = "Render (Blender)";
+      toast("ติดตามงาน render ไม่ได้: " + (e && e.message || e) + " — ดูผลในโฟลเดอร์โครงการ", true);
     });
   }
   $("#new-project").addEventListener("submit", function (e) {

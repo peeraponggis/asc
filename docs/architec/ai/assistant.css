@@ -9,6 +9,31 @@
   background: var(--panel, #1c2128); color: var(--ink, #e6e9ed); border: 1px solid var(--line, #3a414b); box-shadow: 0 12px 36px rgba(0, 0, 0, .45);
   font: 14px/1.5 Tahoma, "Noto Sans Thai", system-ui, sans-serif; }
 .aiw[hidden] { display: none; }
+/* 0.26: ย่อ/ขยาย/ลากมุมปรับขนาด · จุดสถานะโมเดล · จุดข้อความใหม่ · การ์ด 3 ปุ่ม + เลิกทำ · ออกแบบอัตโนมัติ · ไมค์ */
+.aiw { resize: both; min-width: 300px; min-height: 52px; }
+.aiw.min { resize: none; height: auto !important; }
+.aiw.min .aictx, .aiw.min .aibody, .aiw.min .aiq, .aiw.min .ainext, .aiw.min .aiin { display: none; }
+.aiw.max { resize: none; border-radius: 10px; }
+.aifab.unread::after { content: ""; position: absolute; top: 6px; right: 6px; width: 14px; height: 14px; border-radius: 50%; background: #e5484d; border: 2px solid #fff; }
+.aidot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+.aidot.on { background: #2fbf71; box-shadow: 0 0 0 2px rgba(47, 191, 113, .25); }
+.aidot.off { background: #e5484d; box-shadow: 0 0 0 2px rgba(229, 72, 77, .25); }
+.aisrc .aibadge { display: inline-block; margin: 0 6px 2px 0; padding: 0 7px; border-radius: 999px; border: 1px solid currentColor; font-size: 11px; opacity: .9; }
+.aidrop { margin-top: 4px; font-size: 12px; color: #e8892b; }
+.aiext { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+.aicp { margin: 6px 10px 0; }
+.aicr { margin: 4px 10px; padding: 6px 8px; border-radius: 6px; background: rgba(127, 127, 127, .12); font-size: 12.5px; }
+.aicard.auto { border-color: #2f6fd6; }
+.aicard.auto .aich { background: rgba(47, 111, 214, .18); }
+.aist.ok { color: #2fbf71; opacity: 1; }
+.ainext { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; border-top: 1px solid var(--line, #3a414b); font-size: 12.5px; background: rgba(47, 111, 214, .10); }
+.aimic { width: 34px; height: 34px; align-self: center; font-size: 16px; }
+.aimic.rec { background: #e5484d; color: #fff; animation: aiRec 1s ease-in-out infinite; }
+@keyframes aiRec { 50% { box-shadow: 0 0 0 5px rgba(229, 72, 77, .3); } }
+.aitest { font-size: 12px; }
+.aitest.ok { color: #2fbf71; } .aitest.bad { color: #e5484d; }
+.aicfg .aibtn.small { margin-top: 6px; }
+@media (prefers-reduced-motion: reduce) { .aimic.rec { animation: none; } }
 .aih { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 10px; cursor: move; user-select: none; border-bottom: 1px solid var(--line, #3a414b); }
 .aiht { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .aiht b { font-size: 14px; }
@@ -45,3 +70,41 @@
 .aicfg .small { font-size: 12px; opacity: .8; }
 .aicfg a { color: #4fb3ff; font-size: 12px; }
 @media (max-width: 520px) { .aifab { width: 56px; height: 56px; right: 10px; bottom: 10px; } }
+
+/* ---------- ช่วยเหลือตามตำแหน่ง (help.js · 0.25.0) — F1 · Shift ชี้ · คลิกขวา */
+.hlp-btn { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line, #3a414b); background: var(--panel, #fff); color: var(--ink, #1b2433);
+  border-radius: 999px; padding: 4px 11px; font: 600 12.5px/1.4 Tahoma, "Noto Sans Thai", system-ui, sans-serif; cursor: pointer; white-space: nowrap; }
+.hlp-btn kbd { font: 600 10.5px monospace; border: 1px solid currentColor; border-radius: 4px; padding: 0 4px; opacity: .7; }
+.hlp-btn.on { border: 2px solid #e8892b; background: #fff4e8; color: #8a4b0c; }
+body.hlp-on, body.hlp-on * { cursor: help !important; }
+.hlp-bar { position: fixed; left: 50%; top: 6px; transform: translateX(-50%); z-index: 9500; background: #fff4e8; color: #7a4a05; border: 1px solid #f3c99a;
+  border-radius: 999px; padding: 6px 8px 6px 16px; font: 13px/1.4 Tahoma, "Noto Sans Thai", system-ui, sans-serif; box-shadow: 0 4px 14px rgba(0, 0, 0, .15); }
+.hlp-bar button { margin-left: 8px; border: 0; background: #e8892b; color: #fff; border-radius: 999px; padding: 3px 12px; font: inherit; font-weight: 600; cursor: pointer !important; }
+.hlp-badges { position: fixed; inset: 0; z-index: 9400; pointer-events: none; }
+.hlp-badges span { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #e8892b; color: #fff; font: 700 11px/16px sans-serif; text-align: center; box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
+.hlp-pop, .hlp-tip { position: fixed; z-index: 9600; width: 380px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; box-sizing: border-box;
+  background: #fff; color: #1b2433; border: 1px solid #d9dde3; border-radius: 12px; box-shadow: 0 12px 32px rgba(20, 30, 50, .22); padding: 14px 16px;
+  font: 13.5px/1.55 Tahoma, "Noto Sans Thai", system-ui, sans-serif; cursor: auto !important; }
+.hlp-pop *, .hlp-tip * { cursor: auto !important; }
+.hlp-tip { width: 300px; padding: 10px 12px; pointer-events: none; }
+.hlp-h { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; padding-right: 18px; }
+.hlp-h b { font-size: 15.5px; }
+.hlp-h small { margin-left: auto; color: #5b6475; font-size: 12px; }
+.hlp-hot { font-size: 12px; color: #3a4352; }
+.hlp-k { font: 600 11.5px monospace; background: #eef0f3; border: 1px solid #c9ced6; border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; }
+.hlp-pop p, .hlp-tip p { margin: 8px 0 4px; color: #3a4352; }
+.hlp-muted { color: #5b6475 !important; font-size: 12.5px; }
+.hlp-row { display: flex; gap: 8px; margin: 6px 0; font-size: 13px; color: #3a4352; }
+.hlp-row > span { flex: none; min-width: 74px; color: #5b6475; font-weight: 600; font-size: 12px; padding-top: 1px; }
+.hlp-acts { display: flex; gap: 8px; margin: 12px 0 6px; }
+.hlp-acts button { flex: 1; border: 1px solid #d9dde3; background: #fff; color: #1b2433; border-radius: 8px; padding: 8px; font: inherit; font-size: 13px; cursor: pointer !important; }
+.hlp-acts .hlp-go { background: #e8892b; border-color: #e8892b; color: #fff; font-weight: 600; }
+.hlp-src { display: block; color: #5b6475; font-size: 11.5px; }
+.hlp-x { position: absolute; top: 6px; right: 8px; border: 0; background: none; font-size: 20px; line-height: 1; color: #5b6475; cursor: pointer !important; }
+.hlp-ring { position: fixed; z-index: 9550; border: 3px solid #e8892b; border-radius: 10px; pointer-events: none; box-shadow: 0 0 0 4px rgba(232, 137, 43, .25); }
+.hlp-pulse { animation: hlpPulse 1s ease-in-out 5; }
+@keyframes hlpPulse { 50% { box-shadow: 0 0 0 6px rgba(232, 137, 43, .55); } }
+.hlp-ctx { position: fixed; z-index: 9700; background: #fff; border: 1px solid #d9dde3; border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); padding: 4px; }
+.hlp-ctx button { border: 0; background: none; padding: 7px 12px; font: 13.5px Tahoma, "Noto Sans Thai", system-ui, sans-serif; color: #1b2433; cursor: pointer; border-radius: 6px; }
+.hlp-ctx button:hover { background: #fff4e8; }
+@media print { .hlp-btn, .hlp-bar, .hlp-badges, .hlp-pop, .hlp-tip, .hlp-ring, .hlp-ctx { display: none !important; } }

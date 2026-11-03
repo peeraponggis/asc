@@ -1,7 +1,7 @@
 // แผง ข้อมูลวัตถุ (Entity Info) รวมของ 2D/3D — แก้ค่าได้ทุกชนิด · ค่าที่พิมพ์ใช้ตามนั้น (ผิดกติกาเตือน ไม่บีบค่า) (โดย ลุงพี)
-import * as M from "./model.js?v=0.24.3";
-import * as SEL from "./sel3d.js?v=0.24.3";
-import { PALETTE } from "./materials.js?v=0.24.3";
+import * as M from "./model.js?v=0.25.0";
+import * as SEL from "./sel3d.js?v=0.25.0";
+import { PALETTE } from "./materials.js?v=0.25.0";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const ROOF = [["none", "ไม่มี"], ["flat", "เรียบ"], ["shed", "เพิง"], ["gable", "จั่ว"], ["hip", "ปั้นหยา"], ["curved", "โค้ง"]];
@@ -25,6 +25,9 @@ function rows(doc, t, o) {
     if (o.kind === "stair") return [...base, ["กว้าง (มม.)", num("w", o.w, 50)], ["จำนวนขั้น", num("n", o.n, 1)], ["ลูกนอน (มม.)", num("run", o.run, 10)], ["ฐาน (มม.)", num("base", o.base, 50)], ["สูงรวม (มม.)", num("rise", o.rise, 50)]];
     return base;
   }
+  if (t === "items" && o.kind === "model") { const s = Number(o.s) || 1, m = (v) => ((v * s) / 1000).toFixed(2);
+    return [["ชื่อป้าย", txt("name", o.name)], ["ขนาดจริง", ro(`${m(o.w)} × ${m(o.d)} × ${m(o.h)} ม. (กว้าง × ลึก × สูง)`)], ["ตัวคูณ", num("s", s, 0.05)], ["หมุน (°)", num("rot", o.rot || 0, 15)], ["ระดับ (มม.)", num("z", o.z || 0, 50)],
+      ["ไฟล์ต้นทาง", ro(o.src || "-")], ["สามเหลี่ยม", ro((o.tris || 0).toLocaleString())]]; }
   if (t === "items") return [["ตัวคูณ", num("s", o.s || 1, 0.05)], ["หมุน (°)", num("rot", o.rot || 0, 15)], ["ระดับ (มม.)", num("z", o.z || 0, 50)]];
   if (t === "sweeps") return [["หน้าตัด กว้าง", num("w", o.w)], ["หน้าตัด สูง", num("h", o.h)], ["ระดับ (มม.)", num("z", o.z || 0, 50)], ["วัสดุ", matSel(o.mat)]];
   if (t === "texts3d") return [["ข้อความ", txt("s", o.s)], ["ขนาดตัวอักษร (มม.)", num("h", o.h)]];
@@ -51,7 +54,7 @@ export function applyField(doc, keys, k, raw) {
   let warn = "";
   for (const key of keys) {
     const [t] = SEL.split(key), o = SEL.find(doc, key); if (!o) continue;
-    const isNum = !["name", "mark", "s", "mat", "kind", "type", "rebar", "pile"].includes(k);
+    const isNum = (t === "items" && k === "s") || !["name", "mark", "s", "mat", "kind", "type", "rebar", "pile"].includes(k);   // ชิ้นส่วน: s = ตัวคูณ (ตัวเลข) · ข้อความ: s = ตัวอักษร
     const v = isNum ? Number(raw) : raw;
     if (isNum && (raw === "" || isNaN(v))) return "ค่าไม่ใช่ตัวเลข — ไม่ได้เปลี่ยน";
     if (isNum && v <= 0 && !["base", "sill", "rot", "z", "offset", "off", "top"].includes(k)) return "ค่าต้องมากกว่า 0 — ไม่ได้เปลี่ยน";
