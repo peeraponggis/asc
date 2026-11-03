@@ -1,7 +1,8 @@
 // แผง ข้อมูลวัตถุ (Entity Info) รวมของ 2D/3D — แก้ค่าได้ทุกชนิด · ค่าที่พิมพ์ใช้ตามนั้น (ผิดกติกาเตือน ไม่บีบค่า) (โดย ลุงพี)
-import * as M from "./model.js?v=0.25.1";
-import * as SEL from "./sel3d.js?v=0.25.1";
-import { PALETTE } from "./materials.js?v=0.25.1";
+import * as M from "./model.js?v=0.30.1";
+import * as SEL from "./sel3d.js?v=0.30.1";
+import { PALETTE } from "./materials.js?v=0.30.1";
+import * as SOL from "./mesh.js?v=0.30.1";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const ROOF = [["none", "ไม่มี"], ["flat", "เรียบ"], ["shed", "เพิง"], ["gable", "จั่ว"], ["hip", "ปั้นหยา"], ["curved", "โค้ง"]];
@@ -9,6 +10,27 @@ const matSel = (v, k = "mat") => `<select data-k="${k}"><option value="">ค่�
 const num = (k, v, step = 10, extra = "") => `<input type="number" data-k="${k}" step="${step}" value="${v ?? ""}" ${extra}>`;
 const txt = (k, v) => `<input data-k="${k}" value="${esc(v ?? "")}">`;
 const ro = (v) => `<span class="mono">${esc(v)}</span>`;
+
+/** ก้อนผิว+เส้น (0.26): ทั้งก้อน · หน้า · เส้น · จุด */
+const chk = (k, on) => `<input type="checkbox" data-k="${k}" ${on ? "checked" : ""}>`;
+function solidRows(key, s) {
+  const p = SEL.sub(key), f = (m) => `${(m / 1000).toLocaleString(undefined, { maximumFractionDigits: 3 })} ม.`;
+  if (p.kind === "f") {
+    const fi = +p.ref, F = s.faces[fi]; if (!F) return [];
+    const n = SOL.normal(s, fi), tilt = Math.round((Math.acos(Math.max(-1, Math.min(1, n[2]))) * 180) / Math.PI);
+    const az = Math.round(((Math.atan2(n[0], n[1]) * 180) / Math.PI + 360) % 360), dir = tilt < 2 ? "หันขึ้น (หน้าบน)" : tilt > 178 ? "หันลง (หน้าล่าง)" : `ทิศ ${az}° · เอียง ${tilt}°`;
+    return [["พื้นที่", ro(`${(SOL.faceArea(s, fi) / 1e6).toFixed(2)} ตร.ม.`)], ["หันไปทาง", ro(dir)], ["วัสดุหน้านี้", matSel(F.mat, "fmat")], ["จำนวนรู", ro(F.loops.length - 1)]];
+  }
+  if (p.kind === "e") {
+    const k = p.ref, E = SOL.edges(s).get(k);
+    return [["ความยาว", ro(f(SOL.edgeLen(s, k)))], ["หน้าที่ติดกัน", ro(E ? E.faces.length : 0)], ["ซ่อนเส้น", chk("ehide", (s.hidden || []).includes(k))], ["เส้นนุ่ม (Soft)", chk("esoft", (s.soft || []).includes(k))]];
+  }
+  if (p.kind === "v") { const v = s.verts[+p.ref] || [0, 0, 0]; return [["ตำแหน่ง (มม.)", ro(v.map((x) => Math.round(x).toLocaleString()).join(" , "))]]; }
+  const b = SOL.bbox(s);
+  return [["ชื่อ", txt("name", s.name)], ["วัสดุทั้งก้อน", matSel(s.mat)], ["ฐาน (มม.)", num("sbase", b.lo[2], 50)], ["สูง (มม.)", num("sheight", b.hi[2] - b.lo[2], 50)],
+    ["ขนาด", ro(`${f(b.hi[0] - b.lo[0])} × ${f(b.hi[1] - b.lo[1])}`)], ["หน้า / เส้น", ro(`${s.faces.length} / ${SOL.edges(s).size}`)],
+    ["ปริมาตร", ro(SOL.isClosed(s) ? `${(SOL.volume(s) / 1e9).toFixed(2)} ม.³` : "ยังไม่ปิดสนิท")]];
+}
 
 /** ฟิลด์ของแต่ละชนิด: [ป้าย, html] */
 function rows(doc, t, o) {
@@ -45,7 +67,8 @@ export function entityHTML(doc, keys) {
   const [t] = SEL.split(ks[0]), o = SEL.find(doc, ks[0]), same = ks.every((k) => k.startsWith(t + ":"));
   const head = `<div class="ent-h"><b>${esc(t === "struct" ? SEL.STRUCT_TH[o.kind] || "โครงสร้าง" : SEL.NAME[t] || t)}${ks.length > 1 ? ` · เลือก ${ks.length} ชิ้น` : ""}</b><small>${esc(SEL.describe(doc, ks[0]))}</small></div>`;
   if (!same) return head + `<p class="note">เลือกหลายชนิดพร้อมกัน — ใช้ ย้าย (M) · หมุน (Q) · Delete · Ctrl+C/V ได้ทั้งชุด · แก้ค่าทีละชนิด: Shift+คลิกเอาออกให้เหลือชนิดเดียว</p>`;
-  return head + `<div class="kv ent" data-keys="${esc(ks.join(","))}">${rows(doc, t, o).map(([l, h]) => `<span>${l}</span>${h}`).join("")}</div>` +
+  const R = t === "solids" ? solidRows(ks[0], o) : rows(doc, t, o);
+  return head + `<div class="kv ent" data-keys="${esc(ks.join(","))}">${R.map(([l, h]) => `<span>${l}</span>${h}`).join("")}</div>` +
     `<div class="row" style="margin-top:8px"><button type="button" class="chipb" data-ent="del">🗑 ลบ</button><button type="button" class="chipb" data-ent="copy">⧉ คัดลอก</button>${t === "walls" ? '<button type="button" class="chipb" data-ent="door">＋ ประตู</button><button type="button" class="chipb" data-ent="window">＋ หน้าต่าง</button>' : ""}</div>`;
 }
 
@@ -54,6 +77,7 @@ export function applyField(doc, keys, k, raw) {
   let warn = "";
   for (const key of keys) {
     const [t] = SEL.split(key), o = SEL.find(doc, key); if (!o) continue;
+    if (t === "solids") { warn = applySolid(o, key, k, raw) || warn; continue; }
     const isNum = (t === "items" && k === "s") || !["name", "mark", "s", "mat", "kind", "type", "rebar", "pile"].includes(k);   // ชิ้นส่วน: s = ตัวคูณ (ตัวเลข) · ข้อความ: s = ตัวอักษร
     const v = isNum ? Number(raw) : raw;
     if (isNum && (raw === "" || isNaN(v))) return "ค่าไม่ใช่ตัวเลข — ไม่ได้เปลี่ยน";
@@ -68,4 +92,23 @@ export function applyField(doc, keys, k, raw) {
     if (t === "struct" && o.kind === "column" && (o.top ?? 0) <= (o.base ?? 0)) warn = "⚠ หัวเสาต่ำกว่าโคนเสา — ตรวจค่าอีกครั้ง";
   }
   return warn;
+}
+/** ก้อนผิว+เส้น: ค่าที่แก้ในแผง (ค่าที่พิมพ์ใช้ตามนั้น · ผิดกติกาเตือน ไม่บีบค่า) */
+function applySolid(s, key, k, raw) {
+  const p = SEL.sub(key);
+  if (k === "name") { s.name = raw; return ""; }
+  if (k === "mat") { if (raw) s.mat = raw; else delete s.mat; return ""; }
+  if (k === "fmat") { const F = s.faces[+p.ref]; if (F) { if (raw) F.mat = raw; else delete F.mat; } return ""; }
+  if (k === "ehide" || k === "esoft") {
+    const L = k === "ehide" ? (s.hidden = s.hidden || []) : (s.soft = s.soft || []), on = raw === true || raw === "true" || raw === "on";
+    const i = L.indexOf(p.ref); if (on && i < 0) L.push(p.ref); if (!on && i >= 0) L.splice(i, 1); return "";
+  }
+  const v = Number(raw); if (raw === "" || isNaN(v)) return "ค่าไม่ใช่ตัวเลข — ไม่ได้เปลี่ยน";
+  const b = SOL.bbox(s);
+  if (k === "sbase") { const dz = Math.round(v - b.lo[2]); s.verts = s.verts.map((q) => [q[0], q[1], q[2] + dz]); return ""; }
+  if (k === "sheight") {
+    if (v <= 0) return "ค่าต้องมากกว่า 0 — ไม่ได้เปลี่ยน";
+    const h = b.hi[2] - b.lo[2] || 1; s.verts = s.verts.map((q) => [q[0], q[1], Math.round(b.lo[2] + ((q[2] - b.lo[2]) * v) / h)]); return "";
+  }
+  return "";
 }

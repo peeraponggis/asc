@@ -236,7 +236,10 @@ body[data-view="2d"] .v3only, body[data-view="3d"] .v2only { display: none !impo
 .bar { gap: 10px; padding: 6px 12px; flex-wrap: nowrap; min-width: 0; }
 .bar .sp { flex: 1; min-width: 4px; }
 .docbox { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
-.docbox .docname { width: 220px; font-size: 15px; padding: 2px 6px; }
+.docbox .docname { width: auto; font-size: 15px; padding: 2px 6px; field-sizing: content; min-width: 0; max-width: min(380px, 100%); box-sizing: border-box; text-overflow: ellipsis; }   /* ชื่อแบบยาวขึ้นได้ตามข้อความ (0.30.1 · เดิมถูกตัดชิดปุ่มโหมด) */
+.docbox { flex: 0 1 auto; overflow: hidden;  min-width: 120px; }
+@media (max-width: 1320px) { .bar > .acts { flex-wrap: wrap; justify-content: flex-end; min-width: 0; row-gap: 4px; } }   /* จอแคบ: ปุ่มด้านขวาขึ้นแถวที่สอง ไม่ดันทับชื่อแบบ/ปุ่มโหมด (0.30.1) */
+body .aifab { bottom: 44px; }   /* เหนือแถบสถานะ/ช่องระยะ/ปุ่ม Render ท้ายจอ (ลากย้ายได้เหมือนเดิม) */
 .docbox #saved { padding-left: 7px; font-size: 11px; }
 .modeseg button { padding: 5px 14px; font-weight: 600; }
 .modeseg button.on { background: var(--ink); border-color: var(--ink); color: var(--panel); }
@@ -297,7 +300,7 @@ a.btn.accent { background: var(--accent); border-color: var(--accent); color: #f
 #plan .ghost { opacity: .18; }
 .ent-h { display: flex; flex-direction: column; gap: 1px; margin-bottom: 8px; }
 .ent-h small { color: var(--muted); font-size: 11.5px; }
-@media (max-width: 1250px) { .acts .pill { padding: 5px 9px; font-size: 12px; } .docbox .docname { width: 150px; } }
+@media (max-width: 1250px) { .acts .pill { padding: 5px 9px; font-size: 12px; } .docbox .docname { max-width: min(240px, 100%); } }
 @media (max-width: 980px) { .bar { flex-wrap: wrap; } .acts { flex-wrap: wrap; } }
 
 /* ---------- 0.25.0: ตรวจลำดับงาน (workflow.js · workflowui.js) */

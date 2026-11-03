@@ -1,10 +1,12 @@
 // กระดานวาด 2D (SVG) ของตัวเขียนแบบ ASC Architect (โดย ลุงพี)
 // เครื่องมือ: เลือก/ย้าย · ผนัง · ห้อง · กล่อง (push-pull) · ประตู · หน้าต่าง · เส้น · มิติ · ข้อความ · สัญลักษณ์ · ลบ
 // จับจุด: กริด · ปลายผนัง/เส้น · ตั้งฉาก (Shift ปิด) · พิมพ์ระยะแล้ว Enter ระหว่างวาด (แบบ SketchUp)
-import * as M from "./model.js?v=0.25.1";
-import * as CAD from "./cadlayer.js?v=0.25.1";
-import * as ST from "./struct.js?v=0.25.1";
-import { footprint, modelLabel } from "./import3d-core.js?v=0.25.1";
+import * as M from "./model.js?v=0.30.1";
+import * as CAD from "./cadlayer.js?v=0.30.1";
+import * as ST from "./struct.js?v=0.30.1";
+import * as SOL from "./mesh.js?v=0.30.1";
+const solidLv = (s) => ({ base: SOL.bbox(s).lo[2], tag: s.tag });          // ก้อนผิว+เส้น: ชั้นตามจุดต่ำสุด
+import { footprint, modelLabel } from "./import3d-core.js?v=0.30.1";
 
 const NS = "http://www.w3.org/2000/svg";
 const el = (tag, attrs, parent) => {
@@ -71,6 +73,7 @@ export class Plan2D {
       this.doc.walls.forEach((w) => { if (this.on("walls", w) || !this.level) pts.push(w.a, w.b); });
       this.doc.lines.forEach((l) => pts.push(...l.pts));
       this.doc.masses.forEach((m) => pts.push(...m.pts));
+      (this.doc.solids || []).forEach((s) => s.verts.forEach((v) => pts.push([v[0], v[1]])));
       pts.push(...ST.snapPts(this.doc, this.level));
       if (this.draft && this.draft.pts) pts.push(...this.draft.pts.slice(0, -1));
       for (const q of this.host.cadSnap ? this.host.cadSnap(p, tol) : []) pts.push(q);
@@ -110,6 +113,7 @@ export class Plan2D {
     for (const l of d.lines) for (let i = 0; i < l.pts.length - (l.closed ? 0 : 1); i++)
       if (M.projectOnSegment(p, l.pts[i], l.pts[(i + 1) % l.pts.length]).d < tol) return { type: "lines", id: l.id };
     for (const m of d.masses) if (this.on("masses", m) && M.pointInPolygon(p, m.pts)) return { type: "masses", id: m.id };
+    for (const s of d.solids || []) if (this.on("masses", solidLv(s)) && SOL.topOutlines(s).some((o) => M.pointInPolygon(p, o.pts))) return { type: "solids", id: s.id };
     return null;
   }
   find(sel) { return sel ? (this.doc[sel.type] || []).find((x) => x.id === sel.id) : null; }
@@ -252,6 +256,7 @@ export class Plan2D {
         if (this.drag.handle) obj[this.drag.handle] = this.snap(p, null, e).p;
         else { obj.a = mv(o.a); obj.b = mv(o.b); }
       } else if (typ === "masses" || typ === "lines") obj.pts = o.pts.map(mv);
+      else if (typ === "solids") obj.verts = o.verts.map((v) => [Math.round(v[0] + delta[0]), Math.round(v[1] + delta[1]), v[2]]);
       else if (typ === "dims") { obj.a = mv(o.a); obj.b = mv(o.b); }
       else if (typ === "texts" || typ === "syms") obj.p = mv(o.p);
       else if (typ === "struct") { if (o.a) { obj.a = mv(o.a); obj.b = mv(o.b); } if (o.p) obj.p = mv(o.p); if (o.pts) obj.pts = o.pts.map(mv); }
@@ -402,6 +407,14 @@ export class Plan2D {
       const c = m.pts.reduce((a, q) => M.add(a, M.mul(q, 1 / m.pts.length)), [0, 0]);
       const [x, y] = this.toScreen(c);
       el("text", { x, y, class: "lbl" }, L.main).textContent = `${m.name || "กล่อง"} สูง ${Math.round(m.height).toLocaleString()}`;
+    }
+    // ก้อนผิว+เส้น (0.26): วงนอกของหน้าที่หันขึ้น (มองจากบน) · ป้ายชื่อ + ความสูงสูงสุด
+    for (const s of d.solids || []) {
+      if (!this.on("masses", solidLv(s))) continue;
+      const outs = SOL.topOutlines(s), sel = isSel("solids", s.id);
+      for (const o of outs) el("polygon", { points: o.pts.map(P).join(" "), class: "mass" + (sel ? " sel" : "") }, L.main);
+      const b = SOL.bbox(s), [x, y] = this.toScreen([(b.lo[0] + b.hi[0]) / 2, (b.lo[1] + b.hi[1]) / 2]);
+      el("text", { x, y, class: "lbl" }, L.main).textContent = `${s.name || "ก้อน"} สูง ${Math.round(b.hi[2] - b.lo[2]).toLocaleString()}`;
     }
     // ผนัง
     this._struct(P, isSel);

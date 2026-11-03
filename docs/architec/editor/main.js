@@ -1,22 +1,22 @@
 // ตัวเขียนแบบ ASC Architect — เชื่อมผัง 2D · 3D · แผงคุณสมบัติ · บันทึก/ส่งออก (โดย ลุงพี)
-import * as M from "./model.js?v=0.25.1";
-import { Plan2D } from "./plan2d.js?v=0.25.1";
-import { View3D } from "./view3d.js?v=0.25.1";
-import { toDXF } from "./dxf.js?v=0.25.1";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.25.1";
-import * as CAD from "./cadlayer.js?v=0.25.1";
-import { Sketch3D } from "./sketch3d.js?v=0.25.1";
-import { PALETTE } from "./materials.js?v=0.25.1";
-import { sunPosition } from "./sun.js?v=0.25.1";
-import { initSkUI } from "./skui.js?v=0.25.1";
-import { readDXF, decodeDXF } from "./dxfread.js?v=0.25.1";
-import * as LS from "./localstore.js?v=0.25.1";
-import * as ST from "./struct.js?v=0.25.1";
-import { openStruct } from "./structui.js?v=0.25.1";
-import { openSolar } from "./solarui.js?v=0.25.1";
-import * as WF from "./workflowui.js?v=0.25.1";
-import { analyze as wfAnalyze } from "./workflow.js?v=0.25.1";
-import { openStandards, printStandards } from "./standardsui.js?v=0.25.1";
+import * as M from "./model.js?v=0.30.1";
+import { Plan2D } from "./plan2d.js?v=0.30.1";
+import { View3D } from "./view3d.js?v=0.30.1";
+import { toDXF } from "./dxf.js?v=0.30.1";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.30.1";
+import * as CAD from "./cadlayer.js?v=0.30.1";
+import { Sketch3D } from "./sketch3d.js?v=0.30.1";
+import { PALETTE } from "./materials.js?v=0.30.1";
+import { sunPosition } from "./sun.js?v=0.30.1";
+import { initSkUI } from "./skui.js?v=0.30.1";
+import { readDXF, decodeDXF } from "./dxfread.js?v=0.30.1";
+import * as LS from "./localstore.js?v=0.30.1";
+import * as ST from "./struct.js?v=0.30.1";
+import { openStruct } from "./structui.js?v=0.30.1";
+import { openSolar } from "./solarui.js?v=0.30.1";
+import * as WF from "./workflowui.js?v=0.30.1";
+import { analyze as wfAnalyze } from "./workflow.js?v=0.30.1";
+import { openStandards, printStandards } from "./standardsui.js?v=0.30.1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -83,7 +83,7 @@ function refresh() {
     `พื้นที่ตามกรอบผนัง ${s.footprintM2.toLocaleString()} ตร.ม. · ${s.levels} ชั้น<br>` + (s.struct ? `โครงสร้าง ${s.struct} ชิ้น (ดู 🏗 โครงสร้าง)<br>` : "") +
     (pv && pv.count ? `<b>แผงโซลาร์ ${pv.count} แผง = ${s.pvKwp.toLocaleString()} kWp</b><br>เอียง ${s.pvTilt}° · หัน ${Math.round(s.pvAzimuth)}°` : "") +
     (hist.doc.imported ? ascSummary(hist.doc.imported) : pv && pv.count ? "" : "ไม่มีแผงโซลาร์ (ต้องมีผนังและหลังคา)");
-  $("#doc-name").value = hist.doc.name;
+  $("#doc-name").value = hist.doc.name; $("#doc-name").title = hist.doc.name + " — คลิกเพื่อแก้ชื่อแบบ";
   syncRoofInputs();
   if (plan.level && !ST.levels(hist.doc).some((l) => l.id === plan.level.id)) plan.level = null;
   if ($("#levelSel").options.length !== ST.levels(hist.doc).length + (ST.levels(hist.doc).length > 1 ? 1 : 0)) syncLevels();
@@ -165,10 +165,11 @@ let ui = null;
 const KEYS = { v: "select", h: "pan", w: "wall", r: "room", d: "door", n: "window", b: "box", l: "line", m: "dim", t: "text", s: "symbol", e: "erase", k: "calib", c: "column", g: "beam", f: "footing" };
 document.addEventListener("keydown", (e) => {
   const inField = !!(e.target.matches && e.target.matches("input, select, textarea")) && e.target.id !== "vcb";
+  const in3d = over3d || document.body.dataset.view === "3d";   // โหมด 3D อย่างเดียว: คีย์ลัดเป็นของ 3D เสมอ ไม่ว่าเมาส์อยู่ตรงไหน
   if (e.key === "F1" && e.shiftKey && ui) { e.preventDefault(); ui.keysDlg(); return; }   // F1 เฉย ๆ = โหมดช่วยเหลือ (ai/help.js)
   if ((e.ctrlKey || e.metaKey) && !inField) {
     const k = e.key.toLowerCase();
-    if (over3d && ui) {
+    if (in3d && ui) {
       if (k === "c") { e.preventDefault(); ui.ext.copy(false); return; }
       if (k === "x") { e.preventDefault(); ui.ext.copy(true); return; }
       if (k === "v") { e.preventDefault(); ui.ext.paste(); return; }
@@ -185,10 +186,10 @@ document.addEventListener("keydown", (e) => {
   // ระหว่างวาด: ตัวเลข/จุลภาคไปที่ช่องระยะ (แบบ SketchUp)
   if (plan.draft && /^[0-9.,x*]$/.test(e.key) && e.target.id !== "vcb") { $("#vcb").focus(); return; }
   if ((e.key === "Delete" || e.key === "Backspace") && sk && sk.S.size && !plan.draft) { e.preventDefault(); ui.ext.removeSel(); plan.select(null); return; }   // ลบที่เลือก (2D หรือ 3D) ทุกชนิด
-  if (plan.key(e)) { e.preventDefault(); return; }
+  if ((!in3d || plan.draft || !/^(Escape|Enter)$/.test(e.key)) && plan.key(e)) { e.preventDefault(); return; }   // Esc/Enter ในภาพ 3D เป็นของเครื่องมือ 3D (เดิมผัง 2D กินไปก่อน)
   if (e.target.id === "vcb") return;
-  if (over3d && /^[0-9.,x*s-]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && (/^[0-9.,-]$/.test(e.key) || ui.ext.busy() || $("#vcb").value)) { vcb3d = true; $("#vcb").focus(); return; }   // พิมพ์ระยะ/มุมได้ทันทีแบบ SketchUp
-  if (over3d && !e.ctrlKey && !e.metaKey && !e.altKey) {
+  if (in3d && /^[0-9.,x*s-]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && (/^[0-9.,-]$/.test(e.key) || ui.ext.busy() || $("#vcb").value)) { vcb3d = true; $("#vcb").focus(); return; }   // พิมพ์ระยะ/มุมได้ทันทีแบบ SketchUp
+  if (in3d && !e.ctrlKey && !e.metaKey && !e.altKey) {
     if (e.key === "Escape") { if (!ui.ext.cancel()) { if (sk.tool === "select" && sk.S.size) { sk.S.clear(); ui.ext.selChanged(); } else setTool3d("select"); } return; }
     if (e.key === "Enter") { if (ui.ext.busy()) { e.preventDefault(); ui.ext.finish(); } return; }
     if (e.key === "Z" && e.shiftKey) { e.preventDefault(); view.fit(); return; }
@@ -198,13 +199,14 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "Delete") { ui.ext.removeSel(); return; }
   }
   if (sk && sk.tool === "walk" && /^(w|a|s|d)$/i.test(e.key)) return;     // กำลังเดินใน 3D: W/A/S/D ไม่สลับเครื่องมือผัง 2D (แม้เมาส์อยู่นอกช่อง 3D)
+  if (document.body.dataset.view === "3d") return;                     // 3D อย่างเดียว: ไม่สลับไปเครื่องมือผัง 2D (เดิม F = ฐานราก แทน Offset)
   if (!e.ctrlKey && !e.metaKey && !e.altKey && KEYS[e.key.toLowerCase()]) setTool(KEYS[e.key.toLowerCase()]);
 });
 document.addEventListener("keyup", (e) => plan.key(e));
 let over3d = false, vcb3d = false;
 $("#pane2d").addEventListener("pointerenter", () => (vcb3d = false)); $("#pane3d").addEventListener("pointerenter", () => (over3d = true)); $("#pane3d").addEventListener("pointerleave", (e) => { if (!e.relatedTarget || e.relatedTarget.id !== "vcb") over3d = false; });
 $("#vcb").addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && ui && (over3d || vcb3d || ui.ext.busy()) && ui.ext.typed($("#vcb").value)) { e.preventDefault(); $("#vcb").value = ""; $("#vcb").blur(); vcb3d = false; return; }
+  if (e.key === "Enter" && ui && (over3d || vcb3d || ui.ext.busy() || document.body.dataset.view === "3d") && ui.ext.typed($("#vcb").value)) { e.preventDefault(); $("#vcb").value = ""; $("#vcb").blur(); vcb3d = false; return; }
   if (e.key === "Escape") vcb3d = false;
   if (e.key === "Enter") { e.preventDefault(); plan.key(e); $("#vcb").blur(); }
   if (e.key === "Escape") { $("#vcb").value = ""; $("#vcb").blur(); plan.key(e); }
@@ -607,7 +609,7 @@ async function traceLocal(f) {
 function parseDxfLocal(buf, name) {
   return new Promise((res, rej) => {
     let w;
-    try { w = new Worker(new URL("./dxfworker.js?v=0.25.1", import.meta.url), { type: "module" }); } catch (err) { w = null; }
+    try { w = new Worker(new URL("./dxfworker.js?v=0.30.1", import.meta.url), { type: "module" }); } catch (err) { w = null; }
     if (!w) { try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } return; }
     w.onmessage = (ev) => { w.terminate(); ev.data.error ? rej(new Error(ev.data.error)) : res(ev.data.data); };
     w.onerror = (ev) => { w.terminate(); try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } ev.preventDefault(); };

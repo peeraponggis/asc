@@ -1,7 +1,8 @@
 // ส่งออกผัง 2D เป็น DXF R12 (ASCII) — เปิดได้ใน CadCraft · LibreCAD · FreeCAD · AutoCAD (โดย ลุงพี)
 // ตัวอักษรไทยเขียนเป็น \U+XXXX (รูปแบบมาตรฐานของ DXF) · ชั้นตาม AIA เดียวกับแม่แบบใน cadcraft\templates
-import { wallPolygon, openingSpans, wallLength, norm, sub, add, mul, perp, dist } from "./model.js?v=0.25.1";
-import * as ST from "./struct.js?v=0.25.1";
+import { wallPolygon, openingSpans, wallLength, norm, sub, add, mul, perp, dist } from "./model.js?v=0.30.1";
+import * as ST from "./struct.js?v=0.30.1";
+import * as SOL from "./mesh.js?v=0.30.1";
 
 const LAYERS = [["A-WALL", 7], ["A-DOOR", 3], ["A-GLAZ", 4], ["A-DIMS", 2], ["A-TEXT", 7], ["A-MASS", 5], ["A-LINE", 8], ["A-SYMB", 6], ["S-COLS", 1], ["S-BEAM", 5], ["S-FOOT", 30], ["S-SLAB", 8], ["S-STAIR", 7], ["S-TEXT", 1]];
 
@@ -67,6 +68,11 @@ export function toDXF(doc, opts = {}) {
     poly("A-MASS", m.pts, true);
     const c = m.pts.reduce((s, p) => add(s, mul(p, 1 / m.pts.length)), [0, 0]);
     text("A-MASS", c, 150, `H=${Math.round(m.height)}`);
+  }
+  for (const s of doc.solids || []) {                                  // ก้อนผิว+เส้น (0.26): ผังจากบน + ความสูงสูงสุด
+    const b = SOL.bbox(s); if (!on("masses", { base: b.lo[2], tag: s.tag })) continue;
+    for (const o of SOL.topOutlines(s)) poly("A-MASS", o.pts, true);
+    text("A-MASS", [(b.lo[0] + b.hi[0]) / 2, (b.lo[1] + b.hi[1]) / 2], 150, `H=${Math.round(b.hi[2])}`);
   }
   for (const l of doc.lines) poly("A-LINE", l.pts, l.closed);
   for (const d of doc.dims) {

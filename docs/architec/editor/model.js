@@ -17,7 +17,7 @@ export function newDoc(name) {
     app: "pee_architec-drawing", version: 1, name: name || "แบบใหม่", units: "mm",
     site: { lat: null, lon: null, north: 0 },
     walls: [], openings: [], masses: [], lines: [], dims: [], texts: [], syms: [], trees: [], cads: [], backdrop: null,
-    items3d: [], texts3d: [], dims3d: [], sweeps: [], struct: [],
+    items3d: [], texts3d: [], dims3d: [], sweeps: [], struct: [], solids: [],
     levels: [{ id: "L1", name: "ชั้น 1", z: 0, h: 3000 }],
     roof: Object.assign({}, DEFAULTS.roof), pv: Object.assign({}, DEFAULTS.pv),
   };
@@ -25,7 +25,7 @@ export function newDoc(name) {
 
 export function normalize(doc) {
   const d = Object.assign(newDoc(), doc || {});
-  for (const k of ["walls", "openings", "masses", "lines", "dims", "texts", "syms", "trees", "cads", "items3d", "texts3d", "dims3d", "sweeps", "struct"]) d[k] = Array.isArray(d[k]) ? d[k] : [];
+  for (const k of ["walls", "openings", "masses", "lines", "dims", "texts", "syms", "trees", "cads", "items3d", "texts3d", "dims3d", "sweeps", "struct", "solids", "guides"]) d[k] = Array.isArray(d[k]) ? d[k] : [];
   if (!Array.isArray(d.levels) || !d.levels.length) d.levels = [{ id: "L1", name: "ชั้น 1", z: 0, h: 3000 }];
   d.roof = Object.assign({}, DEFAULTS.roof, d.roof || {});
   d.pv = Object.assign({}, DEFAULTS.pv, d.pv || {});
@@ -117,6 +117,7 @@ export function bounds(doc) {
   const addp = (p) => { xs.push(p[0]); ys.push(p[1]); };
   doc.walls.forEach((w) => wallPolygon(w).forEach(addp));
   doc.masses.forEach((m) => m.pts.forEach(addp));
+  (doc.solids || []).forEach((s) => s.verts.forEach(addp));                  // ผิว+เส้น (0.26 · mesh.js)
   doc.lines.forEach((l) => l.pts.forEach(addp));
   (doc.items3d || []).forEach((t) => { addp([t.p[0] - 1500, t.p[1] - 1500]); addp([t.p[0] + 1500, t.p[1] + 1500]); });
   (doc.sweeps || []).forEach((l) => l.pts.forEach(addp));

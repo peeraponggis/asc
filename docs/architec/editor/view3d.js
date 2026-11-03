@@ -12,11 +12,12 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
 import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import * as M from "./model.js?v=0.25.1";
-import { material } from "./materials.js?v=0.25.1";
-import { buildItem, kindTh } from "./props3d.js?v=0.25.1";
-import { modelItem } from "./import3d.js?v=0.25.1";
-import * as ST from "./struct.js?v=0.25.1";
+import * as M from "./model.js?v=0.30.1";
+import { material } from "./materials.js?v=0.30.1";
+import { buildItem, kindTh } from "./props3d.js?v=0.30.1";
+import { modelItem } from "./import3d.js?v=0.30.1";
+import * as ST from "./struct.js?v=0.30.1";
+import * as SOL from "./mesh.js?v=0.30.1";
 
 const MM = 0.001;
 const v3 = (p, z = 0) => new THREE.Vector3(p[0] * MM, z * MM, -p[1] * MM);
@@ -80,6 +81,7 @@ export class View3D {
     this.camera.position.set(18, 14, 22);
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
+    this.controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.ROTATE, RIGHT: THREE.MOUSE.PAN };   // ล้อ = ซูม · ปุ่มกลาง = หมุนรอบ (แบบ SketchUp)
     this.controls.maxPolarAngle = Math.PI * 0.497;
     this.hemi = new THREE.HemisphereLight(0xcfe3ff, 0x5b6b45, 0.3); sc.add(this.hemi);
     const sun = (this.sun = new THREE.DirectionalLight(0xfff0d8, 2.7));
@@ -87,7 +89,7 @@ export class View3D {
     sc.add(sun, sun.target);
     const gg = new THREE.PlaneGeometry(1200, 1200); gg.attributes.uv.array.forEach((v, i, a) => (a[i] = v * 1200));
     const ground = (this.ground = new THREE.Mesh(gg, material("grass")));
-    ground.rotation.x = -Math.PI / 2; ground.position.y = -0.003; ground.receiveShadow = true; ground.name = "พื้นดิน"; ground.userData.tag = "site";
+    ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02; ground.receiveShadow = true;   // 0.26: ต่ำกว่าพื้นอาคาร 20 มม. (เดิม 3 มม. กะพริบเมื่อมองไกล) ground.name = "พื้นดิน"; ground.userData.tag = "site";
     sc.add(ground);
     this.model = new THREE.Group(); this.model.name = "แบบ"; sc.add(this.model);
     this.asc = new THREE.Group(); this.asc.name = "โมเดล ASC Studio"; sc.add(this.asc);
@@ -95,7 +97,7 @@ export class View3D {
     this.cadGroup = new THREE.Group(); this.cadGroup.name = "เส้น CAD"; sc.add(this.cadGroup);
     this.mats = {
       wall: material("white"),
-      wallSel: new THREE.MeshStandardMaterial({ color: 0xf2b36b, roughness: 0.7 }),
+      wallSel: new THREE.MeshStandardMaterial({ color: 0xf2b36b, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }),
       slab: material("concrete"),
       roof: material("metal"),
       gable: material("white"),
@@ -117,7 +119,7 @@ export class View3D {
     this.backMat = new THREE.LineDashedMaterial({ color: 0x1b1d20, dashSize: 0.18, gapSize: 0.12, transparent: true, opacity: 0.55, depthFunc: THREE.GreaterDepth });
     this.xray = new THREE.MeshLambertMaterial({ color: 0xdfe6ee, transparent: true, opacity: 0.35, depthWrite: false });
     this.hidden = new THREE.MeshBasicMaterial({ color: 0xffffff, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
-    this.mono = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.9 });
+    this.mono = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.9, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
     this.flat = new Map();
     // ภาพหลังผ่านขั้นตอนเพิ่มคุณภาพ: เงาซอกมุม (AO) + ลบรอยหยัก + tone mapping
     const cp = (this.composer = new EffectComposer(r));
@@ -139,13 +141,26 @@ export class View3D {
     for (const ev of ["pointerdown", "pointermove", "pointerup", "wheel"]) canvas.addEventListener(ev, wake, { passive: true });
     for (const ev of ["click", "input", "change", "keydown", "keyup", "pointerup"]) document.addEventListener(ev, wake, { passive: true, capture: true });
     this.controls.addEventListener("change", wake);
+    // 0.26 แก้กะพริบ: เดิมเลื่อนเมาส์/หมุนล้อทีละครั้ง = สลับภาพเร็ว (ไม่มีเงาซอกมุม) ↔ ภาพเต็มหลัง 250 มส. → เงาโผล่-หายเป็นจังหวะ
+    //   ใหม่: ภาพเต็มทุกครั้งที่กล้องนิ่ง · ภาพเร็วเฉพาะตอนกล้องกำลังเคลื่อน/ลากอยู่ · เครื่องแรง (ภาพเต็ม < 25 มส.) ใช้ภาพเต็มตลอด
+    this.navUntil = 0; this.hqMs = 999; this.pressed = false;
+    canvas.addEventListener("pointerdown", () => (this.pressed = true), { passive: true });
+    addEventListener("pointerup", () => { this.pressed = false; this.invalidate(); }, { passive: true });
+    canvas.addEventListener("wheel", () => (this.navUntil = performance.now() + 400), { passive: true });
+    const hq = () => { const t = performance.now(); this.composer.render(); this.overlay(); this.hqMs = this.hqMs * 0.7 + (performance.now() - t) * 0.3; this.hqDone = true; };
     const loop = () => {
       this._raf = requestAnimationFrame(loop);
       const moved = this.controls.update(), now = performance.now();
       if (this.anim) { this.anim(now); this.invalidate(); }
-      if (moved) this.invalidate();
-      if (this.dirty) { this.dirty = false; this.renderer.render(this.scene, this.camera); this.overlay(); this.hqDone = false; return; }
-      if (!this.hqDone && now - this.lastChange > 250) { this.hqDone = true; this.composer.render(); this.overlay(); }
+      if (moved) { this.invalidate(); this.navUntil = now + 400; }
+      this.fitDepth();
+      const nav = now < this.navUntil || (this.pressed && moved);
+      if (this.dirty) {
+        this.dirty = false;
+        if (!nav || this.hqMs < 25) { hq(); return; }
+        this.renderer.render(this.scene, this.camera); this.overlay(); this.hqDone = false; return;
+      }
+      if (!this.hqDone && !nav) hq();
     };
     loop();
   }
@@ -153,6 +168,13 @@ export class View3D {
   get doc() { return this.host.hist.doc; }
   /** ขอให้วาดภาพใหม่ (เรียกได้บ่อย ไม่เปลือง) */
   invalidate() { this.dirty = true; this.lastChange = performance.now(); }
+  /** 0.26 แก้กะพริบ: ระยะใกล้/ไกลของกล้องตามระยะที่มองจริง (เดิมตายตัว 0.1–6,000 ม. → ความละเอียดความลึกไม่พอเมื่อมองไกล) */
+  fitDepth() {
+    const c = this.camera; if (!c.isPerspectiveCamera) return;
+    const d0 = c.position.distanceTo(this.controls.target); if (!isFinite(d0) || d0 <= 0) return;   // กล้องยังไม่พร้อม (ช่องภาพสูง 0 ฯลฯ)
+    const d = d0, near = Math.min(5, Math.max(0.02, d * 0.004)), far = Math.max(1500, d * 40);
+    if (Math.abs(near - c.near) / c.near > 0.15 || Math.abs(far - c.far) / c.far > 0.15) { c.near = near; c.far = far; c.updateProjectionMatrix(); }
+  }
   /** เส้น ป้ายข้อความ มิติ 3D วาดทับภาพสุดท้าย */
   overlay() { const r = this.renderer; r.autoClear = false; r.render(this.notesScene, this.camera); r.autoClear = true; }
 
@@ -253,6 +275,8 @@ export class View3D {
       add(mesh, m.name || "กล่อง", { type: "masses", id: m.id }, m.tag || "masses");
       if (m.mat === "water") mesh.castShadow = false;
     }
+    // ผิว + เส้น (0.26 · mesh.js): ก้อนละ 1 เมช · กลุ่มวัสดุต่อหน้า · ตารางสามเหลี่ยม → หน้า (เลือกหน้าได้) · เส้นขอบแยก (เลือกเส้นได้)
+    for (const s of d.solids || []) if (!s.off) this._solid(s, add);
     // โครงสร้าง: ฐานราก เสา คาน พื้น บันได (คอนกรีตเสริมเหล็ก)
     for (const o of d.struct || []) {
       const mt = material(o.mat || (o.kind === "slab" ? "concrete" : o.kind === "stair" ? "granite" : "concrete")), data = { type: "struct", id: o.id }, nm = `${ST.KINDS[o.kind] || "โครงสร้าง"} ${o.mark || ""}`;
@@ -336,7 +360,7 @@ export class View3D {
     let col = src.color ? src.color.clone() : new THREE.Color(0xdddddd);
     const img = src.map && src.map.image;
     if (img && img.getContext) { const d = img.getContext("2d").getImageData(0, 0, img.width, img.height).data; let r = 0, g = 0, b = 0, n = 0; for (let i = 0; i < d.length; i += 4 * 97) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; } col = new THREE.Color().setRGB(r / n / 255, g / n / 255, b / n / 255, THREE.SRGBColorSpace); }
-    const m = new THREE.MeshLambertMaterial({ color: col, transparent: src.transparent, opacity: src.opacity, side: src.side });
+    const m = new THREE.MeshLambertMaterial({ color: col, transparent: src.transparent, opacity: src.opacity, side: src.side, depthWrite: !src.transparent, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
     this.flat.set(src.uuid, m); return m;
   }
   /** เส้น ข้อความชี้ มิติ 3D ข้อความ 3D (doc.lines · doc.texts3d · doc.dims3d) */
@@ -375,7 +399,40 @@ export class View3D {
     const ax = d.axes3d; this.axes.position.copy(ax ? v3(ax.o, ax.o[2] || 0) : new THREE.Vector3()); this.axes.rotation.y = ax ? ((ax.rot || 0) * Math.PI) / 180 : 0;
     g.visible = !this.hiddenTags.has("notes");
   }
+  _solid(s, add) {
+    const pos = [], groups = [], faceOfTri = [], mats = [], matIdx = new Map();
+    // ก้อนเปิด (หน้าแบนเดี่ยว · ลบหน้าแล้ว) เห็นได้ทั้งสองด้านแบบ SketchUp (และคลิกโดนจากด้านหลัง)
+    const open = !SOL.isClosed(s), two = (m) => { if (!open) return m; this._two = this._two || new Map(); if (!this._two.has(m.uuid)) { const c = m.clone(); c.side = THREE.DoubleSide; this._two.set(m.uuid, c); } return this._two.get(m.uuid); };
+    const matOf = (k) => { const key = k || s.mat || ""; if (!matIdx.has(key)) { matIdx.set(key, mats.length); mats.push(two(key ? material(key) : this.mats.mass)); } return matIdx.get(key); };
+    s.faces.forEach((F, fi) => {
+      let tris; try { tris = SOL.triangulate(s, fi); } catch (e) { tris = []; }
+      const start = pos.length / 3;
+      for (const t of tris) { for (const i of t) { const p = s.verts[i]; pos.push(p[0] * MM, p[2] * MM, -p[1] * MM); } faceOfTri.push(fi); }
+      if (tris.length) groups.push([start, tris.length * 3, matOf(F.mat)]);
+    });
+    const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    for (const [a, n, m] of groups) geo.addGroup(a, n, m);
+    geo.computeVertexNormals();
+    const uv = new Float32Array((pos.length / 3) * 2);                  // UV ตามระนาบของหน้า (ลายวัสดุไม่ยืด)
+    for (let k = 0, t = 0; k < pos.length; k += 9, t++) {
+      const n = SOL.normal(s, faceOfTri[t]), b = SOL.basis(n);
+      for (let j = 0; j < 3; j++) { const p = [pos[k + j * 3] / MM, -pos[k + j * 3 + 2] / MM, pos[k + j * 3 + 1] / MM]; uv[(k / 3 + j) * 2] = SOL.V.dot(p, b.u) * MM; uv[(k / 3 + j) * 2 + 1] = SOL.V.dot(p, b.v) * MM; }
+    }
+    geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2)); geo.userData.faceOfTri = faceOfTri;
+    const mesh = new THREE.Mesh(geo, mats.length > 1 ? mats : mats[0] || this.mats.mass);
+    add(mesh, s.name || "ก้อน", { type: "solids", id: s.id }, s.tag || "masses");
+    if (mats.some((m) => m.transparent)) mesh.castShadow = false;
+    // เส้นขอบ: ทุกเส้นของผิว (ไม่ใช่มุมจากการแบ่งสามเหลี่ยม) · เก็บ key ต่อช่วงไว้เลือกเส้น
+    const E = [...SOL.edges(s).entries()].filter(([, e]) => !(s.soft || []).includes(SOL.ekey(e.a, e.b)) && !(s.hidden || []).includes(SOL.ekey(e.a, e.b)));
+    const lp = new Float32Array(E.length * 6);
+    E.forEach(([, e], k) => { [e.a, e.b].forEach((i, j) => { const p = s.verts[i]; lp.set([p[0] * MM, p[2] * MM, -p[1] * MM], k * 6 + j * 3); }); });
+    const lg = new THREE.BufferGeometry(); lg.setAttribute("position", new THREE.BufferAttribute(lp, 3));
+    const ls = new THREE.LineSegments(lg, this.solidEdgeMat || (this.solidEdgeMat = new THREE.LineBasicMaterial({ color: 0x1b1d20 })));
+    ls.userData = { helper: true, solidEdges: true, id: s.id, keys: E.map(([k]) => k) }; ls.raycast = () => {};
+    mesh.add(ls); mesh.userData.solidEdges = ls; mesh.userData.edges = null;
+  }
   _edges(m) {
+    if (m.userData.solidEdges) return;                                // ผิว+เส้นมีเส้นขอบของตัวเอง
     if (m.userData.edges) return;
     const eg = new THREE.EdgesGeometry(m.geometry, m.userData.edgeAngle || this.edgeAngle);
     const e = new THREE.LineSegments(eg, this.edgeMat), b = new THREE.LineSegments(eg, this.backMat);
@@ -391,6 +448,7 @@ export class View3D {
       m.material = sel || full ? m0 : k === "shaded" || k === "back" ? this._flat(m0) : k === "xray" ? this.xray : k === "mono" ? this.mono : this.hidden;
       if (edges) this._edges(m);
       if (m.userData.edges) { m.userData.edges[0].visible = edges; m.userData.edges[1].visible = k === "back"; }
+      if (m.userData.solidEdges) m.userData.solidEdges.visible = k !== "render" || !!this.solidEdgesInRender;   // ผิว+เส้น: เส้นขอบแบบ SketchUp (ภาพนำเสนอซ่อน)
       m.visible = !this.hiddenTags.has(m.userData.tag);
     }
     if (this.asc.children.length) this.asc.visible = !this.hiddenTags.has("asc");
@@ -429,7 +487,8 @@ export class View3D {
   }
   /** มุมมองมาตรฐานแบบ SketchUp: iso · top · front · right · back · left (หน้า = ทิศใต้ของแบบ) */
   setView(name) {
-    const b = this.bounds(); if (b.isEmpty()) return;
+    const b = this.bounds();
+    if (b.isEmpty()) b.set(new THREE.Vector3(-10, 0, -10), new THREE.Vector3(10, 3, 10));   // แบบว่าง: มองพื้นที่ 20×20 ม. รอบจุดกำเนิด (เดิมกดแล้วไม่ขยับ)
     const c = b.getCenter(new THREE.Vector3()), r = Math.max(b.getSize(new THREE.Vector3()).length() / 2, 3);
     const d = (r / Math.sin(((this.camera.fov * Math.PI) / 180) / 2)) * 0.9;
     const dir = { iso: [0.75, 0.6, 1], top: [0, 1, 0.0001], front: [0, 0.08, 1], right: [1, 0.08, 0], back: [0, 0.08, -1], left: [-1, 0.08, 0] }[name];

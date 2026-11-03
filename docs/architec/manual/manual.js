@@ -3,8 +3,8 @@
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const PAGE_URL = { home: "../", editor: "../editor/", cad: "../cad/" };
-const H = await fetch("../ai/help.json?v=0.25.1").then((r) => r.json());
-const shots = await fetch("shots/index.json?v=0.25.1").then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+const H = await fetch("../ai/help.json?v=0.30.1").then((r) => r.json());
+const shots = await fetch("shots/index.json?v=0.30.1").then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
 const ORDER = H.toc.flatMap((c) => c.keys);
 const CH = Object.fromEntries(H.toc.map((c) => [c.chapter, c]));
 $("#mtitle").textContent = `คู่มือ ASC Architect ${H.version}`;

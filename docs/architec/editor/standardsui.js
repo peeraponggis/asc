@@ -1,5 +1,5 @@
 // หน้าต่าง ตรวจตามมาตรฐาน: สรุปผล · เลือกชุดกฎ · ตาราง · ออกรายงาน PDF (พิมพ์) (โดย ลุงพี)
-import { check, SETS, SET_TITLE } from "./standards.js?v=0.25.1";
+import { check, SETS, SET_TITLE } from "./standards.js?v=0.30.1";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));

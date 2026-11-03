@@ -1,8 +1,8 @@
 // ตรวจลำดับงาน: เตือนเมื่อทำข้ามขั้นหรือข้อมูลในแบบไม่ตรงกัน (โดย ลุงพี)
 // ตรวจจากข้อมูลจริงในแบบเท่านั้น · เตือนอย่างเดียว ไม่ล็อก ไม่แก้ให้เอง · ข้ามรายข้อได้ (จำไว้ในแบบ doc.wfSkip)
 // ไม่มี DOM — ทดสอบด้วย node ได้ (tests/workflow.test.mjs)
-import * as M from "./model.js?v=0.25.1";
-import * as ST from "./struct.js?v=0.25.1";
+import * as M from "./model.js?v=0.30.1";
+import * as ST from "./struct.js?v=0.30.1";
 
 export const STEPS = ["ผัง 2D", "โมเดล 3D", "โครงสร้าง", "โซลาร์ + SLD", "ชุดแบบ + Plot"];
 export const LEVEL = { hi: "สำคัญ", md: "ควรแก้", lo: "แนะนำ" };

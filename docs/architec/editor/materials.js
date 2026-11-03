@@ -124,6 +124,9 @@ export function material(key) {
   else if (p.tex) { const t = texSet(p); m = new THREE.MeshStandardMaterial({ map: t.map, normalMap: t.normalMap, normalScale: new THREE.Vector2(0.8, 0.8), roughness: p.rough, metalness: p.metal || 0, envMapIntensity: p.env ?? 1 }); }
   else m = new THREE.MeshStandardMaterial({ color: p.base, roughness: p.rough ?? 0.7, metalness: p.metal || 0 });
   m.name = p.th; m.userData.key = p.key;
+  // 0.26 แก้กะพริบ: ดันผิวถอยหลังเล็กน้อย → เส้นขอบอยู่หน้าผิวเสมอ (ไม่ขาด ๆ หาย ๆ เวลาซูม) · วัสดุโปร่งใสไม่เขียนค่าความลึก (ไม่สลับลำดับ)
+  Object.assign(m, { polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  if (m.transparent) m.depthWrite = false;
   cache.set(p.key, m);
   return m;
 }

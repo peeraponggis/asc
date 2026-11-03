@@ -2,13 +2,13 @@
 // เมนู 10 หมวด · แถบเครื่องมือ (มาตรฐาน · เงา · รูปแบบ · ตำแหน่ง · มุมมอง · ตัด/ฉาก) · ชุดเครื่องมือใหญ่ 37 ปุ่ม · ถาดเครื่องมือ 11 แผง (ติดขวา)
 // ข้อมูลโมเดล 11 หน้า · แถบเครื่องมือ (ติ๊กเลือก) · Render ภาพนำเสนอ · ช่องเดิมของ main.js (#sun-date #sun-time #section #scenes #mat3d) ยังใช้ร่วม
 import * as THREE from "three";
-import { STYLES, TAGS } from "./view3d.js?v=0.25.1";
-import { PALETTE, swatch } from "./materials.js?v=0.25.1";
-import { KINDS } from "./props3d.js?v=0.25.1";
-import { entityHTML, applyField } from "./entity.js?v=0.25.1";
-import * as SEL from "./sel3d.js?v=0.25.1";
-import { Tools3D, SETTINGS } from "./tools3d.js?v=0.25.1";
-import { openImport3d } from "./import3d.js?v=0.25.1";
+import { STYLES, TAGS } from "./view3d.js?v=0.30.1";
+import { PALETTE, swatch } from "./materials.js?v=0.30.1";
+import { KINDS } from "./props3d.js?v=0.30.1";
+import { entityHTML, applyField } from "./entity.js?v=0.30.1";
+import * as SEL from "./sel3d.js?v=0.30.1";
+import { Tools3D, SETTINGS } from "./tools3d.js?v=0.30.1";
+import { openImport3d } from "./import3d.js?v=0.30.1";
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -92,11 +92,11 @@ const TOOLS = {
   paint: ["ถังสี", "Paint Bucket", "B", "เลือกวัสดุในถาด วัสดุ แล้วคลิกผนัง/กล่อง/หลังคา/หน้าตัดกวาด"], eraser: ["ยางลบ", "Eraser", "E", "คลิกวัตถุที่จะลบ: กล่อง/หน้า ชิ้นส่วน เส้น ข้อความ มิติ (Ctrl+Z ย้อน)"],
   tagtool: ["Tag", "Tag", "", "เลือก Tag ปัจจุบันในถาด Tags แล้วคลิกวัตถุเพื่อใส่ Tag นั้น"],
   line: ["เส้น", "Line", "L", "คลิกทีละจุดบนพื้น/หน้าบนกล่อง · คลิกจุดแรก = ปิดเป็นหน้า · ดับเบิลคลิก/Enter = จบเป็นเส้น · พิมพ์ระยะ + Enter"],
-  freehand: ["วาดอิสระ", "Freehand", "", "กดค้างแล้วลากวาด · ปล่อยใกล้จุดเริ่ม = หน้า"], rect: ["สี่เหลี่ยม", "Rectangle", "R", "ลากบนพื้นหรือบนหน้าบนของกล่อง → กล่องใหม่ (สูงตามค่าเริ่มต้น)"],
+  freehand: ["วาดอิสระ", "Freehand", "", "กดค้างแล้วลากวาด · ปล่อยใกล้จุดเริ่ม = หน้า"], rect: ["สี่เหลี่ยม", "Rectangle", "R", "ลาก หรือคลิกมุมแรกแล้วคลิกมุมตรงข้าม บนพื้นหรือบนหน้าบนของกล่อง → กล่องใหม่ (สูงตามค่าเริ่มต้น)"],
   rrect: ["สี่เหลี่ยมหมุน", "Rotated Rectangle", "", "คลิกปลายด้านแรก 2 จุด แล้วลากความกว้าง → หน้า"], circle: ["วงกลม", "Circle", "C", "คลิกจุดศูนย์กลาง แล้วลากรัศมี (พิมพ์รัศมี + Enter) → หน้า"],
   polygon: ["หลายเหลี่ยม", "Polygon", "", "คลิกศูนย์กลาง ลากรัศมี · พิมพ์ 8s + Enter = 8 ด้าน → หน้า"], arc: ["โค้ง", "Arc", "A", "คลิกศูนย์กลาง → จุดเริ่ม → จุดจบ → เส้นโค้ง"],
   arc2: ["โค้ง 2 จุด", "2 Point Arc", "", "คลิกจุดเริ่ม → จุดจบ → ลากความโค้ง"], arc3: ["โค้ง 3 จุด", "3 Point Arc", "", "คลิก 3 จุดบนโค้ง"], pie: ["พาย", "Pie", "", "คลิกศูนย์กลาง → ขอบโค้ง 2 จุด → หน้ารูปพาย"],
-  pushpull: ["Push/Pull", "Push/Pull", "P", "ลากหน้าบนขึ้น/ลง = ความสูง · ลากหน้าข้าง = ดันออก/เข้า (ทีละ 50 มม.)"],
+  pushpull: ["Push/Pull", "Push/Pull", "P", "ลากหน้าบนขึ้น/ลง = ความสูง · ลากหน้าข้าง = ดันออก/เข้า (ทีละ 50 มม.) · ปล่อยแล้วพิมพ์ระยะ + Enter = พอดี"],
   follow: ["Follow Me", "Follow Me", "", "คลิกเส้นที่วาดไว้ → กวาดหน้าตัดสี่เหลี่ยมตามเส้น (พิมพ์ 200x300 + Enter = กว้าง×สูง) · ใช้ทำคาน รั้ว ราง ขอบสระ"],
   move: ["ย้าย", "Move", "M", "ลากกล่อง/ชิ้นส่วน (ทีละ 50 มม.) · กด Ctrl ค้างตอนเริ่มลาก = คัดลอก"], rotate: ["หมุน", "Rotate", "Q", "คลิกกล่อง/ชิ้นส่วน = หมุน 15° · Shift = ทวนทาง"],
   scale: ["ย่อขยาย", "Scale", "S", "กดที่กล่อง/ชิ้นส่วนแล้วลากซ้าย-ขวา · หรือเลือกแล้วพิมพ์ตัวคูณ + Enter"], offset: ["Offset", "Offset", "F", "คลิกหน้าบนของกล่อง แล้วลากเข้า/ออก → หน้าใหม่ขนานขอบ"],
@@ -229,7 +229,7 @@ export function initSkUI(opts) {
       ["นำเข้าไฟล์ CAD (DXF/DWG/PDF)…", "", () => act("cad")], ["นำเข้า 3D SketchUp (.skp, .dae)…", "", () => openImport3d({ hist, view, ext, status, setTool3d: opts.setTool3d, onChange: opts.onChange })], ["ภาพลอกแบบ…", "", () => $("#trace-file").click()], "-",
       ["ส่งออกภาพ (Render)…", "", () => renderDlg()], ["ส่งออก GLB → Blender", "", () => act("glb")], ["ส่งออก DXF (ผัง 2D)", "", () => act("dxf")], ["Plot PDF…", "Ctrl+P", () => act("plot")], ["ชุดแบบก่อสร้าง A3…", "", () => act("drawset")]]],
     ["แก้ไข", [["ย้อน", "Ctrl+Z", () => act("undo")], ["ทำซ้ำ", "Ctrl+Y", () => act("redo")], "-", ["ตัด", "Ctrl+X", () => ext.copy(true)], ["คัดลอก", "Ctrl+C", () => ext.copy(false)], ["วาง", "Ctrl+V", () => ext.paste()], ["ลบที่เลือก", "Delete", STD.erase], "-",
-      ["เลือกทั้งหมด", "Ctrl+A", () => selectAll(), "3d"], ["ยกเลิกเลือก", "Esc", () => { sk.S.clear(); ext.selChanged(); }], "-", ["รวมกลุ่ม (Make Group)", "", () => sk.group()], ["แยกกลุ่ม", "", () => sk.ungroup()]]],
+      ["เลือกทั้งหมด", "Ctrl+A", () => selectAll(), "3d"], ["ยกเลิกเลือก", "Esc", () => { sk.S.clear(); ext.selChanged(); }], "-", ["ลบเส้นไกด์ทั้งหมด", "", () => { hist.commit((d) => (d.guides = [])); opts.onChange(); status("ลบเส้นไกด์แล้ว"); }, "3d"], "-", ["รวมกลุ่ม (Make Group)", "", () => sk.group()], ["แยกกลุ่ม", "", () => sk.ungroup()]]],
     ["มุมมอง", [["แถบเครื่องมือ…", "", toolbarsDlg], ["ถาดเครื่องมือ (Default Tray)", "", () => toggleTray()], "-", ["เงา", "", () => $("#skShadow").click(), "3d"], ["หมอก", "", () => { view.setFog(!view.fogOn); status(view.fogOn ? "เปิดหมอก (ไกลจางลง)" : "ปิดหมอก"); }, "3d"],
       ["แกน", "", () => { view.axes.visible = !view.axes.visible; view.invalidate(); }, "3d"], "-", ...STYLES.map((s) => [`รูปแบบ: ${s.th}`, "", () => setStyle(s.k), "3d"]), "-",
       ["ผัง 2D อย่างเดียว", "", () => $('[data-view="2d"]').click()], ["ผัง 2D | 3D", "", () => $('[data-view="split"]').click()], ["3D อย่างเดียว", "", () => $('[data-view="3d"]').click()]]],
@@ -242,7 +242,13 @@ export function initSkUI(opts) {
       ["แสดงเฉพาะโครงสร้าง (ซ่อนผนัง หลังคา)", "", () => { for (const k of ["walls", "openings", "roof", "pv"]) view.setTagVisible(k, view.hiddenTags.has("struct") ? true : !view.hiddenTags.has(k) ? false : true); view.setTagVisible("struct", true); renderTray("tags"); status("สลับมุมมองโครงสร้าง (ถาด Tags เปิด/ปิดทีละกลุ่มได้)"); }, "3d"]]],
     ["เครื่องมือ", [...["select", "pan", "erase", "calib"].map((t) => [`ผัง: ${TOOLS2D[t][0]}`, TOOLS2D[t][1], T2(t), "2d"]), "-",
       ...["select", "component", "eraser", "tagtool", "paint", "move", "rotate", "scale", "offset", "pushpull", "follow"].map((t) => [TOOLS[t][0], TOOLS[t][2], ACTS.has(t) ? () => doAct(t) : T3(t), "3d"]), "-",
-      ...["tape", "dim", "protractor", "text", "axes", "text3d"].map((t) => [TOOLS[t][0], TOOLS[t][2], T3(t), "3d"]), "-", ["ระนาบตัด (Section Plane)", "", () => doAct("section"), "3d"]]],
+      ...["tape", "dim", "protractor", "text", "axes", "text3d"].map((t) => [TOOLS[t][0], TOOLS[t][2], T3(t), "3d"]), "-", ["ระนาบตัด (Section Plane)", "", () => doAct("section"), "3d"], ["ระนาบตัดบนหน้า (คลิกหน้าแล้วลากเข้า)", "", () => ext.sol.sectionStart(), "3d"], ["ล้างระนาบตัด", "", () => ext.sol.sectionClear(), "3d"], "-",
+      ["Solid Tools: รวม (Union)", "", () => ext.sol.solidOp("union"), "3d"], ["Solid Tools: ลบ (Subtract)", "", () => ext.sol.solidOp("subtract"), "3d"], ["Solid Tools: ตัด (Trim)", "", () => ext.sol.solidOp("trim"), "3d"],
+      ["Solid Tools: ตัดกัน (Intersect)", "", () => ext.sol.solidOp("intersect"), "3d"], ["Solid Tools: แยก (Split)", "", () => ext.sol.solidOp("split"), "3d"], ["Solid Tools: เปลือกนอก (Outer Shell)", "", () => ext.sol.solidOp("shell"), "3d"],
+      ["ตัดกันที่ผิว: กับที่เลือก (Intersect Faces)", "", () => ext.sol.intersectWith("sel"), "3d"], ["ตัดกันที่ผิว: กับทั้งโมเดล", "", () => ext.sol.intersectWith("model"), "3d"], "-",
+      ["ทำเป็น Component", "", () => ext.sol.makeComponent(), "3d"], ["แตกกลุ่ม/Component (Explode)", "", () => ext.sol.explodeSel(), "3d"], ["ซ่อนที่เลือก", "", () => ext.sol.hideSel(), "3d"], ["แสดงที่ซ่อนทั้งหมด", "", () => ext.sol.unhideAll(), "3d"],
+      ["ล็อก/ปลดล็อก", "", () => ext.sol.lockSel(), "3d"], ["กลับด้านหน้า (Reverse Faces)", "", () => ext.sol.reverseSel(), "3d"], "-",
+      ["Sandbox: พื้นผิวจากเส้นชั้นความสูง", "", () => ext.sol.terrainFromSel(), "3d"], ["Sandbox: พื้นผิวตาราง (From Scratch)", "", () => ext.sol.terrainGridNew(), "3d"], ["Sandbox: ดันพื้น (Smoove)", "", () => ext.sol.smooveStart(), "3d"]]],
     ["หน้าต่าง", [["ข้อมูลโมเดล (Model Info)", "", () => modelInfo("units")], ["ถาดเครื่องมือ (Default Tray)", "", () => toggleTray(true)], ["ชิ้นส่วน (Components)", "", () => openPanel("components"), "3d"], ["จับคู่ภาพถ่าย (Match Photo)", "", () => openPanel("match"), "3d"],
       ["โครงสร้างโมเดล (Outliner)", "", () => openPanel("outliner")], "-", ["สลับธีม สว่าง/มืด", "", () => { const r = document.documentElement, cur = r.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); r.dataset.theme = cur === "dark" ? "light" : "dark"; store.set("theme", r.dataset.theme); }]]],
     ["ส่วนเสริม", [["ASCA: โซลาร์ — ผลผลิต + สตริง + Single Line Diagram", "", () => act("solar")], ["ASCA: โครงสร้าง — ตรวจขนาด + ตาราง", "", () => act("struct")], ["ASCA: ผลผลิตไฟฟ้าโซลาร์ (หน้าหลัก pvlib)", "", () => act("yield")], ["ASCA: ชุดแบบก่อสร้าง + IFC", "", () => act("drawset")], ["ASCA: ร่างกล่องอาคารด้วย AI", "", () => act("ai-draft")],
@@ -363,7 +369,7 @@ export function initSkUI(opts) {
     if (id === "trSoft") { view.setEdgeAngle(Number(v)); renderTray("soften"); }
     if (id === "cRand") { SETTINGS.compRandom = e.target.checked; saveSettings(); }
     const ent = e.target.closest(".ent [data-k]");
-    if (ent) { const keys = e.target.closest(".ent").dataset.keys.split(","); let warn = ""; hist.commit((dd) => { warn = applyField(dd, keys, ent.dataset.k, ent.value); }); if (warn && /ไม่ได้เปลี่ยน/.test(warn)) hist.undo(); opts.onChange(); renderTray("entity"); if (warn) status(warn); return; }
+    if (ent) { const keys = e.target.closest(".ent").dataset.keys.split(","); let warn = ""; hist.commit((dd) => { warn = applyField(dd, keys, ent.dataset.k, ent.type === "checkbox" ? ent.checked : ent.value); }); if (warn && /ไม่ได้เปลี่ยน/.test(warn)) hist.undo(); opts.onChange(); renderTray("entity"); if (warn) status(warn); return; }
     if (id === "eName") editMass((m) => (m.name = v || "กล่อง"));
     if (id === "eTag") editMass((m) => (m.tag = v));
     if (id === "eH") editMass((m) => (m.height = Math.max(1, Number(v) || 1)));

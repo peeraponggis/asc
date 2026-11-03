@@ -2,8 +2,8 @@
 // เลือก · push-pull ทุกหน้า (บน = สูง · ข้าง = ดันผนังของกล่องออก/เข้า) · สี่เหลี่ยมบนพื้น/บนหน้ากล่อง · ย้าย (Ctrl = คัดลอก) · หมุน 15°
 // · ทาสีวัสดุ · ตลับเมตร · รวมกลุ่ม — ทุกการแก้ผ่าน hist.commit (Ctrl+Z ได้)
 import * as THREE from "three";
-import * as M from "./model.js?v=0.25.1";
-import { TypedSet } from "./sel3d.js?v=0.25.1";
+import * as M from "./model.js?v=0.30.1";
+import { TypedSet } from "./sel3d.js?v=0.30.1";
 
 const MM = 0.001;
 const cap = (el, id) => { try { el.setPointerCapture(id); } catch (e) { /* ไม่มี pointer ที่กดอยู่จริง — ข้ามได้ */ } };
@@ -28,7 +28,7 @@ export class Sketch3D {
   set sel(v) { this.S.clear(); for (const id of v) this._ms.add(id); }
 
   setTool(t) {
-    this.tool = t; this.drag = null; this.clearOver(); if (this.ext) { this.ext.reset(); this.ext.planeZ = null; }
+    this.tool = t; this.drag = null; this.lastPush = null; this.clearOver(); if (this.ext) { this.ext.reset(); this.ext.planeZ = null; if (this.ext.sol) this.ext.sol.smOn = false; }
     this.v.canvas.style.cursor = t === "orbit" ? "grab" : t === "paint" ? "cell" : t === "select" ? "default" : "crosshair";
     this.host.status(HELP[t] || "");
     if (t !== "tape") this.label.hidden = true;
@@ -101,6 +101,11 @@ export class Sketch3D {
       return;
     }
     if (t === "rect") {
+      // คลิกมุมแรกไปแล้ว (โหมดคลิก-คลิกแบบ SketchUp): คลิกนี้ = มุมตรงข้าม → ปล่อยเมาส์แล้วสร้างกล่อง
+      if (this.drag && this.drag.kind === "rect" && this.drag.clicked) {
+        const p = this.plane(e, this.drag.y); if (!p) return; own();
+        this.drag.b = [snap(p.x / MM, 50), snap(-p.z / MM, 50)]; this.drag.clicked = false; return;
+      }
       const h = this.hit(e, ["masses"]);
       const top = h && h.n.y > 0.9 ? this.mass(h.id) : null;
       const y = top ? ((top.base || 0) + top.height) * MM : 0;
@@ -184,7 +189,18 @@ export class Sketch3D {
   up(e) {
     if (this.ext && this.ext.up(e)) return;
     const d = this.drag; if (!d) return;
-    e.stopImmediatePropagation(); this.drag = null; this.v.controls.enabled = true; this.clearOver();
+    e.stopImmediatePropagation(); this.drag = null; this.v.controls.enabled = true;
+    if (d.kind === "rect" && !d.clicked && (!d.b || Math.abs(d.b[0] - d.a[0]) < 100 || Math.abs(d.b[1] - d.a[1]) < 100)) {
+      // คลิกเฉย ๆ (ไม่ได้ลาก) = มุมแรก → ขยับเมาส์ดูกรอบ แล้วคลิกมุมตรงข้าม (Esc = ยกเลิก)
+      d.clicked = true; d.b = null; this.drag = d;
+      this.host.status("สี่เหลี่ยม: คลิกมุมตรงข้าม (หรือกด Esc ยกเลิก)"); return;
+    }
+    this.clearOver();
+    if (d.kind === "top" || d.kind === "side" || d.kind === "wtop") {
+      // จำหน้าที่เพิ่งดึง → พิมพ์ระยะ + Enter ได้ระยะพอดี (ระยะจากตำแหน่งเดิมก่อนลาก · ลบ = ดันเข้า)
+      this.lastPush = { kind: d.kind, id: (d.m || d.w).id, h0: d.h0, i: d.i, n: d.n, orig: d.orig }; if (this.ext && this.ext.sol) this.ext.sol.forget();
+      this.host.status(`push-pull: พิมพ์ระยะ + Enter เพื่อแก้ให้พอดี (มม. จากตำแหน่งเดิม · ลบ = ดันเข้า)`);
+    }
     if (d.kind === "rect") {
       if (!d.b || Math.abs(d.b[0] - d.a[0]) < 100 || Math.abs(d.b[1] - d.a[1]) < 100) return;
       const [x0, x1] = [Math.min(d.a[0], d.b[0]), Math.max(d.a[0], d.b[0])], [y0, y1] = [Math.min(d.a[1], d.b[1]), Math.max(d.a[1], d.b[1])];
@@ -203,6 +219,25 @@ export class Sketch3D {
       this.sel = new Set(copies.map((m) => m.id));
     }
     this.host.onChange();
+  }
+
+  /** Push/Pull ตามระยะที่พิมพ์ (หลังลากหน้าเสร็จ) · v = มม. จากตำแหน่งเดิมก่อนลาก (ลบ = ดันเข้า/ลดลง) */
+  pushTyped(v) {
+    const lp = this.lastPush; if (!lp || !isFinite(v)) return false;
+    if (lp.kind === "top") {
+      if (lp.h0 + v < 50) { this.host.status(`⚠ ความสูงจะเหลือ ${(lp.h0 + v).toLocaleString()} มม. — ต้องสูงอย่างน้อย 50 มม.`); return true; }
+      this.host.hist.commit((d) => { const m = d.masses.find((x) => x.id === lp.id); if (m) m.height = lp.h0 + v; });
+      this.host.onChange(); this.host.status(`push-pull: สูง ${(lp.h0 + v).toLocaleString()} มม. พอดี`); return true;
+    }
+    if (lp.kind === "wtop") {
+      if (lp.h0 + v < 100) { this.host.status(`⚠ ผนังจะสูง ${(lp.h0 + v).toLocaleString()} มม. — ต้องสูงอย่างน้อย 100 มม.`); return true; }
+      this.host.hist.commit((d) => { const w = d.walls.find((x) => x.id === lp.id); if (w) w.height = lp.h0 + v; });
+      this.host.onChange(); this.host.status(`push-pull ผนัง: สูง ${(lp.h0 + v).toLocaleString()} มม. พอดี`); return true;
+    }
+    const n = lp.orig.length, i = lp.i;
+    const pts = lp.orig.map((q, k) => (k === i || k === (i + 1) % n ? [Math.round(q[0] + lp.n[0] * v), Math.round(q[1] + lp.n[1] * v)] : q.slice()));
+    this.host.hist.commit((d) => { const m = d.masses.find((x) => x.id === lp.id); if (m) m.pts = pts; });
+    this.host.onChange(); this.host.status(`push-pull ด้านข้าง: ${v > 0 ? "ดันออก" : "ดันเข้า"} ${Math.abs(v).toLocaleString()} มม. พอดี`); return true;
   }
 
   // ---------------------------------------------------------------- อื่น ๆ
@@ -257,8 +292,8 @@ export class Sketch3D {
 const HELP = {
   orbit: "หมุนมุมมอง: ลากซ้าย · เลื่อน: ลากขวา · ซูม: ล้อเมาส์",
   select: "คลิกกล่องเพื่อเลือก · Shift = เพิ่ม/เอาออก · Delete ลบ",
-  pushpull: "push-pull: ลากหน้าบนขึ้น/ลง = ความสูง · ลากหน้าข้าง = ดันผนังออก/เข้า (ทีละ 50 มม.)",
-  rect: "สี่เหลี่ยม: ลากบนพื้นหรือบนหน้าบนของกล่อง (ซ้อนชั้นได้) → ได้กล่องใหม่",
+  pushpull: "push-pull: ลากหน้าบนขึ้น/ลง = ความสูง · ลากหน้าข้าง = ดันผนังออก/เข้า (ทีละ 50 มม.) · ปล่อยแล้วพิมพ์ระยะ + Enter = พอดี",
+  rect: "สี่เหลี่ยม: ลาก หรือคลิกมุมแรกแล้วคลิกมุมตรงข้าม บนพื้นหรือบนหน้าบนของกล่อง (ซ้อนชั้นได้) → ได้กล่องใหม่",
   move: "ย้าย: ลากกล่อง/กลุ่ม (ทีละ 50 มม.) · กด Ctrl ค้างตอนเริ่มลาก = คัดลอก",
   rotate: "หมุน: คลิกกล่อง = หมุน 15° · Shift+คลิก = หมุนกลับ",
   paint: "ทาสี: เลือกวัสดุ แล้วคลิกกล่อง/ผนัง/หลังคา",

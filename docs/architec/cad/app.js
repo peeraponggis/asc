@@ -1,11 +1,11 @@
 // CAD 2D ของ ASC Architect — เปิด/แก้/บันทึก DWG·DXF แบบ AutoCAD (โดย ลุงพี)
 // เอกสารจริงอยู่ฝั่ง server (ezdxf) · หน้านี้ถือสำเนาวัตถุใน model space + จดสิ่งที่เปลี่ยน แล้วส่งไปตอนบันทึก
-import * as G from "./geom.js?v=0.25.1";
-import * as H from "./geom2.js?v=0.25.1";
-import * as SY from "./symbols.js?v=0.25.1";
-import * as UI from "./ribbon.js?v=0.25.1";
-import { aciColor } from "../editor/cadlayer.js?v=0.25.1";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.25.1";
+import * as G from "./geom.js?v=0.30.1";
+import * as H from "./geom2.js?v=0.30.1";
+import * as SY from "./symbols.js?v=0.30.1";
+import * as UI from "./ribbon.js?v=0.30.1";
+import { aciColor } from "../editor/cadlayer.js?v=0.30.1";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.30.1";
 
 const $ = (s) => document.querySelector(s);
 const CLOUD = window.PA_MODE === "cloud";
@@ -52,7 +52,7 @@ function load(d) {
 // ไฟล์ใหญ่: พิกัดเส้นมาเป็นไฟล์ไบนารี (float32) ถอดใน worker → ใส่ให้กลุ่มเส้นแต่ละกลุ่มตามลำดับ (subarray ไม่คัดลอก)
 function viewBin(url) {
   return new Promise((res, rej) => {
-    const w = new Worker("./viewbin.worker.js?v=0.25.1");
+    const w = new Worker("./viewbin.worker.js?v=0.30.1");
     w.onmessage = (m) => { w.terminate(); m.data.error ? rej(new Error(m.data.error)) : res(m.data); };
     w.onerror = (e) => { w.terminate(); rej(new Error(e.message || "โหลดเส้นไม่ได้")); };
     w.postMessage({ url });
