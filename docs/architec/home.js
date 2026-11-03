@@ -1,9 +1,9 @@
 // หน้าแรกแบบ B "ขั้นงานอัจฉริยะ" (ลุงพีเลือก 3 พ.ย. 2569) — งานที่เปิดล่าสุด + 5 ขั้นงาน + ต้องดูก่อนไปต่อ + เริ่มงานอื่น (โดย ลุงพี)
 // อ่านแบบล่าสุดจาก localStorage ของตัวเขียนแบบ (pa.editor.last → pa.editor.draft[.โครงการ]) แล้ววิเคราะห์ด้วย workflow.js / standards.js
 // ตัวเลขทุกตัวมาจากแบบจริง · ไม่มีงาน = แนะนำแบบตัวอย่าง/แบบใหม่
-import { analyze } from "./editor/workflow.js?v=0.25.0";
-import { check as stdCheck } from "./editor/standards.js?v=0.25.0";
-import * as M from "./editor/model.js?v=0.25.0";
+import { analyze } from "./editor/workflow.js?v=0.25.1";
+import { check as stdCheck } from "./editor/standards.js?v=0.25.1";
+import * as M from "./editor/model.js?v=0.25.1";
 
 const CLOUD = window.PA_MODE === "cloud";
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));

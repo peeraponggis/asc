@@ -1,6 +1,6 @@
 // หน้าต่าง 🏗 โครงสร้าง: ชั้นอาคาร · สร้างโครงจากผนัง · ตรวจขนาดเบื้องต้น · ตารางเสา คาน ฐานราก + ปริมาณงาน (โดย ลุงพี)
-import * as M from "./model.js?v=0.25.0";
-import * as ST from "./struct.js?v=0.25.0";
+import * as M from "./model.js?v=0.25.1";
+import * as ST from "./struct.js?v=0.25.1";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const f1 = (v, d = 1) => Number(v).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d });
