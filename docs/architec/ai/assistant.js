@@ -5,13 +5,14 @@
 // ป้ายที่มาคิดจากสิ่งที่ใช้จริง: 📚 คลัง · 🗂️ ข้อมูลในงาน · 🌐 ความรู้ทั่วไป · ➡️ ต่อไปทำอะไร จากสถานะจริงของหน้า
 // หน้าเว็บบอกสถานะผ่าน window.ascaAI = { page(), pageName(), facts(), next(), sets, run(name, params), snapshot(), restore(s), focus(t),
 //   checks(), explain(), bom(), autoPlan(), commands() } (ดู editor/main.js · cad/app.js · app.js) · คำสั่ง/ตัวตรวจค่าอยู่ที่ ai/actions.js
-import { loadKB } from "./kb.js?v=0.30.1";
-import { providers, byId, loadCfg, saveCfg, chain, askChain, parseReply, reachable, testProvider } from "./providers.js?v=0.30.1";
-import * as A from "./actions.js?v=0.30.1";
-import "./help.js?v=0.30.1";                                                     // ช่วยเหลือตามตำแหน่ง F1 · Shift ชี้ · คลิกขวา
+import { loadKB } from "./kb.js?v=0.31.0";
+import { providers, byId, loadCfg, saveCfg, chain, askChain, parseReply, reachable, testProvider, PRESETS, prettyModel, okBase, setProxy, listModels, chatUrl } from "./providers.js?v=0.31.0";
+import * as A from "./actions.js?v=0.31.0";
+import "./help.js?v=0.31.0";                                                     // ช่วยเหลือตามตำแหน่ง F1 · Shift ชี้ · คลิกขวา
 
 const BASE = new URL("./", import.meta.url);
 const CLOUD = window.PA_MODE === "cloud";
+setProxy(CLOUD ? null : "/api/ai/proxy");                                         // ผู้ให้บริการที่บล็อกการเรียกจากหน้าเว็บ → ส่งผ่าน server ในเครื่อง (0.31.0)
 const LS_CHAT = "asca.ai.chat", LS_POS = "asca.ai.pos", LS_MISS = "asca.ai.unanswered", LS_FAB = "asca.ai.fab", LS_WIN = "asca.ai.win";
 const NEXT_RE = /ต่อไป|ขั้นตอนไหน|ขั้นต่อไป|ขาดอะไร|ทำอะไรต่อ|เหลืออะไร|ต้องทำอะไร|เริ่มตรงไหน|next/i;
 const HELP_RE = /^(หน้านี้|ใช้ยังไง|ใช้งานยังไง|ช่วยด้วย|help)/i;
@@ -99,7 +100,7 @@ async function runAction(a) {
 }
 
 // ---------------------------------------------------------------- piBot: 4 ท่า (ตาเปิด · ตาปิด · นิ้วซ้ายกด · นิ้วขวากด)
-function bot(size) { return `<span class="pibot" style="width:${size}px;height:${size}px;background-image:url(${new URL("pibot.webp?v=0.30.1", BASE)})" aria-hidden="true"></span>`; }
+function bot(size) { return `<span class="pibot" style="width:${size}px;height:${size}px;background-image:url(${new URL("pibot.webp?v=0.31.0", BASE)})" aria-hidden="true"></span>`; }
 let mood = "idle", frame = 0, burst = 0, nextBlink = Date.now() + 2500;
 function animate() {
   const now = Date.now();
@@ -141,7 +142,7 @@ async function refreshStatus() {
     else {
       model = { ok: true, text: `${provName()} · กำลังตรวจ…` }; paintStatus();
       const ok = await reachable(p, cfg, CLOUD), mdl = (cfg.models[p.id] || p.models[0] || "").split("/").pop();
-      model = { ok, text: `${p.name.split(" (")[0]} · ${mdl}${!sel || p.id !== sel.id ? " (สำรอง)" : ""}${ok ? "" : " · ⚠ ติดต่อไม่ได้"}` };
+      model = { ok, text: `${p.anthropic ? prettyModel(cfg.models[p.id] || p.models[0]) : `${p.name.split(" (")[0]} · ${mdl}`}${!sel || p.id !== sel.id ? " (สำรอง)" : ""}${ok ? "" : " · ⚠ ติดต่อไม่ได้"}` };
     }
   }
   paintStatus();
@@ -436,39 +437,78 @@ function mic() {
 }
 
 // ---------------------------------------------------------------- ตั้งค่า (ผู้ให้บริการ · เจ้าที่เพิ่มเอง · ทดสอบ)
+// 0.31.0 (หน้าตัวอย่างที่ลุงพีอนุมัติ 5 พ.ย. 2569 · หน้าตาเดียวกับ ASC Studio): 2 ช่อง
+//   ซ้าย ⚙️ ผู้ให้บริการ AI: รายการปุ่มเลือก (+ Claude ป้าย "ใหม่") · ป้ายสถานะรุ่น · คีย์ · โมเดล · ทดสอบ · ลิงก์ขอคีย์
+//   ขวา  ➕ เพิ่ม AI อื่น: เลือกเจ้าที่รู้จัก (กรอก URL ให้) หรือ "อื่น ๆ" · ชื่อ · Base URL · โมเดล + ดึงรายชื่อ · คีย์ · ทดสอบ / บันทึก
+let draft = null;                                                                   // ค่าที่แก้ในฟอร์ม (ยังไม่บันทึก) — เปลี่ยนปุ่มเลือกแล้วคีย์ที่พิมพ์ไม่หาย
+const hostOf = (u) => { try { return new URL(u).host; } catch (e) { return u; } };
 function settings() {
-  const all = providers(cfg).filter((p) => !(p.localOnly && CLOUD));
-  const opts = all.map((p) => `<option value="${esc(p.id)}"${p.id === cfg.provider ? " selected" : ""}>${esc(p.name)}</option>`).join("");
-  const test = (id) => `<button class="aibtn small" data-h="test" data-p="${esc(id)}">ทดสอบ</button> <span class="aitest" data-tp="${esc(id)}"></span>`;
-  const rows = all.filter((p) => p.models && !p.custom).map((p) => `<fieldset><legend>${esc(p.name)}</legend>
-    ${p.key ? `<label>คีย์ <input type="password" data-key="${p.id}" value="${esc(cfg.keys[p.id] || "")}" autocomplete="off" placeholder="วางคีย์ที่นี่"></label> ${p.signup ? `<a href="${p.signup}" target="_blank" rel="noopener">สมัคร/สร้างคีย์</a>` : ""}` : ""}
-    <label>โมเดล <input data-model="${p.id}" list="aim-${p.id}" value="${esc(cfg.models[p.id] || p.models[0])}"><datalist id="aim-${p.id}">${p.models.map((m) => `<option value="${esc(m)}">`).join("")}</datalist></label>${test(p.id)}</fieldset>`).join("");
-  const cust = (cfg.custom || []).map((c) => `<fieldset data-cid="${esc(c.id)}"><legend>${esc(c.name || "API แบบ OpenAI")} (เพิ่มเอง)</legend>
-    <label>ชื่อ <input data-cname="${esc(c.id)}" value="${esc(c.name || "")}"></label><label>ที่อยู่ API (base URL) <input data-curl="${esc(c.id)}" value="${esc(c.url || "")}" placeholder="http://127.0.0.1:1234/v1"></label>
-    <label>โมเดล <input data-cmodel="${esc(c.id)}" value="${esc(c.model || "")}"></label><label>คีย์ (ถ้ามี) <input type="password" data-key="${esc(c.id)}" value="${esc(cfg.keys[c.id] || "")}" autocomplete="off"></label>
-    ${test(c.id)} <button class="aibtn small" data-h="cdel" data-p="${esc(c.id)}">ลบเจ้านี้</button></fieldset>`).join("");
+  draft = { ...cfg, keys: { ...cfg.keys }, models: { ...cfg.models }, custom: (cfg.custom || []).map((x) => ({ ...x })) };
+  const all = providers(draft).filter((p) => !(p.localOnly && CLOUD));
+  const list = all.map((p) => `<label class="aipopt${p.id === draft.provider ? " sel" : ""}"><input type="radio" name="aiprov" value="${esc(p.id)}"${p.id === draft.provider ? " checked" : ""}><span>${esc(p.name)}</span>${p.isNew ? `<em class="aipnew">ใหม่</em>` : ""}</label>`).join("");
   let miss = []; try { miss = JSON.parse(localStorage.getItem(LS_MISS) || "[]"); } catch (e) { /* */ }
   const body = win.querySelector(".aibody");
-  body.innerHTML = `<div class="aicfg"><label>ผู้ให้บริการ AI <select id="ai-prov">${opts}</select></label>
-    <p class="small">ไม่ใช้ AI = ค้นคลังความรู้ + แปลงคำสั่งในเครื่อง ไม่ส่งอะไรออก · เจ้าออนไลน์จะได้รับคำถาม + ความรู้ที่เกี่ยวข้อง + สถานะหน้าและผลตรวจ (ตัวเลข ไม่มีชื่อไฟล์) ·
-    ถ้าเจ้าที่เลือกใช้ไม่ได้ จะลองเจ้าอื่นต่อเอง · <b>คีย์เก็บในเบราว์เซอร์นี้เท่านั้น</b> ไม่เข้า git ไม่ขึ้นคลาวด์ · ปุ่ม ทดสอบ ส่งคำถามสั้น ๆ หนึ่งครั้งไปที่เจ้านั้น</p>${rows}${cust}
-    <fieldset class="ainew"><legend>＋ เพิ่มเจ้าที่ใช้ API แบบ OpenAI (LM Studio · vLLM · เซิร์ฟเวอร์บริษัท ฯลฯ)</legend>
-    <label>ชื่อ <input id="ai-cn" placeholder="เช่น LM Studio ในเครื่อง"></label><label>ที่อยู่ API (base URL) <input id="ai-cu" placeholder="http://127.0.0.1:1234/v1"></label>
-    <label>โมเดล <input id="ai-cm" placeholder="ชื่อโมเดลตามที่เซิร์ฟเวอร์นั้นใช้"></label><label>คีย์ (ถ้ามี) <input type="password" id="ai-ck" autocomplete="off"></label>
-    <button class="aibtn" data-h="cadd">เพิ่มเจ้านี้</button></fieldset>
-    <p><button class="aibtn pri" data-h="cfg-save">บันทึก</button> <button class="aibtn" data-h="cfg-close">ปิด</button> <button class="aibtn" data-h="cfg-wipe">ลบคีย์ทั้งหมด</button> <button class="aibtn" data-h="miss" ${miss.length ? "" : "disabled"}>ส่งออกคำถามที่ตอบไม่ได้ (${miss.length})</button></p></div>`;
-  if (!CLOUD) fetch("/api/ai/ollama/models").then((r) => r.json()).then((j) => {   // โมเดลที่มีใน Ollama ของเครื่องนี้
+  body.innerHTML = `<div class="aicfg"><div class="aip2">
+    <section class="aipcard"><div class="aiphd"><b>⚙️ ผู้ให้บริการ AI</b><span class="aipchip${model && !model.ok ? " bad" : ""}">● ${esc(model && model.text ? model.text : provName())}</span></div>
+    <div class="aiplist">${list}</div><div class="aipdet" id="ai-det"></div>
+    <p class="small">ถ้าเจ้าที่เลือกใช้ไม่ได้ จะลองเจ้าอื่นต่อเอง · ไม่ใช้ AI = ค้นคลังความรู้ + แปลงคำสั่งในเครื่อง ไม่ส่งอะไรออก</p>
+    <p><button class="aibtn pri" data-h="cfg-save">บันทึก</button> <button class="aibtn" data-h="cfg-close">ปิด</button> <button class="aibtn" data-h="cfg-wipe">ลบคีย์ทั้งหมด</button> <button class="aibtn" data-h="miss" ${miss.length ? "" : "disabled"}>ส่งออกคำถามที่ตอบไม่ได้ (${miss.length})</button></p></section>
+    <section class="aipcard"><div class="aiphd"><b>➕ เพิ่ม AI อื่น</b></div>
+    <p class="small">เลือกเจ้าที่รู้จัก = กรอก URL ให้เอง · หรือเลือก "อื่น ๆ" แล้วกรอกเอง (ต้องเป็น API แบบ OpenAI)</p>
+    <label>ผู้ให้บริการ <select id="ai-ps">${PRESETS.map((x) => `<option value="${x.key}">${esc(x.label)}</option>`).join("")}</select></label>
+    <label>ชื่อที่แสดง <input id="ai-cn" maxlength="40"></label>
+    <label>Base URL (กรอกให้แล้ว) <input id="ai-cu" placeholder="https://api.example.com/v1" spellcheck="false"></label>
+    <label>โมเดล <span class="aiprow"><input id="ai-cm" list="ai-cml" spellcheck="false"><button class="aibtn small" data-h="nfetch">ดึงรายชื่อ</button></span><datalist id="ai-cml"></datalist></label>
+    <label>คีย์ API (ถ้ามี) <input type="password" id="ai-ck" autocomplete="off" placeholder="วางคีย์ที่นี่"></label>
+    <a id="ai-csu" target="_blank" rel="noopener" hidden></a>
+    <p><button class="aibtn" data-h="ntest">ทดสอบ</button> <button class="aibtn pri" data-h="cadd">บันทึก</button> <span class="aitest" id="ai-nout"></span></p>
+    <div class="aipwarn">ทุกเจ้าใช้กติกาเดียวกัน: เรื่องโปรแกรมตอบจากคลังความรู้ · ตัวเลขจากงานจริง · ป้ายที่มา 📚🗂️🌐</div>
+    <p class="small">หน้าตาเดียวกันทั้ง ASC Studio และ ASC Architect · รุ่นในเครื่องส่งผ่าน server ในเครื่องเมื่อเว็บผู้ให้บริการบล็อกการเรียกจากหน้าเว็บ</p></section>
+  </div></div>`;
+  det(draft.provider); preset();
+}
+/** รายละเอียดเจ้าที่เลือก (ช่องซ้ายล่าง) */
+function det(id) {
+  const p = byId(draft, id) || providers(draft)[0], box = win.querySelector("#ai-det"); if (!box) return;
+  const test = `<button class="aibtn small" data-h="test" data-p="${esc(p.id)}">ทดสอบการเชื่อมต่อ</button> ${p.signup ? `<a class="aibtn small" href="${p.signup}" target="_blank" rel="noopener">ขอคีย์ที่ ${esc(hostOf(p.signup))} ↗</a>` : ""} <span class="aitest" data-tp="${esc(p.id)}"></span>`;
+  const key = (p.key || p.custom) ? `<label>คีย์ API (เก็บในเครื่องนี้เท่านั้น ไม่ลงไฟล์งาน) <input type="password" data-key="${esc(p.id)}" value="${esc(draft.keys[p.id] || "")}" autocomplete="off" placeholder="วางคีย์ที่นี่"></label>` : "";
+  const cur = draft.models[p.id] || (p.custom ? (draft.custom.find((x) => x.id === p.id) || {}).model : p.models && p.models[0]) || "";
+  let html = "";
+  if (p.id === "none") html = `<p class="small">ไม่ส่งอะไรออกนอกเครื่อง · คำถามค้นจากคลังความรู้ของโปรแกรม</p>`;
+  else if (p.custom) {
+    const c = draft.custom.find((x) => x.id === p.id) || {};
+    html = `<label>ชื่อ <input data-cname="${esc(p.id)}" value="${esc(c.name || "")}"></label><label>ที่อยู่ API (base URL) <input data-curl="${esc(p.id)}" value="${esc(c.url || "")}"></label>
+      <label>โมเดล <input data-cmodel="${esc(p.id)}" value="${esc(c.model || "")}"></label>${key}<p>${test} <button class="aibtn small" data-h="cdel" data-p="${esc(p.id)}">ลบเจ้านี้</button></p>`;
+  } else {
+    const mdl = p.modelNotes
+      ? `<label>โมเดล <select data-model="${p.id}">${p.models.map((m) => `<option value="${esc(m)}"${m === cur ? " selected" : ""}>${esc(m)} · ${esc(p.modelNotes[m] || "")}</option>`).join("")}</select></label>`
+      : `<label>โมเดล <input data-model="${p.id}" list="aim-${p.id}" value="${esc(cur)}"><datalist id="aim-${p.id}">${(p.models || []).map((m) => `<option value="${esc(m)}">`).join("")}</datalist></label>`;
+    html = `${key}${mdl}<p>${test}</p>`;
+  }
+  const note = p.anthropic ? "คีย์ Claude แยกจากแพ็กเกจ Claude ที่ใช้แชต · คิดเงินตามการใช้ · คำถามจะถูกส่งออกนอกเครื่อง"
+    : p.id === "none" ? "" : p.id === "ollama" ? "ใช้ Ollama ในเครื่องนี้ · ข้อมูลไม่ออกนอกเครื่อง"
+    : "เจ้าออนไลน์จะได้รับคำถาม + ความรู้ที่เกี่ยวข้อง + สถานะหน้าและผลตรวจ (ตัวเลข ไม่มีชื่อไฟล์)";
+  box.innerHTML = html + (note ? `<p class="small">${esc(note)}</p>` : "");
+  if (p.id === "ollama" && !CLOUD) fetch("/api/ai/ollama/models").then((r) => r.json()).then((j) => {   // โมเดลที่มีใน Ollama ของเครื่องนี้
     const dl = win.querySelector("#aim-ollama"); if (!dl) return;
     dl.innerHTML = (j.models || []).map((m) => `<option value="${esc(m)}">`).join("");
-    if (!j.ok) dl.closest("fieldset").insertAdjacentHTML("beforeend", `<p class="small">${esc(j.error || "ไม่พบ Ollama")}</p>`);
+    if (!j.ok) box.insertAdjacentHTML("beforeend", `<p class="small">${esc(j.error || "ไม่พบ Ollama")}</p>`);
   }).catch(() => {});
 }
-/** ค่าในฟอร์มตั้งค่า (ยังไม่บันทึก) → cfg ชุดใหม่ */
-function readForm() {
-  const c = { ...cfg, keys: { ...cfg.keys }, models: { ...cfg.models }, custom: (cfg.custom || []).map((x) => ({ ...x })) };
-  const sel = win.querySelector("#ai-prov"); if (sel) c.provider = sel.value;
-  for (const el of win.querySelectorAll("[data-key]")) { const v = el.value.trim(); if (v) c.keys[el.dataset.key] = v; else delete c.keys[el.dataset.key]; }
-  for (const el of win.querySelectorAll("[data-model]")) c.models[el.dataset.model] = el.value.trim();
+/** เลือกเจ้าที่รู้จัก (ช่องขวา) → กรอกชื่อ/URL/โมเดล/ลิงก์ขอคีย์ */
+function preset() {
+  const sel = win.querySelector("#ai-ps"); if (!sel) return;
+  const x = PRESETS.find((y) => y.key === sel.value) || PRESETS[0], v = (id) => win.querySelector(id);
+  v("#ai-cn").value = x.name; v("#ai-cu").value = x.url; v("#ai-cm").value = x.model; v("#ai-cml").innerHTML = ""; v("#ai-nout").textContent = "";
+  const a = v("#ai-csu"); a.hidden = !x.signup; if (x.signup) { a.href = x.signup; a.textContent = `ขอคีย์ที่ ${hostOf(x.signup)} ↗`; }
+}
+/** ค่าในฟอร์มตั้งค่า (ยังไม่บันทึก) → cfg ชุดใหม่ (เริ่มจาก draft — เจ้าที่ไม่ได้เปิดดูอยู่คงค่าเดิม) */
+function readForm(base) {
+  const b = base || draft || cfg;
+  const c = { ...b, keys: { ...b.keys }, models: { ...b.models }, custom: (b.custom || []).map((x) => ({ ...x })) };
+  const sel = win.querySelector('input[name="aiprov"]:checked'); if (sel) c.provider = sel.value;
+  for (const el of win.querySelectorAll("#ai-det [data-key]")) { const v = el.value.trim(); if (v) c.keys[el.dataset.key] = v; else delete c.keys[el.dataset.key]; }
+  for (const el of win.querySelectorAll("#ai-det [data-model]")) c.models[el.dataset.model] = el.value.trim();
   for (const x of c.custom) {
     const g = (a) => win.querySelector(`[data-${a}="${CSS.escape(x.id)}"]`);
     if (g("cname")) x.name = g("cname").value.trim(); if (g("curl")) x.url = g("curl").value.trim(); if (g("cmodel")) x.model = g("cmodel").value.trim();
@@ -476,9 +516,16 @@ function readForm() {
   return c;
 }
 function saveSettings() {
-  cfg = readForm(); saveCfg(cfg); setOpen = false;
+  cfg = readForm(); saveCfg(cfg); setOpen = false; draft = null;
   add({ who: "ai", text: `ใช้: ${provName()}` + (cfg.provider !== "none" && !chain(cfg, CLOUD).length ? " — ยังไม่มีคีย์ของเจ้านี้ จะตอบจากคู่มือในเครื่อง" : "") });
   refreshStatus();
+}
+/** เจ้าใหม่จากช่องขวา (ยังไม่บันทึก) → { p, c } สำหรับทดสอบ · URL ใช้ไม่ได้ = null */
+function newDraft() {
+  const v = (id) => win.querySelector(id).value.trim(), base = okBase(v("#ai-cu"));
+  if (!base) return null;
+  const c = readForm(); c.keys = { ...c.keys, tmp: v("#ai-ck") }; c.models = { ...c.models, tmp: v("#ai-cm") };
+  return { p: { id: "tmp", name: v("#ai-cn") || "API แบบ OpenAI", url: chatUrl(base), models: [v("#ai-cm") || "default"], custom: true }, c, base };
 }
 
 // ---------------------------------------------------------------- เหตุการณ์
@@ -502,14 +549,27 @@ win.addEventListener("click", async (e) => {
   if (h === "mic") return mic();
   if (h === "autonext") { const plan = host().autoPlan(), i = plan.findIndex((s) => s.state !== "done"); return autoStart(i < 0 ? undefined : i); }
   if (h === "cfg") { setOpen = !setOpen; if (setOpen && ws.min) ws.min = false; return render(); }
-  if (h === "cfg-close") { setOpen = false; return render(); }
+  if (h === "cfg-close") { setOpen = false; draft = null; return render(); }
   if (h === "cfg-save") return saveSettings();
   if (h === "cfg-wipe") { cfg.keys = {}; saveCfg(cfg); setOpen = false; refreshStatus(); return add({ who: "ai", text: "ลบคีย์ทั้งหมดออกจากเบราว์เซอร์แล้ว" }); }
-  if (h === "cadd") {
-    const v = (id) => win.querySelector(id).value.trim(), url = v("#ai-cu");
-    if (!/^https?:\/\//i.test(url)) { win.querySelector("#ai-cu").focus(); win.querySelector("#ai-cu").placeholder = "ต้องขึ้นต้นด้วย http:// หรือ https://"; return; }
+  if (h === "nfetch" || h === "ntest" || h === "cadd") {
+    const out = win.querySelector("#ai-nout"), d = newDraft(), v = (id) => win.querySelector(id).value.trim();
+    if (!d) { out.textContent = "✗ URL ใช้ไม่ได้ — ต้องขึ้นต้นด้วย https:// (หรือ http:// ในเครื่องนี้/วงแลนในบ้าน เช่น 192.168.x.x)"; out.className = "aitest bad"; return; }
+    if (h === "nfetch") {
+      out.textContent = "กำลังดึงรายชื่อ…"; out.className = "aitest";
+      const ms = await listModels(d.base, v("#ai-ck"));
+      win.querySelector("#ai-cml").innerHTML = ms.map((m) => `<option value="${esc(m)}">`).join("");
+      if (ms.length && !v("#ai-cm")) win.querySelector("#ai-cm").value = ms[0];
+      out.textContent = ms.length ? `✓ ได้ ${ms.length} โมเดล — เลือกจากช่องโมเดล` : "✗ ดึงรายชื่อไม่ได้ — พิมพ์ชื่อโมเดลเอง"; out.className = "aitest " + (ms.length ? "ok" : "bad"); return;
+    }
+    if (h === "ntest") {
+      out.textContent = "กำลังทดสอบ…"; out.className = "aitest";
+      const r = await testProvider(d.p, d.c);
+      out.textContent = r.ok ? `✓ เชื่อมต่อได้ · ${d.p.models[0]} ตอบใน ${(r.ms / 1000).toFixed(1)} วินาที` : `✗ ${r.error || "ตอบว่าง"}`; out.className = "aitest " + (r.ok ? "ok" : "bad"); return;
+    }
+    if (!v("#ai-cm")) { out.textContent = "✗ ใส่ชื่อโมเดลก่อน (หรือกด ดึงรายชื่อ)"; out.className = "aitest bad"; return; }
     const c = readForm(), id = "c" + Date.now().toString(36);
-    c.custom.push({ id, name: v("#ai-cn") || "API แบบ OpenAI", url, model: v("#ai-cm") });
+    c.custom.push({ id, name: v("#ai-cn") || "API แบบ OpenAI", url: d.base, model: v("#ai-cm") });
     if (v("#ai-ck")) c.keys[id] = v("#ai-ck");
     c.provider = id; cfg = c; saveCfg(cfg); settings(); refreshStatus(); return;
   }
@@ -520,7 +580,7 @@ win.addEventListener("click", async (e) => {
     if (p.key && !c.keys[p.id]) { out.textContent = "✗ ยังไม่ใส่คีย์"; out.className = "aitest bad"; return; }
     out.textContent = "กำลังทดสอบ…"; out.className = "aitest";
     const r = await testProvider(p, c);
-    out.textContent = r.ok ? `✓ ตอบได้ (${(r.ms / 1000).toFixed(1)} วิ)` : `✗ ${r.error || "ตอบว่าง"}`; out.className = "aitest " + (r.ok ? "ok" : "bad"); return;
+    out.textContent = r.ok ? `✓ เชื่อมต่อได้ · ${c.models[p.id] || p.models[0]} ตอบใน ${(r.ms / 1000).toFixed(1)} วินาที` : `✗ ${r.error || "ตอบว่าง"}`; out.className = "aitest " + (r.ok ? "ok" : "bad"); return;
   }
   if (h === "miss") {
     let a = []; try { a = JSON.parse(localStorage.getItem(LS_MISS) || "[]"); } catch (er) { /* */ }
@@ -543,6 +603,11 @@ win.addEventListener("click", async (e) => {
     const [id, i] = t.dataset.step.split(":").map(Number), m = byMsg(id), s = m && m.steps[i];
     if (s && s.act) { const v = validateLegacy([s.act]); if (v.length) add({ who: "card", title: "ยืนยันขั้นนี้", actions: v, state: "open" }); }
   }
+});
+win.addEventListener("change", (e) => {
+  const t = e.target;
+  if (t.name === "aiprov") { draft = readForm(draft); draft.provider = t.value; win.querySelectorAll(".aipopt").forEach((l) => l.classList.toggle("sel", l.querySelector("input").checked)); det(t.value); return; }
+  if (t.id === "ai-ps") preset();
 });
 win.addEventListener("dblclick", (e) => { if (e.target.closest(".aih") && !e.target.closest("button")) setWin({ max: !ws.max, min: false }); });
 let drag = null;                                                                    // ลากหัวหน้าต่าง

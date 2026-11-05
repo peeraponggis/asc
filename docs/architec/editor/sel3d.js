@@ -1,7 +1,7 @@
 // การเลือกรวมของ 2D/3D + งานแก้ทั่วไป (ย้าย หมุน ลบ คัดลอก) ได้ทุกชนิดวัตถุ (โดย ลุงพี)
 // กุญแจ = "ชนิด:id" เช่น "walls:w1" · หลังคาทั้งผืน = "roof:roof" · ไม่มี DOM/three (ทดสอบด้วย node ได้)
-import * as M from "./model.js?v=0.30.1";
-import * as SOL from "./mesh.js?v=0.30.1";
+import * as M from "./model.js?v=0.31.0";
+import * as SOL from "./mesh.js?v=0.31.0";
 
 /** มุมมองของชุดที่เลือกเฉพาะชนิดเดียว (ให้โค้ดเดิมที่ใช้ sk.sel / ext.itemSel ทำงานต่อได้) */
 export class TypedSet {

@@ -1,5 +1,5 @@
 // หน้าต่าง ตรวจลำดับงาน + ป้ายจำนวนข้อเตือนที่แถบบน + ถามก่อน Plot/ชุดแบบเมื่อยังมีข้อสำคัญ (โดย ลุงพี)
-import { analyze, LEVEL } from "./workflow.js?v=0.30.1";
+import { analyze, LEVEL } from "./workflow.js?v=0.31.0";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));

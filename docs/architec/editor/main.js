@@ -1,22 +1,22 @@
 // ตัวเขียนแบบ ASC Architect — เชื่อมผัง 2D · 3D · แผงคุณสมบัติ · บันทึก/ส่งออก (โดย ลุงพี)
-import * as M from "./model.js?v=0.30.1";
-import { Plan2D } from "./plan2d.js?v=0.30.1";
-import { View3D } from "./view3d.js?v=0.30.1";
-import { toDXF } from "./dxf.js?v=0.30.1";
-import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.30.1";
-import * as CAD from "./cadlayer.js?v=0.30.1";
-import { Sketch3D } from "./sketch3d.js?v=0.30.1";
-import { PALETTE } from "./materials.js?v=0.30.1";
-import { sunPosition } from "./sun.js?v=0.30.1";
-import { initSkUI } from "./skui.js?v=0.30.1";
-import { readDXF, decodeDXF } from "./dxfread.js?v=0.30.1";
-import * as LS from "./localstore.js?v=0.30.1";
-import * as ST from "./struct.js?v=0.30.1";
-import { openStruct } from "./structui.js?v=0.30.1";
-import { openSolar } from "./solarui.js?v=0.30.1";
-import * as WF from "./workflowui.js?v=0.30.1";
-import { analyze as wfAnalyze } from "./workflow.js?v=0.30.1";
-import { openStandards, printStandards } from "./standardsui.js?v=0.30.1";
+import * as M from "./model.js?v=0.31.0";
+import { Plan2D } from "./plan2d.js?v=0.31.0";
+import { View3D } from "./view3d.js?v=0.31.0";
+import { toDXF } from "./dxf.js?v=0.31.0";
+import { plotFormHTML, wirePlotForm, readPlotForm } from "../plotform.js?v=0.31.0";
+import * as CAD from "./cadlayer.js?v=0.31.0";
+import { Sketch3D } from "./sketch3d.js?v=0.31.0";
+import { PALETTE } from "./materials.js?v=0.31.0";
+import { sunPosition } from "./sun.js?v=0.31.0";
+import { initSkUI } from "./skui.js?v=0.31.0";
+import { readDXF, decodeDXF } from "./dxfread.js?v=0.31.0";
+import * as LS from "./localstore.js?v=0.31.0";
+import * as ST from "./struct.js?v=0.31.0";
+import { openStruct } from "./structui.js?v=0.31.0";
+import { openSolar } from "./solarui.js?v=0.31.0";
+import * as WF from "./workflowui.js?v=0.31.0";
+import { analyze as wfAnalyze } from "./workflow.js?v=0.31.0";
+import { openStandards, printStandards } from "./standardsui.js?v=0.31.0";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -609,7 +609,7 @@ async function traceLocal(f) {
 function parseDxfLocal(buf, name) {
   return new Promise((res, rej) => {
     let w;
-    try { w = new Worker(new URL("./dxfworker.js?v=0.30.1", import.meta.url), { type: "module" }); } catch (err) { w = null; }
+    try { w = new Worker(new URL("./dxfworker.js?v=0.31.0", import.meta.url), { type: "module" }); } catch (err) { w = null; }
     if (!w) { try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } return; }
     w.onmessage = (ev) => { w.terminate(); ev.data.error ? rej(new Error(ev.data.error)) : res(ev.data.data); };
     w.onerror = (ev) => { w.terminate(); try { res(readDXF(decodeDXF(buf), name)); } catch (err) { rej(err); } ev.preventDefault(); };

@@ -3,12 +3,12 @@
 // แก้: ยางลบ Tag ย่อขยาย Offset Follow Me (กวาดหน้าตัดตามเส้น) · ใส่ข้อมูล: มิติ 3D ไม้โปรแทรกเตอร์ ข้อความชี้ แกน ข้อความ 3D
 // กล้อง: ซูมกรอบ เดิน (WASD/ลูกศร) · ชิ้นส่วน: วางต้นไม้ รถ ฯลฯ · คัดลอก/ตัด/วาง · ทุกการแก้ผ่าน hist.commit (Ctrl+Z ได้)
 import * as THREE from "three";
-import * as M from "./model.js?v=0.30.1";
-import { kindTh, KINDS } from "./props3d.js?v=0.30.1";
-import * as SEL from "./sel3d.js?v=0.30.1";
-import { makeModelItem, modelLabel } from "./import3d-core.js?v=0.30.1";
-import { SolidTools } from "./solid3d.js?v=0.30.1";
-import * as SOL from "./mesh.js?v=0.30.1";
+import * as M from "./model.js?v=0.31.0";
+import { kindTh, KINDS } from "./props3d.js?v=0.31.0";
+import * as SEL from "./sel3d.js?v=0.31.0";
+import { makeModelItem, modelLabel } from "./import3d-core.js?v=0.31.0";
+import { SolidTools } from "./solid3d.js?v=0.31.0";
+import * as SOL from "./mesh.js?v=0.31.0";
 
 /** ชนิดที่คลิกเลือกได้ใน 3D (ทุกอย่างที่เห็น ยกเว้นพื้นดิน/แผงโซลาร์อัตโนมัติ) */
 const PICK = new Set(["walls", "openings", "roof", "masses", "solids", "items", "lines", "texts3d", "dims3d", "sweeps", "struct"]);

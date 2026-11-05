@@ -1,7 +1,7 @@
 // ชิ้นส่วน 3D (Components) สำหรับฉากนำเสนอ: ต้นไม้ ไม้พุ่ม รถยนต์ แผงโซลาร์ตั้งพื้น เตียงอาบแดด โซฟา โต๊ะ เสาไฟสวน (โดย ลุงพี)
 // เก็บในแบบเป็น doc.items3d = [{ id, kind, p:[x,y] มม., z มม., rot องศา, s ขนาดเท่า }] · รูปทรงสุ่มจาก id (สร้างใหม่กี่ครั้งก็เหมือนเดิม)
 import * as THREE from "three";
-import { material } from "./materials.js?v=0.30.1";
+import { material } from "./materials.js?v=0.31.0";
 
 export const KINDS = [
   { k: "tree", th: "ต้นไม้", size: "สูง ~4.5 ม." }, { k: "palm", th: "ต้นปาล์ม", size: "สูง ~6 ม." }, { k: "shrub", th: "ไม้พุ่ม", size: "Ø ~1.4 ม." },
