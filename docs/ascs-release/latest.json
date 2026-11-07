@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.165.0",
+ "version": "0.165.1",
  "published": "2026-11-07",
  "notes": [
-  "แบบสำรวจหน้างาน (เมนูใหม่ แบบสำรวจ ก่อนเมนูหน้างาน): แบบบ้าน (1 เฟส/3 เฟสฟอร์มเดียว) · อาคาร/ร้านค้า · โรงงาน/โกดัง · Solar farm + ส่วนกลาง (ลูกค้า ที่ตั้ง การไฟฟ้า บิล 12 เดือน การใช้ไฟ ระบบ+แบต ระบบเดิม รูปถ่าย) · …"
+  "วิธีสร้างไฟล์อุปกรณ์เพิ่ม: ปุ่มดาวน์โหลดบันทึกไฟล์ zip/prompt/แม่แบบลงเครื่องโดยตรง (โหลดจากโปรแกรมแล้วบันทึกเอง) ไม่พาไปหน้า git · เอาปุ่มเปิด GitHub ออก"
  ],
  "requirements": "5c56ea9839289d16",
  "package": {
-  "file": "ascs-app-0.165.0.bin",
-  "size": 20464099,
-  "sha256": "63122bf85629ddcc8edd202ed551aff3573bbf769a822bd2c99070be0a612eca"
+  "file": "ascs-app-0.165.1.bin",
+  "size": 20463842,
+  "sha256": "faf6e440a1eb33fb7678ba37f7d9e33a534f716e32aa3f4de9eba445a730748e"
  },
  "setup": {
-  "file": "ascs-setup-0.165.0.bin",
+  "file": "ascs-setup-0.165.1.bin",
   "size": 44112433,
-  "sha256": "29ba0401724de678d2e9a5e131792c38cd956c9ba066a4eba7c10b02e77acf0e",
-  "name": "ASC-Studio-Setup-0.165.0.exe"
+  "sha256": "55720c4773bbadc2f0d7c8f33dbb3207f9e27fa85f30c1b227e6b53570e72de6",
+  "name": "ASC-Studio-Setup-0.165.1.exe"
  }
 }
