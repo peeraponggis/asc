@@ -123,6 +123,27 @@ document.addEventListener("click", function (e) { var b = e.target.closest && e.
     });
   }
 
+  // ---------------------------------------------------------------- โหมดปรับปรุง (ลุงพีสั่ง 8 พ.ย. 2569)
+  // ถาม server ในเครื่อง /api/gate (สวิตช์กลาง ASC Enterprise · ผู้ดูแลระบบ/@proinventive.co.th ผ่าน) ทุก 5 นาที
+  // blocked = หน้าจอ กำลังปรับปรุง เต็มจอ (ข้อความมาจากสวิตช์) · อ่านไม่ได้ = ไม่บล็อก · เครื่องผู้พัฒนา (git) ไม่ถูกบล็อก
+  function maintGate() {
+    api("/api/gate").then(function (g) { if (g && g.blocked) maintShow(g); }).catch(function () { /* ไม่บล็อก */ });
+    setTimeout(maintGate, 300000);
+  }
+  function maintShow(g) {
+    if (document.getElementById("asc-maint")) return;
+    var lang = (document.documentElement.lang || "th").slice(0, 2);
+    var pick = function (m) { m = m || {}; return m[lang] || m.th || m[Object.keys(m)[0]] || ""; };
+    var box = document.createElement("div");
+    box.id = "asc-maint"; box.setAttribute("role", "alertdialog");
+    box.style.cssText = "position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(160deg,#0b1f33,#12324f);color:#fff;font-family:Sarabun,Kanit,Tahoma,sans-serif;text-align:center";
+    box.innerHTML = '<div style="max-width:520px"><div style="font-size:56px">🛠️</div><h1 style="font-size:26px;margin:10px 0 8px;font-weight:700"></h1><p style="font-size:16px;line-height:1.7;opacity:.92;margin:0"></p></div>';
+    box.querySelector("h1").textContent = pick(g.title);
+    box.querySelector("p").textContent = pick(g.message);
+    var put = function () { if (!document.getElementById("asc-maint")) document.body.appendChild(box); document.documentElement.style.overflow = "hidden"; };
+    put(); setInterval(put, 1000);
+  }
+
   // ---------------------------------------------------------------- เริ่ม
   function init() {
     document.body.classList.toggle("cloud", CLOUD);
@@ -138,6 +159,7 @@ document.addEventListener("click", function (e) { var b = e.target.closest && e.
       loadProjects();
       loadDesignAuto();
       presenceLocal();
+      maintGate();
     }
     loadCatalog();
     var last = null; try { last = localStorage.getItem("pa.tab"); } catch (e) { /* */ }

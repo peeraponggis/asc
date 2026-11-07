@@ -1,16 +1,15 @@
 {
  "app": "ASC Architect",
- "version": "0.31.1",
+ "version": "0.31.2",
  "runtime": "py312-66bd077d",
- "published": "2026-11-07",
+ "published": "2026-11-08",
  "notes": [
-  "POST /api/asc/open รับ path เต็ม ของโฟลเดอร์ส่งออกจาก ASC Studio (เดิมหาตายตัวที่ aiSolar\\design-auto\\out ซึ่งเป็น path เครื่องพัฒนา → เครื่องที่ติดตั้ง ASC …",
-  "เทสต์ใหม่ tests/test_asc_send.py 3 ข้อ"
+  "GET /api/gate + หน้าจอเต็มจอในหน้าโปรแกรม (asc_link.py ไฟล์เดียวกับ ASC Studio)"
  ],
  "package": {
-  "file": "asca-app-0.31.1.bin",
-  "size": 16225870,
-  "sha256": "a6e368b0f765a9814545a6e5e96ea749dad17475fdfdfc3d0a087af72ebf9cc9"
+  "file": "asca-app-0.31.2.bin",
+  "size": 16227661,
+  "sha256": "acfb53ebfc94ccf58f1f345be830fe1305e08f74e0d2562b24fe06727ec34922"
  },
  "setup_url": null,
  "constructcad": "0.8.0"
