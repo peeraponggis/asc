@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.163.0",
+ "version": "0.163.1",
  "published": "2026-11-07",
  "notes": [
-  "แบบจำลองระบบ (การไหลพลังงาน 00–23 น.) ใช้บนเว็บ ASC Cloud ได้ · เสียงบรรยายบนเว็บใช้เสียงเบราว์เซอร์: Edge เปรมวดี/นิวัฒน์ · Chrome เลือกเสียงดีที่สุดตามเพศ · อ่านหน่วย/ตัวย่อ/ยี่ห้อเป็นไทย รุ่นสินค้าใช้เสียงอังกฤษ …"
+  "ส่งไป ASC Architect จากเครื่องที่ติดตั้งจากชุดติดตั้งได้แล้ว (แก้ Not Found): ส่ง path เต็มของโฟลเดอร์ส่งออกให้ ASCA (ต้อง ASCA 0.31.1 ขึ้นไป) · แสดงข้อความผิดพลาดจริงและบอกเมื่อ ASCA เป็นรุ่นเก่า"
  ],
  "requirements": "5c56ea9839289d16",
  "package": {
-  "file": "ascs-app-0.163.0.bin",
-  "size": 20142355,
-  "sha256": "626d16050634c0fddc6593a9b46e8a6e146cef20a4ce89987246f33ec4033832"
+  "file": "ascs-app-0.163.1.bin",
+  "size": 20142377,
+  "sha256": "fecef0d8e41f063ab425121f1d2bc9871fb2674cb0c62dfffd35b06f3e2baaa5"
  },
  "setup": {
-  "file": "ascs-setup-0.163.0.bin",
+  "file": "ascs-setup-0.163.1.bin",
   "size": 43442225,
-  "sha256": "53ca3961a2268826f10c3c91002a194dae3a3ef15e85a74dd11ed3a28c2c28d4",
-  "name": "ASC-Studio-Setup-0.163.0.exe"
+  "sha256": "001e0219395058ecc8ec2587c9bd303ce9438b01d38471c8c37302ef5628ba63",
+  "name": "ASC-Studio-Setup-0.163.1.exe"
  }
 }
