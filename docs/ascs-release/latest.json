@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.165.1",
+ "version": "0.165.2",
  "published": "2026-11-07",
  "notes": [
-  "วิธีสร้างไฟล์อุปกรณ์เพิ่ม: ปุ่มดาวน์โหลดบันทึกไฟล์ zip/prompt/แม่แบบลงเครื่องโดยตรง (โหลดจากโปรแกรมแล้วบันทึกเอง) ไม่พาไปหน้า git · เอาปุ่มเปิด GitHub ออก"
+  "ชุดสร้างไฟล์อุปกรณ์ (zip): ไม่รวมโฟลเดอร์ _src และ _test_3.4 · ตัดข้อความอ้างถึงออกจากอ่านก่อน/หน้าต่าง"
  ],
  "requirements": "5c56ea9839289d16",
  "package": {
-  "file": "ascs-app-0.165.1.bin",
-  "size": 20463842,
-  "sha256": "faf6e440a1eb33fb7678ba37f7d9e33a534f716e32aa3f4de9eba445a730748e"
+  "file": "ascs-app-0.165.2.bin",
+  "size": 20392554,
+  "sha256": "7b628e6578bb35c41c0b2eaf869d53fe91577fd9ad9873b8acd7a8aa4db4f7be"
  },
  "setup": {
-  "file": "ascs-setup-0.165.1.bin",
-  "size": 44112433,
-  "sha256": "55720c4773bbadc2f0d7c8f33dbb3207f9e27fa85f30c1b227e6b53570e72de6",
-  "name": "ASC-Studio-Setup-0.165.1.exe"
+  "file": "ascs-setup-0.165.2.bin",
+  "size": 43969585,
+  "sha256": "c436b40d253729d05846f0e4e026d5499f590bcc0e7db1e6517f236ff424133a",
+  "name": "ASC-Studio-Setup-0.165.2.exe"
  }
 }
