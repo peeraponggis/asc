@@ -1,12 +1,12 @@
 // กระดานวาด 2D (SVG) ของตัวเขียนแบบ ASC Architect (โดย ลุงพี)
 // เครื่องมือ: เลือก/ย้าย · ผนัง · ห้อง · กล่อง (push-pull) · ประตู · หน้าต่าง · เส้น · มิติ · ข้อความ · สัญลักษณ์ · ลบ
 // จับจุด: กริด · ปลายผนัง/เส้น · ตั้งฉาก (Shift ปิด) · พิมพ์ระยะแล้ว Enter ระหว่างวาด (แบบ SketchUp)
-import * as M from "./model.js?v=0.31.0";
-import * as CAD from "./cadlayer.js?v=0.31.0";
-import * as ST from "./struct.js?v=0.31.0";
-import * as SOL from "./mesh.js?v=0.31.0";
+import * as M from "./model.js?v=0.31.1";
+import * as CAD from "./cadlayer.js?v=0.31.1";
+import * as ST from "./struct.js?v=0.31.1";
+import * as SOL from "./mesh.js?v=0.31.1";
 const solidLv = (s) => ({ base: SOL.bbox(s).lo[2], tag: s.tag });          // ก้อนผิว+เส้น: ชั้นตามจุดต่ำสุด
-import { footprint, modelLabel } from "./import3d-core.js?v=0.31.0";
+import { footprint, modelLabel } from "./import3d-core.js?v=0.31.1";
 
 const NS = "http://www.w3.org/2000/svg";
 const el = (tag, attrs, parent) => {

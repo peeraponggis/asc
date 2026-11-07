@@ -1,6 +1,6 @@
 // เมนูแบบ Ribbon + แถบเครื่องมือลอย + คลังสัญลักษณ์ + ตั้งค่าเมาส์ ของหน้า CAD 2D (โดย ลุงพี)
 // ปุ่มคำสั่งใช้ data-cmd (app.js รันเอง) · ปุ่มสัญลักษณ์ data-sym · ปุ่มหน้าตา data-ui · จำค่าใน localStorage (ascaCad.*)
-import { CATS, SYMS, LIB_CAT, LIB_PAPER, symSVG } from "./symbols.js?v=0.31.0";
+import { CATS, SYMS, LIB_CAT, LIB_PAPER, symSVG } from "./symbols.js?v=0.31.1";
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -129,7 +129,7 @@ export const ENTRIES = new Map();
 for (const s of Object.values(SYMS)) ENTRIES.set("s:" + s.id, { key: "s:" + s.id, cat: s.cat, short: s.short, th: s.th, std: s.std, sym: s, real: s.real, layer: s.layer });
 async function loadLibrary() {
   try {
-    const r = await fetch("../library/catalog.json?v=0.31.0"); if (!r.ok) return;
+    const r = await fetch("../library/catalog.json?v=0.31.1"); if (!r.ok) return;
     const c = await r.json();
     for (const it of c.symbols || []) {
       const cat = LIB_CAT[it.group]; if (!cat) continue;

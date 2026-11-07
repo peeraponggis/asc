@@ -3,9 +3,9 @@
 // ลาก (เลือก/ย้าย): หน้า = เข้าออกตามแนวตั้งฉาก ผิวข้างเคียงยืดตาม · เส้น/จุด = ย้ายตามแกนที่ใกล้ทิศเมาส์ (ลูกศร → ← ↑ ล็อกแกน แดง/เขียว/น้ำเงิน · ↓ ปลดล็อก)
 // Push/Pull: หน้าใดก็ได้ของก้อน · Ctrl = ดึงสำเนา · ดับเบิลคลิก = ระยะล่าสุด · ทุกงาน: ปล่อยแล้วพิมพ์ระยะ + Enter = พอดี
 import * as THREE from "three";
-import * as SOL from "./mesh.js?v=0.31.0";
-import * as SEL from "./sel3d.js?v=0.31.0";
-import * as CSG from "./csg.js?v=0.31.0";
+import * as SOL from "./mesh.js?v=0.31.1";
+import * as SEL from "./sel3d.js?v=0.31.1";
+import * as CSG from "./csg.js?v=0.31.1";
 
 const MM = 0.001;
 const W = (p) => new THREE.Vector3(p[0] * MM, p[2] * MM, -p[1] * MM);          // มม. (x,y,z ขึ้น) → three

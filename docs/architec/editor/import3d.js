@@ -5,10 +5,10 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
-import * as LS from "./localstore.js?v=0.31.0";
-import * as I from "./import3d-core.js?v=0.31.0";
-import * as ST from "./struct.js?v=0.31.0";
-import * as M from "./model.js?v=0.31.0";
+import * as LS from "./localstore.js?v=0.31.1";
+import * as I from "./import3d-core.js?v=0.31.1";
+import * as ST from "./struct.js?v=0.31.1";
+import * as M from "./model.js?v=0.31.1";
 
 const CLOUD = window.PA_MODE === "cloud";
 const LIBKEY = "asca.models.lib";

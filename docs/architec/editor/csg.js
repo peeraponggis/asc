@@ -1,6 +1,6 @@
 // Solid Tools (รวม · ลบ · ตัด · ตัดกัน · แยก · เปลือกนอก) ของก้อนผิว+เส้น — 0.28 (โดย ลุงพี)
 // ใช้ต้นไม้ BSP แบบ csg.js (Evan Wallace, MIT) เขียนใหม่สำหรับหน่วย มม. · ไม่ใช้ three (ทดสอบด้วย node ได้)
-import * as SOL from "./mesh.js?v=0.31.0";
+import * as SOL from "./mesh.js?v=0.31.1";
 
 const EPS = 0.01;                                         // มม.
 const COPLANAR = 0, FRONT = 1, BACK = 2, SPANNING = 3;
