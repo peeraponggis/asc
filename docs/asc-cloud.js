@@ -335,7 +335,75 @@
             menus    : menus,
             loginAt  : Date.now()
         };
+        await maintenanceGate(_profile, !!error);   // อ่านโปรไฟล์ไม่สำเร็จ = ไม่บล็อก (กันล็อกผู้ดูแลทิ้งเพราะอ่านสิทธิ์ไม่ได้)
         return _profile;
+    }
+
+    /* ── โหมดปรับปรุง (ลุงพีสั่ง 8 พ.ย. 2569) ─────────────────────────────
+       ไฟล์ maintenance.json (โฟลเดอร์เดียวกับไฟล์นี้ = รากของ ASC Enterprise) เปิดสวิตช์ "on": true
+       → ทุกคนยกเว้นผู้ดูแลระบบ (profiles.is_admin) และอีเมลโดเมนใน exemptDomains ที่ล็อกอินแล้ว เห็นหน้าจอ "กำลังปรับปรุง" เต็มจอ
+       ทุกหน้าที่โหลดไฟล์นี้ (หน้าหลัก · ASCS · ASCA · Project Plan ฯลฯ) · เลิกใช้: แก้ "on": false แล้ว push
+       ล้มเหลวอ่านไฟล์ไม่ได้ = ไม่บล็อก (ไม่ให้ระบบปิดตัวเองเพราะเน็ตสะดุด) · เป็นด่านฝั่งหน้าจอชั่วคราว ไม่ใช่การปิดสิทธิ์ที่ฐานข้อมูล */
+    const MAINT_URL = (function () {
+        try { return new URL('maintenance.json', (document.currentScript && document.currentScript.src) || location.href).href; }
+        catch (e) { return 'maintenance.json'; }
+    })();
+    let _maint = null;
+    function maintConfig() {
+        if (!_maint) {
+            _maint = fetch(MAINT_URL + '?t=' + Date.now(), { cache: 'no-store' })
+                .then(r => (r.ok ? r.json() : null)).catch(() => null);
+        }
+        return _maint;
+    }
+    function maintExempt(cfg, p) {
+        if (!p) return false;
+        if (p.isAdmin) return true;
+        const mail = String(p.email || '').toLowerCase();
+        return (cfg.exemptDomains || []).some(d => mail.endsWith('@' + String(d).toLowerCase()));
+    }
+    function maintShow(cfg, signedOut) {
+        if (window.__ascMaint) return;
+        window.__ascMaint = true;
+        const lang = (document.documentElement.lang || navigator.language || 'th').slice(0, 2).toLowerCase();
+        const msg = cfg.message || {};
+        const text = msg[lang] || msg.th || 'ระบบกำลังปรับปรุง';
+        const title = (cfg.title || {})[lang] || (cfg.title || {}).th || 'กำลังปรับปรุงระบบ';
+        const btn = { th: 'ออกจากระบบ', lo: 'ອອກຈາກລະບົບ', en: 'Sign out' }[lang] || 'ออกจากระบบ';
+        const box = document.createElement('div');
+        box.id = 'asc-maint';
+        box.setAttribute('role', 'alertdialog');
+        box.style.cssText = 'position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;'
+            + 'background:linear-gradient(160deg,#0b1f33,#12324f);color:#fff;font-family:Sarabun,Kanit,Tahoma,sans-serif;text-align:center';
+        box.innerHTML = '<div style="max-width:520px"><div style="font-size:56px">🛠️</div>'
+            + '<h1 style="font-size:26px;margin:10px 0 8px;font-weight:700"></h1>'
+            + '<p style="font-size:16px;line-height:1.7;opacity:.92;margin:0 0 18px"></p>'
+            + '<button type="button" style="font:inherit;padding:9px 22px;border-radius:10px;border:1px solid #7fb3d9;background:transparent;color:#fff;cursor:pointer"></button></div>';
+        box.querySelector('h1').textContent = title;
+        box.querySelector('p').textContent = text;
+        const b = box.querySelector('button');
+        b.textContent = btn;
+        if (signedOut) b.style.display = 'none';   // ยังไม่ได้ล็อกอิน = ไม่มีให้ออกจากระบบ
+        b.onclick = async () => { try { await sb.auth.signOut(); } catch (e) { /* ออกไม่ได้ก็รีโหลด */ } location.reload(); };
+        const put = () => { if (!document.getElementById('asc-maint')) (document.body || document.documentElement).appendChild(box); document.documentElement.style.overflow = 'hidden'; };
+        put();
+        // กันลบกล่องด้วยเครื่องมือนักพัฒนา (ชั่วคราว): วางกลับทุก 1 วินาที
+        setInterval(put, 1000);
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', put);
+    }
+    /* หน้าที่ไม่มีหน้าล็อกอินของตัวเอง (เช่น Project Plan): strict = true → ไม่ได้ล็อกอินก็ถูกบล็อกตอนปรับปรุง */
+    async function maintenanceGuard(strict) {
+        if (!enabled) return;
+        await AscCloud.ready();
+        const cfg = await maintConfig();
+        if (!cfg || !cfg.on) return;
+        if (_profile) { if (!maintExempt(cfg, _profile)) maintShow(cfg); }
+        else if (strict) maintShow(cfg, true);
+    }
+    async function maintenanceGate(p, profileFailed) {
+        if (!p || profileFailed) return;
+        const cfg = await maintConfig();
+        if (cfg && cfg.on && !maintExempt(cfg, p)) maintShow(cfg);
     }
 
     /* ── สถานะการใช้งาน (Pi monitor ขั้น 1 · supabase/presence.sql) ─────────
@@ -407,7 +475,7 @@
     }
 
     async function presenceSend(closed) {
-        if (presence.off || !enabled || !_profile || !presence.app) return;
+        if (presence.off || window.__ascMaint || !enabled || !_profile || !presence.app) return;
         const page = presencePageNow();
         const active = !document.hidden && (Date.now() - presence.lastInput) < PRESENCE_MS + 5000;
         try {
@@ -1056,6 +1124,8 @@
         }
     };
 
+    AscCloud.maintenanceGuard = maintenanceGuard;
+    AscCloud._maint = { gate: maintenanceGate, exempt: maintExempt };   // ใช้ทดสอบ
     window.AscCloud = AscCloud;
 
     // เริ่มนับสถานะทุกหน้าที่โหลดไฟล์นี้ · ส่งจริงเมื่อมีผู้ใช้ล็อกอิน (ready/signIn/onAuthChange ตั้ง _profile)

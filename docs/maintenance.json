@@ -1,0 +1,11 @@
+{
+  "on": false,
+  "since": "2026-11-08",
+  "exemptDomains": ["proinventive.co.th"],
+  "title": { "th": "กำลังปรับปรุงระบบ", "lo": "ກຳລັງປັບປຸງລະບົບ", "en": "Under maintenance" },
+  "message": {
+    "th": "ขณะนี้ระบบกำลังปรับปรุง สิทธิ์การใช้งานถูกระงับชั่วคราว ขออภัยในความไม่สะดวก จะเปิดให้ใช้งานอีกครั้งเมื่อปรับปรุงเสร็จ",
+    "lo": "ຂະນະນີ້ລະບົບກຳລັງປັບປຸງ ສິດການໃຊ້ງານຖືກລະງັບຊົ່ວຄາວ ຂໍອະໄພໃນຄວາມບໍ່ສະດວກ ຈະເປີດໃຫ້ໃຊ້ງານອີກຄັ້ງເມື່ອປັບປຸງແລ້ວ",
+    "en": "The system is under maintenance and access is temporarily suspended. We apologise for the inconvenience; it will reopen when the work is finished."
+  }
+}
