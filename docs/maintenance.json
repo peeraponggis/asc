@@ -1,5 +1,5 @@
 {
-  "on": false,
+  "on": true,
   "since": "2026-11-08",
   "exemptDomains": ["proinventive.co.th"],
   "title": { "th": "กำลังปรับปรุงระบบ", "lo": "ກຳລັງປັບປຸງລະບົບ", "en": "Under maintenance" },
