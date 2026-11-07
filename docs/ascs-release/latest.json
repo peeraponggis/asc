@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.165.2",
- "published": "2026-11-07",
+ "version": "0.166.0",
+ "published": "2026-11-08",
  "notes": [
-  "ชุดสร้างไฟล์อุปกรณ์ (zip): ไม่รวมโฟลเดอร์ _src และ _test_3.4 · ตัดข้อความอ้างถึงออกจากอ่านก่อน/หน้าต่าง"
+  "ซ่อนอุปกรณ์จากคลัง ASC Enterprise (ติ๊ก ซ่อนใน ASCS → นำเข้าไฟล์สำรองแล้วไม่แสดง/ถอดออก) · แบบสำรวจ Solar Floating และ EV Charging Station ใช้หน้าต่างแบบสำรวจหน้างานเดียวกับแบบอื่น (แท็บ ⓐ… · ข้อมูลที่ยังขาด · …"
  ],
  "requirements": "5c56ea9839289d16",
  "package": {
-  "file": "ascs-app-0.165.2.bin",
-  "size": 20392554,
-  "sha256": "7b628e6578bb35c41c0b2eaf869d53fe91577fd9ad9873b8acd7a8aa4db4f7be"
+  "file": "ascs-app-0.166.0.bin",
+  "size": 20400755,
+  "sha256": "f6691617d9cab6899081e73cc1fd80c72aee8c2b366c108cd122e07a2f7546b9"
  },
  "setup": {
-  "file": "ascs-setup-0.165.2.bin",
-  "size": 43969585,
-  "sha256": "c436b40d253729d05846f0e4e026d5499f590bcc0e7db1e6517f236ff424133a",
-  "name": "ASC-Studio-Setup-0.165.2.exe"
+  "file": "ascs-setup-0.166.0.bin",
+  "size": 44002865,
+  "sha256": "cec11b963af98acf6ee2da0836328ba50b04af5197867c43d7f8297052f7db86",
+  "name": "ASC-Studio-Setup-0.166.0.exe"
  }
 }
