@@ -867,21 +867,9 @@
                         <div class="px-6 py-3 border-b border-slate-100 flex flex-wrap gap-3 items-center">
                             <input type="text" id="dev-search" placeholder="ค้นหายี่ห้อหรือรุ่น..." oninput="renderDevBank()"
                                    class="flex-1 min-w-[160px] border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <select id="dev-filter-cat" onchange="renderDevBank()"
-                                    class="border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="">ทุกหมวด</option>
-                                <option value="PV">แผงโซลาร์เซลล์</option>
-                                <option value="INV">อินเวอร์เตอร์</option>
-                                <option value="ESS">แบตเตอรี่</option>
-                                <option value="OPT">ออปติไมเซอร์</option>
-                                <option value="EV">เครื่องชาร์จรถไฟฟ้า</option>
-                            </select>
-                            <select id="dev-filter-hide" onchange="renderDevBank()" title="ซ่อนใน ASCS"
-                                    class="border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="">แสดง: ทั้งหมด</option>
-                                <option value="shown">เฉพาะที่ ASCS เห็น</option>
-                                <option value="hidden">เฉพาะที่ซ่อนใน ASCS</option>
-                            </select>
+                            <button onclick="devFilterReset()" id="dev-filter-reset" class="hidden px-3 py-2 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition" title="ล้างตัวกรองใต้หัวคอลัมน์ทั้งหมด">
+                                <i class="fa-solid fa-filter-circle-xmark mr-1"></i> ล้างตัวกรอง
+                            </button>
                             <button onclick="loadDevBank(true)" class="px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 transition" title="ดึงรายการใหม่จากคลาวด์">
                                 <i class="fa-solid fa-rotate"></i>
                             </button>
@@ -902,6 +890,8 @@
                                         <th class="px-3 py-2 font-semibold text-center whitespace-nowrap" title="ติ๊ก = รายการนี้ยังอยู่ในคลัง แต่หน้าออกแบบและ ASC Studio ไม่แสดงให้เลือก">ซ่อนใน ASCS</th>
                                         <th class="px-3 py-2"></th>
                                     </tr>
+                                    <!-- ตัวกรองใต้หัวคอลัมน์ (ลุงพีสั่ง 9 พ.ย. 2569): ขึ้นเฉพาะคอลัมน์ที่ข้อมูลต่างกัน ≥ 2 แบบ · แต่ละตัวเลือกมีจำนวนกำกับ -->
+                                    <tr id="dev-filters" class="text-[11px] text-slate-500 bg-white"></tr>
                                 </thead>
                                 <tbody id="dev-tbody"></tbody>
                             </table>
@@ -2891,12 +2881,14 @@ async function loadDevBank(force) {
 
 function renderDevBank() {
     const term = (document.getElementById('dev-search').value || '').trim().toLowerCase();
-    const cat  = document.getElementById('dev-filter-cat').value;
-    const hid  = (document.getElementById('dev-filter-hide') || {}).value || '';
+    const F = DEVFILTER;
     const list = DEVBANK.filter(r =>
-        (!cat || r.category === cat) &&
-        (!hid || (hid === 'hidden') === !!r.hidden_in_ascs) &&
+        (!F.category || r.category === F.category) &&
+        (!F.brand    || r.brand === F.brand) &&
+        (!F.subtype  || (r.subtype || '') === F.subtype) &&
+        (!F.hidden   || (F.hidden === 'hidden') === !!r.hidden_in_ascs) &&
         (!term || (r.brand + ' ' + r.model).toLowerCase().includes(term)));
+    renderDevFilters();
 
     const byCat = {};
     DEVBANK.forEach(r => { byCat[r.category] = (byCat[r.category] || 0) + 1; });
@@ -2932,6 +2924,42 @@ function renderDevBank() {
                 '<i class="fa-solid fa-trash"></i></button></td>' +
         '</tr>';
     }).join('');
+}
+
+/* ตัวกรองใต้หัวคอลัมน์ — คอลัมน์ไหนมีค่าต่างกัน ≥ 2 แบบจึงมีช่องเลือก (ค่า + จำนวนแถว) · ค่าที่เลือกคงอยู่จนกดล้าง
+   รุ่นและสรุปไม่ทำเป็นตัวเลือก (เกือบทุกแถวต่างกัน) ใช้ช่องค้นหาด้านบนแทน */
+let DEVFILTER = { category: '', brand: '', subtype: '', hidden: '' };
+const DEV_CAT_LABEL = { PV: 'แผงโซลาร์เซลล์', INV: 'อินเวอร์เตอร์', ESS: 'แบตเตอรี่', OPT: 'ออปติไมเซอร์', EV: 'เครื่องชาร์จรถไฟฟ้า' };
+function devFilterSet(k, v) { DEVFILTER[k] = v; renderDevBank(); }
+function devFilterReset() { DEVFILTER = { category: '', brand: '', subtype: '', hidden: '' }; renderDevBank(); }
+function renderDevFilters() {
+    const row = document.getElementById('dev-filters');
+    if (!row) return;
+    /* นับจากรายการที่ผ่านตัวกรอง "คอลัมน์อื่น" แล้ว ตัวเลขจึงบอกว่าเลือกแล้วจะเหลือกี่แถว */
+    const others = k => DEVBANK.filter(r =>
+        (k === 'category' || !DEVFILTER.category || r.category === DEVFILTER.category) &&
+        (k === 'brand'    || !DEVFILTER.brand    || r.brand === DEVFILTER.brand) &&
+        (k === 'subtype'  || !DEVFILTER.subtype  || (r.subtype || '') === DEVFILTER.subtype) &&
+        (k === 'hidden'   || !DEVFILTER.hidden   || (DEVFILTER.hidden === 'hidden') === !!r.hidden_in_ascs));
+    const sel = (k, pairs, allLabel) => {
+        const distinct = new Set(DEVBANK.map(r => k === 'category' ? r.category : k === 'brand' ? r.brand : k === 'subtype' ? (r.subtype || '') : (r.hidden_in_ascs ? 'hidden' : 'shown')));
+        if (distinct.size < 2 && !DEVFILTER[k]) return '';
+        const cnt = {}; others(k).forEach(r => { const v = k === 'category' ? r.category : k === 'brand' ? r.brand : k === 'subtype' ? (r.subtype || '') : (r.hidden_in_ascs ? 'hidden' : 'shown'); cnt[v] = (cnt[v] || 0) + 1; });
+        const opts = pairs.filter(([v]) => cnt[v] !== undefined || v === DEVFILTER[k]).map(([v, l]) =>
+            '<option value="' + esc(v) + '"' + (DEVFILTER[k] === v ? ' selected' : '') + '>' + esc(l) + ' (' + (cnt[v] || 0) + ')</option>').join('');
+        return '<select onchange="devFilterSet(\'' + k + '\', this.value)" class="w-full max-w-[160px] border border-slate-200 rounded p-1 text-[11px] bg-white' + (DEVFILTER[k] ? ' border-amber-400 text-amber-800 font-semibold' : '') + '">' +
+               '<option value="">' + esc(allLabel) + '</option>' + opts + '</select>';
+    };
+    const uniq = (arr) => [...new Set(arr)].sort((a, b) => String(a).localeCompare(String(b), 'th'));
+    const catPairs  = uniq(DEVBANK.map(r => r.category)).map(c => [c, (DEV_CAT_LABEL[c] || c)]);
+    const brandPairs = uniq(DEVBANK.map(r => r.brand)).map(b => [b, b]);
+    const subPairs  = uniq(DEVBANK.map(r => r.subtype || '')).map(s => [s, s || '(ไม่ระบุ)']);
+    const hidPairs  = [['shown', 'ASCS เห็น'], ['hidden', 'ซ่อนใน ASCS']];
+    const cells = [sel('category', catPairs, 'ทั้งหมด'), sel('brand', brandPairs, 'ทั้งหมด'), sel('subtype', subPairs, 'ทุกชนิด'), '', sel('hidden', hidPairs, 'ทั้งหมด'), ''];
+    const any = cells.some(Boolean);
+    row.innerHTML = any ? cells.map((c, i) => '<td class="' + (i === 0 ? 'px-6' : 'px-3') + ' pb-2 ' + (i === 3 ? 'hidden sm:table-cell' : '') + (i === 4 ? ' text-center' : '') + '">' + c + '</td>').join('') : '';
+    const active = Object.values(DEVFILTER).some(Boolean);
+    const btn = document.getElementById('dev-filter-reset'); if (btn) btn.classList.toggle('hidden', !active);
 }
 
 /* จังหวะที่หนึ่ง อ่านไฟล์ทั้งหมดแล้วแสดงผลให้ตรวจ ยังไม่แตะเซิร์ฟเวอร์ */
