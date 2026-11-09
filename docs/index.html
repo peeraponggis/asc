@@ -876,6 +876,12 @@
                                 <option value="OPT">ออปติไมเซอร์</option>
                                 <option value="EV">เครื่องชาร์จรถไฟฟ้า</option>
                             </select>
+                            <select id="dev-filter-hide" onchange="renderDevBank()" title="ซ่อนใน ASCS"
+                                    class="border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">แสดง: ทั้งหมด</option>
+                                <option value="shown">เฉพาะที่ ASCS เห็น</option>
+                                <option value="hidden">เฉพาะที่ซ่อนใน ASCS</option>
+                            </select>
                             <button onclick="loadDevBank(true)" class="px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 transition" title="ดึงรายการใหม่จากคลาวด์">
                                 <i class="fa-solid fa-rotate"></i>
                             </button>
@@ -893,6 +899,7 @@
                                         <th class="px-3 py-2 font-semibold">ยี่ห้อ</th>
                                         <th class="px-3 py-2 font-semibold">รุ่น</th>
                                         <th class="px-3 py-2 font-semibold hidden sm:table-cell">สรุป</th>
+                                        <th class="px-3 py-2 font-semibold text-center whitespace-nowrap" title="ติ๊ก = รายการนี้ยังอยู่ในคลัง แต่หน้าออกแบบและ ASC Studio ไม่แสดงให้เลือก">ซ่อนใน ASCS</th>
                                         <th class="px-3 py-2"></th>
                                     </tr>
                                 </thead>
@@ -2885,8 +2892,10 @@ async function loadDevBank(force) {
 function renderDevBank() {
     const term = (document.getElementById('dev-search').value || '').trim().toLowerCase();
     const cat  = document.getElementById('dev-filter-cat').value;
+    const hid  = (document.getElementById('dev-filter-hide') || {}).value || '';
     const list = DEVBANK.filter(r =>
         (!cat || r.category === cat) &&
+        (!hid || (hid === 'hidden') === !!r.hidden_in_ascs) &&
         (!term || (r.brand + ' ' + r.model).toLowerCase().includes(term)));
 
     const byCat = {};
@@ -2894,6 +2903,7 @@ function renderDevBank() {
     document.getElementById('dev-count').innerText =
         'ในคลัง ' + DEVBANK.length + ' รายการ (' +
         Object.keys(byCat).sort().map(c => c + ' ' + byCat[c]).join(' · ') + ')' +
+        (DEVBANK.some(r => r.hidden_in_ascs) ? ' · ซ่อนใน ASCS ' + DEVBANK.filter(r => r.hidden_in_ascs).length : '') +
         (list.length !== DEVBANK.length ? ' · แสดง ' + list.length : '');
 
     const body = document.getElementById('dev-tbody');
@@ -2908,11 +2918,15 @@ function renderDevBank() {
         const sub  = r.subtype ? ' <span class="text-[10px] text-slate-400">' + esc(r.subtype) + '</span>' : '';
         const warn = miss.length
             ? '<div class="text-[10px] text-amber-700 mt-0.5">⚠ ขาด ' + esc(miss.join(', ')) + '</div>' : '';
-        return '<tr class="border-t border-slate-100 hover:bg-slate-50">' +
+        return '<tr class="border-t border-slate-100 hover:bg-slate-50' + (r.hidden_in_ascs ? ' opacity-50' : '') + '">' +
             '<td class="px-6 py-2 text-xs text-slate-500">' + esc(r.category) + '</td>' +
             '<td class="px-3 py-2 font-medium text-slate-700">' + esc(r.brand) + '</td>' +
             '<td class="px-3 py-2 text-slate-700">' + esc(r.model) + sub + warn + '</td>' +
             '<td class="px-3 py-2 text-xs text-slate-400 hidden sm:table-cell">' + esc(r.source_file || '') + '</td>' +
+            '<td class="px-3 py-2 text-center whitespace-nowrap">' +
+                '<label class="inline-flex items-center gap-1 cursor-pointer" title="ซ่อนใน ASCS — ยังอยู่ในคลัง ไม่ลบ">' +
+                '<input type="checkbox" ' + (r.hidden_in_ascs ? 'checked ' : '') + 'onchange="devBankHide(\'' + r.id + '\', this.checked)" class="w-4 h-4 accent-amber-600">' +
+                (r.hidden_in_ascs ? '<span class="text-[10px] text-amber-700 font-semibold">ซ่อน</span>' : '') + '</label></td>' +
             '<td class="px-3 py-2 text-right">' +
                 '<button onclick="devBankDelete(\'' + r.id + '\')" class="text-red-500 hover:text-red-700 px-2" title="ลบออกจากคลัง">' +
                 '<i class="fa-solid fa-trash"></i></button></td>' +
@@ -3164,9 +3178,11 @@ async function devBankBackup() {
             const made = [PFX[r.category] || r.category || 'OTHER', r.subtype, r.brand, r.model]
                             .filter(Boolean).join('_');
             let base = devSafeName(raw || made);
-            const path0 = (r.category || 'OTHER') + '/' + base + '.txt';
+            /* รายการที่ติ๊ก "ซ่อนใน ASCS" แยกโฟลเดอร์ จะได้ไม่ลากเข้า ASC Studio ปนกับที่ใช้จริง */
+            const dir = (r.hidden_in_ascs ? '_ซ่อนใน_ASCS/' : '') + (r.category || 'OTHER');
+            const path0 = dir + '/' + base + '.txt';
             let path = path0, n = 2;
-            while (used[path]) { path = (r.category || 'OTHER') + '/' + base + '_' + (n++) + '.txt'; }
+            while (used[path]) { path = dir + '/' + base + '_' + (n++) + '.txt'; }
             used[path] = true;
             files.push({ name: path, text: devSpecToText(r) });
         });
@@ -3190,6 +3206,10 @@ async function devBankBackup() {
             '2. โฟลเดอร์ PV INV ESS OPT EV',
             '   ไฟล์ .txt ที่ประกอบขึ้นใหม่จากค่าที่เก็บไว้',
             '   ลากเข้าช่อง "เลือกไฟล์ดาต้าชีต" ในหน้าคลังได้ทันที ค่าที่ได้จะตรงกับของเดิมทุกฟิลด์',
+            '   ลากไฟล์เหล่านี้เข้า ASC Studio ได้เช่นกัน (นำเข้า database/datasheet)',
+            '',
+            '3. โฟลเดอร์ _ซ่อนใน_ASCS (ถ้ามี) = รายการที่ติ๊ก "ซ่อนใน ASCS" ' + DEVBANK.filter(r => r.hidden_in_ascs).length + ' รายการ',
+            '   ยังอยู่ในคลังบนคลาวด์ แต่ตั้งใจไม่ให้แสดงใน ASC Studio — อย่าลากโฟลเดอร์นี้เข้า ASC Studio',
             '',
             'ข้อจำกัดที่ต้องรู้',
             '   คลังบนคลาวด์เก็บเฉพาะค่า ไม่ได้เก็บคอมเมนต์อธิบายแต่ละฟิลด์',
@@ -3219,6 +3239,23 @@ async function devBankBackup() {
         devMsg('สร้างไฟล์สำรองไม่สำเร็จ : ' + e.message, false);
     } finally {
         if (btn) { btn.disabled = false; btn.innerHTML = old; }
+    }
+}
+
+/* ช่องติ๊ก "ซ่อนใน ASCS" (ลุงพีสั่ง 8 พ.ย. 2569): บันทึกทันที ไม่ลบ · หน้าออกแบบ/ASC Studio รุ่นเว็บกรองรายการที่ซ่อนออก (asc-devices.js)
+   ไฟล์สำรอง .txt ของรายการที่ซ่อนอยู่ในโฟลเดอร์ _ซ่อนใน_ASCS แยกต่างหาก จะได้ไม่ลากเข้า ASC Studio ไปด้วย */
+async function devBankHide(id, hidden) {
+    const r = DEVBANK.find(x => x.id === id);
+    if (!r) return;
+    try {
+        await AscCloud.setDeviceHidden(id, hidden);
+        r.hidden_in_ascs = !!hidden;
+        devMsg((hidden ? 'ซ่อน ' : 'แสดง ') + r.brand + ' ' + r.model + ' ใน ASCS แล้ว' + (hidden ? ' (ยังอยู่ในคลัง)' : ''), true);
+        if (window.AscDevices) { try { await AscDevices.refresh(); } catch (e) {} }
+        renderDevBank();
+    } catch (e) {
+        devMsg(e.message, false);
+        renderDevBank();
     }
 }
 

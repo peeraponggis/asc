@@ -999,7 +999,7 @@
             let out = [], from = 0;
             for (;;) {
                 const { data, error } = await sb.from('devices')
-                    .select('id, category, brand, model, subtype, spec, source_file, updated_at')
+                    .select('id, category, brand, model, subtype, spec, source_file, updated_at, hidden_in_ascs')
                     .order('category').order('brand').order('model')
                     .range(from, from + PAGE - 1);
                 if (error) throw fail(error);
@@ -1033,6 +1033,18 @@
                 .select('id');
             if (error) throw fail(error);
             return (data || []).length;
+        },
+
+        /* ติ๊ก/เลิกติ๊ก "ซ่อนใน ASCS" (เฉพาะผู้ดูแลระบบ · ไม่ลบ) — รายการยังอยู่ในคลัง แต่หน้าออกแบบและ ASC Studio ไม่แสดง
+           อัปเดต updated_at ด้วย เพื่อให้ตราประทับเปลี่ยน แคชในเครื่องของทุกคนจึงดึงใหม่ */
+        async setDeviceHidden(id, hidden) {
+            need();
+            const { data, error } = await sb.from('devices')
+                .update({ hidden_in_ascs: !!hidden, updated_at: new Date().toISOString() })
+                .eq('id', id).select('id');
+            if (error) throw fail(error);
+            if (!data || !data.length) throw new Error('บันทึกไม่สำเร็จ เฉพาะผู้ดูแลระบบเท่านั้นที่แก้คลังอุปกรณ์ได้');
+            return true;
         },
 
         async deleteDevice(id) {
