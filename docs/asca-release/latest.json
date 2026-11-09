@@ -1,15 +1,13 @@
 {
  "app": "ASC Architect",
- "version": "0.31.2",
+ "version": "0.31.4",
  "runtime": "py312-66bd077d",
- "published": "2026-11-08",
- "notes": [
-  "GET /api/gate + หน้าจอเต็มจอในหน้าโปรแกรม (asc_link.py ไฟล์เดียวกับ ASC Studio)"
- ],
+ "published": "2026-11-09",
+ "notes": [],
  "package": {
-  "file": "asca-app-0.31.2.bin",
-  "size": 16227661,
-  "sha256": "acfb53ebfc94ccf58f1f345be830fe1305e08f74e0d2562b24fe06727ec34922"
+  "file": "asca-app-0.31.4.bin",
+  "size": 16229358,
+  "sha256": "71853bb991f6d1b5f145895832f04ff69658211d0d06eed049900f10b4608af5"
  },
  "setup_url": null,
  "constructcad": "0.8.0"
