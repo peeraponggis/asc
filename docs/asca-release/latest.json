@@ -1,13 +1,13 @@
 {
  "app": "ASC Architect",
- "version": "0.31.4",
+ "version": "0.31.5",
  "runtime": "py312-66bd077d",
  "published": "2026-11-09",
  "notes": [],
  "package": {
-  "file": "asca-app-0.31.4.bin",
-  "size": 16229358,
-  "sha256": "71853bb991f6d1b5f145895832f04ff69658211d0d06eed049900f10b4608af5"
+  "file": "asca-app-0.31.5.bin",
+  "size": 16229495,
+  "sha256": "f89edb131db32dc5ed9b4c120f094a7a2a29404adf34086451785a39cb22f06f"
  },
  "setup_url": null,
  "constructcad": "0.8.0"

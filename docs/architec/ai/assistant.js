@@ -5,10 +5,10 @@
 // ป้ายที่มาคิดจากสิ่งที่ใช้จริง: 📚 คลัง · 🗂️ ข้อมูลในงาน · 🌐 ความรู้ทั่วไป · ➡️ ต่อไปทำอะไร จากสถานะจริงของหน้า
 // หน้าเว็บบอกสถานะผ่าน window.ascaAI = { page(), pageName(), facts(), next(), sets, run(name, params), snapshot(), restore(s), focus(t),
 //   checks(), explain(), bom(), autoPlan(), commands() } (ดู editor/main.js · cad/app.js · app.js) · คำสั่ง/ตัวตรวจค่าอยู่ที่ ai/actions.js
-import { loadKB } from "./kb.js?v=0.31.1";
-import { providers, byId, loadCfg, saveCfg, chain, askChain, parseReply, reachable, testProvider, PRESETS, prettyModel, okBase, setProxy, listModels, chatUrl } from "./providers.js?v=0.31.1";
-import * as A from "./actions.js?v=0.31.1";
-import "./help.js?v=0.31.1";                                                     // ช่วยเหลือตามตำแหน่ง F1 · Shift ชี้ · คลิกขวา
+import { loadKB } from "./kb.js?v=0.31.5";
+import { providers, byId, loadCfg, saveCfg, chain, askChain, parseReply, reachable, testProvider, PRESETS, prettyModel, okBase, setProxy, listModels, chatUrl } from "./providers.js?v=0.31.5";
+import * as A from "./actions.js?v=0.31.5";
+import "./help.js?v=0.31.5";                                                     // ช่วยเหลือตามตำแหน่ง F1 · Shift ชี้ · คลิกขวา
 
 const BASE = new URL("./", import.meta.url);
 const CLOUD = window.PA_MODE === "cloud";
@@ -100,7 +100,7 @@ async function runAction(a) {
 }
 
 // ---------------------------------------------------------------- piBot: 4 ท่า (ตาเปิด · ตาปิด · นิ้วซ้ายกด · นิ้วขวากด)
-function bot(size) { return `<span class="pibot" style="width:${size}px;height:${size}px;background-image:url(${new URL("pibot.webp?v=0.31.1", BASE)})" aria-hidden="true"></span>`; }
+function bot(size) { return `<span class="pibot" style="width:${size}px;height:${size}px;background-image:url(${new URL("pibot.webp?v=0.31.5", BASE)})" aria-hidden="true"></span>`; }
 let mood = "idle", frame = 0, burst = 0, nextBlink = Date.now() + 2500;
 function animate() {
   const now = Date.now();

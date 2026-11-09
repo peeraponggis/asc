@@ -14,7 +14,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 const OWN = ".hlp-pop,.hlp-bar,.hlp-tip,.hlp-ctx,.hlp-btn,.aiw,.aifab";
 
 let help = null, helpP = null, on = false, pop = null, tip = null, badges = null, timer = 0, shift = false;
-const load = () => (helpP ||= fetch(new URL("help.json?v=0.31.1", BASE)).then((r) => (r.ok ? r.json() : { entries: {} })).catch(() => ({ entries: {} })).then((h) => (help = h)));
+const load = () => (helpP ||= fetch(new URL("help.json?v=0.31.5", BASE)).then((r) => (r.ok ? r.json() : { entries: {} })).catch(() => ({ entries: {} })).then((h) => (help = h)));
 
 /** ปุ่ม/ช่องที่ใกล้ที่สุด → { el, key } · key = <หน้า>:<ชนิด>:<ค่า> (ดู knowledge/help/README.md) */
 const own = (el) => { for (const [a, t] of ATTRS) if (el.dataset[a]) return `${PAGE}:${t}:${el.dataset[a]}`; return el.id ? `${PAGE}:id:${el.id}` : ""; };

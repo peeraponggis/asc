@@ -2,13 +2,13 @@
 // เมนู 10 หมวด · แถบเครื่องมือ (มาตรฐาน · เงา · รูปแบบ · ตำแหน่ง · มุมมอง · ตัด/ฉาก) · ชุดเครื่องมือใหญ่ 37 ปุ่ม · ถาดเครื่องมือ 11 แผง (ติดขวา)
 // ข้อมูลโมเดล 11 หน้า · แถบเครื่องมือ (ติ๊กเลือก) · Render ภาพนำเสนอ · ช่องเดิมของ main.js (#sun-date #sun-time #section #scenes #mat3d) ยังใช้ร่วม
 import * as THREE from "three";
-import { STYLES, TAGS } from "./view3d.js?v=0.31.1";
-import { PALETTE, swatch } from "./materials.js?v=0.31.1";
-import { KINDS } from "./props3d.js?v=0.31.1";
-import { entityHTML, applyField } from "./entity.js?v=0.31.1";
-import * as SEL from "./sel3d.js?v=0.31.1";
-import { Tools3D, SETTINGS } from "./tools3d.js?v=0.31.1";
-import { openImport3d } from "./import3d.js?v=0.31.1";
+import { STYLES, TAGS } from "./view3d.js?v=0.31.5";
+import { PALETTE, swatch } from "./materials.js?v=0.31.5";
+import { KINDS } from "./props3d.js?v=0.31.5";
+import { entityHTML, applyField } from "./entity.js?v=0.31.5";
+import * as SEL from "./sel3d.js?v=0.31.5";
+import { Tools3D, SETTINGS } from "./tools3d.js?v=0.31.5";
+import { openImport3d } from "./import3d.js?v=0.31.5";
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
