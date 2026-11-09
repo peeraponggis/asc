@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.167.0",
+ "version": "0.167.1",
  "published": "2026-11-09",
  "notes": [
-  "สิทธิ์ตามแพ็กเกจ: ออกรายงานตามประเภทที่แพ็กเกจรวม · เพดาน kWp รวม · โลโก้/SLD-DXF เฉพาะแพ็กเกจที่รวม · ลายน้ำทดลองใช้บน PDF · /api/access · ล็อกโปรแกรมที่ไม่อยู่ในแพ็กเกจ (ไม่รู้สิทธิ์ = อนุญาต)"
+  "ปุ่ม 🗑 ล้างคำตอบแบบสำรวจนี้ ในหน้าต่างแบบสำรวจหน้างาน (ทุกประเภท · ล้างเฉพาะคำตอบ ช่องในงานไม่แตะ · Ctrl+Z ย้อนได้) แทนปุ่มของหน้าต่าง EV เดิม"
  ],
  "requirements": "5c56ea9839289d16",
  "package": {
-  "file": "ascs-app-0.167.0.bin",
-  "size": 20403691,
-  "sha256": "99e2b499d6ada80ae0c38c55a272ff825fac20cfac5f9479cb65088fc2affd0e"
+  "file": "ascs-app-0.167.1.bin",
+  "size": 20404271,
+  "sha256": "c7120fb52bdd5f697386a135fac7092b6c9790a22933af298cd5f1e84801efea"
  },
  "setup": {
-  "file": "ascs-setup-0.167.0.bin",
-  "size": 44010545,
-  "sha256": "3cc70dbae1f931fc453254a98f7361265c63560f3ab1d1642235d553d4295437",
-  "name": "ASC-Studio-Setup-0.167.0.exe"
+  "file": "ascs-setup-0.167.1.bin",
+  "size": 44011569,
+  "sha256": "32b7c31c4cff3ae3af432d9560a5e899d2a322a04c298a536d5c1fa275b28486",
+  "name": "ASC-Studio-Setup-0.167.1.exe"
  }
 }
