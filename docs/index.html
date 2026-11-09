@@ -800,10 +800,10 @@
                                     <tr class="text-left text-xs text-slate-500">
                                         <th class="pl-6 pr-1 py-2 w-8"><input type="checkbox" id="al-sel-all" onchange="allowlistSelectAll(this.checked)" class="w-4 h-4 accent-red-600 cursor-pointer" title="เลือกทั้งหมดที่แสดง"></th>
                                         <th class="px-3 py-2 font-semibold"><button type="button" onclick="allowlistSort('email')" class="hover:text-slate-800 select-none" title="คลิกเพื่อเรียง ก→ฮ / ฮ→ก">อีเมล <i id="al-sort-email" class="fa-solid fa-sort ml-0.5"></i></button></th>
-                                        <th class="px-3 py-2 font-semibold"><button type="button" onclick="allowlistSort('status')" class="hover:text-slate-800 select-none" title="คลิกเพื่อเรียง สมัครแล้วก่อน / ยังไม่สมัครก่อน">สถานะ <i id="al-sort-status" class="fa-solid fa-sort ml-0.5"></i></button></th>
-                                        <th class="px-3 py-2 font-semibold">สิทธิ์การใช้งาน</th>
-                                        <th class="px-3 py-2 font-semibold">สิทธิ์เมนู <span class="font-normal text-slate-400">(คลิกเพื่อเปิด/ปิด)</span></th>
-                                        <th class="px-3 py-2 font-semibold hidden sm:table-cell">หมายเหตุ</th>
+                                        <th class="px-3 py-2 font-semibold"><button type="button" onclick="allowlistSort('status')" class="hover:text-slate-800 select-none" title="คลิกเพื่อเรียง สมัครแล้วก่อน / ยังไม่สมัครก่อน">สถานะ <i id="al-sort-status" class="fa-solid fa-sort ml-0.5"></i></button><div id="al-f-status"></div></th>
+                                        <th class="px-3 py-2 font-semibold">สิทธิ์การใช้งาน<div id="al-f-access"></div></th>
+                                        <th class="px-3 py-2 font-semibold">สิทธิ์เมนู <span class="font-normal text-slate-400">(คลิกเพื่อเปิด/ปิด)</span><div id="al-f-menu"></div></th>
+                                        <th class="px-3 py-2 font-semibold hidden sm:table-cell">หมายเหตุ<div id="al-f-note"></div></th>
                                         <th class="px-3 py-2"></th>
                                     </tr>
                                 </thead>
@@ -2386,11 +2386,38 @@ async function loadAllowlist() {
     }
 }
 
+/* ตัวกรองรายคอลัมน์ (ลุงพีสั่ง 9 พ.ย. 2569): ช่องเลือกใต้หัวตาราง แสดงเฉพาะคอลัมน์ที่มีข้อมูลต่างกัน ≥ 2 แบบ
+   vals(x) = ค่าของแถวนั้น (หลายค่าได้ เช่น เมนู) · เลือก "ทั้งหมด" = ไม่กรอง */
+const AL_FILT = { status: '', access: '', menu: '', note: '' };
+const AL_COLS = {
+    status: x => [x.registered ? 'สมัครแล้ว' : 'ยังไม่สมัคร'],
+    access: x => { const r = ACCESS_READY ? ACCESS[String(x.email).toLowerCase()] : null; if (!r || !r.access) return [];
+        const a = r.access; const m = { exempt: 'ยกเว้น (ผู้ดูแล/บริษัท)', grace: 'บัญชีเดิม', trial: 'ทดลอง', suspended: 'พักสิทธิ์', expired: 'หมดสิทธิ์' };
+        return [a.state === 'active' ? 'แพ็กเกจ ' + (a.package ? a.package.name : '') : (m[a.state] || a.state)]; },
+    menu: x => { if (!x.registered || !x.menusReady) return []; const v = APP_MENUS.filter(m => !m.adminOnly && (x.isAdmin || x.menus.includes(m.key))).map(m => m.label);
+        if (x.isAdmin) v.push('Admin'); return v.length ? v : ['ยังไม่เปิดเมนูใด']; },
+    note: x => [(x.note || '').trim() ? 'มีหมายเหตุ' : 'ไม่มีหมายเหตุ']
+};
+function allowlistFilterUi() {
+    for (const k of Object.keys(AL_COLS)) {
+        const box = document.getElementById('al-f-' + k); if (!box) continue;
+        const cnt = {}; ALLOWLIST.forEach(x => AL_COLS[k](x).forEach(v => { cnt[v] = (cnt[v] || 0) + 1; }));
+        const keys = Object.keys(cnt).sort((a, b) => a.localeCompare(b, 'th'));
+        if (keys.length < 2) { box.innerHTML = ''; AL_FILT[k] = ''; continue; }
+        if (AL_FILT[k] && !cnt[AL_FILT[k]]) AL_FILT[k] = '';
+        box.innerHTML = '<select onchange="AL_FILT.' + k + '=this.value;renderAllowlist()" class="mt-1 w-full max-w-[160px] border rounded px-1 py-0.5 text-[11px] font-normal '
+            + (AL_FILT[k] ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-300 bg-white text-slate-600') + '"><option value="">ทั้งหมด</option>'
+            + keys.map(v => '<option value="' + esc(v) + '"' + (AL_FILT[k] === v ? ' selected' : '') + '>' + esc(v) + ' (' + cnt[v] + ')</option>').join('') + '</select>';
+    }
+}
+function allowlistFilter(x) { return Object.keys(AL_COLS).every(k => !AL_FILT[k] || AL_COLS[k](x).includes(AL_FILT[k])); }
+
 function renderAllowlist() {
+    allowlistFilterUi();
     const term = (document.getElementById('al-search').value || '').trim().toLowerCase();
-    const list = allowlistSorted(term ? ALLOWLIST.filter(x => x.email.toLowerCase().includes(term) ||
-                                                           (x.note || '').toLowerCase().includes(term))
-                                      : ALLOWLIST);
+    const filtered = Object.values(AL_FILT).some(Boolean);
+    const list = allowlistSorted(ALLOWLIST.filter(x => allowlistFilter(x) && (!term || x.email.toLowerCase().includes(term) ||
+                                                           (x.note || '').toLowerCase().includes(term))));
     for (const k of ['email', 'status']) {
         const ic = document.getElementById('al-sort-' + k);
         if (ic) ic.className = 'fa-solid ml-0.5 ' + (AL_SORT.key !== k ? 'fa-sort text-slate-300' : AL_SORT.dir > 0 ? 'fa-sort-up' : 'fa-sort-down');
@@ -2399,7 +2426,7 @@ function renderAllowlist() {
     const done = ALLOWLIST.filter(x => x.registered).length;
     document.getElementById('al-count').innerText =
         'ทั้งหมด ' + ALLOWLIST.length + ' รายชื่อ · สมัครแล้ว ' + done + ' · ยังไม่สมัคร ' + (ALLOWLIST.length - done) +
-        (term ? '  (แสดง ' + list.length + ')' : '');
+        ((term || filtered) ? '  (แสดง ' + list.length + ')' : '');
 
     AL_SHOWN = list;
     document.getElementById('al-tbody').innerHTML = list.length ? list.map(x => `
@@ -2425,7 +2452,7 @@ function renderAllowlist() {
                 </button>
             </td>
         </tr>`).join('')
-        : '<tr><td colspan="7" class="px-6 py-4 text-sm text-slate-400">ไม่พบรายชื่อที่ตรงกับคำค้นหา</td></tr>';
+        : '<tr><td colspan="7" class="px-6 py-4 text-sm text-slate-400">ไม่พบรายชื่อที่ตรงกับคำค้นหา/ตัวกรอง</td></tr>';
     allowlistSyncSel();
 }
 
