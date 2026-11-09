@@ -368,6 +368,8 @@
                     <p class="text-sm text-slate-500" id="greet-sub">นี่คือภาพรวมโครงการโซลาร์เซลล์ของคุณในระบบ</p>
                 </div>
 
+                <div id="my-access-card" class="hidden mb-8"></div>
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                         <div>
@@ -752,6 +754,22 @@
                                     <i class="fa-solid fa-plus mr-1"></i> เพิ่มรายชื่อ
                                 </button>
                             </div>
+                            <div class="mt-3 p-3 rounded-lg border-2 border-amber-400 bg-amber-50">
+                                <label class="flex items-center gap-2 text-sm font-semibold text-slate-800 cursor-pointer">
+                                    <input type="checkbox" id="al-pkg-on" onchange="allowlistPkgToggle()" class="w-4 h-4 accent-emerald-600">
+                                    ใช้สิทธิ์ตามแพ็กเกจที่ซื้อ
+                                    <span class="font-normal text-xs text-slate-500">(ไม่ติ๊ก = ทดลองใช้ 7 วันนับจากวันสมัคร)</span>
+                                </label>
+                                <div id="al-pkg-row" class="hidden flex flex-wrap gap-2 mt-2 items-center text-sm">
+                                    <span>แพ็กเกจ</span><select id="al-pkg" onchange="allowlistPkgToggle()" class="border border-slate-300 rounded-lg p-2 bg-white"></select>
+                                    <span>เริ่ม</span><input type="date" id="al-from" onchange="allowlistPkgToggle(true)" class="border border-slate-300 rounded-lg p-2">
+                                    <span>หมดอายุ</span><input type="date" id="al-to" class="border border-slate-300 rounded-lg p-2">
+                                    <span>ที่มา</span>
+                                    <select id="al-src" class="border border-slate-300 rounded-lg p-2 bg-white">
+                                        <option>ซื้อเอง</option><option>คอร์สอบรม</option><option>ตัวแทนแจก</option><option>ทีมงาน</option>
+                                    </select>
+                                </div>
+                            </div>
                             <div id="al-msg" class="text-xs mt-2"></div>
                         </div>
 
@@ -759,6 +777,17 @@
                             <input type="text" id="al-search" placeholder="ค้นหาอีเมล..." oninput="renderAllowlist()"
                                    class="flex-1 min-w-[160px] border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <span id="al-count" class="text-xs text-slate-500"></span>
+                            <button type="button" onclick="accessApproveLegacy()" title="บัญชีเดิมที่สมัครไว้แล้ว ใช้งานได้ต่ออีก 1 เดือนนับจากวันนี้ (ยกเว้นผู้ดูแลระบบและ @proinventive.co.th)"
+                                    class="px-3 py-2 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow transition whitespace-nowrap">
+                                <i class="fa-solid fa-circle-check mr-1"></i> อนุมัติบัญชีเดิม (ใช้ได้ 1 เดือน)
+                            </button>
+                            <button type="button" onclick="accessAutoSuspendNow()" title="พักสิทธิ์บัญชีที่ไม่ได้ใช้งานเกิน 30 วัน (ไม่ลบ · เปิดคืนได้) · ระบบทำเองทุกวันถ้าเปิด pg_cron"
+                                    class="px-3 py-2 rounded-lg text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow transition whitespace-nowrap">
+                                <i class="fa-solid fa-pause mr-1"></i> พักบัญชีที่ไม่ใช้เกิน 30 วัน
+                            </button>
+                            <button type="button" onclick="accessPackagesOpen()" class="px-3 py-2 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow transition whitespace-nowrap">
+                                <i class="fa-solid fa-box mr-1"></i> แพ็กเกจ
+                            </button>
                             <button id="al-bulk-btn" onclick="allowlistRemoveSelected()" disabled
                                     class="px-3 py-2 rounded-lg text-xs font-bold text-white bg-red-600 hover:bg-red-700 shadow transition whitespace-nowrap disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed">
                                 <i class="fa-solid fa-trash-can mr-1"></i> ถอดที่เลือก (<span id="al-sel-n">0</span>)
@@ -772,6 +801,7 @@
                                         <th class="pl-6 pr-1 py-2 w-8"><input type="checkbox" id="al-sel-all" onchange="allowlistSelectAll(this.checked)" class="w-4 h-4 accent-red-600 cursor-pointer" title="เลือกทั้งหมดที่แสดง"></th>
                                         <th class="px-3 py-2 font-semibold"><button type="button" onclick="allowlistSort('email')" class="hover:text-slate-800 select-none" title="คลิกเพื่อเรียง ก→ฮ / ฮ→ก">อีเมล <i id="al-sort-email" class="fa-solid fa-sort ml-0.5"></i></button></th>
                                         <th class="px-3 py-2 font-semibold"><button type="button" onclick="allowlistSort('status')" class="hover:text-slate-800 select-none" title="คลิกเพื่อเรียง สมัครแล้วก่อน / ยังไม่สมัครก่อน">สถานะ <i id="al-sort-status" class="fa-solid fa-sort ml-0.5"></i></button></th>
+                                        <th class="px-3 py-2 font-semibold">สิทธิ์การใช้งาน</th>
                                         <th class="px-3 py-2 font-semibold">สิทธิ์เมนู <span class="font-normal text-slate-400">(คลิกเพื่อเปิด/ปิด)</span></th>
                                         <th class="px-3 py-2 font-semibold hidden sm:table-cell">หมายเหตุ</th>
                                         <th class="px-3 py-2"></th>
@@ -1487,6 +1517,7 @@ function kwpOf(proj) {
    5. หน้า Projects
    ───────────────────────────────────────────── */
 function renderDashboard() {
+    try { renderMyAccess(); } catch (e) { console.warn('แสดงสิทธิ์การใช้งานไม่สำเร็จ', e); }
     const grid  = document.getElementById('project-grid');
     const empty = document.getElementById('empty-state');
     const term  = document.getElementById('search-input').value.trim().toLowerCase();
@@ -2344,13 +2375,14 @@ async function loadAllowlist() {
     if (!card) return;
     card.classList.remove('hidden');
     document.getElementById('al-tbody').innerHTML =
-        '<tr><td colspan="6" class="px-6 py-4 text-sm text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังโหลด...</td></tr>';
+        '<tr><td colspan="7" class="px-6 py-4 text-sm text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังโหลด...</td></tr>';
     try {
         ALLOWLIST = await AscCloud.listAllowedEmails();
+        await loadAccessAdmin();
         renderAllowlist();
     } catch (e) {
         document.getElementById('al-tbody').innerHTML =
-            '<tr><td colspan="6" class="px-6 py-4 text-sm text-red-600">โหลดรายชื่อไม่สำเร็จ : ' + esc(e.message) + '</td></tr>';
+            '<tr><td colspan="7" class="px-6 py-4 text-sm text-red-600">โหลดรายชื่อไม่สำเร็จ : ' + esc(e.message) + '</td></tr>';
     }
 }
 
@@ -2383,15 +2415,17 @@ function renderAllowlist() {
                     ? '<span class="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded">สมัครแล้ว</span>'
                     : '<span class="text-[11px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded">ยังไม่สมัคร</span>'}
             </td>
+            <td class="px-3 py-2.5">${accessCell(x)}</td>
             <td class="px-3 py-2.5">${accessChips(x)}</td>
             <td class="px-3 py-2.5 text-xs text-slate-500 hidden sm:table-cell">${esc(x.note || '')}</td>
-            <td class="px-3 py-2.5 text-right">
+            <td class="px-3 py-2.5 text-right whitespace-nowrap">
+                ${accessRowButtons(x)}
                 <button onclick="allowlistRemove('${esc(x.email)}')" class="text-slate-300 hover:text-red-500 transition" title="ถอดออกจากรายชื่อ">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
             </td>
         </tr>`).join('')
-        : '<tr><td colspan="6" class="px-6 py-4 text-sm text-slate-400">ไม่พบรายชื่อที่ตรงกับคำค้นหา</td></tr>';
+        : '<tr><td colspan="7" class="px-6 py-4 text-sm text-slate-400">ไม่พบรายชื่อที่ตรงกับคำค้นหา</td></tr>';
     allowlistSyncSel();
 }
 
@@ -2455,6 +2489,14 @@ async function allowlistAdd() {
     btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
     try {
         await AscCloud.addAllowedEmail(mail, note);
+        // ติ๊ก "ใช้สิทธิ์ตามแพ็กเกจที่ซื้อ" → บันทึกแพ็กเกจ/วันเริ่ม-หมดอายุ/ที่มา (ต้องรัน supabase/access-control.sql)
+        if (document.getElementById('al-pkg-on').checked) {
+            await AscCloud.accessSet({
+                email: mail, usePackage: true, package: document.getElementById('al-pkg').value,
+                validFrom: document.getElementById('al-from').value, validTo: document.getElementById('al-to').value,
+                source: document.getElementById('al-src').value
+            });
+        }
         document.getElementById('al-email').value = '';
         document.getElementById('al-note').value  = '';
         allowMsg('เพิ่ม ' + mail.toLowerCase() + ' แล้ว — บอกให้เขาไปกด "สมัครใช้งาน" ที่หน้าเข้าสู่ระบบได้เลย', true);
@@ -2517,6 +2559,221 @@ function renderAppLinks() {
 }
 
 /* ป้ายสิทธิ์ในตารางรายชื่อ · Admin = เห็นทุกเมนูอยู่แล้ว ป้ายเมนูจึงปิดกดไว้ */
+/* ─── สิทธิ์การใช้งาน · แพ็กเกจ (supabase/access-control.sql · 8 พ.ย. 2569) ───────────────
+   รายชื่อผู้มีสิทธิ์: ติ๊กใช้แพ็กเกจ · แก้สิทธิ์รายบัญชี · พัก/เปิดสิทธิ์ · อนุมัติบัญชีเดิม 1 เดือน · พักอัตโนมัติ 30 วัน
+   Dashboard ของแต่ละบัญชี: การ์ด "สิทธิ์การใช้งานของฉัน" (แพ็กเกจ · วันหมด · เพดาน kWp · เครื่องพร้อมกัน · ความสามารถ)
+   ยังไม่ได้รัน SQL = ADMIN เห็นข้อความให้รันไฟล์ · ผู้ใช้ไม่เห็นการ์ด */
+let ACCESS = {}, ACCESS_PKGS = [], ACCESS_READY = false;
+const FEATURE_LABELS = {
+    ascs: 'ASC Studio', asca: 'ASC Architect', check: 'ตรวจ วสท.', report: 'รายงาน', proposal: 'ข้อเสนอลูกค้า', engineering: 'รายงานวิศวกรรม',
+    submission: 'ชุดยื่นการไฟฟ้า', sld_dxf: 'SLD/DXF', logo: 'โลโก้บริษัท', team_share: 'แชร์งานในทีม', watermark: 'PDF มีลายน้ำ'
+};
+
+function accFmtDate(d) {
+    if (!d) return '—';
+    const t = new Date(String(d).length <= 10 ? d + 'T00:00:00' : d);
+    return isNaN(t) ? String(d) : t.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+}
+function accAgo(d) {
+    if (!d) return 'ยังไม่เคยใช้';
+    const n = Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
+    return n <= 0 ? 'วันนี้' : n + ' วันก่อน';
+}
+function accStateChip(a) {
+    const chip = (cls, text) => '<span class="text-[11px] px-2 py-0.5 rounded border whitespace-nowrap ' + cls + '">' + esc(text) + '</span>';
+    const pk = a.package ? a.package.name : '';
+    switch (a.state) {
+        case 'exempt':    return chip('bg-slate-100 text-slate-600 border-slate-300', 'ยกเว้น (ผู้ดูแล/บริษัท)');
+        case 'active':    return chip('bg-emerald-50 text-emerald-700 border-emerald-200', 'แพ็กเกจ ' + pk) + ' <span class="text-[11px] text-slate-500">ถึง ' + esc(accFmtDate(a.validTo)) + '</span>';
+        case 'grace':     return chip('bg-amber-50 text-amber-700 border-amber-200', 'บัญชีเดิม') + ' <span class="text-[11px] text-slate-500">ถึง ' + esc(accFmtDate(a.graceUntil)) + '</span>';
+        case 'trial':     return chip('bg-blue-50 text-blue-700 border-blue-200', 'ทดลอง') + ' <span class="text-[11px] text-slate-500">ถึง ' + esc(accFmtDate(a.validTo)) + '</span>';
+        case 'suspended': return chip('bg-red-50 text-red-700 border-red-200', 'พักสิทธิ์' + (String(a.suspendReason || '').indexOf('idle') === 0 ? ' (ไม่ใช้ 30 วัน)' : ''));
+        case 'expired':   return chip('bg-red-50 text-red-700 border-red-200', 'หมดสิทธิ์');
+        default:          return chip('bg-slate-100 text-slate-500 border-slate-300', a.state || '—');
+    }
+}
+
+async function loadAccessAdmin() {
+    try {
+        ACCESS_PKGS = await AscCloud.accessPackages();
+        const list = await AscCloud.accessAdminList();
+        ACCESS = {};
+        list.forEach(r => { ACCESS[String(r.email).toLowerCase()] = r; });
+        ACCESS_READY = true;
+        const sel = document.getElementById('al-pkg');
+        if (sel && !sel.options.length) {
+            ACCESS_PKGS.forEach(p => { const o = document.createElement('option'); o.value = p.code; o.textContent = p.name; if (p.code === 'starter') o.selected = true; sel.appendChild(o); });
+        }
+    } catch (e) { ACCESS_READY = false; console.warn('อ่านสิทธิ์การใช้งานไม่สำเร็จ (ยังไม่ได้รัน supabase/access-control.sql?)', e); }
+}
+
+function accessCell(x) {
+    if (!ACCESS_READY) return '<span class="text-[11px] text-amber-600">รัน supabase/access-control.sql ก่อน</span>';
+    const r = ACCESS[String(x.email).toLowerCase()];
+    if (!r) return '<span class="text-[11px] text-slate-400">—</span>';
+    const a = r.access || {};
+    const lim = a.maxDevices ? ' / ' + a.maxDevices : '';
+    return '<div class="leading-tight">' + accStateChip(a) + (r.request ? ' <span title="ขอเปิดสิทธิ์ รอผู้ดูแล" class="text-[11px]">🔔</span>' : '')
+        + '<div class="text-[11px] text-slate-500 mt-0.5">ใช้ล่าสุด ' + esc(accAgo(r.lastUse)) + (r.devicesNow ? ' · ออนไลน์ ' + r.devicesNow + lim + ' เครื่อง' : '') + '</div></div>';
+}
+function accessRowButtons(x) {
+    if (!ACCESS_READY) return '';
+    const r = ACCESS[String(x.email).toLowerCase()];
+    if (!r || !r.access || r.access.state === 'exempt') return '';
+    const m = esc(x.email), susp = r.access.state === 'suspended';
+    return '<button onclick="accessEditOpen(\'' + m + '\')" class="text-[11px] px-2 py-0.5 rounded border border-slate-300 text-slate-600 hover:border-blue-400 hover:text-blue-600 mr-1">แก้สิทธิ์</button>'
+        + '<button onclick="accessToggleSuspend(\'' + m + '\',' + (susp ? 'false' : 'true') + ')" class="text-[11px] px-2 py-0.5 rounded border mr-2 '
+        + (susp ? 'bg-emerald-600 text-white border-emerald-600' : 'border-amber-400 text-amber-700 hover:bg-amber-50') + '">' + (susp ? '▶ เปิดสิทธิ์' : '⏸ พัก') + '</button>';
+}
+
+async function accessToggleSuspend(email, on) {
+    if (on && !confirm('พักสิทธิ์ ' + email + ' หรือไม่?\n\nงานและข้อมูลยังอยู่ครบ ติ๊กเปิดสิทธิ์คืนได้ทุกเมื่อ')) return;
+    try {
+        await AscCloud.accessSuspend(email, on, 'manual');
+        allowMsg((on ? 'พักสิทธิ์ ' : 'เปิดสิทธิ์ ') + email + ' แล้ว', true);
+        await loadAllowlist();
+    } catch (e) { allowMsg(e.message, false); }
+}
+async function accessApproveLegacy() {
+    if (!confirm('อนุมัติบัญชีเดิมทั้งหมดให้ใช้งานได้อีก 1 เดือน นับจากวันนี้?\n\n(ยกเว้นผู้ดูแลระบบ · @proinventive.co.th · บัญชีที่กำหนดแพ็กเกจไว้แล้ว)')) return;
+    try {
+        const n = await AscCloud.accessApproveLegacy(1);
+        allowMsg('อนุมัติบัญชีเดิม ' + n + ' บัญชี ใช้งานได้อีก 1 เดือน', true);
+        await loadAllowlist();
+    } catch (e) { allowMsg(e.message, false); }
+}
+async function accessAutoSuspendNow() {
+    if (!confirm('พักสิทธิ์บัญชีที่ไม่ได้ใช้งานเกิน 30 วันตอนนี้เลยหรือไม่?\n\n(ไม่ลบข้อมูล · เปิดสิทธิ์คืนได้ · ยกเว้นผู้ดูแลระบบ/@proinventive.co.th/บัญชีที่ติ๊กยกเว้น)')) return;
+    try {
+        const n = await AscCloud.accessAutoSuspend(30);
+        allowMsg('พักสิทธิ์ ' + n + ' บัญชีที่ไม่ใช้เกิน 30 วัน', true);
+        await loadAllowlist();
+    } catch (e) { allowMsg(e.message, false); }
+}
+
+/* ฟอร์มเพิ่มอีเมล: ติ๊กแพ็กเกจ → แสดงแถวเลือก + วันหมดอายุเติมให้ตามจำนวนวันของแพ็กเกจ (แก้ได้) */
+function allowlistPkgToggle(fromChanged) {
+    const on = document.getElementById('al-pkg-on').checked;
+    document.getElementById('al-pkg-row').classList.toggle('hidden', !on);
+    if (!on) return;
+    const from = document.getElementById('al-from');
+    if (!from.value) from.value = new Date().toISOString().slice(0, 10);
+    const pk = ACCESS_PKGS.find(p => p.code === document.getElementById('al-pkg').value);
+    if (pk) {
+        const d = new Date(from.value + 'T00:00:00'); d.setDate(d.getDate() + pk.duration_days);
+        document.getElementById('al-to').value = d.toISOString().slice(0, 10);
+    }
+}
+
+function accModal(html) {
+    let m = document.getElementById('ac-modal');
+    if (m) m.remove();
+    m = document.createElement('div');
+    m.id = 'ac-modal';
+    m.className = 'fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4';
+    m.innerHTML = '<div class="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">' + html + '</div>';
+    m.addEventListener('click', ev => { if (ev.target === m) m.remove(); });
+    document.body.appendChild(m);
+    return m;
+}
+
+function accessEditOpen(email) {
+    const r = ACCESS[String(email).toLowerCase()];
+    if (!r) return;
+    const row = r.row || {}, a = r.access || {};
+    const opts = ACCESS_PKGS.map(p => '<option value="' + esc(p.code) + '"' + (p.code === (row.package_code || 'starter') ? ' selected' : '') + '>' + esc(p.name) + '</option>').join('');
+    const m = accModal('<h3 class="font-bold text-slate-800 mb-1">แก้สิทธิ์การใช้งาน</h3><p class="text-xs text-slate-500 mb-4 break-all">' + esc(email) + ' · ' + accStateChip(a) + '</p>'
+        + '<label class="flex items-center gap-2 text-sm font-semibold mb-2"><input type="checkbox" id="ae-on" class="w-4 h-4 accent-emerald-600"' + (row.use_package ? ' checked' : '') + '> ใช้สิทธิ์ตามแพ็กเกจที่ซื้อ</label>'
+        + '<div class="grid grid-cols-2 gap-3 text-sm mb-3">'
+        + '<label>แพ็กเกจ<select id="ae-pkg" class="mt-1 w-full border border-slate-300 rounded-lg p-2 bg-white">' + opts + '</select></label>'
+        + '<label>ที่มา<input id="ae-src" value="' + esc(row.source || '') + '" placeholder="ซื้อเอง / คอร์สอบรม / ตัวแทนแจก" class="mt-1 w-full border border-slate-300 rounded-lg p-2"></label>'
+        + '<label>เริ่ม<input type="date" id="ae-from" value="' + esc(row.valid_from || '') + '" class="mt-1 w-full border border-slate-300 rounded-lg p-2"></label>'
+        + '<label>หมดอายุ<input type="date" id="ae-to" value="' + esc(row.valid_to || '') + '" class="mt-1 w-full border border-slate-300 rounded-lg p-2"></label>'
+        + '<label>จำนวนเครื่องพร้อมกัน (ว่าง = ตามแพ็กเกจ)<input type="number" min="1" id="ae-dev" value="' + esc(row.max_devices_override || '') + '" class="mt-1 w-full border border-slate-300 rounded-lg p-2"></label>'
+        + '<label>เพดาน kWp รวม (ว่าง = ตามแพ็กเกจ)<input type="number" min="1" step="any" id="ae-kwp" value="' + esc(row.max_kwp_override || '') + '" class="mt-1 w-full border border-slate-300 rounded-lg p-2"></label>'
+        + '</div>'
+        + '<label class="flex items-center gap-2 text-sm mb-4"><input type="checkbox" id="ae-ex" class="w-4 h-4"' + (row.exempt ? ' checked' : '') + '> ยกเว้นการพักอัตโนมัติ (ไม่ใช้เกิน 30 วันก็ไม่ถูกพัก)</label>'
+        + '<div class="text-xs text-slate-500 mb-4">บัญชีเดิม: ใช้ได้ถึง ' + esc(accFmtDate(row.grace_until)) + ' · ใช้งานล่าสุด ' + esc(accAgo(r.lastUse)) + '</div>'
+        + '<div id="ae-msg" class="text-xs text-red-600 mb-2"></div>'
+        + '<div class="flex gap-2 justify-end"><button class="px-4 py-2 rounded-lg text-sm border border-slate-300" onclick="document.getElementById(\'ac-modal\').remove()">ยกเลิก</button>'
+        + '<button class="px-4 py-2 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700" onclick="accessEditSave(\'' + esc(email) + '\')">บันทึก</button></div>');
+    return m;
+}
+async function accessEditSave(email) {
+    const g = id => document.getElementById(id).value;
+    try {
+        const dev = g('ae-dev'), kwp = g('ae-kwp');
+        await AscCloud.accessSet({
+            email: email, usePackage: document.getElementById('ae-on').checked, package: g('ae-pkg'),
+            validFrom: g('ae-from'), validTo: g('ae-to'), clearDates: !g('ae-from') && !g('ae-to'), source: g('ae-src'),
+            exempt: document.getElementById('ae-ex').checked, devOverride: dev === '' ? 0 : Number(dev), kwpOverride: kwp === '' ? 0 : Number(kwp)
+        });
+        document.getElementById('ac-modal').remove();
+        allowMsg('บันทึกสิทธิ์ ' + email + ' แล้ว', true);
+        await loadAllowlist();
+    } catch (e) { document.getElementById('ae-msg').textContent = e.message; }
+}
+
+function accessPackagesOpen() {
+    if (!ACCESS_READY) { allowMsg('รัน supabase/access-control.sql ก่อน', false); return; }
+    const feats = Object.keys(FEATURE_LABELS);
+    const rows = ACCESS_PKGS.map(p => '<div class="border border-slate-200 rounded-lg p-3 mb-3" data-pk="' + esc(p.code) + '">'
+        + '<div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">'
+        + '<label class="col-span-2">ชื่อ <b class="text-slate-400">(' + esc(p.code) + ')</b><input data-f="name" value="' + esc(p.name) + '" class="mt-1 w-full border border-slate-300 rounded p-1.5"></label>'
+        + '<label>ราคา (฿ รวม VAT)<input data-f="price_baht" type="number" value="' + esc(p.price_baht ?? '') + '" class="mt-1 w-full border border-slate-300 rounded p-1.5"></label>'
+        + '<label>อายุ (วัน)<input data-f="duration_days" type="number" value="' + esc(p.duration_days) + '" class="mt-1 w-full border border-slate-300 rounded p-1.5"></label>'
+        + '<label>kWp รวม (ว่าง = ไม่จำกัด)<input data-f="max_kwp" type="number" value="' + esc(p.max_kwp ?? '') + '" class="mt-1 w-full border border-slate-300 rounded p-1.5"></label>'
+        + '<label>เครื่องพร้อมกัน<input data-f="max_devices" type="number" min="1" value="' + esc(p.max_devices) + '" class="mt-1 w-full border border-slate-300 rounded p-1.5"></label>'
+        + '<label class="col-span-2 md:col-span-4">หมายเหตุ<input data-f="note" value="' + esc(p.note || '') + '" class="mt-1 w-full border border-slate-300 rounded p-1.5"></label></div>'
+        + '<div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs">' + feats.map(k => '<label class="flex items-center gap-1"><input type="checkbox" data-ft="' + k + '"' + ((p.features || {})[k] ? ' checked' : '') + '> ' + esc(FEATURE_LABELS[k]) + '</label>').join('') + '</div></div>').join('');
+    accModal('<h3 class="font-bold text-slate-800 mb-1">แพ็กเกจ</h3><p class="text-xs text-slate-500 mb-4">แก้ราคา อายุ เพดาน kWp จำนวนเครื่อง และความสามารถ ได้ที่นี่ (มีผลกับบัญชีที่ใช้แพ็กเกจนั้นทันที)</p>' + rows
+        + '<div id="ap-msg" class="text-xs text-red-600 mb-2"></div><div class="flex gap-2 justify-end"><button class="px-4 py-2 rounded-lg text-sm border border-slate-300" onclick="document.getElementById(\'ac-modal\').remove()">ปิด</button>'
+        + '<button class="px-4 py-2 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700" onclick="accessPackagesSave()">บันทึกทั้งหมด</button></div>');
+}
+async function accessPackagesSave() {
+    try {
+        for (const box of document.querySelectorAll('#ac-modal [data-pk]')) {
+            const row = { code: box.dataset.pk, features: {} };
+            box.querySelectorAll('[data-f]').forEach(i => { row[i.dataset.f] = i.value; });
+            box.querySelectorAll('[data-ft]').forEach(i => { if (i.checked) row.features[i.dataset.ft] = true; });
+            const old = ACCESS_PKGS.find(p => p.code === row.code) || {};
+            row.sort = old.sort;
+            await AscCloud.accessSavePackage(row);
+        }
+        document.getElementById('ac-modal').remove();
+        allowMsg('บันทึกแพ็กเกจแล้ว', true);
+        await loadAllowlist();
+    } catch (e) { document.getElementById('ap-msg').textContent = e.message; }
+}
+
+/* การ์ด "สิทธิ์การใช้งานของฉัน" บน Dashboard — ข้อมูลจาก my_access() (ยังไม่รัน SQL = ไม่แสดง) */
+function renderMyAccess() {
+    const box = document.getElementById('my-access-card');
+    if (!box) return;
+    const a = window.AscCloud && AscCloud.myAccess ? AscCloud.myAccess() : null;
+    if (!a || a.ok === false) { box.classList.add('hidden'); return; }
+    const feats = a.features || {};
+    const chips = Object.keys(FEATURE_LABELS).filter(k => k !== 'watermark').map(k => '<span class="text-[11px] px-2 py-0.5 rounded border ' + (feats[k]
+        ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200 line-through') + '">' + esc(FEATURE_LABELS[k]) + '</span>').join(' ');
+    const kwpUsed = (typeof visibleProjects === 'function') ? visibleProjects().reduce((s, p) => s + (typeof kwpOf === 'function' ? kwpOf(p) : 0), 0) : 0;
+    const cap = a.maxKwp ? Number(a.maxKwp) : null;
+    const pct = cap ? Math.min(100, Math.round(kwpUsed / cap * 100)) : 0;
+    const title = a.state === 'exempt' ? 'ผู้ดูแลระบบ / ทีมงาน' : (a.package ? 'แพ็กเกจ ' + a.package.name : (a.state === 'trial' ? 'ทดลองใช้งาน' : 'สิทธิ์การใช้งาน'));
+    box.classList.remove('hidden');
+    box.innerHTML = '<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">'
+        + '<div class="flex flex-wrap items-center gap-2 mb-1"><i class="fa-solid fa-id-badge text-blue-600"></i><h3 class="font-bold text-slate-800">สิทธิ์การใช้งานของฉัน</h3>' + accStateChip(a) + '</div>'
+        + '<p class="text-sm text-slate-700 mb-3"><b>' + esc(title) + '</b>'
+        + (a.state === 'exempt' ? ' · ใช้งานได้ทุกอย่าง ไม่จำกัดเพดาน kWp และจำนวนเครื่อง' : '') + '</p>'
+        + (a.state === 'exempt' ? '' : '<div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm mb-3">'
+            + '<div><div class="text-xs text-slate-500">ใช้ได้ถึง</div><div class="font-semibold">' + esc(accFmtDate(a.validTo || a.graceUntil)) + '</div></div>'
+            + '<div><div class="text-xs text-slate-500">เครื่องที่ใช้พร้อมกันได้</div><div class="font-semibold">' + esc(a.maxDevices || 1) + ' เครื่อง</div></div>'
+            + '<div><div class="text-xs text-slate-500">kWp รวมทุกโครงการในระบบ</div><div class="font-semibold">' + esc(Math.round(kwpUsed * 10) / 10) + (cap ? ' / ' + esc(cap) + ' kWp' : ' kWp (ไม่ระบุเพดาน)') + '</div>'
+            + (cap ? '<div class="h-1.5 rounded bg-slate-200 mt-1 overflow-hidden"><div class="h-full ' + (pct >= 90 ? 'bg-red-500' : 'bg-emerald-500') + '" style="width:' + pct + '%"></div></div>' : '') + '</div></div>')
+        + '<div class="flex flex-wrap gap-1.5">' + chips + (feats.watermark ? ' <span class="text-[11px] px-2 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200">PDF มีลายน้ำ</span>' : '') + '</div>'
+        + (a.state === 'grace' ? '<p class="text-xs text-amber-700 mt-3">บัญชีเดิมใช้งานได้ถึงวันที่ ' + esc(accFmtDate(a.graceUntil)) + ' หลังจากนั้นเลือกแพ็กเกจเพื่อใช้งานต่อ ติดต่อผู้ดูแลระบบ</p>' : '')
+        + '</div>';
+}
+
 function accessChips(x) {
     if (!x.registered) return '<span class="text-[11px] text-slate-400">สมัครก่อนจึงกำหนดได้</span>';
     if (!x.menusReady) return '<span class="text-[11px] text-amber-600">รัน supabase/menu-access.sql ก่อน</span>';

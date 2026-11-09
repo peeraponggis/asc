@@ -336,6 +336,7 @@
             loginAt  : Date.now()
         };
         await maintenanceGate(_profile, !!error);   // อ่านโปรไฟล์ไม่สำเร็จ = ไม่บล็อก (กันล็อกผู้ดูแลทิ้งเพราะอ่านสิทธิ์ไม่ได้)
+        if (!error) { _profile.access = await fetchAccess(); accessGate(_profile.access); accessWatch(); }
         return _profile;
     }
 
@@ -400,6 +401,93 @@
         if (_profile) { if (!maintExempt(cfg, _profile)) maintShow(cfg); }
         else if (strict) maintShow(cfg, true);
     }
+
+    /* ── สิทธิ์การใช้งาน · แพ็กเกจ · นับเครื่องพร้อมกัน (supabase/access-control.sql · 8 พ.ย. 2569) ─────
+       หลังล็อกอินเรียก my_access() (ทุก 60 วินาที) → state: exempt (ผู้ดูแล/โดเมนบริษัท) · active · grace (บัญชีเดิม 1 เดือน)
+       · trial · expired · suspended · busy (ใช้เกินจำนวนเครื่องของแพ็กเกจ) — expired/suspended/busy = หน้าจอกั้นเต็มจอ + ปุ่มขอเปิดสิทธิ์
+       ยังไม่ได้รัน SQL (ไม่มีฟังก์ชัน) หรือเรียกไม่สำเร็จ = ไม่บังคับ (ใช้ได้ตามเดิม) */
+    function accessInstance() {
+        try {
+            let v = localStorage.getItem('asc_instance');
+            if (!v) {
+                v = 'w' + String((window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/-/g, '').slice(0, 30);
+                localStorage.setItem('asc_instance', v);
+            }
+            return v;
+        } catch (e) { return 'w' + presenceSid(); }
+    }
+    async function fetchAccess() {
+        try {
+            const { data, error } = await sb.rpc('my_access', {
+                p_instance: accessInstance(), p_label: String(navigator.platform || '').slice(0, 40), p_app: presence.app || 'WEB'
+            });
+            if (error || !data || data.ok === false) return null;
+            return data;
+        } catch (e) { return null; }
+    }
+    const ACCESS_TXT = {
+        suspended: { th: ['บัญชีนี้ถูกพักสิทธิ์ใช้งาน', 'ไม่ได้ใช้งานเกิน 30 วันหรือผู้ดูแลระบบพักสิทธิ์ไว้ งานและข้อมูลของคุณยังอยู่ครบ กด "ขอเปิดสิทธิ์" เพื่อแจ้งผู้ดูแลระบบ'],
+                     lo: ['ບັນຊີນີ້ຖືກພັກສິດການໃຊ້ງານ', 'ບໍ່ໄດ້ໃຊ້ງານເກີນ 30 ວັນ ຫຼື ຜູ້ດູແລລະບົບພັກສິດໄວ້ ງານ ແລະ ຂໍ້ມູນຂອງທ່ານຍັງຢູ່ຄົບ ກົດ "ຂໍເປີດສິດ" ເພື່ອແຈ້ງຜູ້ດູແລລະບົບ'],
+                     en: ['This account is suspended', 'Unused for over 30 days or suspended by an administrator. Your work and data are safe. Press "Request access" to notify the administrator.'] },
+        expired:   { th: ['สิทธิ์การใช้งานหมดแล้ว', 'ช่วงทดลองหรือแพ็กเกจหมดอายุ เลือกแพ็กเกจเพื่อใช้งานต่อ กด "ขอเปิดสิทธิ์" เพื่อแจ้งผู้ดูแลระบบ'],
+                     lo: ['ສິດການໃຊ້ງານໝົດແລ້ວ', 'ຊ່ວງທົດລອງ ຫຼື ແພັກເກດໝົດອາຍຸ ເລືອກແພັກເກດເພື່ອໃຊ້ງານຕໍ່ ກົດ "ຂໍເປີດສິດ" ເພື່ອແຈ້ງຜູ້ດູແລລະບົບ'],
+                     en: ['Your access has ended', 'The trial or package has expired. Choose a package to continue. Press "Request access" to notify the administrator.'] },
+        busy:      { th: ['บัญชีนี้กำลังใช้งานบนเครื่องอื่น', 'แพ็กเกจนี้ใช้พร้อมกันได้จำกัดจำนวนเครื่อง ออกจากเครื่องอื่นก่อน หรือรอ 3 นาทีแล้วลองอีกครั้ง'],
+                     lo: ['ບັນຊີນີ້ກຳລັງໃຊ້ງານຢູ່ເຄື່ອງອື່ນ', 'ແພັກເກດນີ້ໃຊ້ພ້ອມກັນໄດ້ຈຳກັດຈຳນວນເຄື່ອງ ອອກຈາກເຄື່ອງອື່ນກ່ອນ ຫຼື ລໍຖ້າ 3 ນາທີແລ້ວລອງໃໝ່'],
+                     en: ['This account is in use on another computer', 'This package allows a limited number of computers at once. Sign out elsewhere first, or wait 3 minutes and try again.'] }
+    };
+    const ACCESS_BTN = { req: { th: 'ขอเปิดสิทธิ์', lo: 'ຂໍເປີດສິດ', en: 'Request access' }, sent: { th: 'ส่งคำขอแล้ว', lo: 'ສົ່ງຄຳຂໍແລ້ວ', en: 'Request sent' },
+                         retry: { th: 'ลองอีกครั้ง', lo: 'ລອງອີກຄັ້ງ', en: 'Try again' }, out: { th: 'ออกจากระบบ', lo: 'ອອກຈາກລະບົບ', en: 'Sign out' } };
+    function accessHide() {
+        const e = document.getElementById('asc-access');
+        if (e) e.remove();
+        if (!window.__ascMaint) document.documentElement.style.overflow = '';
+    }
+    function accessShow(acc) {
+        if (document.getElementById('asc-access')) return;
+        const lang = ((document.documentElement.lang || navigator.language || 'th').slice(0, 2).toLowerCase());
+        const L = ['th', 'lo', 'en'].includes(lang) ? lang : 'th';
+        const t = (ACCESS_TXT[acc.state] || ACCESS_TXT.expired)[L];
+        const box = document.createElement('div');
+        box.id = 'asc-access';
+        box.setAttribute('role', 'alertdialog');
+        box.style.cssText = 'position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;padding:24px;'
+            + 'background:linear-gradient(160deg,#16213a,#2a3a5e);color:#fff;font-family:Sarabun,Kanit,Tahoma,sans-serif;text-align:center';
+        box.innerHTML = '<div style="max-width:540px"><div style="font-size:52px">' + (acc.state === 'busy' ? '🖥️' : '⏸️') + '</div>'
+            + '<h1 style="font-size:24px;margin:10px 0 8px;font-weight:700"></h1><p style="font-size:15px;line-height:1.7;opacity:.92;margin:0 0 18px"></p>'
+            + '<div data-r="1" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"></div></div>';
+        box.querySelector('h1').textContent = t[0];
+        box.querySelector('p').textContent = t[1];
+        const row = box.querySelector('[data-r]');
+        const mk = (label, fn, primary) => {
+            const b = document.createElement('button');
+            b.type = 'button'; b.textContent = label;
+            b.style.cssText = 'font:inherit;padding:9px 22px;border-radius:10px;cursor:pointer;border:1px solid #8fb0e0;color:#fff;background:' + (primary ? '#2f6fd1' : 'transparent');
+            b.onclick = () => fn(b); row.appendChild(b);
+        };
+        if (acc.state === 'busy') mk(ACCESS_BTN.retry[L], () => location.reload(), true);
+        else mk(ACCESS_BTN.req[L], async (b) => { try { await sb.rpc('access_request', { p_note: acc.state }); b.textContent = ACCESS_BTN.sent[L]; b.disabled = true; } catch (e) { /* ส่งไม่ได้ = ลองใหม่ */ } }, true);
+        mk(ACCESS_BTN.out[L], async () => { try { await sb.auth.signOut(); } catch (e) { /* รีโหลดต่อ */ } location.reload(); });
+        const put = () => { if (!document.getElementById('asc-access') && window.__ascAccessBlocked) (document.body || document.documentElement).appendChild(box); if (window.__ascAccessBlocked) document.documentElement.style.overflow = 'hidden'; };
+        window.__ascAccessBlocked = true;
+        put();
+        window.__ascAccessTimer = window.__ascAccessTimer || setInterval(put, 1000);
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', put);
+    }
+    function accessGate(acc) {
+        if (acc && ['suspended', 'expired', 'busy'].includes(acc.state)) accessShow(acc);
+        else { window.__ascAccessBlocked = false; accessHide(); }
+    }
+    let _accessTimer = null;
+    function accessWatch() {
+        if (_accessTimer) return;
+        _accessTimer = setInterval(async () => {
+            if (!_profile || window.__ascMaint) return;
+            const a = await fetchAccess();
+            if (a) { _profile.access = a; accessGate(a); }
+        }, 60000);
+    }
+
     async function maintenanceGate(p, profileFailed) {
         if (!p || profileFailed) return;
         const cfg = await maintConfig();
@@ -822,6 +910,59 @@
             return mail;
         },
 
+
+        /* ── สิทธิ์การใช้งาน · แพ็กเกจ (supabase/access-control.sql) ───────── */
+        myAccess() { return _profile ? (_profile.access || null) : null; },
+
+        async accessAdminList() {
+            need();
+            const r = await withSession(() => sb.rpc('access_admin_list'));
+            return r.data || [];
+        },
+        async accessPackages() {
+            need();
+            const r = await withSession(() => sb.from('access_packages').select('*').order('sort'));
+            return r.data || [];
+        },
+        async accessSavePackage(row) {
+            need();
+            const clean = {
+                code: String(row.code), name: String(row.name || row.code), sort: Number(row.sort) || 0,
+                price_baht: row.price_baht === '' || row.price_baht == null ? null : Number(row.price_baht),
+                duration_days: Math.max(1, Number(row.duration_days) || 30),
+                max_kwp: row.max_kwp === '' || row.max_kwp == null ? null : Number(row.max_kwp),
+                max_devices: Math.max(1, Number(row.max_devices) || 1),
+                features: row.features || {}, note: String(row.note || ''), updated_at: new Date().toISOString()
+            };
+            await withSession(() => sb.from('access_packages').upsert(clean, { onConflict: 'code' }));
+            return true;
+        },
+        async accessSet(a) {
+            need();
+            await withSession(() => sb.rpc('access_set', {
+                p_email: a.email, p_use_package: a.usePackage ?? null, p_package: a.package ?? null,
+                p_valid_from: a.validFrom || null, p_valid_to: a.validTo || null, p_source: a.source ?? null,
+                p_exempt: a.exempt ?? null, p_dev_override: a.devOverride ?? null, p_kwp_override: a.kwpOverride ?? null,
+                p_clear_dates: !!a.clearDates
+            }));
+            return true;
+        },
+        async accessSuspend(email, on, reason) {
+            need();
+            await withSession(() => sb.rpc('access_suspend', { p_email: email, p_on: !!on, p_reason: reason || 'manual' }));
+            return true;
+        },
+        async accessApproveLegacy(months) {
+            need();
+            const r = await withSession(() => sb.rpc('access_approve_legacy', { p_months: months || 1 }));
+            return r.data;
+        },
+        async accessAutoSuspend(days) {
+            need();
+            const r = await withSession(() => sb.rpc('access_auto_suspend', { p_days: days || 30 }));
+            return r.data;
+        },
+
         async removeAllowedEmail(email) {
             need();
             const mail = String(email || '').trim().toLowerCase();
@@ -1125,6 +1266,7 @@
     };
 
     AscCloud.maintenanceGuard = maintenanceGuard;
+    AscCloud._access = { gate: accessGate };   // ใช้ทดสอบ
     AscCloud._maint = { gate: maintenanceGate, exempt: maintExempt };   // ใช้ทดสอบ
     window.AscCloud = AscCloud;
 
