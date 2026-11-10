@@ -36,10 +36,16 @@
 
     /* ธีมของ ASC Studio ที่ไม่ใช่ E+ (ธีมเดิม 5 แบบ) → ใกล้เคียงที่สุด */
     const LEGACY = { night: 'carbon', forest: 'drafting', ocean: 'classic', sand: 'classic', lavender: 'classic' };
+    /* หน้าเก่าที่สีส่วนใหญ่อยู่ในสคริปต์ (ผัง canvas · ตารางที่สร้างจากโค้ด) ใส่ data-light-only
+       → ธีมมืดแสดงเป็น Classic ในหน้านั้น (ไม่มีส่วนที่อ่านไม่ออก) · ไม่เปลี่ยนค่าที่ผู้ใช้เลือก */
+    const LIGHT_ONLY = !!(document.currentScript && document.currentScript.hasAttribute('data-light-only'));
     function readPrefs() { try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; } }
     function current() {
-        const t = readPrefs().theme;
-        return THEMES.includes(t) ? t : (LEGACY[t] || 'classic');
+        // ?theme=carbon ใน URL = ใช้ชั่วคราว ไม่บันทึก (หน้าที่ฝังใน iframe / ภาพตัวอย่าง · แบบ asc-tokens.css ของ ASCS)
+        const q = (location.search.match(/[?&]theme=(\w+)/) || [])[1];
+        const t0 = readPrefs().theme;
+        const t = THEMES.includes(q) ? q : THEMES.includes(t0) ? t0 : (LEGACY[t0] || 'classic');
+        return LIGHT_ONLY && P[t].dark ? 'classic' : t;
     }
 
     /* สีของ Tailwind ทุกเฉด → ตัวแปร (--c-<สี>-<เฉด>) ที่ตั้งค่าตามธีม */
@@ -61,6 +67,12 @@
         ['bg', 'panel', 'panel2', 'line', 'edge', 'head', 'ink', 'ink2', 'ink3', 'accent', 'accent2', 'accentFg', 'hover', 'sel', 'ok', 'okbg', 'warn', 'warnbg', 'fail', 'failbg']
             .forEach(k => out.push(`--${k.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}: ${p[k]}`));
         out.push(`--radius: ${p.radius}`, `--mshadow: ${p.shadow}`);
+        // ชื่อตัวแปรเดิมของหน้า ASC รุ่นเก่า (asc_design · asc_3d · device_location · pi-monitor) → สีของธีม
+        out.push(`--text: ${p.ink}`, `--dim: ${p.ink2}`, `--danger: ${p.fail}`, `--surface: ${p.panel}`, `--border: ${p.line}`, `--border-strong: ${p.edge}`,
+            `--primary: ${p.accent}`, `--ink-900: ${p.ink}`, `--ink-700: ${p.ink}`, `--ink-500: ${p.ink2}`, `--stage: ${p.bg}`,
+            `--radius-sm: ${p.radius}`, `--radius-md: ${p.radius}`, `--radius-lg: calc(${p.radius} + 1px)`,
+            `--shadow-sm: none`, `--shadow-md: 0 1px 3px rgba(0,0,0,.1)`, `--focus-ring: 0 0 0 2px ${p.accent}`,
+            `--g: ${p.ok}`, `--y: ${p.warn}`, `--k: ${p.ink2}`);
         return out.join('; ');
     }
     /* พื้นเข้มกลับด้าน (แถบเมนูซ้ายเดิมเป็นพื้นเข้ม): ตัวอักษรขาว → ink · พื้น slate-900 → panel */
@@ -74,7 +86,8 @@
         return `:root[data-theme="${t}"] { ${vars(p)}; color-scheme: ${p.dark ? 'dark' : 'light'}; }
 :root[data-theme="${t}"] .asc-invert { ${invertedVars(p)}; }
 :root[data-theme="${t}"] .asc-art { ${vars(P.carbon)}; --c-white: ${trip(P.carbon.ink)}; }`;
-    }).join('\n');
+    }).join('\n') + `
+html[data-theme] body { font-family: 'Sarabun', 'Noto Sans Lao', 'Leelawadee UI', 'Segoe UI', sans-serif; }`;
 
     /* Tailwind: ทุกสีอ่านจากตัวแปร (รองรับ /10 ความโปร่ง) · ฟอนต์ Sarabun · มุมตามธีม · เงาบาง */
     const c = (n, k) => `rgb(var(--c-${n}-${k}) / <alpha-value>)`;
@@ -106,6 +119,8 @@
         const r = document.documentElement;
         r.dataset.theme = t;
         document.querySelectorAll('[data-asc-theme]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ascTheme === t)));
+        // ตราคำ PROINVENTIVE บนแถบที่กลับด้านสี (พื้นสว่างในธีมสว่าง) ใช้แบบ on-light
+        document.querySelectorAll('.asc-invert .brand-3d').forEach(e => e.classList.toggle('on-light', !P[t].dark));
         const m = document.querySelector('meta[name=theme-color]');
         if (m) m.setAttribute('content', P[t].panel);
         document.dispatchEvent(new CustomEvent('asc-theme', { detail: t }));

@@ -11,6 +11,9 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
+    <!-- ธีมเดียวกับ ASC Studio (Classic · Carbon · Drafting · ASC Enterprise 4.10.0) -->
+    <script src="asc-theme.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Noto+Sans+Lao:wght@400;600&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
 <title>Pi monitor — ASC Enterprise</title>
@@ -22,28 +25,28 @@
 <script src="asc-cloud.js"></script>
 <script src="asc-pimonitor.js"></script>
 <style>
-  :root { --bg:#f1f5f9; --card:#fff; --ink:#0f172a; --mute:#64748b; --line:#e2e8f0; --brand:#0f766e;
+  :root { --bg:var(--panel2, #f1f5f9); --card:var(--panel, #fff); --ink:var(--ink, #0f172a); --mute:var(--ink2, #64748b); --line:var(--line, #e2e8f0); --brand:var(--ok, #0f766e);
           --g:#16a34a; --y:#ca8a04; --k:#475569; }
   * { box-sizing: border-box; }
   body { margin:0; font-family:Kanit, system-ui, sans-serif; background:var(--bg); color:var(--ink); }
-  header { background:#0f172a; color:#fff; padding:14px 20px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  header { background:var(--ink, #0f172a); color:var(--panel, #fff); padding:14px 20px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
   header h1 { font-size:20px; margin:0; font-weight:600; }
-  header .sub { color:#94a3b8; font-size:13px; }
+  header .sub { color:var(--ink3, #94a3b8); font-size:13px; }
   header .right { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:13px; }
-  header a { color:#99f6e4; }
+  header a { color:var(--ok, #99f6e4); }
   main { max-width:1280px; margin:0 auto; padding:16px; }
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:14px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
   .card b { font-size:28px; display:block; }
   .card span { color:var(--mute); font-size:13px; }
   .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-  select, input, button { font:inherit; font-size:14px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; }
-  button { cursor:pointer; background:var(--brand); color:#fff; border-color:var(--brand); }
-  button.ghost { background:#fff; color:var(--ink); border-color:var(--line); }
+  select, input, button { font:inherit; font-size:14px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel, #fff); }
+  button { cursor:pointer; background:var(--brand); color:var(--panel, #fff); border-color:var(--brand); }
+  button.ghost { background:var(--panel, #fff); color:var(--ink); border-color:var(--line); }
   .tbl { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:auto; }
   table { border-collapse:collapse; width:100%; font-size:14px; }
   th, td { padding:8px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
-  th { background:#f8fafc; color:var(--mute); font-weight:500; position:sticky; top:0; }
+  th { background:var(--panel, #f8fafc); color:var(--mute); font-weight:500; position:sticky; top:0; }
   td.page { white-space:normal; min-width:220px; }
   tr.offline td { color:var(--mute); }
   .empty { padding:30px; text-align:center; color:var(--mute); }
@@ -54,7 +57,7 @@
   .grid label { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--mute); }
   .grid label.chk { flex-direction:row; align-items:center; gap:8px; color:var(--ink); }
   .note { font-size:12px; color:var(--mute); margin-top:8px; }
-  #err { color:#b91c1c; font-size:13px; }
+  #err { color:var(--fail, #b91c1c); font-size:13px; }
 </style>
 </head>
 <body>

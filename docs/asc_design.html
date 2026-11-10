@@ -2,6 +2,9 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
+    <!-- ธีมเดียวกับ ASC Studio (Classic · Carbon · Drafting · ASC Enterprise 4.10.0) -->
+    <script src="asc-theme.js" data-light-only></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Noto+Sans+Lao:wght@400;600&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASC:Design</title>
     
@@ -22,15 +25,15 @@
     <style>
 	/* --- โค้ดตกแต่งกล่อง Help (Custom Alert) --- */
 	.custom-alert-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-	.custom-alert-box { background: #ffffff; width: 90%; max-width: 450px; border-radius: 8px; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); border-left: 6px solid #2563eb; }
+	.custom-alert-box { background: var(--panel, #ffffff); width: 90%; max-width: 450px; border-radius: 8px; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); border-left: 6px solid var(--accent, #2563eb); }
 	.custom-alert-text { 
 		font-size: 16px; /* 🌟 ปรับขนาดตัวอักษรตรงนี้ได้เลย */
-		color: #334155; /* สีเทาเข้ม อ่านง่าย สอดคล้องธีมหลัก */
+		color: var(--ink, #334155); /* สีเทาเข้ม อ่านง่าย สอดคล้องธีมหลัก */
 		line-height: 1.6; 
 		white-space: pre-wrap; 
 	}
-	.custom-alert-btn { margin-top: 15px; padding: 8px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; float: right; font-weight: bold; font-size: 14px; transition: 0.2s; }
-	.custom-alert-btn:hover { background: #1e40af; }
+	.custom-alert-btn { margin-top: 15px; padding: 8px 20px; background: var(--accent, #2563eb); color: white; border: none; border-radius: 4px; cursor: pointer; float: right; font-weight: bold; font-size: 14px; transition: 0.2s; }
+	.custom-alert-btn:hover { background: var(--accent, #1e40af); }
 
 	.flow-animation {
     animation: flow 1.5s linear infinite;
@@ -65,10 +68,10 @@
         }
         body { font-family: 'Inter', 'Noto Sans Thai', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-font-smoothing: antialiased; margin: 0; padding: 0; display: flex; width: 100vw; height: 100vh; background-color: var(--bg); overflow: hidden; }
 
-        #map-wrapper { flex: 1; min-width: 0; height: 100%; z-index: 1; position: relative; background: #e5e7eb; }
+        #map-wrapper { flex: 1; min-width: 0; height: 100%; z-index: 1; position: relative; background: var(--line, #e5e7eb); }
         #map { width: 100%; height: 100%; cursor: crosshair; }
 
-        #sidebar { width: 380px; /* 🌟 เฟส 13: 380px + ฟอนต์ 12px แบบ Huawei */ flex-shrink: 0; background: #f8fafc; box-shadow: -4px 0 24px rgba(15, 23, 42, 0.08); z-index: 2; display: flex; flex-direction: column; height: 100%; border-left: 1px solid var(--border); }
+        #sidebar { width: 380px; /* 🌟 เฟส 13: 380px + ฟอนต์ 12px แบบ Huawei */ flex-shrink: 0; background: var(--panel, #f8fafc); box-shadow: -4px 0 24px rgba(15, 23, 42, 0.08); z-index: 2; display: flex; flex-direction: column; height: 100%; border-left: 1px solid var(--border); }
 
         /* ── ตัวเลือกจากคลังสเปกอุปกรณ์ ยี่ห้อ > รุ่น ──────────────────────
            ยี่ห้อกินพื้นที่น้อยกว่ารุ่น เพราะชื่อรุ่นยาวกว่ามากและต้องอ่านให้ออก */
@@ -76,14 +79,14 @@
         .dev-pick select { min-width: 0; font-size: 0.95em; }
         .dev-pick .dev-brand { flex: 0 0 38%; }
         .dev-pick .dev-model { flex: 1 1 auto; }
-        .dev-pick select:disabled { background: #f1f5f9; color: #94a3b8; }
+        .dev-pick select:disabled { background: var(--panel2, #f1f5f9); color: var(--ink3, #94a3b8); }
         /* รุ่นที่ดาต้าชีตยังกรอกฟิลด์บังคับไม่ครบ ต้องเห็นตั้งแต่ก่อนเลือก */
-        .dev-pick .dev-model option[data-incomplete="1"] { color: #b45309; }
+        .dev-pick .dev-model option[data-incomplete="1"] { color: var(--warn, #b45309); }
         /* หมายเหตุการจับคู่แบตเตอรี่กับอินเวอร์เตอร์ ใต้ตัวเลือกรุ่น */
-        .dev-note { font-size: 0.82em; line-height: 1.45; margin: -2px 0 6px; color: #475569; }
-        .dev-note.ok   { color: #15803d; }
-        .dev-note.warn { color: #b45309; }
-        .dev-note.err  { color: #b91c1c; }
+        .dev-note { font-size: 0.82em; line-height: 1.45; margin: -2px 0 6px; color: var(--ink2, #475569); }
+        .dev-note.ok   { color: var(--ok, #15803d); }
+        .dev-note.warn { color: var(--warn, #b45309); }
+        .dev-note.err  { color: var(--fail, #b91c1c); }
         .dev-note b    { font-weight: 600; }
 
         /* อัปโหลดไฟล์เองกลายเป็นทางสำรอง จึงลดน้ำหนักลงแต่ไม่ซ่อน
@@ -93,9 +96,9 @@
         .file-upload-row.dev-fallback:focus-within { opacity: 1; }
 
         /* แถบบอกสถานะคลัง อยู่ใต้หัวข้อกำหนดสเปกอุปกรณ์ */
-        #devBankStatus { font-size: 0.78em; line-height: 1.5; margin: -2px 0 8px; color: #64748b; }
-        #devBankStatus.warn { color: #b45309; }
-        #devBankStatus.err  { color: #b91c1c; }
+        #devBankStatus { font-size: 0.78em; line-height: 1.5; margin: -2px 0 8px; color: var(--ink2, #64748b); }
+        #devBankStatus.warn { color: var(--warn, #b45309); }
+        #devBankStatus.err  { color: var(--fail, #b91c1c); }
 
         /* ── ตัวลากปรับความกว้าง ─────────────────────────────────────────
            พื้นที่จับกว้าง 8 px เพื่อให้เล็งโดนง่าย แต่วาดเส้นให้ดูบางกว่านั้น
@@ -109,8 +112,8 @@
             position: absolute; top: 0; bottom: 0; left: 3px; width: 2px;
             background: var(--border); transition: background 0.15s ease;
         }
-        #splitter:hover > span, #splitter.dragging > span { background: #2563eb; }
-        #splitter:focus-visible { outline: 2px solid #2563eb; outline-offset: -2px; }
+        #splitter:hover > span, #splitter.dragging > span { background: var(--accent, #2563eb); }
+        #splitter:focus-visible { outline: 2px solid var(--accent, #2563eb); outline-offset: -2px; }
         /* ขณะลาก ห้ามให้เคอร์เซอร์เปลี่ยนตามสิ่งที่อยู่ใต้เมาส์ และห้ามลากเลือกข้อความ */
         body.splitting { cursor: col-resize; user-select: none; -webkit-user-select: none; }
         body.splitting iframe, body.splitting #map { pointer-events: none; }
@@ -118,7 +121,7 @@
         .sidebar-scroll-area::-webkit-scrollbar { width: 8px; }
         .sidebar-scroll-area::-webkit-scrollbar-track { background: transparent; }
         .sidebar-scroll-area::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 8px; }
-        .sidebar-scroll-area::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .sidebar-scroll-area::-webkit-scrollbar-thumb:hover { background: var(--ink3, #94a3b8); }
         .sticky-footer { position: sticky; bottom: 0; background: rgba(255,255,255,0.92); backdrop-filter: blur(8px); padding: 15px; border-top: 1px solid var(--border); z-index: 100; box-shadow: 0 -4px 16px rgba(15,23,42,0.06); }
 
         /* ── Accordion (เมนูหลัก 4 ขั้นตอน) ─────────────────────── */
@@ -156,7 +159,7 @@
         .acc-title .step-chip {
             display: inline-flex; align-items: center; justify-content: center;
             width: 28px; height: 28px; flex-shrink: 0;
-            border-radius: 8px; font-size: 0.85em; color: #ffffff;
+            border-radius: 8px; font-size: 0.85em; color: var(--panel, #ffffff);
             background: var(--accent, var(--primary));
             box-shadow: 0 2px 5px rgba(15, 23, 42, 0.18);
         }
@@ -167,17 +170,17 @@
             display: flex; align-items: center; gap: 8px;
             margin: 18px -2px 12px -2px; border-radius: 6px;
             padding: 5px 10px;
-            background: linear-gradient(90deg, #eef2ff, #f8fafc 70%);
+            background: linear-gradient(90deg, var(--panel2, #eef2ff), var(--panel, #f8fafc) 70%);
             border-top: 1px solid var(--border);
             border-bottom: 1px solid var(--border);
-            border-left: 4px solid #4f46e5;
-            color: #3730a3; font-weight: 600; font-size: 11.5px; letter-spacing: 0.01em;
+            border-left: 4px solid var(--accent, #4f46e5);
+            color: var(--accent, #3730a3); font-weight: 600; font-size: 11.5px; letter-spacing: 0.01em;
         }
         .sub-step-header i { opacity: 0.85; }
         /* สี Divider ให้สอดคล้องกับ accent ของเมนูแม่ */
-        .acc-step-1 .sub-step-header { background: linear-gradient(90deg, var(--step1-soft), #f8fafc 70%); border-left-color: var(--step1); color: #1e40af; }
-        .acc-step-2 .sub-step-header { background: linear-gradient(90deg, var(--step2-soft), #f8fafc 70%); border-left-color: var(--step2); color: #9a3412; }
-        .acc-step-3 .sub-step-header { background: linear-gradient(90deg, var(--step3-soft), #f8fafc 70%); border-left-color: var(--step3); color: #3730a3; }
+        .acc-step-1 .sub-step-header { background: linear-gradient(90deg, var(--step1-soft), var(--panel, #f8fafc) 70%); border-left-color: var(--step1); color: var(--accent, #1e40af); }
+        .acc-step-2 .sub-step-header { background: linear-gradient(90deg, var(--step2-soft), var(--panel, #f8fafc) 70%); border-left-color: var(--step2); color: var(--fail, #9a3412); }
+        .acc-step-3 .sub-step-header { background: linear-gradient(90deg, var(--step3-soft), var(--panel, #f8fafc) 70%); border-left-color: var(--step3); color: var(--accent, #3730a3); }
 
         /* ═══════════════════════════════════════════════════════════
            🎨 เฟส 4: Flat Design + โทนสีเดียวกันภายในแต่ละเมนู
@@ -212,7 +215,7 @@
         .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
         .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
         .sw-slider { position: absolute; inset: 0; background: var(--border-strong); border-radius: 22px; transition: 0.25s; }
-        .sw-slider:before { content: ""; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: 0.25s; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+        .sw-slider:before { content: ""; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: var(--panel, #fff); border-radius: 50%; transition: 0.25s; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
         .switch input:checked + .sw-slider { background: var(--accent-c, var(--primary)); }
         .switch input:checked + .sw-slider:before { transform: translateX(18px); }
         .switch input:focus-visible + .sw-slider { box-shadow: var(--focus-ring); }
@@ -222,12 +225,12 @@
         .save-check-row > span:first-child { display: flex; align-items: center; gap: 8px; }
         .save-check-row > span:first-child i { color: var(--ink-500); width: 16px; text-align: center; }
         .chk-status { font-weight: 700; white-space: nowrap; }
-        .chk-status.chk-ok { color: #059669; }
-        .chk-status.chk-no { color: #dc2626; }
+        .chk-status.chk-ok { color: var(--ok, #059669); }
+        .chk-status.chk-no { color: var(--fail, #dc2626); }
 
         /* ── เฟส 8: แถบเครื่องมือวัตถุ + ป้ายพื้นที่ตอนเลือก ── */
-        .obj-tb-btn { background: #334155; color: #e2e8f0; border: 1px solid #475569; border-radius: 6px; padding: 4px 8px; font-size: 0.78em; font-weight: 600; cursor: pointer; transition: 0.15s; font-family: inherit; }
-        .obj-tb-btn:hover:not(:disabled) { background: #4f46e5; border-color: #6366f1; color: #fff; }
+        .obj-tb-btn { background: var(--ink, #334155); color: var(--line, #e2e8f0); border: 1px solid var(--ink2, #475569); border-radius: 6px; padding: 4px 8px; font-size: 0.78em; font-weight: 600; cursor: pointer; transition: 0.15s; font-family: inherit; }
+        .obj-tb-btn:hover:not(:disabled) { background: var(--accent, #4f46e5); border-color: var(--accent, #6366f1); color: var(--panel, #fff); }
         .obj-tb-btn:disabled { opacity: 0.35; cursor: not-allowed; }
         .area-info-tooltip { background: rgba(255,255,255,0.95) !important; border: 1px solid var(--border-strong) !important; border-radius: 8px !important; box-shadow: var(--shadow-md) !important; font-size: 10.5px !important; }
         /* 🌟 เฟส 12: ป้ายบนแผนที่ (จุดรวมสาย ฯลฯ) เล็กลง */
@@ -237,7 +240,7 @@
         #stepperBar {
             display: flex; align-items: stretch; gap: 4px;
             position: sticky; top: -8px; z-index: 600; /* 🌟 เฟส 14: ปักหมุดบนสุด ไม่เลื่อนหาย */
-            background: #f8fafc;
+            background: var(--panel, #f8fafc);
             margin: -8px -10px 10px -10px;
             padding: 10px 10px 8px 10px;
             border-bottom: 2px solid var(--border);
@@ -250,13 +253,13 @@
             border: 1px solid transparent; transition: 0.15s;
         }
         .step-tab i { font-size: 1.5em; }
-        .step-tab:hover { background: #f1f5f9; color: var(--ink-700); }
+        .step-tab:hover { background: var(--panel2, #f1f5f9); color: var(--ink-700); }
         .step-tab.active.st-1 { background: var(--step1-soft); color: var(--step1); border-color: var(--step1); }
         .step-tab.active.st-2 { background: var(--step2-soft); color: var(--step2); border-color: var(--step2); }
         .step-tab.active.st-3 { background: var(--step3-soft); color: var(--step3); border-color: var(--step3); }
         .step-tab.active.st-4 { background: var(--step4-soft); color: var(--step4); border-color: var(--step4); }
-        #btnExitSystem { width: 40px; flex-shrink: 0; border: none; border-radius: 10px; background: #fef2f2; color: #ef4444; font-size: 1em; cursor: pointer; transition: 0.15s; }
-        #btnExitSystem:hover { background: #ef4444; color: #fff; }
+        #btnExitSystem { width: 40px; flex-shrink: 0; border: none; border-radius: 10px; background: var(--panel2, #fef2f2); color: var(--fail, #ef4444); font-size: 1em; cursor: pointer; transition: 0.15s; }
+        #btnExitSystem:hover { background: var(--fail, #ef4444); color: var(--panel, #fff); }
         /* Stepper นำทางแทนหัวเมนูเดิม — ซ่อนหัว accordion และตัดกรอบให้เนื้อหาเต็มพื้นที่ */
         .accordion-header { display: none !important; }
         .accordion { border: none; box-shadow: none; background: transparent; margin-bottom: 0; }
@@ -269,21 +272,21 @@
         .leaflet-bar { border: none !important; border-radius: 10px !important; box-shadow: 0 4px 14px rgba(15,23,42,0.28) !important; overflow: hidden; }
         .leaflet-bar a, .leaflet-bar a:hover {
             width: 40px !important; height: 40px !important; line-height: 40px !important;
-            font-size: 16px !important; color: #334155 !important;
+            font-size: 16px !important; color: var(--ink, #334155) !important;
             background-color: rgba(255,255,255,0.97) !important;
-            border-bottom: 1px solid #eef2f6 !important;
+            border-bottom: 1px solid var(--bg, #eef2f6) !important;
         }
         .leaflet-bar a:last-child { border-bottom: none !important; }
-        .leaflet-bar a:hover { background-color: #eff6ff !important; color: #2563eb !important; }
+        .leaflet-bar a:hover { background-color: var(--panel2, #eff6ff) !important; color: var(--accent, #2563eb) !important; }
         .leaflet-bar a.leaflet-disabled { opacity: 0.4; }
         /* 🌟 เฟส 10: เลิกใช้ sprite ของ Leaflet.draw — แทนด้วยไอคอน Font Awesome (กึ่งกลางเป๊ะเสมอ) */
         .leaflet-draw-toolbar a { background-image: none !important; position: relative; }
         .leaflet-draw-toolbar a::after {
-            font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 15px; color: #334155;
+            font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 15px; color: var(--ink, #334155);
             position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
         }
-        .leaflet-draw-toolbar a:hover::after { color: #2563eb; }
-        .leaflet-draw-toolbar a.leaflet-disabled::after { color: #b6c2d1; }
+        .leaflet-draw-toolbar a:hover::after { color: var(--accent, #2563eb); }
+        .leaflet-draw-toolbar a.leaflet-disabled::after { color: var(--edge, #b6c2d1); }
         a.leaflet-draw-draw-polyline::after { content: "\f545"; }  /* ไม้บรรทัด: วาดเส้น */
         a.leaflet-draw-draw-polygon::after { content: "\f5ee"; }   /* draw-polygon */
         a.leaflet-draw-draw-marker::after { content: "\f3c5"; }    /* location-dot */
@@ -294,12 +297,12 @@
         .leaflet-right .leaflet-control { margin-right: 12px !important; }
         /* ขวาล่าง: Zoom + สเกล ชิดกันเป็นชุดเดียว */
         .leaflet-bottom.leaflet-right .leaflet-control-scale { margin-bottom: 10px !important; margin-right: 12px !important; background: rgba(255,255,255,0.9); padding: 2px 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(15,23,42,0.2); border: none; }
-        .leaflet-control-scale-line { border: 2px solid #64748b !important; border-top: none !important; color: #475569 !important; background: transparent !important; font-size: 10px !important; }
+        .leaflet-control-scale-line { border: 2px solid var(--ink2, #64748b) !important; border-top: none !important; color: var(--ink2, #475569) !important; background: transparent !important; font-size: 10px !important; }
         /* ปุ่ม Undo/Redo ที่ย้ายเข้า Left Rail */
         #undoRedoRail { display: flex; flex-direction: column; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 14px rgba(15,23,42,0.28); }
-        #undoRedoRail button { width: 40px !important; height: 40px !important; border: none !important; border-bottom: 1px solid #eef2f6 !important; border-radius: 0 !important; box-shadow: none !important; background: rgba(255,255,255,0.97) !important; }
+        #undoRedoRail button { width: 40px !important; height: 40px !important; border: none !important; border-bottom: 1px solid var(--bg, #eef2f6) !important; border-radius: 0 !important; box-shadow: none !important; background: rgba(255,255,255,0.97) !important; }
         #undoRedoRail button:last-child { border-bottom: none !important; }
-        #undoRedoRail button:hover { background: #eff6ff !important; color: #2563eb !important; }
+        #undoRedoRail button:hover { background: var(--panel2, #eff6ff) !important; color: var(--accent, #2563eb) !important; }
 
         /* ── เฟส 7: Setting Rows (label ซ้าย + ช่องกรอกสั้น + หน่วย ชิดขวา) ── */
         .setting-group { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px; padding: 0 10px; margin-bottom: 10px; }
@@ -318,24 +321,24 @@
         .form-group { margin-bottom: 8px; }
         label { display: block; margin-bottom: 3px; font-weight: 600; color: var(--ink-700); font-size: 11px; }
         input[type="number"], input[type="text"], input[type="file"], select, textarea { width: 100%; padding: 3px 6px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); box-sizing: border-box; font-size: 12px; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease; font-family: inherit; color: var(--ink-900); background: var(--surface); }
-        input[type="number"]:hover, input[type="text"]:hover, select:hover { border-color: #94a3b8; }
+        input[type="number"]:hover, input[type="text"]:hover, select:hover { border-color: var(--ink3, #94a3b8); }
         input[type="number"]:focus, input[type="text"]:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: var(--focus-ring); }
 
-        .radio-group { background: #f8fafc; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+        .radio-group { background: var(--panel, #f8fafc); padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
         .radio-item { display: flex; align-items: center; margin-bottom: 6px; }
         .radio-item:last-child { margin-bottom: 0; }
         .radio-item input[type="radio"] { width: auto; margin-right: 8px; cursor: pointer; }
         .radio-item label { margin-bottom: 0; font-weight: normal; cursor: pointer; font-size: 12px; }
 
-        .highlight-input { font-size: 1.1em; font-weight: bold; color: #1e293b; width: 120px; text-align: right; border: 2px solid #cbd5e1; background: #fff; border-radius: 4px; transition: 0.3s;}
-        .highlight-input.success { color: #16a34a; border-color: #16a34a; background: #f0fdf4; }
+        .highlight-input { font-size: 1.1em; font-weight: bold; color: var(--ink, #1e293b); width: 120px; text-align: right; border: 2px solid var(--edge, #cbd5e1); background: var(--panel, #fff); border-radius: 4px; transition: 0.3s;}
+        .highlight-input.success { color: var(--ok, #16a34a); border-color: var(--ok, #16a34a); background: var(--panel2, #f0fdf4); }
         
         .btn-search { background-color: var(--primary); color: white; border: none; padding: 4px 8px; font-size: 11.5px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; white-space: nowrap; transition: filter 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease; font-family: inherit; box-shadow: var(--shadow-sm); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
         .btn-search:hover { filter: brightness(0.92); box-shadow: var(--shadow-md); }
         .btn-search:active { transform: translateY(1px); }
         .input-group { display: flex; gap: 8px; align-items: center; }
         .section-header { font-size: 11px; font-weight: 700; color: var(--ink-500); margin-top: 10px; margin-bottom: 5px; border-bottom: 1px solid var(--border); padding-bottom: 5px; letter-spacing: 0.03em; }
-        .draw-mode-box { display: flex; gap: 10px; background: #fffbeb; padding: 10px; border: 1px solid #fde68a; border-radius: 4px; }
+        .draw-mode-box { display: flex; gap: 10px; background: var(--panel2, #fffbeb); padding: 10px; border: 1px solid var(--warn, #fde68a); border-radius: 4px; }
         
         /* หมุดแก้ไขรูปทรง — ทำเป็นสี่เหลี่ยมสีน้ำเงิน ไม่ใช่วงกลมสีแดงเหมือนเดิม
            เพราะหมุด GCP ของภาพโดรนเป็นกากบาทสีส้มเข้มรองพื้นขาว วางบนภาพถ่าย
@@ -354,11 +357,11 @@
            เปลี่ยนเป็นจุดกลมสีฟ้าให้อ่านออกว่าเป็นเส้นชั่วคราว ไม่ใช่ขอบรูปจริง
            แล้วสลับสีเมื่อดูดมุมฉากหรือรูปตัดกันเอง เพื่อไม่ให้เสียสัญญาณเตือนเดิม */
         .leaflet-draw-guide-dash {
-            background-color: #0ea5e9 !important; width: 4px !important; height: 4px !important;
+            background-color: var(--accent, #0ea5e9) !important; width: 4px !important; height: 4px !important;
             border-radius: 50% !important; opacity: .95 !important;
         }
-        .leaflet-container.asc-draw-snap  .leaflet-draw-guide-dash { background-color: #fa0505 !important; width: 5px !important; height: 5px !important; }
-        .leaflet-container.asc-draw-error .leaflet-draw-guide-dash { background-color: #b91c1c !important; }
+        .leaflet-container.asc-draw-snap  .leaflet-draw-guide-dash { background-color: var(--fail, #fa0505) !important; width: 5px !important; height: 5px !important; }
+        .leaflet-container.asc-draw-error .leaflet-draw-guide-dash { background-color: var(--fail, #b91c1c) !important; }
        .interactive-panel { cursor: pointer !important; outline: none; shape-rendering: geometricPrecision; }
 
         /* เส้นเวกเตอร์ทุกเส้นบนแผนที่ให้เรนเดอร์แบบคมตามเรขาคณิตจริง และมุมหักเป็นเหลี่ยม
@@ -370,56 +373,56 @@
             stroke-miterlimit: 10;
         }
         
-        .file-upload-row { display: flex; align-items: center; justify-content: space-between; font-size: 11px; margin-top: 4px; color: #64748b; }
-        .file-upload-row input[type="file"] { width: 65%; padding: 4px; border: 1px dashed #cbd5e1; background: #f8fafc;}
-        .array-badge { display: inline-block; background: #e2e8f0; color: #334155; padding: 4px 8px; border-radius: 4px; margin: 2px; font-size: 0.9em; font-weight: bold; border: 1px solid #cbd5e1; }
-        .compat-warning { color: #dc2626; font-size: 0.8em; margin-top: 4px; display: none; background: #fef2f2; padding: 6px; border-radius: 4px; border: 1px solid #fca5a5; }
+        .file-upload-row { display: flex; align-items: center; justify-content: space-between; font-size: 11px; margin-top: 4px; color: var(--ink2, #64748b); }
+        .file-upload-row input[type="file"] { width: 65%; padding: 4px; border: 1px dashed var(--edge, #cbd5e1); background: var(--panel, #f8fafc);}
+        .array-badge { display: inline-block; background: var(--line, #e2e8f0); color: var(--ink, #334155); padding: 4px 8px; border-radius: 4px; margin: 2px; font-size: 0.9em; font-weight: bold; border: 1px solid var(--edge, #cbd5e1); }
+        .compat-warning { color: var(--fail, #dc2626); font-size: 0.8em; margin-top: 4px; display: none; background: var(--panel2, #fef2f2); padding: 6px; border-radius: 4px; border: 1px solid var(--fail, #fca5a5); }
 
         .custom-select-wrapper { position: relative; user-select: none; width: 100%; font-size: 0.85em; }
-        .custom-select-display { display: flex; align-items: center; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 8px; background: #f8fafc; cursor: pointer; color: var(--ink-700); font-weight: 600; transition: 0.2s;}
-        .custom-select-display:hover { border-color: #3b82f6; }
+        .custom-select-display { display: flex; align-items: center; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 8px; background: var(--panel, #f8fafc); cursor: pointer; color: var(--ink-700); font-weight: 600; transition: 0.2s;}
+        .custom-select-display:hover { border-color: var(--accent, #3b82f6); }
         .custom-select-options { display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); max-height: 260px; overflow-y: auto; z-index: 1000; box-shadow: var(--shadow-md); margin-top: 4px; }
         .custom-select-options.show { display: block; }
-        .custom-select-option { display: flex; align-items: center; padding: 8px 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s; color: #475569; }
+        .custom-select-option { display: flex; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--panel2, #f1f5f9); cursor: pointer; transition: 0.2s; color: var(--ink2, #475569); }
         .custom-select-option:last-child { border-bottom: none; }
-        .custom-select-option:hover { background: #eff6ff; }
+        .custom-select-option:hover { background: var(--panel2, #eff6ff); }
         .mount-icon { width: 40px; height: 25px; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0; }
         .mount-icon svg { width: 100%; height: 100%; }
         .mount-text { flex: 1; line-height: 1.2; }
 
         .result-box { background: var(--surface); padding: 12px; border-radius: var(--radius-sm); margin-top: 5px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
         .smart-item { display: none; justify-content: space-between; align-items: center; padding: 10px 12px; margin-bottom: 8px; border-radius: 6px; font-weight: 600; font-size: 0.85em; box-shadow: 0 1px 2px rgba(0,0,0,0.03); border: 1px solid transparent; }
-        .smart-item-pv { background: rgba(37, 99, 235, 0.08); border-left: 4px solid #2563eb; color: #1e40af; border-color: rgba(37, 99, 235, 0.15); }
-        .smart-item-opt { background: rgba(16, 185, 129, 0.08); border-left: 4px solid #10b981; color: #065f46; flex-direction: column; align-items: flex-start; border-color: rgba(16, 185, 129, 0.15); }
-        .smart-item-bat { background: rgba(168, 85, 247, 0.08); border-left: 4px solid #a855f7; color: #6b21a8; flex-direction: column; align-items: flex-start; border-color: rgba(168, 85, 247, 0.15); }
-        .smart-item-ev { background: rgba(245, 158, 11, 0.08); border-left: 4px solid #f59e0b; color: #92400e; flex-direction: column; align-items: flex-start; border-color: rgba(245, 158, 11, 0.15); }
-        .smart-item-inv { background: rgba(14, 165, 233, 0.08); border-left: 4px solid #0ea5e9; color: #075985; flex-direction: column; align-items: flex-start; border-color: rgba(14, 165, 233, 0.15); }
+        .smart-item-pv { background: rgba(37, 99, 235, 0.08); border-left: 4px solid var(--accent, #2563eb); color: var(--accent, #1e40af); border-color: rgba(37, 99, 235, 0.15); }
+        .smart-item-opt { background: rgba(16, 185, 129, 0.08); border-left: 4px solid var(--ok, #10b981); color: var(--ok, #065f46); flex-direction: column; align-items: flex-start; border-color: rgba(16, 185, 129, 0.15); }
+        .smart-item-bat { background: rgba(168, 85, 247, 0.08); border-left: 4px solid var(--accent2, #a855f7); color: var(--accent2, #6b21a8); flex-direction: column; align-items: flex-start; border-color: rgba(168, 85, 247, 0.15); }
+        .smart-item-ev { background: rgba(245, 158, 11, 0.08); border-left: 4px solid var(--warn, #f59e0b); color: var(--warn, #92400e); flex-direction: column; align-items: flex-start; border-color: rgba(245, 158, 11, 0.15); }
+        .smart-item-inv { background: rgba(14, 165, 233, 0.08); border-left: 4px solid var(--accent, #0ea5e9); color: var(--accent, #075985); flex-direction: column; align-items: flex-start; border-color: rgba(14, 165, 233, 0.15); }
 
         .smart-db { padding: 12px; border-radius: var(--radius-sm); margin-bottom: 12px; }
-        .smart-db-pv { background: rgba(37, 99, 235, 0.04); border-left: 3px solid #2563eb; }
-        .smart-db-inv { background: rgba(14, 165, 233, 0.04); border-left: 3px solid #0ea5e9; }
-        .smart-db-bat { background: rgba(168, 85, 247, 0.04); border-left: 3px solid #a855f7; margin-bottom: 8px;}
-        .smart-db-opt { background: rgba(16, 185, 129, 0.04); border-left: 3px solid #10b981; margin-bottom: 8px;}
-        .smart-db-ev { background: rgba(245, 158, 11, 0.04); border-left: 3px solid #f59e0b; margin-bottom: 8px;}
-        .smart-db-drone { background: rgba(234, 88, 12, 0.04); border-left: 3px solid #ea580c; margin-bottom: 15px;}
+        .smart-db-pv { background: rgba(37, 99, 235, 0.04); border-left: 3px solid var(--accent, #2563eb); }
+        .smart-db-inv { background: rgba(14, 165, 233, 0.04); border-left: 3px solid var(--accent, #0ea5e9); }
+        .smart-db-bat { background: rgba(168, 85, 247, 0.04); border-left: 3px solid var(--accent2, #a855f7); margin-bottom: 8px;}
+        .smart-db-opt { background: rgba(16, 185, 129, 0.04); border-left: 3px solid var(--ok, #10b981); margin-bottom: 8px;}
+        .smart-db-ev { background: rgba(245, 158, 11, 0.04); border-left: 3px solid var(--warn, #f59e0b); margin-bottom: 8px;}
+        .smart-db-drone { background: rgba(234, 88, 12, 0.04); border-left: 3px solid var(--warn, #ea580c); margin-bottom: 15px;}
 
-        .btn-save { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 6px 10px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.01em; border-radius: var(--radius-md); cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(16,185,129,0.25); transition: all 0.25s ease; font-family: inherit; }
-        .btn-save:hover { background: linear-gradient(135deg, #059669, #047857); transform: translateY(-2px); box-shadow: 0 8px 16px rgba(16,185,129,0.3); }
+        .btn-save { background: linear-gradient(135deg, var(--ok, #10b981), var(--ok, #059669)); color: white; border: none; padding: 6px 10px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.01em; border-radius: var(--radius-md); cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(16,185,129,0.25); transition: all 0.25s ease; font-family: inherit; }
+        .btn-save:hover { background: linear-gradient(135deg, var(--ok, #059669), var(--ok, #047857)); transform: translateY(-2px); box-shadow: 0 8px 16px rgba(16,185,129,0.3); }
         .btn-save:active { transform: translateY(0); }
-        .btn-save:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; transform: none; }
+        .btn-save:disabled { background: var(--ink3, #94a3b8); cursor: not-allowed; box-shadow: none; transform: none; }
 
-        .db-display { background: #1e293b; color: #38bdf8; font-family: monospace; padding: 10px; border-radius: 4px; font-size: 0.8em; overflow-y: auto; height: 80px; min-height: 60px; max-height: 600px; white-space: pre-wrap; word-wrap: break-word; resize: vertical;}
-		.spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #0369a1; animation: spin 1s ease-in-out infinite; vertical-align: middle; margin-right: 4px;}
+        .db-display { background: var(--ink, #1e293b); color: var(--accent, #38bdf8); font-family: monospace; padding: 10px; border-radius: 4px; font-size: 0.8em; overflow-y: auto; height: 80px; min-height: 60px; max-height: 600px; white-space: pre-wrap; word-wrap: break-word; resize: vertical;}
+		.spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: var(--accent, #0369a1); animation: spin 1s ease-in-out infinite; vertical-align: middle; margin-right: 4px;}
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        .warning-fuse { background: #fef2f2; border-left: 4px solid #ef4444; padding: 8px; margin-top: 8px; font-size: 0.8em; color: #b91c1c; border-radius: 4px;}
+        .warning-fuse { background: var(--panel2, #fef2f2); border-left: 4px solid var(--fail, #ef4444); padding: 8px; margin-top: 8px; font-size: 0.8em; color: var(--fail, #b91c1c); border-radius: 4px;}
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 		/* --- IV Curve Modal Styles --- */
         .iv-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out; }
-        .iv-modal-content { background: #f8fafc; width: 95%; max-width: 1000px; max-height: 95vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
-        .iv-modal-header { padding: 15px 20px; background: #1e293b; color: white; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1.1em;}
+        .iv-modal-content { background: var(--panel, #f8fafc); width: 95%; max-width: 1000px; max-height: 95vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .iv-modal-header { padding: 15px 20px; background: var(--ink, #1e293b); color: white; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1.1em;}
         .iv-modal-body { padding: 20px; overflow-y: auto; flex: 1; }
-        .iv-close-btn { background: none; border: none; color: #cbd5e1; font-size: 1.5em; cursor: pointer; transition: 0.2s; }
+        .iv-close-btn { background: none; border: none; color: var(--edge, #cbd5e1); font-size: 1.5em; cursor: pointer; transition: 0.2s; }
         .iv-close-btn:hover { color: white; transform: scale(1.1); }
 
         /* 🌟 โค้ดสร้างหน้าจอ Loading แบบเต็มจอ 🌟 */
@@ -437,45 +440,45 @@
     <!-- 🌟 โครงสร้าง HTML สำหรับ Loading Screen (ใช้ไฟล์ GIF) 🌟 -->
     <div id="globalLoadingOverlay">
         <img src="img/ld.gif" alt="Loading..." style="width: 100px; height: auto; margin-bottom: 20px;">
-        <div id="globalLoadingText" style="font-size: 1.5em; font-weight: bold; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">กำลังประมวลผล...</div>
+        <div id="globalLoadingText" style="font-size: 1.5em; font-weight: bold; color: var(--panel, #ffffff); text-shadow: 0 2px 4px rgba(0,0,0,0.5);">กำลังประมวลผล...</div>
     </div>
 
     <div id="map-wrapper">
         <div id="map"></div>
         <!-- 🌟 เฟส 8: แถบเครื่องมือวัตถุ (แสดงเมื่อคลิกเลือกวัตถุบนแผนที่) -->
         <div id="objToolbar" style="display: none; position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(15,23,42,0.88); backdrop-filter: blur(6px); border-radius: 10px; padding: 6px 10px; gap: 6px; align-items: center; box-shadow: 0 6px 18px rgba(0,0,0,0.35);">
-            <span style="color: #cbd5e1; font-size: 0.75em; font-weight: 600; margin-right: 2px;"><i class="fa-solid fa-arrows-rotate"></i> หมุน</span>
+            <span style="color: var(--edge, #cbd5e1); font-size: 0.75em; font-weight: 600; margin-right: 2px;"><i class="fa-solid fa-arrows-rotate"></i> หมุน</span>
             <button class="obj-tb-btn rot-btn" id="objRotM15" title="หมุนซ้าย 15°">-15°</button>
             <button class="obj-tb-btn rot-btn" id="objRotM1" title="หมุนซ้าย 1°">-1°</button>
-            <input type="number" id="objRotInput" value="5" min="0.1" max="180" step="0.5" title="องศาที่ต้องการหมุน" style="width: 52px; padding: 3px 4px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: #fff; text-align: center; font-size: 0.8em;">
+            <input type="number" id="objRotInput" value="5" min="0.1" max="180" step="0.5" title="องศาที่ต้องการหมุน" style="width: 52px; padding: 3px 4px; border-radius: 6px; border: 1px solid var(--ink2, #475569); background: var(--ink, #1e293b); color: var(--panel, #fff); text-align: center; font-size: 0.8em;">
             <button class="obj-tb-btn rot-btn" id="objRotP1" title="หมุนขวา 1°">+1°</button>
             <button class="obj-tb-btn rot-btn" id="objRotP15" title="หมุนขวา 15°">+15°</button>
-            <span style="width: 1px; height: 18px; background: #475569; margin: 0 3px;"></span>
+            <span style="width: 1px; height: 18px; background: var(--ink2, #475569); margin: 0 3px;"></span>
             <button class="obj-tb-btn" id="objCopy" title="คัดลอก (Ctrl+C)"><i class="fa-solid fa-copy"></i></button>
             <button class="obj-tb-btn" id="objCut" title="ตัด (Ctrl+X)"><i class="fa-solid fa-scissors"></i></button>
             <button class="obj-tb-btn" id="objPaste" title="วาง (Ctrl+V)"><i class="fa-solid fa-paste"></i></button>
         </div>
-        <div style="position: absolute; top: 15px; right: 15px; z-index: 1000; background: rgba(255,255,255,0.95); padding: 5px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #cbd5e1; display: flex; flex-direction: column; align-items: center; pointer-events: none; width: 40px; height: 40px; justify-content: center; backdrop-filter: blur(4px);" id="northCompass">
-            <div style="color: #dc2626; font-size: 18px; line-height: 0.8; margin-top: -2px;">▲</div>
-            <div style="font-size: 13px; font-weight: 900; color: #1e293b; line-height: 1;">N</div>
+        <div style="position: absolute; top: 15px; right: 15px; z-index: 1000; background: rgba(255,255,255,0.95); padding: 5px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid var(--edge, #cbd5e1); display: flex; flex-direction: column; align-items: center; pointer-events: none; width: 40px; height: 40px; justify-content: center; backdrop-filter: blur(4px);" id="northCompass">
+            <div style="color: var(--fail, #dc2626); font-size: 18px; line-height: 0.8; margin-top: -2px;">▲</div>
+            <div style="font-size: 13px; font-weight: 900; color: var(--ink, #1e293b); line-height: 1;">N</div>
         </div>
 
 
 		<!-- 🌟 แถบสถานะแผนที่ (Map Status Bar) ขอบล่าง 🌟 -->
-        <div id="mapStatusBar" style="position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255,255,255,0.95); padding: 4px 14px; border-radius: 999px; box-shadow: 0 2px 10px rgba(15,23,42,0.25); border: none; display: flex; gap: 14px; font-size: 0.72em; font-weight: bold; color: #1e293b; backdrop-filter: blur(4px); pointer-events: none; white-space: nowrap; align-items: center;">
-            <div><i class="fa-solid fa-solar-panel" style="color: #2563eb;"></i> PV: <span id="status-panels" style="color: #ea580c;">0</span></div>
-            <div><i class="fa-solid fa-bolt" style="color: #16a34a;"></i> Capacity: <span id="status-kwp" style="color: #ea580c;">0.00 kWp</span></div>
-            <div><i class="fa-solid fa-scale-balanced" style="color: #8b5cf6;"></i> DC/AC Ratio: <span id="status-ratio" style="color: #ea580c;">-</span></div>
+        <div id="mapStatusBar" style="position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255,255,255,0.95); padding: 4px 14px; border-radius: 999px; box-shadow: 0 2px 10px rgba(15,23,42,0.25); border: none; display: flex; gap: 14px; font-size: 0.72em; font-weight: bold; color: var(--ink, #1e293b); backdrop-filter: blur(4px); pointer-events: none; white-space: nowrap; align-items: center;">
+            <div><i class="fa-solid fa-solar-panel" style="color: var(--accent, #2563eb);"></i> PV: <span id="status-panels" style="color: var(--warn, #ea580c);">0</span></div>
+            <div><i class="fa-solid fa-bolt" style="color: var(--ok, #16a34a);"></i> Capacity: <span id="status-kwp" style="color: var(--warn, #ea580c);">0.00 kWp</span></div>
+            <div><i class="fa-solid fa-scale-balanced" style="color: var(--accent, #8b5cf6);"></i> DC/AC Ratio: <span id="status-ratio" style="color: var(--warn, #ea580c);">-</span></div>
             <!-- แสดงเฉพาะเมื่อโครงการมีอุปกรณ์นั้นจริง ไม่งั้นแถบจะยาวเกินจำเป็นในงานทั่วไป -->
-            <div id="status-bat-box" style="display: none;"><i class="fa-solid fa-battery-full" style="color: #0891b2;"></i> Battery: <span id="status-bat" style="color: #ea580c;">0 kWh</span></div>
-            <div id="status-opt-box" style="display: none;"><i class="fa-solid fa-microchip" style="color: #db2777;"></i> Optimizer: <span id="status-opt" style="color: #ea580c;">0</span></div>
+            <div id="status-bat-box" style="display: none;"><i class="fa-solid fa-battery-full" style="color: var(--accent, #0891b2);"></i> Battery: <span id="status-bat" style="color: var(--warn, #ea580c);">0 kWh</span></div>
+            <div id="status-opt-box" style="display: none;"><i class="fa-solid fa-microchip" style="color: var(--fail, #db2777);"></i> Optimizer: <span id="status-opt" style="color: var(--warn, #ea580c);">0</span></div>
         </div>
 
 		<!-- ปุ่ม Undo / Redo บนแผนที่ -->
-        <div style="position: absolute; top: 70px; right: 15px; z-index: 1000; display: flex; flex-direction: column; gap: 8px;"><button id="btnUndoMap" style="background: rgba(255,255,255,0.95); border: 1px solid #cbd5e1; border-radius: 8px; width: 44px; height: 44px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-size: 16px; color: #475569; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: 0.2s;" title="ย้อนกลับ (Undo)">
+        <div style="position: absolute; top: 70px; right: 15px; z-index: 1000; display: flex; flex-direction: column; gap: 8px;"><button id="btnUndoMap" style="background: rgba(255,255,255,0.95); border: 1px solid var(--edge, #cbd5e1); border-radius: 8px; width: 44px; height: 44px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-size: 16px; color: var(--ink2, #475569); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: 0.2s;" title="ย้อนกลับ (Undo)">
                 <i class="fa-solid fa-rotate-left"></i>
             </button>
-            <button id="btnRedoMap" style="background: rgba(255,255,255,0.95); border: 1px solid #cbd5e1; border-radius: 8px; width: 44px; height: 44px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-size: 16px; color: #475569; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: 0.2s;" title="ทำซ้ำ (Redo)">
+            <button id="btnRedoMap" style="background: rgba(255,255,255,0.95); border: 1px solid var(--edge, #cbd5e1); border-radius: 8px; width: 44px; height: 44px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-size: 16px; color: var(--ink2, #475569); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: 0.2s;" title="ทำซ้ำ (Redo)">
                 <i class="fa-solid fa-rotate-right"></i>
             </button>
         </div>
@@ -508,7 +511,7 @@
                     
                     <!-- ย้ายปุ่มนำเข้าโครงการขึ้นมาด้านบนสุด -->
                     <div class="form-group" style="margin-bottom: 15px;">
-                        <button class="btn-search" id="btnImportProject" style="background-color: #2563eb; width: 100%; padding: 10px; font-size: 1em;" onclick="document.getElementById('importProjectFile').click();"><i class="fa-solid fa-file-import"></i>Import Data</button>
+                        <button class="btn-search" id="btnImportProject" style="background-color: var(--accent, #2563eb); width: 100%; padding: 10px; font-size: 1em;" onclick="document.getElementById('importProjectFile').click();"><i class="fa-solid fa-file-import"></i>Import Data</button>
                         <input type="file" id="importProjectFile" accept=".txt" style="display: none;">
                     </div>
 
@@ -518,8 +521,8 @@
                     </div>
                     
                     <!-- ย้ายประเภทอาคารมาไว้ใต้ชื่อโครงการ -->
-                    <div class="form-group" style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
-                        <label style="color: #1d4ed8; font-weight: bold;"><i class="fa-solid fa-building"></i> ประเภทอาคาร (ข้อกำหนดแรงดัน วสท.)</label>
+                    <div class="form-group" style="background: var(--panel2, #eff6ff); border: 1px solid var(--sel, #bfdbfe); padding: 10px; border-radius: 6px; margin-bottom: 15px;">
+                        <label style="color: var(--accent, #1d4ed8); font-weight: bold;"><i class="fa-solid fa-building"></i> ประเภทอาคาร (ข้อกำหนดแรงดัน วสท.)</label>
                         <div class="radio-group" style="display: flex; gap: 10px; flex-wrap: wrap; border: none; padding: 0; background: transparent;">
                             <div class="radio-item"><input type="radio" id="bldgRes" name="buildingType" value="1000" checked><label for="bldgRes">บ้านพักอาศัย (Max 1,000V)</label></div>
                             <div class="radio-item"><input type="radio" id="bldgCom" name="buildingType" value="1500"><label for="bldgCom">ธุรกิจ/โรงงาน (Max 1,500V)</label></div>
@@ -530,9 +533,9 @@
                          สองช่องแรกเป็นตัวตัดสิน class ของ SPD ตามตารางที่ 3.2 หน้า 33
                          ซึ่งเดิมโปรแกรมใส่ Type 2 ตายตัวทุกงาน ผิดกับสองในสามเคสของตาราง
                          สองช่องหลังเป็นค่าที่วัดหน้างาน ใช้ให้ผลตรวจแบบเทียบเกณฑ์ภาคผนวก จ.2 -->
-                    <div class="form-group" style="background: #fefce8; border: 1px solid #fde047; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
-                        <label style="color: #a16207; font-weight: bold;"><i class="fa-solid fa-bolt"></i> ระบบป้องกันฟ้าผ่าของอาคาร (วสท. ข้อ 3.6)</label>
-                        <div style="font-size: 11px; color: #713f12; margin: 2px 0 8px 0; line-height: 1.5;">
+                    <div class="form-group" style="background: var(--bg, #fefce8); border: 1px solid var(--warn, #fde047); padding: 10px; border-radius: 6px; margin-bottom: 15px;">
+                        <label style="color: var(--warn, #a16207); font-weight: bold;"><i class="fa-solid fa-bolt"></i> ระบบป้องกันฟ้าผ่าของอาคาร (วสท. ข้อ 3.6)</label>
+                        <div style="font-size: 11px; color: var(--warn, #713f12); margin: 2px 0 8px 0; line-height: 1.5;">
                             ตัดสินชนิด SPD และขนาดสายต่อประสานศักย์ · ไม่ระบุ = โปรแกรมตัดสินให้ไม่ได้ และจะขึ้นเตือนในผลตรวจ
                         </div>
                         <label style="font-size: 11.5px;">อาคารมีระบบป้องกันฟ้าผ่าภายนอกหรือไม่</label>
@@ -547,8 +550,8 @@
                             <option value="ok">รักษาได้</option>
                             <option value="not_ok">รักษาไม่ได้ (ต้องต่อประสานเข้าระบบล่อฟ้าโดยตรง)</option>
                         </select>
-                        <div id="lpsMeasuredBox" style="display: none; border-top: 1px dashed #fde047; padding-top: 8px; margin-top: 4px;">
-                            <div style="font-size: 11px; color: #713f12; margin-bottom: 6px;">
+                        <div id="lpsMeasuredBox" style="display: none; border-top: 1px dashed var(--warn, #fde047); padding-top: 8px; margin-top: 4px;">
+                            <div style="font-size: 11px; color: var(--warn, #713f12); margin-bottom: 6px;">
                                 ค่าที่วัด/ออกแบบหน้างาน — เว้นว่างได้ ถ้ายังไม่มีข้อมูล
                             </div>
                             <label style="font-size: 11.5px;">ขนาดตัวนำลงดินของระบบล่อฟ้า (ตร.มม.)</label>
@@ -556,12 +559,12 @@
                             <label style="font-size: 11.5px;">ความต้านทานดินของระบบล่อฟ้าที่วัดได้ (โอห์ม)</label>
                             <input type="number" id="lpsEarthOhm" min="0" step="0.1" placeholder="เกณฑ์ ≤ 10">
                         </div>
-                        <div id="lpsSpdHint" style="font-size: 11px; margin-top: 8px; padding: 6px 8px; border-radius: 4px; background: #fff; border: 1px solid #fde047; color: #713f12;"></div>
+                        <div id="lpsSpdHint" style="font-size: 11px; margin-top: 8px; padding: 6px 8px; border-radius: 4px; background: var(--panel, #fff); border: 1px solid var(--warn, #fde047); color: var(--warn, #713f12);"></div>
 
                         <!-- เครื่องคำนวณระยะการแยก S · โผล่เมื่ออาคารมีระบบล่อฟ้า
                              สูตรและค่าสัมประสิทธิ์อยู่ใน asc-lps.js พร้อมที่มา -->
-                        <div id="lpsCalcBox" style="display: none; border-top: 1px dashed #fde047; padding-top: 10px; margin-top: 10px;">
-                            <div style="font-weight: 600; color: #a16207; font-size: 11.5px; margin-bottom: 6px;">
+                        <div id="lpsCalcBox" style="display: none; border-top: 1px dashed var(--warn, #fde047); padding-top: 10px; margin-top: 10px;">
+                            <div style="font-weight: 600; color: var(--warn, #a16207); font-size: 11.5px; margin-bottom: 6px;">
                                 <i class="fa-solid fa-ruler"></i> คำนวณระยะการแยก S
                             </div>
                             <label style="font-size: 11.5px;">ชั้นของระบบป้องกันฟ้าผ่า (LPL)</label>
@@ -587,11 +590,11 @@
                                     <input type="number" id="lpsConductorLen" min="0" step="0.1" placeholder="เช่น 17">
                                 </div>
                             </div>
-                            <div style="font-size: 10.5px; color: #713f12; margin: 4px 0 8px 0; line-height: 1.5;">
+                            <div style="font-size: 10.5px; color: var(--warn, #713f12); margin: 4px 0 8px 0; line-height: 1.5;">
                                 l วัดจากจุดที่พิจารณา ไปถึงจุดประสานศักย์หรือจุดต่อลงดินที่ใกล้ที่สุด (l = l₁+l₂+l₃)
                             </div>
 
-                            <div style="font-weight: 600; color: #a16207; font-size: 11.5px; margin: 10px 0 6px 0;">
+                            <div style="font-weight: 600; color: var(--warn, #a16207); font-size: 11.5px; margin: 10px 0 6px 0;">
                                 <i class="fa-solid fa-bolt-lightning"></i> เสาล่อฟ้าบนผัง
                             </div>
                             <div style="display: flex; gap: 8px; align-items: flex-end;">
@@ -603,10 +606,10 @@
                                     <i class="fa-solid fa-location-crosshairs"></i> ปักเสา
                                 </button>
                             </div>
-                            <div style="font-size: 10.5px; color: #713f12; margin-top: 4px;">
+                            <div style="font-size: 10.5px; color: var(--warn, #713f12); margin-top: 4px;">
                                 กดปักเสาแล้วคลิกบนแผนที่ · กด Esc เพื่อยกเลิก · คลิกที่เสาเพื่อดึงค่ากลับมาแก้
                             </div>
-                            <div id="lpsCalcOut" style="font-size: 11px; margin-top: 8px; padding: 6px 8px; border-radius: 4px; background: #fff; border: 1px solid #fde047; color: #713f12;"></div>
+                            <div id="lpsCalcOut" style="font-size: 11px; margin-top: 8px; padding: 6px 8px; border-radius: 4px; background: var(--panel, #fff); border: 1px solid var(--warn, #fde047); color: var(--warn, #713f12);"></div>
                         </div>
                     </div>
 					
@@ -616,7 +619,7 @@
                             <input type="text" id="coordInput" placeholder="ค้นหาพิกัด Lat, Long">
                             <button class="btn-search" id="btnSearch">ค้นหา</button>
                         </div>
-                        <div style="font-size: 0.8em; color: #64748b; margin-top: 6px; padding: 6px; background: #f1f5f9; border-radius: 4px;" id="locationName">ที่ตั้ง: -</div>
+                        <div style="font-size: 0.8em; color: var(--ink2, #64748b); margin-top: 6px; padding: 6px; background: var(--panel2, #f1f5f9); border-radius: 4px;" id="locationName">ที่ตั้ง: -</div>
                     </div>
                     
                     <!-- ══════════════════════════════════════════════════════════════
@@ -627,10 +630,10 @@
                          กรอกที่นี่เพราะเป็นหน้าที่นิยามตัวโครงการ แล้วไหลไปกับ DB2
                          ให้ทุกเมนูปลายทางใช้ร่วมกัน ไม่ต้องกรอกซ้ำ
                          ══════════════════════════════════════════════════════════════ -->
-                    <div class="form-group smart-db" id="jobCard" style="margin-top: 15px; border-left-color: #d97706; background: rgba(217,119,6,0.05);">
-                        <label style="color: #b45309; font-weight: bold; display:flex; align-items:center; gap:7px;">
+                    <div class="form-group smart-db" id="jobCard" style="margin-top: 15px; border-left-color: var(--warn, #d97706); background: rgba(217,119,6,0.05);">
+                        <label style="color: var(--warn, #b45309); font-weight: bold; display:flex; align-items:center; gap:7px;">
                             <i class="fa-solid fa-clipboard-list"></i> ข้อมูลงานและทีมติดตั้ง
-                            <span style="font-weight:normal; font-size:0.8em; color:#92400e;">(ใช้ในใบสั่งงานช่าง)</span>
+                            <span style="font-weight:normal; font-size:0.8em; color:var(--warn, #92400e);">(ใช้ในใบสั่งงานช่าง)</span>
                         </label>
                         <div style="margin-top:8px;">
                             <div class="setting-row"><span class="sr-label">ชื่อลูกค้า:</span>
@@ -640,7 +643,7 @@
                             <div class="setting-row" style="align-items:flex-start;"><span class="sr-label">ที่อยู่หน้างาน:</span>
                                 <span class="sr-ctrl"><textarea id="jobCustAddr" rows="2" placeholder="บ้านเลขที่ หมู่ ตำบล อำเภอ จังหวัด รหัสไปรษณีย์" style="width:190px; resize:vertical;"></textarea></span></div>
 
-                            <div class="setting-row" style="border-top:1px dashed #fcd34d; padding-top:8px;"><span class="sr-label">วันติดตั้ง:</span>
+                            <div class="setting-row" style="border-top:1px dashed var(--warn, #fcd34d); padding-top:8px;"><span class="sr-label">วันติดตั้ง:</span>
                                 <span class="sr-ctrl"><input type="date" id="jobDateStart" style="width:130px;">
                                     ถึง <input type="date" id="jobDateEnd" style="width:130px;"></span></div>
                             <div class="setting-row"><span class="sr-label">เวลาถึงหน้างาน:</span>
@@ -652,27 +655,27 @@
                                     <option value="ไม่ขออนุญาต">ไม่ขออนุญาต</option>
                                 </select></span></div>
 
-                            <div class="setting-row" style="border-top:1px dashed #fcd34d; padding-top:8px;"><span class="sr-label">วิศวกรผู้ควบคุม:</span>
+                            <div class="setting-row" style="border-top:1px dashed var(--warn, #fcd34d); padding-top:8px;"><span class="sr-label">วิศวกรผู้ควบคุม:</span>
                                 <span class="sr-ctrl"><input type="text" id="jobEngineer" value="" placeholder="ชื่อวิศวกร" style="width:150px;"></span></div>
                             <div class="setting-row"><span class="sr-label">ช่างติดตั้ง:</span>
                                 <span class="sr-ctrl"><input type="text" id="jobTechs" value="" placeholder="คั่นชื่อด้วยจุลภาค" style="width:190px;"></span></div>
                             <div class="setting-row" style="align-items:flex-start;"><span class="sr-label">หมายเหตุถึงช่าง:</span>
                                 <span class="sr-ctrl"><textarea id="jobNote" rows="2" placeholder="เช่น รางซีที่ใช้จับยึดท่อให้พ้นสี เก็บทุกชิ้น" style="width:190px; resize:vertical;"></textarea></span></div>
                         </div>
-                        <div style="font-size:0.75em; color:#92400e; margin-top:8px; line-height:1.4;">
+                        <div style="font-size:0.75em; color:var(--warn, #92400e); margin-top:8px; line-height:1.4;">
                             ข้อมูลนี้ไหลไปกับไฟล์ DB2 ใบสั่งงานช่างจะเติมให้เองโดยไม่ต้องพิมพ์ซ้ำ
                         </div>
                     </div>
 
                     <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <span>Image Overlay</span>
-                        <button id="btnAddDroneBtn" style="background: #ea580c; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 0.9em; cursor: pointer; font-weight: bold; transition: 0.2s;"><i class="fa-solid fa-plus"></i> เพิ่มรูป</button>
+                        <button id="btnAddDroneBtn" style="background: var(--warn, #ea580c); color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 0.9em; cursor: pointer; font-weight: bold; transition: 0.2s;"><i class="fa-solid fa-plus"></i> เพิ่มรูป</button>
                     </div>
                     <div class="form-group smart-db smart-db-drone" id="droneListContainer">
-                        <div style="font-size: 0.75em; color: #64748b; margin-bottom: 8px; line-height: 1.3;">
+                        <div style="font-size: 0.75em; color: var(--ink2, #64748b); margin-bottom: 8px; line-height: 1.3;">
                             <b>1. วางคร่าว ๆ ก่อน</b> — เลือกไฟล์ แล้วใช้ <b>✋ ย้ายภาพ</b> ลากไปวาง ปรับ <b>หมุน / ย่อ-ขยาย</b> ให้ทาบกับภาพดาวเทียมพอประมาณ<br>
                             <b>2. ปรับละเอียดด้วย GCP</b> — กด <b>🎯 ปัก GCP</b> แล้ว <b>① คลิกจุดเด่นบนภาพโดรน</b> (มุมหลังคา/เสา) ตามด้วย <b>② คลิกตำแหน่งจริงของจุดเดียวกันบนดาวเทียม</b> ภาพจะขยับเข้าหาทันที ปักต่อได้เรื่อย ๆ (กด Esc เพื่อจบ) — กระจายจุดเป็นสามเหลี่ยมกว้าง ๆ อย่าปักซ้อน/เรียงเส้นตรง<br>
-                            <span style="color:#94a3b8;">1 จุด = เลื่อน · 2 จุด = เลื่อน+หมุน+ย่อขยาย · 3 จุด = Affine ตรงเป๊ะทุกจุด · 4 จุดขึ้นไป = Affine เฉลี่ยความคลาด (มี RMSE) หรือเลือก Rubber-sheet เพื่อดัดให้ตรงทุกจุด · กากบาทเหลือง = จุดยึดที่เพิ่งคลิก (ชั่วคราว) · กากบาทส้ม = หมุดที่ปักแล้ว · เส้นประแดง = ความคลาดของแต่ละหมุด</span><br>
+                            <span style="color:var(--ink3, #94a3b8);">1 จุด = เลื่อน · 2 จุด = เลื่อน+หมุน+ย่อขยาย · 3 จุด = Affine ตรงเป๊ะทุกจุด · 4 จุดขึ้นไป = Affine เฉลี่ยความคลาด (มี RMSE) หรือเลือก Rubber-sheet เพื่อดัดให้ตรงทุกจุด · กากบาทเหลือง = จุดยึดที่เพิ่งคลิก (ชั่วคราว) · กากบาทส้ม = หมุดที่ปักแล้ว · เส้นประแดง = ความคลาดของแต่ละหมุด</span><br>
                             <b>3. เสร็จแล้วกด ✅ เสร็จสิ้น</b> — ปิดโหมดตรึงภาพก่อนไปวาดหลังคา ไม่งั้นคลิกบนแผนที่จะยังถูกโหมดนี้ดักอยู่ (ระบบปิดให้เองเมื่อกดเครื่องมือวาดหรือสลับขั้นตอน) <b>หมุด ✛ จะถูกซ่อนให้อัตโนมัติ</b> เพื่อไม่ให้บังงานวาด ค่ายังอยู่ครบและกลับมาแก้ได้ทุกเมื่อ<br>
                             🔍 ซูมไปที่ภาพ · 🔒 ล็อกกันขยับ · ลากหมุด ✛ เพื่อปรับ · ลบหมุดจากรายการหรือคลิกขวาที่หมุด · ซ้อนหลายภาพด้วยปุ่ม "+ เพิ่มรูป" · ภาพย่อจะถูกฝังไปกับไฟล์ DB2 ให้เปิดมาแล้วเห็นภาพทันที
                         </div>
@@ -685,10 +688,10 @@
                     <div id="devBankStatus">กำลังโหลดคลังสเปกอุปกรณ์…</div>
 
                     <div class="form-group smart-db smart-db-pv">
-                        <label><span style="background: rgba(37, 99, 235, 0.15); padding: 2px 6px; border-radius: 4px; color: #2563eb; font-weight: bold; border-left: 3px solid #2563eb;">1. แผงโซลาร์เซลล์ (PV Module)</span></label>
+                        <label><span style="background: rgba(37, 99, 235, 0.15); padding: 2px 6px; border-radius: 4px; color: var(--accent, #2563eb); font-weight: bold; border-left: 3px solid var(--accent, #2563eb);">1. แผงโซลาร์เซลล์ (PV Module)</span></label>
                         <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-                            <select id="pvSelect" style="flex: 1; background: #f1f5f9; pointer-events: none; color: #0284c7; font-weight: bold;" disabled><option value="">-- อัปโหลดไฟล์ (TXT) --</option></select>
-                            <button id="btnClearPv" class="btn-search" style="background: #ef4444; padding: 4px 8px;" title="ยกเลิกการใช้แผง"><i class="fa-solid fa-trash"></i></button>
+                            <select id="pvSelect" style="flex: 1; background: var(--panel2, #f1f5f9); pointer-events: none; color: var(--accent, #0284c7); font-weight: bold;" disabled><option value="">-- อัปโหลดไฟล์ (TXT) --</option></select>
+                            <button id="btnClearPv" class="btn-search" style="background: var(--fail, #ef4444); padding: 4px 8px;" title="ยกเลิกการใช้แผง"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <!-- เลือกจากคลังสเปกอุปกรณ์ ยี่ห้อ > รุ่น -->
                         <div class="dev-pick" data-dev="pv" data-cat="PV">
@@ -701,10 +704,10 @@
                     <!-- ย้าย Inverter และ ESS/OPT/EVC มาต่อจาก PV Module -->
                     <div class="section-header" style="margin-top: 15px;">2. การจัดการอินเวอร์เตอร์ (Inverters)</div>
                     <div class="form-group smart-db smart-db-inv">
-                        <label id="lblInv1">2.1 อินเวอร์เตอร์หลัก (INV 1) <span id="estInvSize" style="color:#ea580c; font-weight:bold; font-size:0.9em; margin-left: 5px;"></span></label>
+                        <label id="lblInv1">2.1 อินเวอร์เตอร์หลัก (INV 1) <span id="estInvSize" style="color:var(--warn, #ea580c); font-weight:bold; font-size:0.9em; margin-left: 5px;"></span></label>
                         <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-                            <select id="invSelect1" style="flex: 1; background: #f1f5f9; pointer-events: none; color: #0284c7; font-weight: bold;" disabled><option value="">-- อัปโหลดไฟล์ (TXT) --</option></select>
-                            <button id="btnClearInv1" class="btn-search" style="background: #ef4444; padding: 4px 8px;" title="ยกเลิกการใช้ INV 1"><i class="fa-solid fa-trash"></i></button>
+                            <select id="invSelect1" style="flex: 1; background: var(--panel2, #f1f5f9); pointer-events: none; color: var(--accent, #0284c7); font-weight: bold;" disabled><option value="">-- อัปโหลดไฟล์ (TXT) --</option></select>
+                            <button id="btnClearInv1" class="btn-search" style="background: var(--fail, #ef4444); padding: 4px 8px;" title="ยกเลิกการใช้ INV 1"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <!-- เลือกจากคลังสเปกอุปกรณ์ ยี่ห้อ > รุ่น -->
                         <div class="dev-pick" data-dev="inv1" data-cat="INV">
@@ -715,8 +718,8 @@
                         
                         <label style="margin-top: 10px;">2.2 อินเวอร์เตอร์เสริม (INV 2) - ตัวเลือก</label>
                         <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-                            <select id="invSelect2" style="flex: 1; background: #f1f5f9; pointer-events: none; color: #0284c7; font-weight: bold;" disabled><option value="">-- ไม่ใช้ / รออัปโหลด (TXT) --</option></select>
-                            <button id="btnClearInv2" class="btn-search" style="background: #ef4444; padding: 4px 8px;" title="ยกเลิกการใช้ INV 2"><i class="fa-solid fa-trash"></i></button>
+                            <select id="invSelect2" style="flex: 1; background: var(--panel2, #f1f5f9); pointer-events: none; color: var(--accent, #0284c7); font-weight: bold;" disabled><option value="">-- ไม่ใช้ / รออัปโหลด (TXT) --</option></select>
+                            <button id="btnClearInv2" class="btn-search" style="background: var(--fail, #ef4444); padding: 4px 8px;" title="ยกเลิกการใช้ INV 2"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <!-- เลือกจากคลังสเปกอุปกรณ์ ยี่ห้อ > รุ่น -->
                         <div class="dev-pick" data-dev="inv2" data-cat="INV">
@@ -729,8 +732,8 @@
                     <div class="section-header">3. เลือกระบบเสริม (ESS / OPT / EVC)</div>
                     <div class="form-group smart-db smart-db-bat">
                         <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-                            <select id="batSelect" style="flex: 1; background: #f1f5f9; pointer-events: none; color: #0284c7; font-weight: bold;" disabled><option value="">-- ไม่ใช้ / รออัปโหลด (TXT) --</option></select>
-                            <button id="btnClearBat" class="btn-search" style="background: #ef4444; padding: 4px 8px;" title="ยกเลิกการใช้ BAT"><i class="fa-solid fa-trash"></i></button>
+                            <select id="batSelect" style="flex: 1; background: var(--panel2, #f1f5f9); pointer-events: none; color: var(--accent, #0284c7); font-weight: bold;" disabled><option value="">-- ไม่ใช้ / รออัปโหลด (TXT) --</option></select>
+                            <button id="btnClearBat" class="btn-search" style="background: var(--fail, #ef4444); padding: 4px 8px;" title="ยกเลิกการใช้ BAT"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <!-- เลือกจากคลังสเปกอุปกรณ์ ยี่ห้อ > รุ่น -->
                         <div class="dev-pick" data-dev="bat" data-cat="ESS">
@@ -742,8 +745,8 @@
                     </div>
                     <div class="form-group smart-db smart-db-opt">
                         <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-                            <select id="optSelect" style="flex: 1; background: #f1f5f9; pointer-events: none; color: #0284c7; font-weight: bold;" disabled><option value="">-- ไม่ใช้ / รออัปโหลด (TXT) --</option></select>
-                            <button id="btnClearOpt" class="btn-search" style="background: #ef4444; padding: 4px 8px;" title="ยกเลิกการใช้ OPT"><i class="fa-solid fa-trash"></i></button>
+                            <select id="optSelect" style="flex: 1; background: var(--panel2, #f1f5f9); pointer-events: none; color: var(--accent, #0284c7); font-weight: bold;" disabled><option value="">-- ไม่ใช้ / รออัปโหลด (TXT) --</option></select>
+                            <button id="btnClearOpt" class="btn-search" style="background: var(--fail, #ef4444); padding: 4px 8px;" title="ยกเลิกการใช้ OPT"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <!-- เลือกจากคลังสเปกอุปกรณ์ ยี่ห้อ > รุ่น -->
                         <div class="dev-pick" data-dev="opt" data-cat="OPT">
@@ -754,8 +757,8 @@
                     </div>
                     <div class="form-group smart-db smart-db-ev">
                         <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-                            <select id="evSelect" style="flex: 1; background: #f1f5f9; pointer-events: none; color: #0284c7; font-weight: bold;" disabled><option value="">-- ไม่ใช้ / รออัปโหลด (TXT) --</option></select>
-                            <button id="btnClearEv" class="btn-search" style="background: #ef4444; padding: 4px 8px;" title="ยกเลิกการใช้ EVC"><i class="fa-solid fa-trash"></i></button>
+                            <select id="evSelect" style="flex: 1; background: var(--panel2, #f1f5f9); pointer-events: none; color: var(--accent, #0284c7); font-weight: bold;" disabled><option value="">-- ไม่ใช้ / รออัปโหลด (TXT) --</option></select>
+                            <button id="btnClearEv" class="btn-search" style="background: var(--fail, #ef4444); padding: 4px 8px;" title="ยกเลิกการใช้ EVC"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <!-- เลือกจากคลังสเปกอุปกรณ์ ยี่ห้อ > รุ่น -->
                         <div class="dev-pick" data-dev="ev" data-cat="EV">
@@ -770,11 +773,11 @@
                          ระบบเดิมไม่ได้ต่อกับแผงที่วาดไว้ จึงไม่เข้าไปยุ่งกับ DC/AC ratio
                          และการคิดสตริงของระบบใหม่ แต่ต้องเข้าไปอยู่ในสมดุลพลังงานรายชั่วโมง
                          เพราะไฟที่ระบบเดิมผลิตเกินโหลดคือไฟที่แบตเตอรี่ใหม่จะเก็บไว้แทนการไหลย้อน -->
-                    <div class="form-group smart-db" id="exCard" style="margin-top: 15px; border-left-color: #0d9488; background: rgba(13,148,136,0.05);">
+                    <div class="form-group smart-db" id="exCard" style="margin-top: 15px; border-left-color: var(--ok, #0d9488); background: rgba(13,148,136,0.05);">
                         <!-- หัวข้อนี้ถูกมองข้ามบ่อย ทั้งที่ถ้าไซต์มีระบบเดิมอยู่แล้วแต่ไม่ติ๊ก
                              ตัวเลขคืนทุนจะสวยเกินจริง เพราะไปนับไฟที่ระบบเดิมผลิตอยู่แล้ว
                              เป็นผลงานของการลงทุนใหม่ จึงทำให้เด่นกว่าหัวข้ออื่นโดยตั้งใจ -->
-                        <label style="color: #dc2626; font-weight: 800; font-size: 14px; display:flex; align-items:center; gap:8px; cursor:pointer; letter-spacing:.01em;">
+                        <label style="color: var(--fail, #dc2626); font-weight: 800; font-size: 14px; display:flex; align-items:center; gap:8px; cursor:pointer; letter-spacing:.01em;">
                             <input type="checkbox" id="exEnabled" style="width:17px; height:17px;">
                             ระบบออนกริดเดิม (AC Coupling)
                         </label>
@@ -786,7 +789,7 @@
                             <div class="setting-row"><span class="sr-label">แผงเดิม วัตต์/จำนวนแผง:</span>
                                 <span class="sr-ctrl"><input type="number" id="exPanelW" value="0" min="0" step="5" style="width:70px;"> W/แผง
                                     <input type="number" id="exPanelQty" value="0" min="0" step="1" style="width:64px;"> แผง</span></div>
-                            <div id="exDcNote" style="font-size:0.72em; color:#64748b; margin:-2px 0 4px 0;"></div>
+                            <div id="exDcNote" style="font-size:0.72em; color:var(--ink2, #64748b); margin:-2px 0 4px 0;"></div>
                             <div class="setting-row"><span class="sr-label">ปีที่ติดตั้ง / เสื่อมปีละ:</span>
                                 <span class="sr-ctrl"><input type="number" id="exYear" value="" placeholder="พ.ศ./ค.ศ." style="width:78px;">
                                     <input type="number" id="exDeg" value="0.5" min="0" max="5" step="0.1" style="width:52px;"> %</span></div>
@@ -800,65 +803,65 @@
 
                             <div id="exEstimateBox" style="margin-top:6px;">
                                 <div class="setting-row"><span class="sr-label">ผลผลิตจำเพาะที่คาด:</span>
-                                    <span class="sr-ctrl"><input type="number" id="exYield" value="1177" readonly title="คำนวณให้อัตโนมัติจาก PSH 4.3 และ PR 0.75" style="width:72px; background:#f1f5f9; color:#334155; cursor:not-allowed;"> kWh/kW/ปี</span></div>
-                                <div style="font-size:0.72em; color:#64748b;">คำนวณให้อัตโนมัติ: PSH 4.3 ชม./วัน × 365 วัน × PR 0.75 = 1,177 kWh/kW/ปี</div>
+                                    <span class="sr-ctrl"><input type="number" id="exYield" value="1177" readonly title="คำนวณให้อัตโนมัติจาก PSH 4.3 และ PR 0.75" style="width:72px; background:var(--panel2, #f1f5f9); color:var(--ink, #334155); cursor:not-allowed;"> kWh/kW/ปี</span></div>
+                                <div style="font-size:0.72em; color:var(--ink2, #64748b);">คำนวณให้อัตโนมัติ: PSH 4.3 ชม./วัน × 365 วัน × PR 0.75 = 1,177 kWh/kW/ปี</div>
                             </div>
                             <div id="exMonthlyBox" style="display:none; margin-top:6px;">
-                                <div style="font-size:0.75em; color:#475569; margin-bottom:3px;">หน่วยที่ผลิตได้รายเดือน (kWh) — ม.ค. ถึง ธ.ค. คั่นด้วยจุลภาคหรือเว้นบรรทัด</div>
+                                <div style="font-size:0.75em; color:var(--ink2, #475569); margin-bottom:3px;">หน่วยที่ผลิตได้รายเดือน (kWh) — ม.ค. ถึง ธ.ค. คั่นด้วยจุลภาคหรือเว้นบรรทัด</div>
                                 <textarea id="exMonthly" rows="2" style="width:100%; font-size:0.78em; font-family:ui-monospace,monospace;" placeholder="4200, 4350, 4800, ..."></textarea>
                             </div>
                             <div id="exHourlyBox" style="display:none; margin-top:6px;">
                                 <div class="file-upload-row">ไฟล์ผลผลิตรายชั่วโมง: <input type="file" id="exHourlyFile" accept=".txt,.csv"></div>
-                                <div style="font-size:0.72em; color:#64748b;">รับ 8,760 ค่า (ทั้งปี) หรือ 24 ค่า (วันเฉลี่ย) หน่วย kW คั่นด้วยจุลภาคหรือขึ้นบรรทัดใหม่</div>
-                                <div id="exHourlyInfo" style="font-size:0.75em; color:#0f766e; font-weight:bold; margin-top:3px;"></div>
+                                <div style="font-size:0.72em; color:var(--ink2, #64748b);">รับ 8,760 ค่า (ทั้งปี) หรือ 24 ค่า (วันเฉลี่ย) หน่วย kW คั่นด้วยจุลภาคหรือขึ้นบรรทัดใหม่</div>
+                                <div id="exHourlyInfo" style="font-size:0.75em; color:var(--ok, #0f766e); font-weight:bold; margin-top:3px;"></div>
                             </div>
 
-                            <label style="display:flex; align-items:center; gap:6px; font-size:0.8em; color:#475569; margin-top:8px; cursor:pointer;">
+                            <label style="display:flex; align-items:center; gap:6px; font-size:0.8em; color:var(--ink2, #475569); margin-top:8px; cursor:pointer;">
                                 <input type="checkbox" id="exExportControl" checked style="width:14px; height:14px;">
                                 มีระบบกันไฟไหลย้อน (Gateway / CT) — ไฟเหลือจะถูกเก็บเข้าแบตเตอรี่แทนการส่งออก
                             </label>
-                            <div id="exSummary" style="font-size:0.78em; margin-top:8px; padding:6px 9px; border-radius:5px; background:#f0fdfa; border:1px solid #99f6e4; color:#115e59; line-height:1.5;"></div>
+                            <div id="exSummary" style="font-size:0.78em; margin-top:8px; padding:6px 9px; border-radius:5px; background:var(--panel2, #f0fdfa); border:1px solid var(--ok, #99f6e4); color:var(--ok, #115e59); line-height:1.5;"></div>
                         </div>
                     </div>
 					
 					<!-- 🌟 ย้ายกล่อง DB0 (Load Profile) มาไว้ใต้ระบบเสริม 🌟 -->
-					<div class="form-group smart-db smart-db-pv" style="margin-top: 15px; border-left-color: #8b5cf6; background: rgba(139, 92, 246, 0.04);">
-						<label style="color: #6d28d9; font-weight: bold;">4. ข้อมูลการใช้ไฟฟ้า (Load Profile)</label>
+					<div class="form-group smart-db smart-db-pv" style="margin-top: 15px; border-left-color: var(--accent, #8b5cf6); background: rgba(139, 92, 246, 0.04);">
+						<label style="color: var(--accent, #6d28d9); font-weight: bold;">4. ข้อมูลการใช้ไฟฟ้า (Load Profile)</label>
 						<div class="file-upload-row">อัปโหลด DB0: <input type="file" id="db0FileInput" accept=".txt"></div>
-                        <div style="font-size: 0.75em; color: #dc2626; margin-top: 4px; font-weight: bold;">*กรณีต้องการวิเคราะห์ค่าไฟฟ้า ให้ทำการนำเข้าไฟล์ DB0</div>
+                        <div style="font-size: 0.75em; color: var(--fail, #dc2626); margin-top: 4px; font-weight: bold;">*กรณีต้องการวิเคราะห์ค่าไฟฟ้า ให้ทำการนำเข้าไฟล์ DB0</div>
 						
 						<!-- กล่องแสดงผล DB0 -->
-						<div id="db0InfoDisplay" style="display: none; margin-top: 8px; padding: 10px; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px;">
-							<div style="font-weight: bold; font-size: 0.85em; color: #1e293b; margin-bottom: 4px;">
+						<div id="db0InfoDisplay" style="display: none; margin-top: 8px; padding: 10px; background: var(--panel2, #fef2f2); border: 1px solid var(--fail, #fca5a5); border-radius: 6px;">
+							<div style="font-weight: bold; font-size: 0.85em; color: var(--ink, #1e293b); margin-bottom: 4px;">
 								📌 ข้อมูลการวิเคราะห์จาก DB0 (<span id="db0CustomerName">-</span>):
 							</div>
-							<div style="font-size: 0.85em; color: #475569;">
-								กำลังผลิตแนะนำ: <span id="db0KwPDisplay" style="font-weight: bold; color: #0284c7;">-</span>
+							<div style="font-size: 0.85em; color: var(--ink2, #475569);">
+								กำลังผลิตแนะนำ: <span id="db0KwPDisplay" style="font-weight: bold; color: var(--accent, #0284c7);">-</span>
 							</div>
-							<div style="font-size: 1em; font-weight: bold; color: #dc2626; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #fca5a5;">
+							<div style="font-size: 1em; font-weight: bold; color: var(--fail, #dc2626); margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--fail, #fca5a5);">
 								🎯 คาดการณ์แผง: <span id="db0CalculatedPanels" style="font-size: 1.2em;">0</span> แผง
 							</div>
 						</div>
                     </div>
 					
 					<!-- ⚡ แผงข้อมูลวิศวกรรมนิคมอุตสาหกรรมขั้นสูง -->
-                    <div id="advancedIndustrialInputPanel" style="display: none; background: #faf5ff; border: 1px solid #e9d5ff; padding: 12px; border-radius: 6px; margin-top: 12px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">    <label style="color: #6b21a8; font-weight: bold; margin-bottom: 8px; display: block;"><i class="fa-solid fa-charging-station"></i> ข้อมูลระบบจ่ายไฟฟ้า (MDB Input)</label>
+                    <div id="advancedIndustrialInputPanel" style="display: none; background: var(--panel, #faf5ff); border: 1px solid var(--hover, #e9d5ff); padding: 12px; border-radius: 6px; margin-top: 12px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">    <label style="color: var(--accent2, #6b21a8); font-weight: bold; margin-bottom: 8px; display: block;"><i class="fa-solid fa-charging-station"></i> ข้อมูลระบบจ่ายไฟฟ้า (MDB Input)</label>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                             
                             <!-- 🌟 ส่วนที่เพิ่มใหม่: แถบเลือกแรงดัน (LV/MV) และคำนวณ Step-up 🌟 -->
-                            <div style="grid-column: 1 / -1; background: #e0e7ff; padding: 10px; border-radius: 6px; border: 1px solid #c7d2fe; margin-bottom: 4px;">
-                                <label style="font-size: 0.85em; color: #3730a3; font-weight: bold;">Electrical Tie-in</label>
+                            <div style="grid-column: 1 / -1; background: var(--hover, #e0e7ff); padding: 10px; border-radius: 6px; border: 1px solid var(--hover, #c7d2fe); margin-bottom: 4px;">
+                                <label style="font-size: 0.85em; color: var(--accent, #3730a3); font-weight: bold;">Electrical Tie-in</label>
                                 <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
-                                    <select id="industrialConnection" style="background: white; flex: 1; padding: 6px; border: 1px solid #a5b4fc; border-radius: 4px;" onchange="state.interconnection = this.value; calculateStepUpTransformer(); updatePreviews();">
+                                    <select id="industrialConnection" style="background: white; flex: 1; padding: 6px; border: 1px solid var(--sel, #a5b4fc); border-radius: 4px;" onchange="state.interconnection = this.value; calculateStepUpTransformer(); updatePreviews();">
                                         <option value="LV">เชื่อมต่อแรงต่ำ (Low Voltage 400V เข้า MDB)</option>
                                         <option value="MV">เชื่อมต่อแรงสูง (Medium Voltage 22/24kV)</option>
                                     </select>
                                     <div id="stepUpTrBox" style="display: none; flex: 1; align-items: center; gap: 8px;">
-                                        <label style="font-size: 0.8em; color: #3730a3;">ขนาด Step-up (kVA):</label>
-                                        <input type="text" id="stepUpTrKva" value="0" readonly style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 6px; width: 100px; text-align: center; font-weight: bold; color: #dc2626;">
+                                        <label style="font-size: 0.8em; color: var(--accent, #3730a3);">ขนาด Step-up (kVA):</label>
+                                        <input type="text" id="stepUpTrKva" value="0" readonly style="background: var(--panel2, #f1f5f9); border: 1px solid var(--edge, #cbd5e1); border-radius: 4px; padding: 6px; width: 100px; text-align: center; font-weight: bold; color: var(--fail, #dc2626);">
                                     </div>
                                 </div>
-                                <div id="mvNote" style="display: none; font-size: 0.75em; color: #4338ca; margin-top: 6px;">
+                                <div id="mvNote" style="display: none; font-size: 0.75em; color: var(--accent, #4338ca); margin-top: 6px;">
                                     *ระบบคำนวณหม้อแปลง Step-up ให้อัตโนมัติ โดยเผื่อ Power Factor 0.85 จากพิกัดอินเวอร์เตอร์รวม
                                 </div>
                             </div>
@@ -880,7 +883,7 @@
                                     
                                     <input type="number" id="industrialTrQty" value="1" min="1" style="background: white; flex: 1; text-align: center;" oninput="state.transformerQty = parseInt(this.value) || 1; updatePreviews();" title="จำนวนหม้อแปลงรวม">
                                 </div>
-                                <div style="font-size: 0.7em; color: #64748b; margin-top: 4px;">*พิมพ์แก้ตัวเลขเองได้ (เช่น 1000+500)</div>
+                                <div style="font-size: 0.7em; color: var(--ink2, #64748b); margin-top: 4px;">*พิมพ์แก้ตัวเลขเองได้ (เช่น 1000+500)</div>
                             </div>
                             <div>
                                 <label style="font-size: 0.8em;">Main Busbar (A)</label>
@@ -936,46 +939,46 @@
                 <div class="accordion-content ">
                     
                     <div class="section-header" style="margin-top: 0;">1. เลือกเครื่องมือ Draw Tools</div>
-                    <div class="form-group draw-mode-box" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <div class="form-group draw-mode-box" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; background: var(--panel2, #f1f5f9); border: 1px solid var(--edge, #cbd5e1); border-radius: 6px;">
                         
-                        <div class="radio-item" style="background: white; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 0; display: flex; align-items: center;">
+                        <div class="radio-item" style="background: white; padding: 8px 10px; border: 1px solid var(--line, #e2e8f0); border-radius: 6px; margin-bottom: 0; display: flex; align-items: center;">
                             <input type="radio" id="drawRoof" name="drawMode" value="roof" checked>
-                            <label for="drawRoof" style="color: #ea580c; font-weight: bold; margin: 0; white-space: nowrap;">🟠 หลังคา</label>
+                            <label for="drawRoof" style="color: var(--warn, #ea580c); font-weight: bold; margin: 0; white-space: nowrap;">🟠 หลังคา</label>
                         </div>
 
-                        <div class="radio-item" style="background: white; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 0; display: flex; align-items: center;">
+                        <div class="radio-item" style="background: white; padding: 8px 10px; border: 1px solid var(--line, #e2e8f0); border-radius: 6px; margin-bottom: 0; display: flex; align-items: center;">
                             <input type="radio" id="drawMdb" name="drawMode" value="mdb">
-                            <label for="drawMdb" style="color: #8b5cf6; font-weight: bold; margin: 0; white-space: nowrap;">🟪 MDB</label>
+                            <label for="drawMdb" style="color: var(--accent, #8b5cf6); font-weight: bold; margin: 0; white-space: nowrap;">🟪 MDB</label>
                         </div>
 
-                        <div class="radio-item" style="background: white; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 0; display: flex; flex-direction: column; align-items: flex-start;">
+                        <div class="radio-item" style="background: white; padding: 8px 10px; border: 1px solid var(--line, #e2e8f0); border-radius: 6px; margin-bottom: 0; display: flex; flex-direction: column; align-items: flex-start;">
                             <div style="display: flex; align-items: center; width: 100%;">
                                 <input type="radio" id="drawWalkway" name="drawMode" value="walkway">
-                                <label for="drawWalkway" style="color: #10b981; font-weight: bold; margin: 0; white-space: nowrap;">🟢 ทางเดิน</label>
+                                <label for="drawWalkway" style="color: var(--ok, #10b981); font-weight: bold; margin: 0; white-space: nowrap;">🟢 ทางเดิน</label>
                             </div>
-                            <div style="font-size: 0.8em; color: #475569; display: flex; align-items: center; margin-top: 6px; padding-left: 20px;">
-                                กว้าง <input type="number" id="manualWalkwayWidth" value="40" step="1" min="10" style="width: 70px; padding: 2px 4px; margin: 0 4px; border: 1px solid #10b981; border-radius: 4px; text-align: center;"> ซม.
+                            <div style="font-size: 0.8em; color: var(--ink2, #475569); display: flex; align-items: center; margin-top: 6px; padding-left: 20px;">
+                                กว้าง <input type="number" id="manualWalkwayWidth" value="40" step="1" min="10" style="width: 70px; padding: 2px 4px; margin: 0 4px; border: 1px solid var(--ok, #10b981); border-radius: 4px; text-align: center;"> ซม.
                             </div>
                         </div>
 
-                        <div class="radio-item" style="background: white; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 0; display: flex; flex-direction: column; align-items: flex-start;">
+                        <div class="radio-item" style="background: white; padding: 8px 10px; border: 1px solid var(--line, #e2e8f0); border-radius: 6px; margin-bottom: 0; display: flex; flex-direction: column; align-items: flex-start;">
                             <div style="display: flex; align-items: center; width: 100%;">
                                 <input type="radio" id="drawKeepout" name="drawMode" value="keepout">
-                                <label for="drawKeepout" style="color: #dc2626; font-weight: bold; margin: 0; white-space: nowrap;">🔴 สิ่งกีดขวาง</label>
+                                <label for="drawKeepout" style="color: var(--fail, #dc2626); font-weight: bold; margin: 0; white-space: nowrap;">🔴 สิ่งกีดขวาง</label>
                             </div>
-                            <div style="font-size: 0.8em; color: #475569; display: flex; align-items: center; margin-top: 6px; padding-left: 20px;">
-                                สูง <input type="number" id="keepoutHeightM" value="1.0" step="0.1" min="0" style="width: 70px; padding: 2px 4px; margin: 0 4px; border: 1px solid #dc2626; border-radius: 4px; text-align: center;"> ม.
+                            <div style="font-size: 0.8em; color: var(--ink2, #475569); display: flex; align-items: center; margin-top: 6px; padding-left: 20px;">
+                                สูง <input type="number" id="keepoutHeightM" value="1.0" step="0.1" min="0" style="width: 70px; padding: 2px 4px; margin: 0 4px; border: 1px solid var(--fail, #dc2626); border-radius: 4px; text-align: center;"> ม.
                             </div>
                         </div>
 
-                        <div class="radio-item" style="background: white; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 0; display: flex; flex-direction: column; align-items: flex-start;">
+                        <div class="radio-item" style="background: white; padding: 8px 10px; border: 1px solid var(--line, #e2e8f0); border-radius: 6px; margin-bottom: 0; display: flex; flex-direction: column; align-items: flex-start;">
                             <div style="display: flex; align-items: center; width: 100%;">
                                 <input type="radio" id="drawPvzone" name="drawMode" value="pvzone">
-                                <label for="drawPvzone" style="color: #2563eb; font-weight: bold; margin: 0; white-space: nowrap;">🔵 พื้นที่วางแผง</label>
+                                <label for="drawPvzone" style="color: var(--accent, #2563eb); font-weight: bold; margin: 0; white-space: nowrap;">🔵 พื้นที่วางแผง</label>
                             </div>
-                            <div style="font-size: 0.8em; color: #475569; margin-top: 6px; padding-left: 20px;">
+                            <div style="font-size: 0.8em; color: var(--ink2, #475569); margin-top: 6px; padding-left: 20px;">
                                 วาดทับบนหลังคา เพื่อจำกัดให้วางแผงเฉพาะในกรอบนี้<br>
-                                <b style="color:#b45309;">เมื่อวาดกรอบแล้ว แผงจะขึ้นเฉพาะในกรอบเท่านั้น</b>
+                                <b style="color:var(--warn, #b45309);">เมื่อวาดกรอบแล้ว แผงจะขึ้นเฉพาะในกรอบเท่านั้น</b>
                                 หลังคาผืนที่ยังไม่มีกรอบทับจะไม่วางแผงให้ ต้องวาดกรอบทับทุกผืนที่จะติดตั้ง
                             </div>
                         </div>
@@ -983,58 +986,58 @@
                     </div>
 
                     <!-- 🌳 ต้นไม้ — สิ่งบังแดดที่อยู่ข้างอาคาร ไม่กินพื้นที่บนหลังคา -->
-                    <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 10px; margin-bottom: 12px;">
+                    <div style="background: var(--panel2, #f0fdf4); border: 1px solid var(--ok, #86efac); border-radius: 6px; padding: 10px; margin-bottom: 12px;">
                         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                            <span style="color: #15803d; font-weight: bold; font-size: 0.9em;">🌳 ต้นไม้บังแดด</span>
-                            <button type="button" id="btnPlaceTree" style="background: #f0fdf4; color: #15803d; border: 1px solid #15803d; border-radius: 5px; padding: 4px 10px; font-size: 0.82em; font-weight: bold; cursor: pointer; white-space: nowrap;">🌳 วางต้นไม้</button>
+                            <span style="color: var(--ok, #15803d); font-weight: bold; font-size: 0.9em;">🌳 ต้นไม้บังแดด</span>
+                            <button type="button" id="btnPlaceTree" style="background: var(--panel2, #f0fdf4); color: var(--ok, #15803d); border: 1px solid var(--ok, #15803d); border-radius: 5px; padding: 4px 10px; font-size: 0.82em; font-weight: bold; cursor: pointer; white-space: nowrap;">🌳 วางต้นไม้</button>
                         </div>
-                        <div style="font-size: 0.8em; color: #475569; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-top: 8px;">
-                            ทรงพุ่ม R <input type="number" id="treeCanopyR" value="3" step="0.5" min="0.3" style="width: 68px; padding: 2px 4px; border: 1px solid #86efac; border-radius: 4px; text-align: center;"> ม.
-                            สูง <input type="number" id="treeHeightM" value="8" step="0.5" min="0.3" style="width: 68px; padding: 2px 4px; border: 1px solid #86efac; border-radius: 4px; text-align: center;"> ม.
-                            เผื่อโต <input type="number" id="treeGrowthM" value="0" step="0.5" min="0" style="width: 68px; padding: 2px 4px; border: 1px solid #86efac; border-radius: 4px; text-align: center;"> ม.
+                        <div style="font-size: 0.8em; color: var(--ink2, #475569); display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-top: 8px;">
+                            ทรงพุ่ม R <input type="number" id="treeCanopyR" value="3" step="0.5" min="0.3" style="width: 68px; padding: 2px 4px; border: 1px solid var(--ok, #86efac); border-radius: 4px; text-align: center;"> ม.
+                            สูง <input type="number" id="treeHeightM" value="8" step="0.5" min="0.3" style="width: 68px; padding: 2px 4px; border: 1px solid var(--ok, #86efac); border-radius: 4px; text-align: center;"> ม.
+                            เผื่อโต <input type="number" id="treeGrowthM" value="0" step="0.5" min="0" style="width: 68px; padding: 2px 4px; border: 1px solid var(--ok, #86efac); border-radius: 4px; text-align: center;"> ม.
                         </div>
-                        <div id="treeStatusBox" style="font-size: 0.78em; line-height: 1.5; margin-top: 8px; color: #166534;">
-                            <span style="color:#64748b;">ยังไม่มีต้นไม้ในไซต์</span>
+                        <div id="treeStatusBox" style="font-size: 0.78em; line-height: 1.5; margin-top: 8px; color: var(--ok, #166534);">
+                            <span style="color:var(--ink2, #64748b);">ยังไม่มีต้นไม้ในไซต์</span>
                         </div>
                     </div>
-                    <div style="font-size: 0.75em; color: #64748b; margin-top: -6px; margin-bottom: 15px; text-align: center;">
-                        <i class="fa-solid fa-info-circle"></i> <b>Snap 90°:</b> เส้นนำเป็นจุดประ<b style="color:#0ea5e9;">สีฟ้า</b> เมื่อลากใกล้มุมฉากจะเปลี่ยนเป็น<b style="color:#fa0505;">สีแดง</b> แล้วดูดให้อัตโนมัติ
+                    <div style="font-size: 0.75em; color: var(--ink2, #64748b); margin-top: -6px; margin-bottom: 15px; text-align: center;">
+                        <i class="fa-solid fa-info-circle"></i> <b>Snap 90°:</b> เส้นนำเป็นจุดประ<b style="color:var(--accent, #0ea5e9);">สีฟ้า</b> เมื่อลากใกล้มุมฉากจะเปลี่ยนเป็น<b style="color:var(--fail, #fa0505);">สีแดง</b> แล้วดูดให้อัตโนมัติ
                     </div>
 
                     <div class="section-header">2. พารามิเตอร์การติดตั้ง (Installation Params)</div>
 					
 					<!-- 🌟 ส่วนใหม่: กำหนดความยาวแต่ละด้านของหลังคาที่เลือก -->
-					<div id="edgeEditorSection" style="display: none; background: #f0fdf4; border: 1px solid #86efac; padding: 12px; border-radius: 6px; margin-top: 10px;">
+					<div id="edgeEditorSection" style="display: none; background: var(--panel2, #f0fdf4); border: 1px solid var(--ok, #86efac); padding: 12px; border-radius: 6px; margin-top: 10px;">
 						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-							<label style="font-weight: bold; color: #16a34a;"><i class="fa-solid fa-ruler-combined"></i> ปรับความยาวแต่ละด้าน</label>
-							<button id="btnApplyEdgeChanges" class="btn-search" style="background: #10b981; padding: 4px 12px; font-size: 0.85em;">ปรับระยะ</button>
+							<label style="font-weight: bold; color: var(--ok, #16a34a);"><i class="fa-solid fa-ruler-combined"></i> ปรับความยาวแต่ละด้าน</label>
+							<button id="btnApplyEdgeChanges" class="btn-search" style="background: var(--ok, #10b981); padding: 4px 12px; font-size: 0.85em;">ปรับระยะ</button>
 						</div>
 						<div id="edgeInputsContainer" style="margin-bottom: 8px; max-height: 200px; overflow-y: auto; padding-right:5px;"></div>
-						<div style="font-size: 0.75em; color: #475569; font-style: italic;">* กรอกตัวเลขแล้วกด "ปรับความยาว" เพื่ออัปเดตรูปทรง (คลิกเลือกหลังคาก่อน)</div>
+						<div style="font-size: 0.75em; color: var(--ink2, #475569); font-style: italic;">* กรอกตัวเลขแล้วกด "ปรับความยาว" เพื่ออัปเดตรูปทรง (คลิกเลือกหลังคาก่อน)</div>
 					</div>
 					
                     <!-- แถบบอกว่าค่าที่กำลังกรอกด้านล่างนี้จะไปลงที่หลังคาผืนไหน
                          ค่าความสูง ความชัน และทิศ เป็นค่ารายหลังคา ถ้าไม่รู้ว่ากำลังแก้ผืนไหนอยู่
                          ก็มีโอกาสไปแก้ผิดผืนโดยไม่รู้ตัว ซึ่งทำให้หลังคากลายเป็นรางน้ำแทนจั่วได้ -->
-                    <div id="activeRoofBanner" style="margin-bottom:10px; padding:7px 10px; border-radius:6px; font-size:0.86em; font-weight:700; background:#f1f5f9; border:1px solid #cbd5e1; color:#64748b;">
+                    <div id="activeRoofBanner" style="margin-bottom:10px; padding:7px 10px; border-radius:6px; font-size:0.86em; font-weight:700; background:var(--panel2, #f1f5f9); border:1px solid var(--edge, #cbd5e1); color:var(--ink2, #64748b);">
                         ยังไม่ได้เลือกหลังคา — ค่าที่กรอกจะใช้กับทุกผืน
                     </div>
 
                     <!-- จำนวนแผงของ "พื้นที่ที่เลือกอยู่" เป็นค่าประจำพื้นที่ ไม่ใช่ยอดรวมของทั้งระบบ
                          ล็อกไว้แล้วจะไม่ถูกแตะ ไม่ว่าจะวาดหลังคาเพิ่มหรือปรับยอดรวมด้านล่าง -->
-                    <div id="ascAreaPanelBox" style="display:none; margin:-4px 0 10px; padding:8px 10px; border-radius:6px; border:1px solid #bfdbfe; background:#eff6ff; font-size:0.86em;"></div>
+                    <div id="ascAreaPanelBox" style="display:none; margin:-4px 0 10px; padding:8px 10px; border-radius:6px; border:1px solid var(--sel, #bfdbfe); background:var(--panel2, #eff6ff); font-size:0.86em;"></div>
 
                     <!-- 🌟 กลุ่มความสูง/ความชันหลังคา — เรียงตามลำดับที่ผู้ใช้กรอกจริงหน้างาน
                          วัดความสูง 2 ค่าด้วยเลเซอร์ แล้วให้โปรแกรมคำนวณ Slope ให้ -->
                     <div class="setting-group">
-                        <div class="setting-row"><span class="sr-label" style="color: #dc2626;" title="ระยะจากพื้นดินขึ้นมาถึงขอบล่างของหลังคา (ชายคา) ด้านที่ต่ำที่สุด ค่านี้เป็นของหลังคาผืนที่เลือกอยู่ ถ้าไม่ได้เลือกผืนไหน จะใช้กับทุกผืน อาคารคนละหลังที่สูงไม่เท่ากัน ให้คลิกเลือกทีละผืนแล้วกรอกแยกกัน">ความสูงชายคา (ขอบล่างของหลังคา):</span><span class="sr-ctrl"><input type="number" id="roofHeightM" value="10" step="0.1" min="0"> ม.</span></div>
-                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="font-size:0.78em; color:#64748b;">ค่านี้เป็นของหลังคาผืนที่เลือก</span><span class="sr-ctrl"><button type="button" id="btnEaveToAll" style="background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; border-radius:5px; padding:3px 8px; font-size:0.78em; font-weight:bold; cursor:pointer; white-space:nowrap;">ใช้ค่านี้กับทุกหลังคา</button></span></div>
-                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.92em; color:#64748b;" title="ใช้เมื่อชายคาสองปลายของหลังคาผืนเดียวกันสูงไม่เท่ากัน (อาคารทรงโมเดิร์นที่พื้นเอียงสองทาง) ถ้าสองปลายสูงเท่ากัน ปล่อยไว้เท่าเดิม ระบบจะถือว่าลาดทางเดียว">&#9492; ชายคาปลายตรงข้าม (ถ้าไม่เท่ากัน):</span><span class="sr-ctrl"><input type="number" id="eaveHeightBM" value="10" step="0.1" min="0"> ม.</span></div>
-                        <div class="setting-row"><span class="sr-label" style="color: #dc2626;" title="ระยะจากพื้นดินขึ้นมาถึงขอบบนของหลังคา หลังคาเพิงแหงนคือชายคาด้านสูง หลังคาจั่วคือสันจั่ว ระบบคำนวณให้อัตโนมัติจากชายคาและความชัน ถ้าวัดมาเองแล้วพิมพ์ทับ ระบบจะคำนวณความชันย้อนกลับให้">ความสูงสันหลังคา (ขอบบน):</span><span class="sr-ctrl"><input type="number" id="ridgeHeightM" value="10" step="0.1" min="0"> ม.</span></div>
+                        <div class="setting-row"><span class="sr-label" style="color: var(--fail, #dc2626);" title="ระยะจากพื้นดินขึ้นมาถึงขอบล่างของหลังคา (ชายคา) ด้านที่ต่ำที่สุด ค่านี้เป็นของหลังคาผืนที่เลือกอยู่ ถ้าไม่ได้เลือกผืนไหน จะใช้กับทุกผืน อาคารคนละหลังที่สูงไม่เท่ากัน ให้คลิกเลือกทีละผืนแล้วกรอกแยกกัน">ความสูงชายคา (ขอบล่างของหลังคา):</span><span class="sr-ctrl"><input type="number" id="roofHeightM" value="10" step="0.1" min="0"> ม.</span></div>
+                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="font-size:0.78em; color:var(--ink2, #64748b);">ค่านี้เป็นของหลังคาผืนที่เลือก</span><span class="sr-ctrl"><button type="button" id="btnEaveToAll" style="background:var(--panel2, #fef2f2); color:var(--fail, #dc2626); border:1px solid var(--fail, #fca5a5); border-radius:5px; padding:3px 8px; font-size:0.78em; font-weight:bold; cursor:pointer; white-space:nowrap;">ใช้ค่านี้กับทุกหลังคา</button></span></div>
+                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.92em; color:var(--ink2, #64748b);" title="ใช้เมื่อชายคาสองปลายของหลังคาผืนเดียวกันสูงไม่เท่ากัน (อาคารทรงโมเดิร์นที่พื้นเอียงสองทาง) ถ้าสองปลายสูงเท่ากัน ปล่อยไว้เท่าเดิม ระบบจะถือว่าลาดทางเดียว">&#9492; ชายคาปลายตรงข้าม (ถ้าไม่เท่ากัน):</span><span class="sr-ctrl"><input type="number" id="eaveHeightBM" value="10" step="0.1" min="0"> ม.</span></div>
+                        <div class="setting-row"><span class="sr-label" style="color: var(--fail, #dc2626);" title="ระยะจากพื้นดินขึ้นมาถึงขอบบนของหลังคา หลังคาเพิงแหงนคือชายคาด้านสูง หลังคาจั่วคือสันจั่ว ระบบคำนวณให้อัตโนมัติจากชายคาและความชัน ถ้าวัดมาเองแล้วพิมพ์ทับ ระบบจะคำนวณความชันย้อนกลับให้">ความสูงสันหลังคา (ขอบบน):</span><span class="sr-ctrl"><input type="number" id="ridgeHeightM" value="10" step="0.1" min="0"> ม.</span></div>
                         <!-- ภาพตัดขวางอธิบายว่าแต่ละค่าวัดจากตรงไหนถึงตรงไหน
                              สามคำนี้ผู้ใช้สับสนบ่อย เพราะ "ความสูงอาคาร" กับ "ด้านสูงของหลังคา"
                              ฟังดูเหมือนกัน ภาพเดียวอธิบายได้ชัดกว่าข้อความยาว ๆ -->
-                        <div style="margin:2px 0 10px; padding:8px 10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px;">
+                        <div style="margin:2px 0 10px; padding:8px 10px; background:var(--panel, #f8fafc); border:1px solid var(--line, #e2e8f0); border-radius:6px;">
                             <svg viewBox="0 0 260 108" width="100%" style="max-width:250px; display:block; margin:0 auto 4px;"
                                  shape-rendering="geometricPrecision" stroke-linejoin="miter" stroke-linecap="butt">
                                 <!-- พื้นดิน -->
@@ -1057,39 +1060,39 @@
                                 <!-- มุมลาด -->
                                 <text x="120" y="52" font-size="7.5" fill="#b45309" font-weight="bold">ความชัน</text>
                             </svg>
-                            <div style="font-size:0.78em; color:#475569; line-height:1.55;">
-                                <b style="color:#0369a1;">ชายคา</b> = ขอบ<b>ล่าง</b>ของหลังคา วัดจากพื้นดินขึ้นมา ·
-                                <b style="color:#dc2626;">สัน</b> = ขอบ<b>บน</b>ของหลังคา<br>
+                            <div style="font-size:0.78em; color:var(--ink2, #475569); line-height:1.55;">
+                                <b style="color:var(--accent, #0369a1);">ชายคา</b> = ขอบ<b>ล่าง</b>ของหลังคา วัดจากพื้นดินขึ้นมา ·
+                                <b style="color:var(--fail, #dc2626);">สัน</b> = ขอบ<b>บน</b>ของหลังคา<br>
                                 กรอกชายคาแล้วใส่ความชัน ระบบคำนวณสันให้เอง หรือวัดสันมาเองแล้วพิมพ์ทับ ระบบจะคำนวณความชันย้อนกลับให้<br>
                                 ชายคาสองปลายเท่ากัน = หลังคาลาดทางเดียว ไม่เท่ากัน = พื้นหลังคาบิดเอียงสองทาง
                             </div>
                         </div>
-                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.88em; color:#64748b;">↳ หลังคาจั่ว/เพิงแหงนซ้อน:</span><span class="sr-ctrl"><button type="button" id="btnDrawRidge" onclick="AscRidge.start(activeRoofLayer)" style="font-size:0.85em; padding:3px 10px; border:1px solid #dc2626; background:#fff; color:#dc2626; border-radius:4px; cursor:pointer; font-weight:600;">✂ วาดเส้นสันหลังคา</button></span></div>
-                        <div id="ridgeToolBox" style="display:none; margin:6px 0 10px; padding:8px 10px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; font-size:0.82em; line-height:1.5;">
-                            <b style="color:#991b1b;">ลากจุดแดงสองจุดให้เส้นพาดตามแนวสันจริง</b><br>
-                            <span style="color:#7f1d1d;">ระบบเดาแนวให้จากรูปหลังคาแล้ว ปรับได้ตามต้องการ<br>เมื่อยืนยัน หลังคาจะถูกตัดเป็นสองผืน ลาดออกจากสันคนละทาง</span>
+                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.88em; color:var(--ink2, #64748b);">↳ หลังคาจั่ว/เพิงแหงนซ้อน:</span><span class="sr-ctrl"><button type="button" id="btnDrawRidge" onclick="AscRidge.start(activeRoofLayer)" style="font-size:0.85em; padding:3px 10px; border:1px solid var(--fail, #dc2626); background:var(--panel, #fff); color:var(--fail, #dc2626); border-radius:4px; cursor:pointer; font-weight:600;">✂ วาดเส้นสันหลังคา</button></span></div>
+                        <div id="ridgeToolBox" style="display:none; margin:6px 0 10px; padding:8px 10px; background:var(--panel2, #fef2f2); border:1px solid var(--failbg, #fecaca); border-radius:6px; font-size:0.82em; line-height:1.5;">
+                            <b style="color:var(--fail, #991b1b);">ลากจุดแดงสองจุดให้เส้นพาดตามแนวสันจริง</b><br>
+                            <span style="color:var(--fail, #7f1d1d);">ระบบเดาแนวให้จากรูปหลังคาแล้ว ปรับได้ตามต้องการ<br>เมื่อยืนยัน หลังคาจะถูกตัดเป็นสองผืน ลาดออกจากสันคนละทาง</span>
                             <div style="margin-top:7px; display:flex; gap:6px;">
-                                <button type="button" onclick="AscRidge.apply()" style="font-size:1em; padding:4px 12px; border:0; background:#dc2626; color:#fff; border-radius:4px; cursor:pointer; font-weight:700;">ยืนยันตัดหลังคา</button>
-                                <button type="button" onclick="AscRidge.cancel()" style="font-size:1em; padding:4px 12px; border:1px solid #cbd5e1; background:#fff; color:#475569; border-radius:4px; cursor:pointer;">ยกเลิก</button>
+                                <button type="button" onclick="AscRidge.apply()" style="font-size:1em; padding:4px 12px; border:0; background:var(--fail, #dc2626); color:var(--panel, #fff); border-radius:4px; cursor:pointer; font-weight:700;">ยืนยันตัดหลังคา</button>
+                                <button type="button" onclick="AscRidge.cancel()" style="font-size:1em; padding:4px 12px; border:1px solid var(--edge, #cbd5e1); background:var(--panel, #fff); color:var(--ink2, #475569); border-radius:4px; cursor:pointer;">ยกเลิก</button>
                             </div>
                         </div>
-                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.92em; color:#64748b;">↳ ระยะไหล / ความกว้าง:</span><span class="sr-ctrl"><span id="roofRunVal" style="font-family:ui-monospace,Menlo,monospace; font-size:0.9em; color:#b45309; background:#fffbeb; border:1px dashed #fde68a; border-radius:4px; padding:2px 8px;">— ม.</span></span></div>
+                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.92em; color:var(--ink2, #64748b);">↳ ระยะไหล / ความกว้าง:</span><span class="sr-ctrl"><span id="roofRunVal" style="font-family:ui-monospace,Menlo,monospace; font-size:0.9em; color:var(--warn, #b45309); background:var(--panel2, #fffbeb); border:1px dashed var(--warn, #fde68a); border-radius:4px; padding:2px 8px;">— ม.</span></span></div>
                         <div class="setting-row"><span class="sr-label">Slope ความเอียงหลังคา:</span><span class="sr-ctrl"><input type="number" id="sysSlope" value="15" step="0.1" min="0" max="90"> องศา</span></div>
-                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.92em; color:#64748b;">↳ ความเอียงตามขวาง:</span><span class="sr-ctrl"><span id="crossSlopeVal" style="font-family:ui-monospace,Menlo,monospace; font-size:0.9em; color:#0369a1; background:#f0f9ff; border:1px dashed #bae6fd; border-radius:4px; padding:2px 8px;">0.00°</span></span></div>
-                        <div class="setting-row"><span class="sr-label">Azimuth ทิศหลังคา:</span><span class="sr-ctrl"><input type="number" id="sysAzimuth" value="" min="-180" max="360" placeholder="Auto" style="width: 62px;"> <button type="button" id="btnFlipAzimuth" title="สลับทิศ 180° — ระบบหาทิศอัตโนมัติจากด้านที่ยาวที่สุด จึงมีโอกาสได้ทิศตรงข้าม" style="border:1px solid #cbd5e1; background:#f1f5f9; border-radius:4px; padding:1px 6px; font-size:0.82em; cursor:pointer; color:#475569;">⟳180°</button></span></div>
+                        <div class="setting-row" style="padding-top:0;"><span class="sr-label" style="padding-left:12px; font-size:0.92em; color:var(--ink2, #64748b);">↳ ความเอียงตามขวาง:</span><span class="sr-ctrl"><span id="crossSlopeVal" style="font-family:ui-monospace,Menlo,monospace; font-size:0.9em; color:var(--accent, #0369a1); background:var(--panel2, #f0f9ff); border:1px dashed var(--sel, #bae6fd); border-radius:4px; padding:2px 8px;">0.00°</span></span></div>
+                        <div class="setting-row"><span class="sr-label">Azimuth ทิศหลังคา:</span><span class="sr-ctrl"><input type="number" id="sysAzimuth" value="" min="-180" max="360" placeholder="Auto" style="width: 62px;"> <button type="button" id="btnFlipAzimuth" title="สลับทิศ 180° — ระบบหาทิศอัตโนมัติจากด้านที่ยาวที่สุด จึงมีโอกาสได้ทิศตรงข้าม" style="border:1px solid var(--edge, #cbd5e1); background:var(--panel2, #f1f5f9); border-radius:4px; padding:1px 6px; font-size:0.82em; cursor:pointer; color:var(--ink2, #475569);">⟳180°</button></span></div>
                         <div class="setting-row"><span class="sr-label">ระยะห่างหลังแผงถึงพื้น:</span><span class="sr-ctrl"><input type="number" id="groundClearanceM" value="10" step="0.1" min="0"> ม.</span></div>
                     </div>
                     <div id="roofGeomWarn" style="display:none; font-size:0.78em; line-height:1.55; border-radius:6px; padding:7px 10px; margin:4px 0 8px 0;"></div>
-                    <div id="polygonParamsList" style="margin-bottom: 12px; font-size: 0.85em; background: #fffbeb; padding: 10px; border-radius: 4px; border: 1px dashed #fde68a; display: none;"></div>
+                    <div id="polygonParamsList" style="margin-bottom: 12px; font-size: 0.85em; background: var(--panel2, #fffbeb); padding: 10px; border-radius: 4px; border: 1px dashed var(--warn, #fde68a); display: none;"></div>
 
                     <!-- ทิศลาดหลังคา: บอกว่าคู่ที่ติดกันเป็นจั่วหรือรางน้ำ พร้อมปุ่มสลับทิศ -->
                     <div style="font-size:0.82em; margin:-6px 0 10px;">
-                        <label style="display:flex; align-items:center; gap:6px; color:#1d4ed8; font-weight:600; cursor:pointer;">
+                        <label style="display:flex; align-items:center; gap:6px; color:var(--accent, #1d4ed8); font-weight:600; cursor:pointer;">
                             <input type="checkbox" id="chkRoofDir" checked style="width:auto; margin:0;">
                             แสดงลูกศรทิศที่แผงหันไป (หางลูกศร = ด้านสัน) — วาดที่พื้นที่วางแผง ถ้ายังไม่มีกรอบจึงวาดที่หลังคา
                         </label>
                         <div id="roofDirBox" style="display:none; margin-top:2px;"></div>
-                        <label style="display:flex; align-items:center; gap:6px; color:#0369a1; font-weight:600; cursor:pointer; margin-top:4px;">
+                        <label style="display:flex; align-items:center; gap:6px; color:var(--accent, #0369a1); font-weight:600; cursor:pointer; margin-top:4px;">
                             <input type="checkbox" id="chkDimLines" checked style="width:auto; margin:0;" onchange="if(typeof recalculateLabels==='function') recalculateLabels();">
                             แสดงเส้นบอกระยะพร้อมหัวลูกศรที่ขอบหลังคา (แบบแบบก่อสร้าง) — ปิดได้ถ้าผังแน่นเกินไป
                         </label>
@@ -1145,7 +1148,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="mountingDesc" style="margin-top: 6px; font-size: 0.85em; color: #475569; background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; line-height: 1.4;">
+                        <div id="mountingDesc" style="margin-top: 6px; font-size: 0.85em; color: var(--ink2, #475569); background: var(--panel, #f8fafc); padding: 8px; border-radius: 4px; border: 1px solid var(--line, #e2e8f0); line-height: 1.4;">
                             ติดตั้งแบบสามเหลี่ยมบนหลังคาเรียบ ลมพัดผ่านได้ทุกทิศทาง ระบายความร้อนได้ดีที่สุด (ประสิทธิภาพ 100%)
                         </div>
                     </div>
@@ -1165,7 +1168,7 @@
                         <label>การเว้นระยะและทางเดิน (Offsets & Walkway)</label>
                         <div class="setting-group">
                             <div class="setting-row"><span class="sr-label">เว้นขอบพื้นที่ด้านใน (Edge):</span><span class="sr-ctrl"><input type="number" id="innerEdgeGapCm" value="100" min="0"> ซม.</span></div>
-                            <div class="setting-row"><span class="sr-label" style="color: #dc2626;">เว้นพื้นที่กีดขวาง (Keepout):</span><span class="sr-ctrl"><input type="number" id="keepoutGapCm" value="0" min="0"> ซม.</span></div>
+                            <div class="setting-row"><span class="sr-label" style="color: var(--fail, #dc2626);">เว้นพื้นที่กีดขวาง (Keepout):</span><span class="sr-ctrl"><input type="number" id="keepoutGapCm" value="0" min="0"> ซม.</span></div>
                             <div class="setting-row"><span class="sr-label">ทางเดินแกน Y:</span><span class="sr-ctrl">กลุ่มละ <input type="number" id="rowsPerGroup" value="10" min="1" style="width: 66px;"> แผง, เว้น <input type="number" id="rowWalkwayGapCm" value="80" min="0" style="width: 74px;"> ซม.</span></div>
                             <div class="setting-row"><span class="sr-label">ทางเดินแกน X:</span><span class="sr-ctrl">กลุ่มละ <input type="number" id="colsPerGroup" value="2" min="1" style="width: 66px;"> แผง, เว้น <input type="number" id="colWalkwayGapCm" value="80" min="0" style="width: 74px;"> ซม.</span></div>
                         </div>
@@ -1179,7 +1182,7 @@
                         </div>
                     </div>
 						<!-- เพิ่มปุ่มบันทึกรูปภาพใหม่ตรงนี้ -->
-						<button id="btnCaptureMapOnly" class="btn-search" style="width: 100%; margin-bottom: 10px; background-color: #ea580c; color: white;">
+						<button id="btnCaptureMapOnly" class="btn-search" style="width: 100%; margin-bottom: 10px; background-color: var(--warn, #ea580c); color: white;">
 							<i class="fa-solid fa-camera"></i> บันทึกรูป(Capture Proj.)
 						</button>
 						<!-- 🌟 เปลี่ยนปุ่ม Toggle เป็นสวิตช์ (เฟส 4) -->
@@ -1197,9 +1200,9 @@
                             </div>
                         </div>
 
-						<div style="background: #fef2f2; border: 1px dashed #fca5a5; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
-                        <label style="color: #dc2626;"><i class="fa-solid fa-bolt"></i>Roof to MDB/Inv.</label>
-                        <div class="setting-row" style="border-bottom: none; padding: 4px 0;"><span class="sr-label" style="color: #dc2626;">ระยะจากหลังคาถึง MDB:</span><span class="sr-ctrl"><input type="number" id="distToMdbMap" value="30" min="1" style="border-color: #fca5a5;"> ม. (Cal To BOM)</span></div>
+						<div style="background: var(--panel2, #fef2f2); border: 1px dashed var(--fail, #fca5a5); padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+                        <label style="color: var(--fail, #dc2626);"><i class="fa-solid fa-bolt"></i>Roof to MDB/Inv.</label>
+                        <div class="setting-row" style="border-bottom: none; padding: 4px 0;"><span class="sr-label" style="color: var(--fail, #dc2626);">ระยะจากหลังคาถึง MDB:</span><span class="sr-ctrl"><input type="number" id="distToMdbMap" value="30" min="1" style="border-color: var(--fail, #fca5a5);"> ม. (Cal To BOM)</span></div>
                         <label class="switch-row" style="margin-top: 8px; border-bottom: none; padding-bottom: 2px;">
                             <span class="sw-label"><i class="fa-solid fa-route"></i> แสดงจำลองการเดินสาย DC (Wiring)</span>
                             <span class="switch"><input type="checkbox" id="btnToggleWiring"><span class="sw-slider"></span></span>
@@ -1210,8 +1213,8 @@
                     <!-- ── ส่วนย่อยที่ 2.2: ตรวจสอบกำลังผลิตและบันทึก DB1 (เดิมคือขั้นตอนที่ 4) ── -->
                     <div class="sub-step-header"><i class="fa-solid fa-clipboard-check"></i> ตรวจสอบกำลังผลิตและบันทึก DB1</div>
                     
-                    <div class="result-box" style="border-left: 5px solid #f97316;">
-                        <h3 style="font-size: 1.1em; margin-bottom: 12px; color: #0f172a; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">ข้อมูลกำลังการผลิต & อุปกรณ์</h3>
+                    <div class="result-box" style="border-left: 5px solid var(--warn, #f97316);">
+                        <h3 style="font-size: 1.1em; margin-bottom: 12px; color: var(--ink, #0f172a); border-bottom: 1px solid var(--panel2, #f1f5f9); padding-bottom: 8px;">ข้อมูลกำลังการผลิต & อุปกรณ์</h3>
                         
                         <div class="smart-item smart-item-pv" id="summaryPvBlock"><span>PV:</span> <span id="outPvName">-</span></div>
                         
@@ -1219,11 +1222,11 @@
                             <div style="display:flex; justify-content: space-between; width: 100%; align-items: center;">
                                 <span>OPT: <span id="outOptName">-</span></span>
                                 <div style="display: flex; align-items: center;">
-                                    <select id="optRatio" style="width: 65px; margin-right: 5px; padding: 2px; border: 1px solid #10b981; border-radius: 4px; color: #059669; font-weight: bold; background: white;">
+                                    <select id="optRatio" style="width: 65px; margin-right: 5px; padding: 2px; border: 1px solid var(--ok, #10b981); border-radius: 4px; color: var(--ok, #059669); font-weight: bold; background: white;">
                                         <option value="1">1:1</option>
                                         <option value="2">1:2</option>
                                     </select>
-                                    <input type="number" id="optQty" value="0" min="0" style="width: 50px; padding: 4px; text-align: center; border: 1px solid #10b981; background: white;">
+                                    <input type="number" id="optQty" value="0" min="0" style="width: 50px; padding: 4px; text-align: center; border: 1px solid var(--ok, #10b981); background: white;">
                                 </div>
                             </div>
                         </div>
@@ -1231,7 +1234,7 @@
                         <div class="smart-item smart-item-bat" id="summaryBatBlock">
                             <div style="display:flex; justify-content: space-between; width: 100%; align-items: center;">
                                 <span>BAT: <span id="outBatName">-</span></span>
-                                <input type="number" id="batQty" value="0" min="0" style="width: 50px; padding: 4px; text-align: center; border: 1px solid #a855f7; background: white;">
+                                <input type="number" id="batQty" value="0" min="0" style="width: 50px; padding: 4px; text-align: center; border: 1px solid var(--accent2, #a855f7); background: white;">
                             </div>
                             <div id="batCompatWarning" class="compat-warning"></div>
                         </div>
@@ -1239,7 +1242,7 @@
                         <div class="smart-item smart-item-ev" id="summaryEvBlock">
                             <div style="display:flex; justify-content: space-between; width: 100%; align-items: center;">
                                 <span>EV: <span id="outEvName">-</span></span>
-                                <input type="number" id="evQty" value="0" min="0" style="width: 50px; padding: 4px; text-align: center; border: 1px solid #f59e0b; background: white;">
+                                <input type="number" id="evQty" value="0" min="0" style="width: 50px; padding: 4px; text-align: center; border: 1px solid var(--warn, #f59e0b); background: white;">
                             </div>
                         </div>
 
@@ -1250,37 +1253,37 @@
                                     <div>INV 2: <span id="outInv2Name">-</span></div>
                                 </div>
                                 <div style="display:flex; flex-direction:column; gap:6px;">
-                                    <input type="number" id="invQty1" value="1" min="1" style="width: 50px; padding: 4px; text-align: center; border: 1px solid #0ea5e9; background: white;">
-                                    <input type="number" id="invQty2" value="0" min="0" style="width: 50px; padding: 4px; text-align: center; border: 1px solid #0ea5e9; background: white;">
+                                    <input type="number" id="invQty1" value="1" min="1" style="width: 50px; padding: 4px; text-align: center; border: 1px solid var(--accent, #0ea5e9); background: white;">
+                                    <input type="number" id="invQty2" value="0" min="0" style="width: 50px; padding: 4px; text-align: center; border: 1px solid var(--accent, #0ea5e9); background: white;">
                                 </div>
                             </div>
                         </div>
 
                         <div style="margin-top: 15px; flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display:flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <span style="font-weight: bold; color: #1e293b; font-size: 1.05em;">แผงที่ติดตั้งได้จริง (แผง):</span>
-                                <input type="number" class="highlight-input" id="finalPanelCount" value="0" min="0" style="background:#f8fafc;">
+                                <span style="font-weight: bold; color: var(--ink, #1e293b); font-size: 1.05em;">แผงที่ติดตั้งได้จริง (แผง):</span>
+                                <input type="number" class="highlight-input" id="finalPanelCount" value="0" min="0" style="background:var(--panel, #f8fafc);">
                             </div>
-                            <div style="font-size: 0.75em; color: #64748b; line-height: 1.4;">
+                            <div style="font-size: 0.75em; color: var(--ink2, #64748b); line-height: 1.4;">
                                 ยอดรวมของทุกพื้นที่ · แก้ที่นี่คือเกลี่ยลงเฉพาะพื้นที่ที่ไม่ได้ล็อก
                                 — ตั้งจำนวนแยกรายพื้นที่และล็อกได้ที่หัวข้อ 3 โดยคลิกเลือกหลังคาหรือกรอบพื้นที่วางแผงบนแผนที่ก่อน
                             </div>
                         </div>
                         
-                        <div style="margin-top: 15px; padding: 6px 0; border-top: 1px dashed #cbd5e1;">
-                            <div class="setting-row" style="border-bottom: none;"><span class="sr-label" style="color: #9a3412;">ตั้งเป้าหมาย DC/AC Ratio (1.00–1.50):</span><span class="sr-ctrl"><input type="number" id="dcacSlider" min="1.0" max="1.5" step="0.01" value="1.2" style="width: 72px; font-weight: bold; color: #9a3412;"><span id="dcacSliderVal" style="display: none;">1.20</span></span></div>
-                            <div style="font-size: 0.75em; color: #9a3412; margin-top: 6px; line-height: 1.3;">
+                        <div style="margin-top: 15px; padding: 6px 0; border-top: 1px dashed var(--edge, #cbd5e1);">
+                            <div class="setting-row" style="border-bottom: none;"><span class="sr-label" style="color: var(--fail, #9a3412);">ตั้งเป้าหมาย DC/AC Ratio (1.00–1.50):</span><span class="sr-ctrl"><input type="number" id="dcacSlider" min="1.0" max="1.5" step="0.01" value="1.2" style="width: 72px; font-weight: bold; color: var(--fail, #9a3412);"><span id="dcacSliderVal" style="display: none;">1.20</span></span></div>
+                            <div style="font-size: 0.75em; color: var(--fail, #9a3412); margin-top: 6px; line-height: 1.3;">
                                 * กรอกค่าเป้าหมาย ระบบจะปรับจำนวนแผงอัตโนมัติให้สัมพันธ์กับขนาด Inverter ตามมาตรฐาน
                             </div>
                         </div>
                         
-                        <div style="margin-top: 12px; flex-direction: column; align-items: flex-start; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                        <div style="margin-top: 12px; flex-direction: column; align-items: flex-start; background: var(--panel, #f8fafc); padding: 12px; border-radius: 8px; border: 1px solid var(--edge, #cbd5e1);">
                             <div style="display:flex; justify-content: space-between; width: 100%;">
-                                <span style="font-weight: bold; color: #475569;">กำลังการผลิตรวม (Total DC):</span> 
-                                <span id="outTotalKwp" style="color: #ea580c; font-weight: bold; font-size: 1.2em;">0.00 kWp</span>
+                                <span style="font-weight: bold; color: var(--ink2, #475569);">กำลังการผลิตรวม (Total DC):</span> 
+                                <span id="outTotalKwp" style="color: var(--warn, #ea580c); font-weight: bold; font-size: 1.2em;">0.00 kWp</span>
                             </div>
-                            <div style="display:flex; justify-content: space-between; width: 100%; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1;">
-                                <span style="font-weight: bold; color: #9a3412; font-size: 0.9em;">อัตรา DC/AC Ratio จริง:</span> 
+                            <div style="display:flex; justify-content: space-between; width: 100%; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--edge, #cbd5e1);">
+                                <span style="font-weight: bold; color: var(--fail, #9a3412); font-size: 0.9em;">อัตรา DC/AC Ratio จริง:</span> 
                                 <span id="outDcAcRatio" style="font-weight: bold; font-size: 1.05em;">-</span>
                             </div>
                             <div id="dcAcWarning" style="font-size: 0.85em; font-weight: bold; margin-top: 10px; padding: 8px; border-radius: 4px; width: 100%; text-align: center; display: none;"></div>
@@ -1288,35 +1291,35 @@
                     </div>
 
                     <div class="result-box" style="margin-bottom: 20px;" id="stringSummarySection">
-                        <h3 style="font-size: 1.05em; margin-bottom: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; color: #0f172a;">สรุปการจัด String (มาตรฐาน วสท.)</h3>
+                        <h3 style="font-size: 1.05em; margin-bottom: 8px; border-bottom: 1px solid var(--panel2, #f1f5f9); padding-bottom: 8px; color: var(--ink, #0f172a);">สรุปการจัด String (มาตรฐาน วสท.)</h3>
                         
-                        <div style="display:flex; flex-direction:column; font-size:0.85em; margin-top:8px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 6px;">
+                        <div style="display:flex; flex-direction:column; font-size:0.85em; margin-top:8px; border-bottom: 1px dashed var(--line, #e2e8f0); padding-bottom: 6px;">
                             <div style="display:flex; justify-content: space-between; margin-bottom: 4px;">
-                                <span style="color: #475569;">ต่อสูงสุด (Max/String):</span> 
-                                <span id="outMaxString" style="font-weight:bold; color: #334155; text-align: right;">-</span>
+                                <span style="color: var(--ink2, #475569);">ต่อสูงสุด (Max/String):</span> 
+                                <span id="outMaxString" style="font-weight:bold; color: var(--ink, #334155); text-align: right;">-</span>
                             </div>
                             <div style="display:flex; justify-content: space-between;">
-                                <span style="color: #475569;">ต่อขั้นต่ำ (Min/String):</span> 
-                                <span id="outMinString" style="font-weight:bold; color: #ea580c; text-align: right;">-</span>
+                                <span style="color: var(--ink2, #475569);">ต่อขั้นต่ำ (Min/String):</span> 
+                                <span id="outMinString" style="font-weight:bold; color: var(--warn, #ea580c); text-align: right;">-</span>
                             </div>
                         </div>
                         
-                        <div style="display:flex; justify-content: space-between; color: #9a3412; font-weight: 600; font-size:0.85em; margin-top: 8px;">
+                        <div style="display:flex; justify-content: space-between; color: var(--fail, #9a3412); font-weight: 600; font-size:0.85em; margin-top: 8px;">
                             <span>จำนวนสตริงที่จะใช้ (Strings):</span> <span id="outTotalStrings">-</span>
                         </div>
                         
-                        <div style="background: #f1f5f9; padding: 8px; border-radius: 4px; font-size: 0.85em; border: 1px solid #cbd5e1; margin-top: 8px;">
-                            <div style="font-weight: bold; margin-bottom: 6px; color: #334155;">สรุปจำนวนแผง/สตริง (Array Config):</div> 
+                        <div style="background: var(--panel2, #f1f5f9); padding: 8px; border-radius: 4px; font-size: 0.85em; border: 1px solid var(--edge, #cbd5e1); margin-top: 8px;">
+                            <div style="font-weight: bold; margin-bottom: 6px; color: var(--ink, #334155);">สรุปจำนวนแผง/สตริง (Array Config):</div> 
                             <div id="outArrayDetails" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
                         </div>
 
-                        <div style="display:flex; justify-content: space-between; color: #334155; font-weight: bold; font-size: 0.9em; margin-top: 10px;">
+                        <div style="display:flex; justify-content: space-between; color: var(--ink, #334155); font-weight: bold; font-size: 0.9em; margin-top: 10px;">
                             <span>Total DC Inputs Capacity (Nu.Input*Nu.Trackers):</span> <span id="outMaxSystemStrings">- ช่อง</span>
                         </div>
                         
                         <div id="fuseWarning" class="warning-fuse" style="display: none;"></div>
 						
-			            <div style="background: rgba(22, 163, 74, 0.1); border-left: 4px solid #16a34a; padding: 8px; border-radius: 4px; margin-top: 8px; color: #16a34a;">
+			            <div style="background: rgba(22, 163, 74, 0.1); border-left: 4px solid var(--ok, #16a34a); padding: 8px; border-radius: 4px; margin-top: 8px; color: var(--ok, #16a34a);">
                             <div style="display: flex; justify-content: space-between; width: 100%; font-weight: bold; font-size: 0.9em;">
                                 <span>Inverter รองรับแผงสูงสุด (150% max.):</span> 
                                 <span id="outMaxSystemPanels">- แผง</span>
@@ -1335,26 +1338,26 @@
                 </div>
                 <div class="accordion-content" style="padding-top: 15px;">
                     
-                    <div class="result-box" style="border-left: 5px solid #16a34a; margin-bottom: 15px;">
-                        <h3 style="font-size: 0.95em; margin-bottom: 8px; color: #16a34a; border-bottom: 1px dashed #bbf7d0; padding-bottom: 4px;">
+                    <div class="result-box" style="border-left: 5px solid var(--ok, #16a34a); margin-bottom: 15px;">
+                        <h3 style="font-size: 0.95em; margin-bottom: 8px; color: var(--ok, #16a34a); border-bottom: 1px dashed var(--ok, #bbf7d0); padding-bottom: 4px;">
                             <i class="fa-solid fa-list-check"></i>Main Materials
                         </h3>
-                        <div style="font-size: 0.8em; color: #475569; line-height: 1.6;">
+                        <div style="font-size: 0.8em; color: var(--ink2, #475569); line-height: 1.6;">
                             <div style="display: flex; justify-content: space-between;">
-                                <span><b>PV:</b></span> <span id="bom-pv-summary" style="color: #4338ca; font-weight: bold;">-</span>
+                                <span><b>PV:</b></span> <span id="bom-pv-summary" style="color: var(--accent, #4338ca); font-weight: bold;">-</span>
                             </div>
                             <div style="display: flex; justify-content: space-between;">
-                                <span><b>Inv:</b></span> <span id="bom-inv-summary" style="color: #4338ca; font-weight: bold;">-</span>
+                                <span><b>Inv:</b></span> <span id="bom-inv-summary" style="color: var(--accent, #4338ca); font-weight: bold;">-</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; display: none;" id="bom-opt-row">
-                                <span><b>Optimizer:</b></span> <span id="bom-opt-summary" style="color: #4338ca; font-weight: bold;">-</span>
+                                <span><b>Optimizer:</b></span> <span id="bom-opt-summary" style="color: var(--accent, #4338ca); font-weight: bold;">-</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; display: none;" id="bom-bat-row">
-                                <span><b>Battery:</b></span> <span id="bom-bat-summary" style="color: #4338ca; font-weight: bold;">-</span>
+                                <span><b>Battery:</b></span> <span id="bom-bat-summary" style="color: var(--accent, #4338ca); font-weight: bold;">-</span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px solid #e2e8f0; padding-top: 4px;">
+                            <div style="display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px solid var(--line, #e2e8f0); padding-top: 4px;">
                                 <span><b>Phase (AC):</b></span> 
-                                <select id="bom-ac-phase" style="width: 120px; padding: 2px 4px; border: 1px solid #c7d2fe; border-radius: 4px; font-size: 0.9em; background: #eef2ff; color: #4338ca; font-weight: bold; outline: none;">
+                                <select id="bom-ac-phase" style="width: 120px; padding: 2px 4px; border: 1px solid var(--hover, #c7d2fe); border-radius: 4px; font-size: 0.9em; background: var(--panel2, #eef2ff); color: var(--accent, #4338ca); font-weight: bold; outline: none;">
                                     <option value="1">1 เฟส (230V)</option>
                                     <option value="3" selected>3 เฟส (400V)</option>
                                 </select>
@@ -1366,8 +1369,8 @@
                     
                     <div class="form-group" style="padding: 2px 0 6px;">
                         
-                        <label style="color: #334155;">รูปแบบการเดินสายไฟฟ้า</label>
-                        <select id="bom-routing-strategy" style="background: #f8fafc; margin-bottom: 10px; border-color: #cbd5e1;">
+                        <label style="color: var(--ink, #334155);">รูปแบบการเดินสายไฟฟ้า</label>
+                        <select id="bom-routing-strategy" style="background: var(--panel, #f8fafc); margin-bottom: 10px; border-color: var(--edge, #cbd5e1);">
                             <optgroup label="กลุ่มท่อร้อยสายไฟฟ้า (Conduits - กฎ 40%)">
                                 <option value="conduit_air_metal" selected>เดินในท่อโลหะลอยในอากาศ (EMT / IMC)</option>
                                 <option value="conduit_air_pvc">เดินในท่ออโลหะลอยในอากาศ (uPVC)</option>
@@ -1390,7 +1393,7 @@
                     <div class="form-group" style="padding: 2px 0 6px;">
                         <div class="setting-group">
                             <div class="setting-row"><span class="sr-label">ความยาวราง Rail:</span><span class="sr-ctrl"><input type="number" id="bom-rail-length" value="4.2" step="0.1" min="2.1"> ม.</span></div>
-                            <div id="rail-fit-advice" style="display:none; font-size: 0.78em; line-height: 1.55; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 7px 10px; margin: 4px 0 6px 0; color: #166534;"></div>
+                            <div id="rail-fit-advice" style="display:none; font-size: 0.78em; line-height: 1.55; background: var(--panel2, #f0fdf4); border: 1px solid var(--ok, #bbf7d0); border-radius: 6px; padding: 7px 10px; margin: 4px 0 6px 0; color: var(--ok, #166534);"></div>
                             <div class="setting-row"><span class="sr-label">ระยะยึด Span:</span><span class="sr-ctrl"><input type="number" id="bom-span-dist" value="1.2" step="0.1" min="0.5"> ม.</span></div>
                             <div class="setting-row"><span class="sr-label">ระยะห่างแผง:</span><span class="sr-ctrl"><input type="number" id="bom-panel-gap" value="2" step="0.5" min="1"> ซม.</span></div>
                         </div>
@@ -1402,7 +1405,7 @@
                             <div class="setting-row"><span class="sr-label">ติดตั้งระบบล้างแผง:</span><span class="sr-ctrl"><select id="bom-cleaning-sys" style="background: white;"><option value="none" selected>-- ไม่ติดตั้ง --</option><option value="auto">Water Cleaning System</option></select></span></div>
                             <div class="setting-row"><span class="sr-label">ระยะท่อเมนปั๊มน้ำ*:</span><span class="sr-ctrl"><input type="number" id="bom-pipe-length" value="30" min="1"> ม.</span></div>
                         </div>
-                        <div style="font-size: 0.7em; color: #64748b; margin-top: 4px; line-height: 1.3;">
+                        <div style="font-size: 0.7em; color: var(--ink2, #64748b); margin-top: 4px; line-height: 1.3;">
                             * ท่อเมนน้ำจะคำนวณคู่ขนานกับแนวท่อสายไฟ (ระยะความยาวของท่อเมนน้ำ ที่เดินจากขอบหลังคาดิ่งลงมาจนถึงจุดติดตั้งปั๊มน้ำที่อยู่ชั้นล่าง) ส่วนสายไมโคร PE จะคำนวณตามความยาวรางยึดแผงทั้งหมด
                         </div>
                     </div>
@@ -1433,7 +1436,7 @@
                             <option value="nasa">NASA POWER</option>
                             <option value="meteonorm">Meteonorm</option>
                         </select>
-                        <div id="meteoInfoDisplay" style="font-size: 0.8em; color: #047857; background: #ecfdf5; padding: 8px; border-radius: 4px; margin-top: 5px; display: block;">
+                        <div id="meteoInfoDisplay" style="font-size: 0.8em; color: var(--ok, #047857); background: var(--panel2, #ecfdf5); padding: 8px; border-radius: 4px; margin-top: 5px; display: block;">
                             <span class="spinner" id="meteoSpinner" style="display:none;"></span>
                             <span id="meteoText"><b>PVGIS:</b> ใช้ข้อมูล GHI, DHI, Temp จาก TMY โซนยุโรป/Global ความละเอียด 1 ชม.</span>
                         </div>
@@ -1461,7 +1464,7 @@
                     <div class="form-group">
                         <label>Inverter Efficiency Curve (JSON / Array)</label>
                         <textarea id="invEffCurve" rows="3" style="resize: vertical; font-family: monospace; font-size: 0.8em;">{ "10%": 95.0, "50%": 98.2, "100%": 99.0 }</textarea>
-                        <div style="font-size: 0.7em; color: #64748b; margin-top: 4px;">* ใส่ข้อมูล Array Curve ประสิทธิภาพ Inverter เพื่อใช้จำลอง Loss จริงแทนค่าเฉลี่ยทื่อๆ</div>
+                        <div style="font-size: 0.7em; color: var(--ink2, #64748b); margin-top: 4px;">* ใส่ข้อมูล Array Curve ประสิทธิภาพ Inverter เพื่อใช้จำลอง Loss จริงแทนค่าเฉลี่ยทื่อๆ</div>
                     </div>
 					<!-- ส่วนที่เพิ่มใหม่: Uncertainties และ Horizon -->
                     <div class="section-header">ประเมินความเสี่ยง(P50 P75 P90 P95)</div>
@@ -1474,8 +1477,8 @@
                     <div class="section-header">Far Horizon Profile (มุมเงยและมุมทิศทางของสิ่งกีดขวาง)</div>
                     <div class="form-group">
                         <label>Horizon Data (Azimuth,Elevation)</label>
-                        <textarea id="horizonProfile" rows="4" style="resize: vertical; font-family: monospace; font-size: 0.85em; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;" placeholder="0,0&#10;90,0&#10;180,0&#10;-90,0"></textarea>
-                        <div style="font-size: 0.7em; color: #64748b; margin-top: 4px;">* พิมพ์แก้ไขข้อมูล (0 เหนือ|90 ออก|-90 ตก|±180 ใต้) : "0, 5",ทิศเหนือ มีสิ่งกีดขวางสูงจากแนวระดับ 5°</div>
+                        <textarea id="horizonProfile" rows="4" style="resize: vertical; font-family: monospace; font-size: 0.85em; padding: 8px; border: 1px solid var(--edge, #cbd5e1); border-radius: 4px;" placeholder="0,0&#10;90,0&#10;180,0&#10;-90,0"></textarea>
+                        <div style="font-size: 0.7em; color: var(--ink2, #64748b); margin-top: 4px;">* พิมพ์แก้ไขข้อมูล (0 เหนือ|90 ออก|-90 ตก|±180 ใต้) : "0, 5",ทิศเหนือ มีสิ่งกีดขวางสูงจากแนวระดับ 5°</div>
                     </div>
                     <!-- กล่อง Voltage Drop และปุ่มคำนวณตารางวัสดุอุปกรณ์ ย้ายเข้ามาอยู่ใน
                          ขั้นตอนที่ 3 (วิศวกรรม) ขั้นตอนเดียว
@@ -1486,25 +1489,25 @@
                          ที่ถูกต้องคือขั้นตอนที่ 3 เพราะระยะสายไฟที่ทำให้เกิดแรงดันตก
                          กรอกอยู่ในขั้นตอนนี้ และปุ่มก็อ่านค่าจากช่องในขั้นตอนนี้ไปคำนวณ -->
                     <!-- 🌟 เริ่ม: กล่องสรุปผลกระทบ Voltage Drop ใต้ขั้นตอนที่ 7 🌟 -->
-                    <div id="vDropImpactBox" style="display: none; background: #ffffff; border: 2px solid #ef4444; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                        <h3 style="margin-top: 0; margin-bottom: 10px; color: #dc2626; font-size: 1.05em; display: flex; align-items: center; gap: 8px;">
+                    <div id="vDropImpactBox" style="display: none; background: var(--panel, #ffffff); border: 2px solid var(--fail, #ef4444); border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; margin-bottom: 10px; color: var(--fail, #dc2626); font-size: 1.05em; display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-triangle-exclamation"></i> ผลกระทบจากระยะสายไฟ (Voltage Drop)
                         </h3>
-                        <div style="font-size: 0.9em; color: #334155; line-height: 1.6;">
-                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px; margin-bottom: 4px;">
+                        <div style="font-size: 0.9em; color: var(--ink, #334155); line-height: 1.6;">
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--edge, #cbd5e1); padding-bottom: 4px; margin-bottom: 4px;">
                                 <span>กำลังการผลิตสูงสุด (Pmax):</span>
-                                <span id="vdrop-original-kwp" style="font-weight: bold; color: #0f172a;">0.00 kWp</span>
+                                <span id="vdrop-original-kwp" style="font-weight: bold; color: var(--ink, #0f172a);">0.00 kWp</span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px; margin-bottom: 4px;">
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--edge, #cbd5e1); padding-bottom: 4px; margin-bottom: 4px;">
                                 <span>ความสูญเสียในสายไฟ (Wiring Loss):</span>
-                                <span id="vdrop-loss-pct" style="font-weight: bold; color: #dc2626;">0.00%</span>
+                                <span id="vdrop-loss-pct" style="font-weight: bold; color: var(--fail, #dc2626);">0.00%</span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; background: #fef2f2; padding: 6px; border-radius: 4px; margin-top: 8px;" id="vdrop-effective-bg">
-                                <span style="font-weight: bold; color: #991b1b;" id="vdrop-effective-label">กำลังการผลิตสุทธิ (Effective):</span>
-                                <span id="vdrop-effective-kwp" style="font-weight: bold; color: #ef4444; font-size: 1.1em;">0.00 kWp</span>
+                            <div style="display: flex; justify-content: space-between; background: var(--panel2, #fef2f2); padding: 6px; border-radius: 4px; margin-top: 8px;" id="vdrop-effective-bg">
+                                <span style="font-weight: bold; color: var(--fail, #991b1b);" id="vdrop-effective-label">กำลังการผลิตสุทธิ (Effective):</span>
+                                <span id="vdrop-effective-kwp" style="font-weight: bold; color: var(--fail, #ef4444); font-size: 1.1em;">0.00 kWp</span>
                             </div>
                         </div>
-                        <div id="vdrop-recommendation" style="font-size: 0.85em; font-weight: bold; margin-top: 10px; text-align: center; padding-top: 8px; border-top: 1px solid #e2e8f0;"></div>
+                        <div id="vdrop-recommendation" style="font-size: 0.85em; font-weight: bold; margin-top: 10px; text-align: center; padding-top: 8px; border-top: 1px solid var(--line, #e2e8f0);"></div>
                     </div>
                     <!-- 🌟 จบ: กล่องสรุปผลกระทบ Voltage Drop 🌟 -->
 
@@ -1512,7 +1515,7 @@
                          วางนอกกล่อง #vDropImpactBox โดยตั้งใจ เพราะกล่องนั้นถูกซ่อน/แสดงตามผลคำนวณ
                          ถ้าเอาปุ่มไปไว้ข้างใน ปุ่มจะหายไปด้วยตอนกล่องถูกซ่อน -->
                     <div style="margin-bottom: 20px;">
-                        <button class="btn-save" id="btnCalculateBOM" style="background: linear-gradient(135deg, #6366f1, #4f46e5); box-shadow: 0 4px 6px rgba(79,70,229,0.25);">
+                        <button class="btn-save" id="btnCalculateBOM" style="background: linear-gradient(135deg, var(--accent, #6366f1), var(--accent, #4f46e5)); box-shadow: 0 4px 6px rgba(79,70,229,0.25);">
                             <i class="fa-solid fa-calculator"></i> คำนวณตารางวัสดุอุปกรณ์
                         </button>
                     </div>
@@ -1538,11 +1541,11 @@
 
                     <div class="section-header">บันทึกฐานข้อมูล (Save to Database)</div>
                     <div style="display: flex; gap: 10px;">
-                        <button class="btn-search" id="btnCheckDesign" type="button" style="flex: 1; margin-top: 0; background:#d97706; color:#fff;" title="ตรวจแบบด้วยกฎ 18 ข้อ ก่อนส่งงาน"><i class="fa-solid fa-stethoscope"></i> ตรวจแบบ</button>
+                        <button class="btn-search" id="btnCheckDesign" type="button" style="flex: 1; margin-top: 0; background:var(--warn, #d97706); color:var(--panel, #fff);" title="ตรวจแบบด้วยกฎ 18 ข้อ ก่อนส่งงาน"><i class="fa-solid fa-stethoscope"></i> ตรวจแบบ</button>
                         <button class="btn-save" id="btnSaveDb2" style="flex: 2; margin-top: 0;"><i class="fa-solid fa-floppy-disk"></i> บันทึก&amp;ส่งออก (Design)</button>
-                        <button class="btn-save" id="btnExportDb2" style="flex: 1; background: #64748b; margin-top: 0; display: none;">Export DB2</button>
+                        <button class="btn-save" id="btnExportDb2" style="flex: 1; background: var(--ink2, #64748b); margin-top: 0; display: none;">Export DB2</button>
                     </div>
-                    <div style="font-size: 0.75em; color: #64748b; margin-top: 8px; line-height: 1.4;">
+                    <div style="font-size: 0.75em; color: var(--ink2, #64748b); margin-top: 8px; line-height: 1.4;">
                         * พารามิเตอร์วิศวกรรมถูกบันทึกอัตโนมัติเมื่อกดคำนวณตารางวัสดุอุปกรณ์ และเมื่อกดปุ่มนี้ · ไฟล์ design ที่ส่งออกใช้นำเข้าเมนู Proposal &amp; Report
                     </div>
                 </div>
@@ -1555,15 +1558,15 @@
 	<!-- ================= เริ่ม: หน้าต่าง Pop-up สำหรับ BOM ================= -->
     <div id="bomModal" class="iv-modal-overlay">
         <div class="iv-modal-content" style="max-width: 1000px;">
-            <div class="iv-modal-header" style="background: #16a34a;">
+            <div class="iv-modal-header" style="background: var(--ok, #16a34a);">
                 <span><i class="fa-solid fa-list-check"></i> ตารางรายการวัสดุอุปกรณ์ (Bill of Materials)</span>
                 <button class="iv-close-btn" onclick="document.getElementById('bomModal').style.display='none'">&times;</button>
             </div>
-            <div class="iv-modal-body" style="background: #f8fafc; padding: 20px;">
-                <div style="background: white; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <div class="iv-modal-body" style="background: var(--panel, #f8fafc); padding: 20px;">
+                <div style="background: white; border: 1px solid var(--edge, #cbd5e1); border-radius: 6px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                     <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
                         <thead>
-                            <tr style="background: #f1f5f9; color: #334155; border-bottom: 2px solid #cbd5e1;">
+                            <tr style="background: var(--panel2, #f1f5f9); color: var(--ink, #334155); border-bottom: 2px solid var(--edge, #cbd5e1);">
                                 <th style="padding: 12px; text-align: center; width: 15%;">หมวด</th>
                                 <th style="padding: 12px; width: 35%;">รายการอุปกรณ์</th>
                                 <th style="padding: 12px; width: 35%;">สเปก / ขนาดอ้างอิง วสท.</th>
@@ -1573,7 +1576,7 @@
                         <tbody id="bom-modal-table-body"></tbody>
                     </table>
                 </div>
-                <div style="font-size: 0.8em; color: #64748b; margin-top: 12px; text-align: right;">
+                <div style="font-size: 0.8em; color: var(--ink2, #64748b); margin-top: 12px; text-align: right;">
                     * ขนาดท่อและสายไฟคำนวณ Safety Factor ตามมาตรฐาน วสท. และขนาดที่มีขายในท้องตลาด
                 </div>
             </div>
@@ -9822,21 +9825,21 @@ function applyEdgeChanges() {
 <!-- กล่องผลตรวจแบบ วางเป็นชั้นลอยเพราะแถบเครื่องมือด้านซ้ายแน่นแล้ว
      และผลตรวจมักยาวหลายรายการ อ่านในกล่องเต็มจอสะดวกกว่าเบียดลงในแถบ -->
 <div id="advOverlay" style="display:none; position:fixed; inset:0; z-index:4000; background:rgba(15,23,42,.55);">
-  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:min(720px,94vw); max-height:88vh; display:flex; flex-direction:column; background:#fff; border-radius:10px; box-shadow:0 18px 50px rgba(0,0,0,.4); overflow:hidden;">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px; border-bottom:1px solid #e2e8f0; background:#fffbeb;">
+  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:min(720px,94vw); max-height:88vh; display:flex; flex-direction:column; background:var(--panel, #fff); border-radius:10px; box-shadow:0 18px 50px rgba(0,0,0,.4); overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px; border-bottom:1px solid var(--line, #e2e8f0); background:var(--panel2, #fffbeb);">
       <div>
-        <div style="font-weight:800; color:#92400e; font-size:1.02em;">🩺 ตรวจแบบก่อนส่งออก</div>
-        <div id="advDsSummary" style="font-size:0.78em; color:#64748b; margin-top:2px;"></div>
+        <div style="font-weight:800; color:var(--warn, #92400e); font-size:1.02em;">🩺 ตรวจแบบก่อนส่งออก</div>
+        <div id="advDsSummary" style="font-size:0.78em; color:var(--ink2, #64748b); margin-top:2px;"></div>
       </div>
       <button type="button" onclick="document.getElementById('advOverlay').style.display='none'"
-              style="background:#e2e8f0; border:0; border-radius:6px; padding:5px 12px; cursor:pointer; font-weight:700; color:#475569;">ปิด</button>
+              style="background:var(--line, #e2e8f0); border:0; border-radius:6px; padding:5px 12px; cursor:pointer; font-weight:700; color:var(--ink2, #475569);">ปิด</button>
     </div>
-    <div style="display:flex; flex-wrap:wrap; gap:12px; padding:8px 16px; border-bottom:1px solid #f1f5f9; font-size:0.78em;">
-      <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="advDs-error" checked style="width:auto;margin:0;"><span style="color:#991b1b;font-weight:700;">ต้องแก้</span></label>
-      <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="advDs-warn" checked style="width:auto;margin:0;"><span style="color:#92400e;font-weight:700;">ควรตรวจสอบ</span></label>
-      <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="advDs-info" checked style="width:auto;margin:0;"><span style="color:#1e40af;font-weight:700;">ข้อสังเกต</span></label>
-      <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="advDs-ok" style="width:auto;margin:0;"><span style="color:#166534;font-weight:700;">ผ่านแล้ว</span></label>
-      <span style="margin-left:auto; color:#94a3b8;">ทุกข้อคำนวณจากตัวเลขในแบบ ไม่ได้ใช้ AI</span>
+    <div style="display:flex; flex-wrap:wrap; gap:12px; padding:8px 16px; border-bottom:1px solid var(--panel2, #f1f5f9); font-size:0.78em;">
+      <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="advDs-error" checked style="width:auto;margin:0;"><span style="color:var(--fail, #991b1b);font-weight:700;">ต้องแก้</span></label>
+      <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="advDs-warn" checked style="width:auto;margin:0;"><span style="color:var(--warn, #92400e);font-weight:700;">ควรตรวจสอบ</span></label>
+      <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="advDs-info" checked style="width:auto;margin:0;"><span style="color:var(--accent, #1e40af);font-weight:700;">ข้อสังเกต</span></label>
+      <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="advDs-ok" style="width:auto;margin:0;"><span style="color:var(--ok, #166534);font-weight:700;">ผ่านแล้ว</span></label>
+      <span style="margin-left:auto; color:var(--ink3, #94a3b8);">ทุกข้อคำนวณจากตัวเลขในแบบ ไม่ได้ใช้ AI</span>
     </div>
     <div id="advDsList" style="padding:12px 16px; overflow:auto;"></div>
   </div>

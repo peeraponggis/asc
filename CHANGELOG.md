@@ -3,6 +3,16 @@
 
 ---
 
+## [4.10.0] — 2569-11-10
+### ธีม ASC Studio ในหน้าเก่าที่เหลือ
+โดย ลุงพี
+
+- ใส่ธีมเดียวกับ ASC Studio (`asc-theme.js`) ใน 7 หน้า: กรอบงาน `master_shell` · วิเคราะห์ค่าไฟ `asc_e_analysis` · ออกแบบ `asc_design` · 3D `asc_3d` · วางผังอุปกรณ์ `device_location` · คู่มือ `manual` (+ `asc-learn.js`) · `pi-monitor`
+- ฟอนต์ Sarabun ทุกหน้า · สีตายตัวใน `<style>` และ `style=""` ของหน้าเก่าแปลงเป็นสีของธีมตามบทบาท (`var(--บทบาท, #สีเดิม)` — ไฟล์ธีมโหลดไม่ได้ = สีเดิม) · ไม่แตะสีในสคริปต์ (ผัง canvas · หน้าพิมพ์) · ตราคำ PROINVENTIVE คงสีทอง
+- ธีมมืด Carbon เต็มรูปแบบ: กรอบงาน · 3D · คู่มือ · Pi monitor · หน้าที่สีส่วนใหญ่อยู่ในสคริปต์ (ออกแบบ · วิเคราะห์ค่าไฟ · วางผังอุปกรณ์) ใช้ `data-light-only` → เลือก Carbon แล้วหน้านั้นแสดงแบบ Classic
+- `asc-theme.js`: ตัวแปรชื่อเดิมของหน้าเก่า (`--text` `--primary` `--surface` …) · `?theme=` ใน URL ใช้ชั่วคราว · แถบหัว master_shell เป็นแผงสว่างแบบ ASCS
+- ไม่เปลี่ยน: เอกสารส่งลูกค้า (`asc_report` · `asc_summary` · `asc_brief`) และแอปมือถือ `mobi`
+
 ## [4.9.0] — 2569-11-10
 ### ธีมเดียวกับ ASC Studio (Classic · Carbon · Drafting)
 โดย ลุงพี

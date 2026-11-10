@@ -54,44 +54,44 @@
     const set = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 
     const CSS = [
-        '#learn-tabs{display:flex;gap:6px;margin-bottom:26px;border-bottom:1px solid #e2e8f0;}',
+        '#learn-tabs{display:flex;gap:6px;margin-bottom:26px;border-bottom:1px solid var(--line, #e2e8f0);}',
         '#learn-tabs button{background:none;border:0;border-bottom:2px solid transparent;',
-        'padding:10px 16px;cursor:pointer;font:inherit;font-size:14px;font-weight:600;color:#64748b;}',
-        '#learn-tabs button.on{color:#2563eb;border-bottom-color:#2563eb;}',
+        'padding:10px 16px;cursor:pointer;font:inherit;font-size:14px;font-weight:600;color:var(--ink2, #64748b);}',
+        '#learn-tabs button.on{color:var(--accent, #2563eb);border-bottom-color:var(--accent, #2563eb);}',
         '#learn-root{display:none;}',
         '#learn-root.on{display:block;}',
-        '.lr-bar{height:5px;border-radius:3px;background:#e2e8f0;overflow:hidden;margin:14px 0 22px;}',
-        '.lr-bar>i{display:block;height:100%;background:#2563eb;border-radius:3px;transition:width .32s ease;}',
+        '.lr-bar{height:5px;border-radius:3px;background:var(--line, #e2e8f0);overflow:hidden;margin:14px 0 22px;}',
+        '.lr-bar>i{display:block;height:100%;background:var(--accent, #2563eb);border-radius:3px;transition:width .32s ease;}',
         '.lr-grid{display:grid;grid-template-columns:212px 1fr;gap:26px;align-items:start;}',
         '@media (max-width:760px){.lr-grid{grid-template-columns:1fr;}}',
         '.lr-nav{list-style:none;margin:0;padding:0;font-size:13px;}',
         '.lr-nav li{margin-bottom:2px;}',
         '.lr-nav button{display:flex;gap:9px;align-items:flex-start;width:100%;text-align:left;',
         'background:none;border:0;padding:8px 10px;border-radius:7px;cursor:pointer;font:inherit;',
-        'font-size:13px;color:#475569;line-height:1.45;}',
-        '.lr-nav button:hover{background:#f1f5f9;}',
-        '.lr-nav button.on{background:#eff6ff;color:#1e40af;font-weight:700;}',
-        '.lr-dot{flex:0 0 20px;height:20px;border-radius:50%;background:#e2e8f0;color:#64748b;',
+        'font-size:13px;color:var(--ink2, #475569);line-height:1.45;}',
+        '.lr-nav button:hover{background:var(--panel2, #f1f5f9);}',
+        '.lr-nav button.on{background:var(--panel2, #eff6ff);color:var(--accent, #1e40af);font-weight:700;}',
+        '.lr-dot{flex:0 0 20px;height:20px;border-radius:50%;background:var(--line, #e2e8f0);color:var(--ink2, #64748b);',
         'font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}',
-        '.lr-nav button.on .lr-dot{background:#2563eb;color:#fff;}',
-        '.lr-nav button.did .lr-dot{background:#0f766e;color:#fff;}',
-        '.lr-media{width:100%;border-radius:12px;border:1px solid #e2e8f0;background:#fff;display:block;}',
-        '.lr-cap{color:#475569;line-height:1.7;margin:16px 0 0;}',
-        '.lr-list{margin:12px 0 0;padding-left:20px;color:#475569;line-height:1.75;font-size:14px;}',
-        '.lr-note{margin-top:14px;background:#fffbeb;border:1px solid #fde68a;border-radius:9px;',
-        'padding:12px 14px;color:#78350f;font-size:13.5px;line-height:1.65;}',
+        '.lr-nav button.on .lr-dot{background:var(--accent, #2563eb);color:var(--panel, #fff);}',
+        '.lr-nav button.did .lr-dot{background:var(--ok, #0f766e);color:var(--panel, #fff);}',
+        '.lr-media{width:100%;border-radius:12px;border:1px solid var(--line, #e2e8f0);background:var(--panel, #fff);display:block;}',
+        '.lr-cap{color:var(--ink2, #475569);line-height:1.7;margin:16px 0 0;}',
+        '.lr-list{margin:12px 0 0;padding-left:20px;color:var(--ink2, #475569);line-height:1.75;font-size:14px;}',
+        '.lr-note{margin-top:14px;background:var(--panel2, #fffbeb);border:1px solid var(--warn, #fde68a);border-radius:9px;',
+        'padding:12px 14px;color:var(--warn, #78350f);font-size:13.5px;line-height:1.65;}',
         '.lr-foot{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:22px;',
-        'padding-top:18px;border-top:1px solid #e2e8f0;}',
-        '.lr-btn{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:8px 15px;',
-        'cursor:pointer;font:inherit;font-size:13px;font-weight:600;color:#334155;}',
-        '.lr-btn:hover{background:#f8fafc;}',
+        'padding-top:18px;border-top:1px solid var(--line, #e2e8f0);}',
+        '.lr-btn{border:1px solid var(--edge, #cbd5e1);background:var(--panel, #fff);border-radius:8px;padding:8px 15px;',
+        'cursor:pointer;font:inherit;font-size:13px;font-weight:600;color:var(--ink, #334155);}',
+        '.lr-btn:hover{background:var(--panel, #f8fafc);}',
         '.lr-btn:disabled{opacity:.4;cursor:default;}',
-        '.lr-btn.pri{background:#2563eb;border-color:#2563eb;color:#fff;}',
-        '.lr-btn.pri:hover{background:#1d4ed8;}',
-        '.lr-btn.try{background:#0f766e;border-color:#0f766e;color:#fff;}',
-        '.lr-btn.try:hover{background:#115e59;}',
+        '.lr-btn.pri{background:var(--accent, #2563eb);border-color:var(--accent, #2563eb);color:var(--panel, #fff);}',
+        '.lr-btn.pri:hover{background:var(--accent, #1d4ed8);}',
+        '.lr-btn.try{background:var(--ok, #0f766e);border-color:var(--ok, #0f766e);color:var(--panel, #fff);}',
+        '.lr-btn.try:hover{background:var(--ok, #115e59);}',
         '.lr-opt{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:16px;',
-        'font-size:12.5px;color:#64748b;}',
+        'font-size:12.5px;color:var(--ink2, #64748b);}',
         '.lr-opt label{display:flex;gap:6px;align-items:center;cursor:pointer;}',
         '@media print{#learn-tabs,#learn-root{display:none !important;}}'
     ].join('');
@@ -111,7 +111,7 @@
 
         $('#lr-main').innerHTML =
             '<img class="lr-media" src="' + esc(s.media[0]) + '" alt="' + esc(s.title) + '">'
-          + '<h3 style="font-size:19px;font-weight:700;color:#0f172a;margin:20px 0 0;">'
+          + '<h3 style="font-size:19px;font-weight:700;color:var(--ink, #0f172a);margin:20px 0 0;">'
           + esc(s.title) + '</h3>'
           + '<p class="lr-cap">' + esc(s.caption) + '</p>'
           + (s.bullets && s.bullets.length
@@ -145,9 +145,9 @@
         const U = D.ui;
         $('#lr-bar').style.width = '100%';
         $('#lr-main').innerHTML =
-            '<div style="border:1px solid #99f6e4;background:#f0fdfa;border-radius:12px;padding:26px 24px;">'
-          + '<div style="font-size:18px;font-weight:700;color:#0f766e;">' + esc(U.finishTitle) + '</div>'
-          + '<p style="color:#475569;line-height:1.7;margin:10px 0 18px;">' + esc(U.finishBody) + '</p>'
+            '<div style="border:1px solid var(--ok, #99f6e4);background:var(--panel2, #f0fdfa);border-radius:12px;padding:26px 24px;">'
+          + '<div style="font-size:18px;font-weight:700;color:var(--ok, #0f766e);">' + esc(U.finishTitle) + '</div>'
+          + '<p style="color:var(--ink2, #475569);line-height:1.7;margin:10px 0 18px;">' + esc(U.finishBody) + '</p>'
           + '<button type="button" class="lr-btn" id="lr-restart">' + esc(U.restart) + '</button>'
           + '</div>';
         /* ดูจบแล้วไม่ต้องเปิดอัตโนมัติอีก ผู้ใช้กลับมาเปิดเองได้จากแท็บด้านบน */
@@ -207,13 +207,13 @@
           +   '<button type="button" id="lr-tab-manual">' + esc(D.ui.tabManual) + '</button>'
           + '</div>'
           + '<section id="learn-root">'
-          +   '<h2 style="font-size:26px;font-weight:600;color:#0f172a;margin:0;">'
+          +   '<h2 style="font-size:26px;font-weight:600;color:var(--ink, #0f172a);margin:0;">'
           +     esc(D.ui.heading) + '</h2>'
-          +   '<p style="color:#64748b;margin:8px 0 0;">' + esc(D.ui.sub) + '</p>'
+          +   '<p style="color:var(--ink2, #64748b);margin:8px 0 0;">' + esc(D.ui.sub) + '</p>'
           +   '<div class="lr-bar"><i id="lr-bar" style="width:0"></i></div>'
           +   '<div class="lr-grid">'
           +     '<div><ul class="lr-nav" id="lr-nav"></ul>'
-          +       '<div style="font-size:12px;color:#94a3b8;margin:10px 0 0 10px;" id="lr-count"></div>'
+          +       '<div style="font-size:12px;color:var(--ink3, #94a3b8);margin:10px 0 0 10px;" id="lr-count"></div>'
           +     '</div>'
           +     '<div id="lr-main"></div>'
           +   '</div>'

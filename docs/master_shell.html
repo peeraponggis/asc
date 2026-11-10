@@ -8,6 +8,9 @@
     <link rel="icon" href="img/favicon.ico" sizes="any">
     <link rel="icon" href="img/pilogo.png?v=2" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- ธีมเดียวกับ ASC Studio (Classic · Carbon · Drafting · ASC Enterprise 4.10.0) -->
+    <script src="asc-theme.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Noto+Sans+Lao:wght@400;600&display=swap" rel="stylesheet">
 
     <!-- โหมดคลาวด์ (Supabase) — ถ้ายังไม่ได้ตั้งค่าใน supabase-config.js ระบบจะเก็บในเครื่องแบบเดิม -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
@@ -18,9 +21,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script>
-        tailwind.config = {
-            theme: { extend: { fontFamily: { sans: ['Kanit', 'sans-serif'] } } }
-        }
+        /* tailwind.config อยู่ใน asc-theme.js (ธีม ASC Studio) */
     </script>
     <style>
         body { overflow: hidden; }
@@ -61,10 +62,10 @@
         @media (prefers-reduced-transparency: reduce) { .brand-3d { filter:none; } }
 
         .nav-step { transition: all 0.3s ease; position: relative; }
-        .nav-step::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background-color: #3b82f6; transform: scaleX(0); transition: transform 0.3s ease; }
+        .nav-step::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background-color: var(--accent, #3b82f6); transform: scaleX(0); transition: transform 0.3s ease; }
         .nav-step.active::after { transform: scaleX(1); }
-        .nav-step.active { color: #1e3a8a; font-weight: 600; background-color: #f0f9ff; }
-        .nav-step.active .step-num { background-color: #3b82f6; color: white; border-color: #3b82f6; }
+        .nav-step.active { color: var(--accent, #1e3a8a); font-weight: 600; background-color: var(--panel2, #f0f9ff); }
+        .nav-step.active .step-num { background-color: var(--accent, #3b82f6); color: white; border-color: var(--accent, #3b82f6); }
 
         .workspace-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; opacity: 0; visibility: hidden; transition: opacity 0.3s ease-in-out; }
         .workspace-iframe.active { opacity: 1; visibility: visible; z-index: 10; }
@@ -76,7 +77,7 @@
 <body class="bg-slate-100 flex flex-col h-screen text-slate-800">
 
     <!-- 1. Top Header -->
-    <header class="bg-slate-900 text-white h-14 flex items-center justify-between px-4 shrink-0 shadow-md z-30">
+    <header class="asc-invert asc-bar bg-slate-900 text-white h-14 flex items-center justify-between px-4 shrink-0 shadow-md z-30">
         <div class="flex items-center space-x-3">
             <!-- 🌟 โลโก้บริษัท -->
             <img src="img/pilogo.png" alt="ProInventive" class="w-9 h-9 object-contain rounded bg-white/10 p-0.5"

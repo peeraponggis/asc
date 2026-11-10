@@ -2,6 +2,9 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
+    <!-- ธีมเดียวกับ ASC Studio (Classic · Carbon · Drafting · ASC Enterprise 4.10.0) -->
+    <script src="asc-theme.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Noto+Sans+Lao:wght@400;600&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ASC 3D — แบบจำลองไซต์ติดตั้ง</title>
 <link rel="icon" href="img/favicon.ico" sizes="any">
@@ -26,7 +29,7 @@ setTimeout(function () {
 <style>
   /* ชุดสีเดียวกับหน้า System Design (asc_design.html :root) เพื่อให้สองเมนู
      ที่ใช้ต่อกันไม่สลับโทนมืด/สว่างกลางทาง ค่าที่ยกมาตรง ๆ คือ
-     bg #f1f5f9 · surface #ffffff · border #e2e8f0 · ink 0f172a/334155/64748b
+     bg var(--panel2, #f1f5f9) · surface var(--panel, #ffffff) · border var(--line, #e2e8f0) · ink 0f172a/334155/64748b
      ส่วน accent เดิมเป็นเหลืองบนพื้นมืด อ่านไม่ออกบนพื้นขาว จึงเปลี่ยนเป็น
      ส้มเข้มที่ผ่านคอนทราสต์บนพื้นสว่าง และยังเป็นสีตระกูลเดียวกับของเดิม */
   :root{
@@ -86,8 +89,8 @@ setTimeout(function () {
   }
   .btn:hover{border-color:var(--accent);color:var(--accent)}
   .btn:active{transform:scale(.97)}
-  .btn.primary{background:var(--accent);color:#15181D;border-color:var(--accent);font-weight:600}
-  .btn.primary:hover{color:#ffffff;filter:brightness(1.08)}
+  .btn.primary{background:var(--accent);color:var(--accent-fg, #15181D);border-color:var(--accent);font-weight:600}
+  .btn.primary:hover{color:var(--panel, #ffffff);filter:brightness(1.08)}
   .btn.mini{padding:5px 8px;font-size:11px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px}
@@ -95,8 +98,8 @@ setTimeout(function () {
     font-size:11px;line-height:1.5;color:var(--dim);background:var(--panel2);
     border-left:2px solid var(--line);border-radius:0 6px 6px 0;padding:6px 9px;margin-top:8px;
   }
-  .note.warn{border-left-color:var(--warn);color:#F0C99A}
-  .note.ok{border-left-color:var(--ok);color:#A5DCC1}
+  .note.warn{border-left-color:var(--warn);color:var(--warn, #F0C99A)}
+  .note.ok{border-left-color:var(--ok);color:var(--ok, #A5DCC1)}
   .ro{
     font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--accent);
     background:var(--panel2);border:1px dashed var(--line);border-radius:6px;padding:4px 8px;
@@ -139,7 +142,7 @@ setTimeout(function () {
     position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
     justify-content:center;gap:16px;background:var(--stage);z-index:10;text-align:center;padding:24px;
   }
-  #drop.over{background:#12181F;box-shadow:inset 0 0 0 3px var(--accent)}
+  #drop.over{background:var(--ink, #12181F);box-shadow:inset 0 0 0 3px var(--accent)}
   #drop h2{margin:0;font-size:19px;font-weight:600}
   #drop p{margin:0;color:var(--dim);font-size:13px;line-height:1.75;max-width:470px}
   #drop .big{font-size:42px;opacity:.75}
@@ -152,7 +155,7 @@ setTimeout(function () {
     position:fixed;inset:0;background:#0f172aA6;z-index:50;display:none;
     flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px;
   }
-  #modal img{max-width:88vw;max-height:72vh;border-radius:8px;box-shadow:0 8px 40px #000}
+  #modal img{max-width:88vw;max-height:72vh;border-radius:8px;box-shadow:0 8px 40px var(--ink, #000)}
 </style>
 </head>
 <body>
@@ -205,7 +208,7 @@ setTimeout(function () {
       <div class="note" id="roofNote"></div>
       <div style="display:flex;gap:6px;margin-top:8px">
         <button class="btn mini" id="btnReset" style="flex:1">↺ หลังคานี้จาก design</button>
-        <button class="btn mini" id="btnClearAll" style="flex:1;background:#fef2f2;color:#991b1b;border-color:#fecaca" title="ลบค่าที่แก้ไว้ทุกหลังคาของโครงการนี้ กลับไปใช้ค่าจากไฟล์ design ล่าสุด">🗑 ล้างค่าที่แก้ทั้งหมด</button>
+        <button class="btn mini" id="btnClearAll" style="flex:1;background:var(--panel2, #fef2f2);color:var(--fail, #991b1b);border-color:var(--failbg, #fecaca)" title="ลบค่าที่แก้ไว้ทุกหลังคาของโครงการนี้ กลับไปใช้ค่าจากไฟล์ design ล่าสุด">🗑 ล้างค่าที่แก้ทั้งหมด</button>
       </div>
     </div>
 
@@ -329,7 +332,7 @@ setTimeout(function () {
   <div id="busy">กำลังประมวลผล…</div>
 
   <div id="drop">
-    <div id="bootFail" hidden style="max-width:520px;text-align:left;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 16px;margin-bottom:6px">
+    <div id="bootFail" hidden style="max-width:520px;text-align:left;background:var(--panel2, #fef2f2);border:1px solid var(--failbg, #fecaca);border-radius:10px;padding:14px 16px;margin-bottom:6px">
       <div style="color:var(--danger);font-weight:600;margin-bottom:6px">⚠️ โหลดไลบรารี 3 มิติไม่สำเร็จ</div>
       <div style="color:var(--dim);font-size:12px;line-height:1.7">
         หน้านี้ใช้ ES Module จึงต้องเปิดผ่าน <b>http://</b> ไม่ใช่ดับเบิลคลิกไฟล์ (<b>file://</b>)

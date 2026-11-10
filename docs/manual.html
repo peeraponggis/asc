@@ -7,41 +7,44 @@
 <link rel="icon" href="img/favicon.ico" sizes="any">
 <link rel="icon" href="img/pilogo.png?v=2" type="image/png">
 <script src="https://cdn.tailwindcss.com"></script>
+    <!-- ธีมเดียวกับ ASC Studio (Classic · Carbon · Drafting · ASC Enterprise 4.10.0) -->
+    <script src="asc-theme.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Noto+Sans+Lao:wght@400;600&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script>
-tailwind.config = { theme: { extend: { fontFamily: { sans: ['Kanit','sans-serif'] } } } }
+        /* tailwind.config อยู่ใน asc-theme.js (ธีม ASC Studio) */
 </script>
 <style>
     html { scroll-behavior: smooth; }
     body { font-family: 'Kanit', sans-serif; }
-    .toc-link.active { background:#eff6ff; color:#1d4ed8; font-weight:600; border-left-color:#2563eb; }
+    .toc-link.active { background:var(--panel2, #eff6ff); color:var(--accent, #1d4ed8); font-weight:600; border-left-color:var(--accent, #2563eb); }
     .step-num { flex-shrink:0; width:32px; height:32px; border-radius:9px; display:flex; align-items:center;
                 justify-content:center; font-weight:700; font-size:.85rem; }
     h2[id], h3[id] { scroll-margin-top: 20px; }
-    .kbd { font-family: ui-monospace, monospace; background:#f1f5f9; border:1px solid #cbd5e1;
+    .kbd { font-family: ui-monospace, monospace; background:var(--panel2, #f1f5f9); border:1px solid var(--edge, #cbd5e1);
            border-bottom-width:2px; border-radius:5px; padding:1px 6px; font-size:.8em; white-space:nowrap; }
-    .btn-ref { display:inline-flex; align-items:center; gap:4px; background:#1e293b; color:#fff;
+    .btn-ref { display:inline-flex; align-items:center; gap:4px; background:var(--ink, #1e293b); color:var(--panel, #fff);
                border-radius:6px; padding:2px 9px; font-size:.78em; font-weight:500; white-space:nowrap; }
     ::-webkit-scrollbar { width:10px; height:10px; }
-    ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:5px; }
-    ::-webkit-scrollbar-thumb:hover { background:#94a3b8; }
+    ::-webkit-scrollbar-thumb { background:var(--edge, #cbd5e1); border-radius:5px; }
+    ::-webkit-scrollbar-thumb:hover { background:var(--ink3, #94a3b8); }
     @media print {
         .no-print { display:none !important; }
         main { max-width:100% !important; padding:0 !important; }
         section { break-inside: avoid-page; }
     }
-    .prompt-box { position:relative; background:#0f172a; color:#e2e8f0; border-radius:12px;
+    .prompt-box { position:relative; background:var(--ink, #0f172a); color:var(--line, #e2e8f0); border-radius:12px;
                   padding:18px 18px 18px; font-family: ui-monospace, monospace; font-size:.78rem;
                   line-height:1.65; white-space:pre-wrap; word-break:break-word; overflow-x:auto; }
-    .prompt-copy { position:absolute; top:10px; right:10px; background:#334155; color:#fff; border:0;
+    .prompt-copy { position:absolute; top:10px; right:10px; background:var(--ink, #334155); color:var(--panel, #fff); border:0;
                    border-radius:7px; padding:5px 12px; font-family:'Kanit',sans-serif; font-size:.72rem;
                    font-weight:600; cursor:pointer; }
-    .prompt-copy:hover { background:#475569; }
+    .prompt-copy:hover { background:var(--ink2, #475569); }
     .keytab td { padding:6px 10px; vertical-align:top; }
-    .keytab tr + tr td { border-top:1px solid #e2e8f0; }
-    .keytab code { font-family:ui-monospace,monospace; font-size:.78em; color:#0f766e; }
-    @media print { .prompt-box { background:#fff; color:#0f172a; border:1px solid #cbd5e1; } .prompt-copy { display:none; } }
+    .keytab tr + tr td { border-top:1px solid var(--line, #e2e8f0); }
+    .keytab code { font-family:ui-monospace,monospace; font-size:.78em; color:var(--ok, #0f766e); }
+    @media print { .prompt-box { background:var(--panel, #fff); color:var(--ink, #0f172a); border:1px solid var(--edge, #cbd5e1); } .prompt-copy { display:none; } }
     @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
 </style>
 </head>
@@ -1622,17 +1625,17 @@ Is_Bifacial = False</div>
                     <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
                         <p class="text-sm text-slate-600 mb-2"><b>ตารางที่ 3.2 หน้า 33</b></p>
                         <table class="w-full text-sm text-slate-600" style="border-collapse: collapse;">
-                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <tr style="border-bottom: 1px solid var(--line, #e2e8f0);">
                                 <th class="text-left py-1.5 font-semibold">การป้องกันฟ้าผ่าของอาคาร</th>
                                 <th class="text-left py-1.5 font-semibold">SPD ฝั่งไฟสลับ</th>
                                 <th class="text-left py-1.5 font-semibold">SPD ฝั่งไฟตรง</th>
                                 <th class="text-left py-1.5 font-semibold">สายต่อประสาน</th>
                             </tr>
-                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <tr style="border-bottom: 1px solid var(--panel2, #f1f5f9);">
                                 <td class="py-1.5">ไม่มีระบบป้องกันฟ้าผ่าภายนอก</td>
                                 <td>class II</td><td>class II</td><td>4 ตร.มม.</td>
                             </tr>
-                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <tr style="border-bottom: 1px solid var(--panel2, #f1f5f9);">
                                 <td class="py-1.5">มีระบบภายนอก · รักษาระยะแยกได้</td>
                                 <td><b>class I</b></td><td>class II</td><td>16 ตร.มม.</td>
                             </tr>
