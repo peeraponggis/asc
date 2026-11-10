@@ -2031,6 +2031,7 @@ async function deleteProject(id) {
 const VIEW_TITLES = { projects:'Dashboard', analytics:'Analytics', team:'Team Members', settings:'Settings' };
 
 function switchView(view) {
+    const prevView = currentView;
     currentView = view;
     document.getElementById('user-menu').classList.add('hidden');
 
@@ -2052,7 +2053,8 @@ function switchView(view) {
 
     if (view === 'analytics') renderAnalytics();
     if (view === 'settings')  renderSettings();
-    else if (/^#settings/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
+    // ออกจาก Settings จริงเท่านั้น (ตอนเปิดหน้าก่อนล็อกอินต้องเก็บ #settings/... ไว้ให้ enterApp พาเข้าแท็บ)
+    else if (prevView === 'settings' && /^#settings/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
 }
 
 function setViewMode(mode) {
