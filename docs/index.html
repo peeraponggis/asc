@@ -6,9 +6,12 @@
     <title>ASC Enterprise — เข้าสู่ระบบ</title>
     <link rel="icon" href="img/favicon.ico" sizes="any">
     <link rel="icon" href="img/pilogo.png?v=2" type="image/png">
+    <meta name="theme-color" content="#ffffff">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- ธีมเดียวกับ ASC Studio (Classic · Carbon · Drafting) — ผูกสี Tailwind ทั้งหน้าเข้ากับธีม · 4.9.0 -->
+    <script src="asc-theme.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Noto+Sans+Lao:wght@400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <!-- PDPA Consent Modal — แสดงทุก session ต้องยอมรับก่อนเข้าใช้งาน -->
@@ -29,19 +32,17 @@
     <script src="asc-terms.js"></script>
 
     <script>
-        tailwind.config = {
-            theme: { extend: { fontFamily: { sans: ['Kanit', 'sans-serif'] } } }
-        }
+        /* tailwind.config อยู่ใน asc-theme.js (สี · ฟอนต์ Sarabun · มุม ตามธีม ASC Studio) */
     </script>
     <style>
         .project-card { transition: all 0.2s ease-in-out; }
         /* แท็บ คำศัพท์ ASCS (asc-terms.js · 4.8.0) */
         .term-ta { resize: none; overflow: hidden; min-height: 2.1rem; line-height: 1.35; }
-        .term-lo textarea { font-family: 'Noto Sans Lao', 'Phetsarath OT', 'Kanit', sans-serif; }
-        #t-body tr.edited td { background: #fffbeb; }
-        #t-body tr.dirty td { background: #eff6ff; }
-        #t-body tr.dirty td:first-child { box-shadow: inset 4px 0 0 #2563eb; }
-        #t-body tr.stale td { background: #f1f5f9; color: #64748b; }
+        .term-lo textarea { font-family: 'Noto Sans Lao', 'Phetsarath OT', 'Sarabun', sans-serif; }
+        #t-body tr.edited td { background: var(--warnbg); }
+        #t-body tr.dirty td { background: var(--hover); }
+        #t-body tr.dirty td:first-child { box-shadow: inset 4px 0 0 var(--accent); }
+        #t-body tr.stale td { background: var(--panel2); color: var(--ink3); }
         /* ── ตราคำ PROINVENTIVE ────────────────────────────────────────
            เฉดทองดูดมาจากไฟล์โลโก้จริง img/pilogo.png โดยไล่จากจุดสว่างสุด
            ไปจุดเงาสุดของเหรียญ ตัวอักษรกับเหรียญจึงเป็นทองโทนเดียวกัน
@@ -95,7 +96,28 @@
         .list-mode .card-body { display: flex; align-items: center; gap: 24px; }
         .list-mode .card-body h3 { margin-bottom: 0; }
         .list-mode .card-size { min-width: 170px; }
-        input:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
+        input:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        /* ── ธีม ASC Studio (asc-theme.js · 4.9.0) ───────────────────────────── */
+        body { background: var(--bg) !important; color: var(--ink); }
+        /* แถบเมนูซ้าย = แผงแบบหน้าแรก ASC Studio: พื้นแผง · เส้นขอบ · รายการที่เลือกมีแถบสีเน้นด้านซ้าย */
+        .asc-side { border-right: 1px solid var(--line); box-shadow: none !important; }
+        .asc-side > div:first-child, .asc-side > div:last-child { border-color: var(--line) !important; }
+        .asc-side .nav-link { border-left: 3px solid transparent; border-radius: 0 !important; }
+        .asc-side .nav-link.bg-blue-600 { background: var(--sel) !important; color: var(--ink) !important; border-left-color: var(--accent); font-weight: 600; box-shadow: none !important; }
+        .asc-side .nav-link.bg-blue-600 i { color: var(--accent); }
+        .asc-side #user-menu { background: var(--panel); border-color: var(--edge); box-shadow: var(--mshadow); }
+        /* ปุ่มเลือกธีม (แบบแถบชื่อ ASC Studio) */
+        .asc-themeseg { align-items: center; }
+        .asc-themeseg button { border: 1px solid var(--line); background: var(--panel); color: var(--ink2); font-size: 12px; padding: 3px 10px; margin-left: -1px; min-height: 28px; }
+        .asc-themeseg button:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+        .asc-themeseg button:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+        .asc-themeseg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); font-weight: 600; }
+        .project-card:hover { transform: none !important; border-color: var(--accent) !important; box-shadow: none !important; }
+        /* ภาพหน้าเข้าสู่ระบบ: พื้นเข้มแบบ Carbon + แสงสีเน้นของธีม */
+        .login-art.asc-art { background:
+            radial-gradient(900px 500px at 15% 10%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 60%),
+            radial-gradient(700px 500px at 85% 90%, color-mix(in srgb, var(--ok) 22%, transparent), transparent 60%),
+            #17191c; }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
@@ -114,7 +136,7 @@
 <div id="login-screen" class="fixed inset-0 z-[100] flex asc-booting">
 
     <!-- ฝั่งซ้าย: แบรนด์ -->
-    <div class="login-art hidden lg:flex w-1/2 relative overflow-hidden flex-col justify-between p-12 text-white">
+    <div class="login-art asc-art hidden lg:flex w-1/2 relative overflow-hidden flex-col justify-between p-12 text-white">
         <div class="absolute inset-0 grid-lines"></div>
 
         <div class="relative flex items-center gap-3">
@@ -282,7 +304,7 @@
 <div id="app-shell" class="hidden h-screen flex overflow-hidden">
 
     <!-- Sidebar -->
-    <aside class="w-64 bg-slate-900 text-slate-300 flex-col hidden md:flex shrink-0 shadow-xl z-20">
+    <aside class="asc-invert asc-side w-64 bg-slate-900 text-slate-300 flex-col hidden md:flex shrink-0 shadow-xl z-20">
         <div class="h-16 flex items-center px-6 border-b border-slate-800 bg-slate-950">
             <img src="img/pilogo.png" alt="" class="w-8 h-8 object-contain mr-3"
                  onerror="this.outerHTML='<div class=&quot;bg-blue-600 text-white p-1.5 rounded mr-3&quot;><i class=&quot;fa-solid fa-solar-panel text-sm&quot;></i></div>'">
@@ -347,6 +369,10 @@
             </div>
 
             <div class="flex items-center space-x-4">
+                <!-- ธีม (ใช้ร่วมกับ ASC Studio · เก็บที่ design-auto.prefs) -->
+                <div class="asc-themeseg hidden md:flex" role="group" aria-label="ธีม">
+                    <button type="button" data-asc-theme="classic">Classic</button><button type="button" data-asc-theme="carbon">Carbon</button><button type="button" data-asc-theme="drafting">Drafting</button>
+                </div>
                 <div class="relative">
                     <button id="bell-btn" class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition flex items-center justify-center relative" title="ความเคลื่อนไหวล่าสุด">
                         <i class="fa-regular fa-bell"></i>
@@ -2150,8 +2176,8 @@ function renderAnalytics() {
     drawChart('chart-monthly', {
         type: 'bar',
         data: { labels: months, datasets: [
-            { label:'จำนวนโปรเจกต์', data:counts, backgroundColor:'rgba(59,130,246,.8)', borderRadius:6, yAxisID:'y' },
-            { label:'kWp รวม', data:kwpPerMonth, type:'line', borderColor:'#10b981', backgroundColor:'#10b981',
+            { label:'จำนวนโปรเจกต์', data:counts, backgroundColor:AscTheme.color('accent',.8), borderRadius:6, yAxisID:'y' },
+            { label:'kWp รวม', data:kwpPerMonth, type:'line', borderColor:AscTheme.color('ok'), backgroundColor:AscTheme.color('ok'),
               tension:.35, pointRadius:3, borderWidth:2, yAxisID:'y1' }
         ]},
         options: baseOpts({
@@ -2164,17 +2190,17 @@ function renderAnalytics() {
 
     // ── กราฟ 2: สถานะโครงการ
     const stageKeys = [
-        { key:'new',    label:'ยังไม่เริ่ม',        color:'#94a3b8' },
-        { key:'load',   label:'วิเคราะห์โหลดแล้ว',  color:'#f59e0b' },
-        { key:'design', label:'ออกแบบผังแล้ว',     color:'#3b82f6' },
-        { key:'param',  label:'ตั้งพารามิเตอร์แล้ว', color:'#6366f1' },
-        { key:'report', label:'ออกรายงานแล้ว',     color:'#22c55e' }
+        { key:'new',    label:'ยังไม่เริ่ม',        color:AscTheme.color('ink3') },
+        { key:'load',   label:'วิเคราะห์โหลดแล้ว',  color:AscTheme.color('warn') },
+        { key:'design', label:'ออกแบบผังแล้ว',     color:AscTheme.color('accent') },
+        { key:'param',  label:'ตั้งพารามิเตอร์แล้ว', color:AscTheme.color('accent2') },
+        { key:'report', label:'ออกรายงานแล้ว',     color:AscTheme.color('ok') }
     ];
     const stageCounts = stageKeys.map(s => list.filter(p => stageOf(p).key === s.key).length);
     drawChart('chart-status', {
         type: 'doughnut',
         data: { labels: stageKeys.map(s=>s.label),
-                datasets: [{ data: stageCounts, backgroundColor: stageKeys.map(s=>s.color), borderWidth:2, borderColor:'#fff' }] },
+                datasets: [{ data: stageCounts, backgroundColor: stageKeys.map(s=>s.color), borderWidth:2, borderColor:AscTheme.color('panel') }] },
         options: baseOpts({ cutout:'62%', plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{ size:11 } } } }, scales:{} })
     });
 
@@ -2183,7 +2209,7 @@ function renderAnalytics() {
     drawChart('chart-top', {
         type: 'bar',
         data: { labels: top.map(p => trim(p.meta.name, 22)),
-                datasets: [{ label:'kWp', data: top.map(kwpOf), backgroundColor:'rgba(37,99,235,.85)', borderRadius:5 }] },
+                datasets: [{ label:'kWp', data: top.map(kwpOf), backgroundColor:AscTheme.color('accent',.85), borderRadius:5 }] },
         options: baseOpts({ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ beginAtZero:true, title:{display:true, text:'kWp', font:{size:10}} } } })
     });
 
@@ -2199,7 +2225,7 @@ function renderAnalytics() {
         type: 'bar',
         data: { labels:['สร้างโครงการ','วิเคราะห์โหลด','วางผังแผง','ตั้งพารามิเตอร์','ออกรายงาน'],
                 datasets: [{ label:'จำนวนโครงการ', data:funnel,
-                             backgroundColor:['#cbd5e1','#fbbf24','#60a5fa','#818cf8','#4ade80'], borderRadius:5 }] },
+                             backgroundColor:[AscTheme.color('line'),AscTheme.color('warn',.75),AscTheme.color('accent',.75),AscTheme.color('accent2',.75),AscTheme.color('ok',.75)], borderRadius:5 }] },
         options: baseOpts({ plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } })
     });
 
@@ -2216,14 +2242,14 @@ function renderAnalytics() {
         drawChart('chart-byuser', {
             type:'bar',
             data:{ labels: owners.map(o=>trim(prettyName(o),16)),
-                   datasets:[{ label:'จำนวนโปรเจกต์', data: owners.map(o=>byUser[o].n), backgroundColor:'rgba(139,92,246,.85)', borderRadius:5 }] },
+                   datasets:[{ label:'จำนวนโปรเจกต์', data: owners.map(o=>byUser[o].n), backgroundColor:AscTheme.color('accent2',.85), borderRadius:5 }] },
             options: baseOpts({ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ beginAtZero:true, ticks:{ precision:0 } } } })
         });
 
         drawChart('chart-kwpuser', {
             type:'bar',
             data:{ labels: owners.map(o=>trim(prettyName(o),16)),
-                   datasets:[{ label:'kWp รวม', data: owners.map(o=>+byUser[o].kwp.toFixed(2)), backgroundColor:'rgba(16,185,129,.85)', borderRadius:5 }] },
+                   datasets:[{ label:'kWp รวม', data: owners.map(o=>+byUser[o].kwp.toFixed(2)), backgroundColor:AscTheme.color('ok',.85), borderRadius:5 }] },
             options: baseOpts({ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ beginAtZero:true } } })
         });
     }
@@ -2263,12 +2289,16 @@ function baseOpts(extra) {
     }, extra);
 }
 
+// เปลี่ยนธีม (ปุ่มบนหัวหน้า หรือ ASC Studio แท็บอื่น) = วาดกราฟใหม่ด้วยสีของธีม
+document.addEventListener('asc-theme', () => { if (currentView === 'analytics' && SESSION) renderAnalytics(); });
+
 function drawChart(canvasId, config) {
     const el = document.getElementById(canvasId);
     if (!el || typeof Chart === 'undefined') return;
     if (charts[canvasId]) charts[canvasId].destroy();
-    Chart.defaults.font.family = 'Kanit';
-    Chart.defaults.color = '#64748b';
+    Chart.defaults.font.family = 'Sarabun';
+    Chart.defaults.color = AscTheme.color('ink2');
+    Chart.defaults.borderColor = AscTheme.color('line');
     charts[canvasId] = new Chart(el, config);
 }
 
