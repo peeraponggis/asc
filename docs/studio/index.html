@@ -13,12 +13,12 @@
   <!-- หน้านี้แปลเองครบ 3 ภาษา — ห้ามเบราว์เซอร์แปลอัตโนมัติซ้ำ (เคยแปล "Design Auto" เป็น "ออกแบบรถยนต์") -->
   <meta name="google" content="notranslate" />
     <script src="lungpee-pdpa.js"></script>
-  <script type="module" crossorigin src="./assets/main-jfoIRCTz.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/finance-BmRR3Lwn.js">
-  <link rel="modulepreload" crossorigin href="./assets/sldSheet-ChaXEXcy.js">
-  <link rel="modulepreload" crossorigin href="./assets/panelDxf-C8mSCO8Z.js">
+  <script type="module" crossorigin src="./assets/main-DA6SsZ-H.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/finance-CMglkSxq.js">
+  <link rel="modulepreload" crossorigin href="./assets/sldSheet-bIdPxAsP.js">
+  <link rel="modulepreload" crossorigin href="./assets/panelDxf-BY_h1Tyv.js">
   <link rel="stylesheet" crossorigin href="./assets/finance-BiU0x1JI.css">
-  <link rel="stylesheet" crossorigin href="./assets/main-FFpVWEpE.css">
+  <link rel="stylesheet" crossorigin href="./assets/main-XPMFOQQF.css">
   <script src="../supabase-config.js"></script>
   <script src="../asc-cloud.js"></script>
 </head>
@@ -52,6 +52,8 @@
       <div id="editbar" class="editbar"></div>
       <div id="fpdims" class="fpdims hidden"></div>
       <div id="toast" class="toast hidden"></div>
+      <!-- แถบป้ายนับอุปกรณ์ (src/ui/tally.ts · จัดเมนูใหม่ เฟส C): อยู่เหนือปุ่ม 2D/3D · ไม่มีอุปกรณ์ = ซ่อน -->
+      <div id="tally" class="tally hidden"></div>
       <div id="viewbar">
         <button data-view="top" data-i18n="view.top"></button>
         <button data-view="iso" data-i18n="view.iso"></button>
@@ -97,6 +99,8 @@
   </section>
   <footer id="footer" class="statusbar"><span id="footText"></span><div id="zoomBox" class="zoombox" role="group"></div></footer>
   <dialog id="dlg"><form method="dialog" id="dlgForm"></form></dialog>
+  <!-- หน้าต่างชั้นที่ 2 (ซ้อนบนหน้าต่างแรก · เช่น ระบบโซลาร์เดิมจากหน้าต่างค่าไฟฟ้า ⑤ — จัดเมนูใหม่ เฟส B) -->
+  <dialog id="dlg2"><form method="dialog" id="dlg2Form"></form></dialog>
   <input type="file" id="filePick" multiple hidden accept=".txt,.json,.geojson,.kml,.dxf,.png,.jpg,.jpeg,.webp,.pgw,.jgw,.wld,.prj" />
 </body>
 </html>
