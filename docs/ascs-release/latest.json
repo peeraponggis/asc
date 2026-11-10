@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.169.1",
+ "version": "0.170.0",
  "published": "2026-11-10",
  "notes": [
-  "ซิงก์หน้าออกแบบ↔หน้ารายงานกฎเดียว (รับทั้งงานที่ใหม่กว่า — ค่าที่แก้ในหน้ารายงานไม่หายอีก) · ลิงก์จากรายงานเปิดซ้ำหน้าต่างเดิม ไม่เปิดโปรแกรมซ้อน · ปุ่ม ↩ กลับหน้ารายงาน + หน้าต่างค่าไฟปิดแล้วเด้งกลับ · …"
+  "คำศัพท์จาก ASC Enterprise ทับข้อความในโปรแกรม: แอดมินแก้ข้อความ 3 ภาษาที่ ASC Enterprise › Settings › คำศัพท์ ASCS แล้ว ASC Studio รุ่นเว็บและรุ่นในเครื่องที่ผูกบัญชีดึงไปใช้ตอนเปิดโปรแกรม (แคชในเครื่อง …"
  ],
  "requirements": "5c56ea9839289d16",
  "package": {
-  "file": "ascs-app-0.169.1.bin",
-  "size": 20427716,
-  "sha256": "5b0376539ae72f9d05a07b72c3fac6c0883f3357a26e7145e2800064b1803df9"
+  "file": "ascs-app-0.170.0.bin",
+  "size": 20430784,
+  "sha256": "2fa08e284660b6c76709b15ebc1770da563a107e68930e7ada9efecdc2661668"
  },
  "setup": {
-  "file": "ascs-setup-0.169.1.bin",
-  "size": 44931121,
-  "sha256": "cc5b3ad735e4f53b6537bd053fd5cf8ccbb0bd551bc72bc858e926ffd7da5476",
-  "name": "ASC-Studio-Setup-0.169.1.exe"
+  "file": "ascs-setup-0.170.0.bin",
+  "size": 44941361,
+  "sha256": "d03ef1d3ab288c098378f5da907c4c82fabf3e3ea6307ab67d31e0e341cc31a4",
+  "name": "ASC-Studio-Setup-0.170.0.exe"
  }
 }

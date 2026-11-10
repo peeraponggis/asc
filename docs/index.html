@@ -25,6 +25,8 @@
          จึงมั่นใจได้ว่าไฟล์ที่นำเข้าคลังจะให้ค่าเหมือนกับตอนอัปโหลดตรง ๆ -->
     <script src="asc-datasheet-parse.js"></script>
     <script src="asc-devices.js"></script>
+    <!-- แท็บ คำศัพท์ ASCS ในหน้า Settings (4.8.0) -->
+    <script src="asc-terms.js"></script>
 
     <script>
         tailwind.config = {
@@ -33,6 +35,13 @@
     </script>
     <style>
         .project-card { transition: all 0.2s ease-in-out; }
+        /* แท็บ คำศัพท์ ASCS (asc-terms.js · 4.8.0) */
+        .term-ta { resize: none; overflow: hidden; min-height: 2.1rem; line-height: 1.35; }
+        .term-lo textarea { font-family: 'Noto Sans Lao', 'Phetsarath OT', 'Kanit', sans-serif; }
+        #t-body tr.edited td { background: #fffbeb; }
+        #t-body tr.dirty td { background: #eff6ff; }
+        #t-body tr.dirty td:first-child { box-shadow: inset 4px 0 0 #2563eb; }
+        #t-body tr.stale td { background: #f1f5f9; color: #64748b; }
         /* ── ตราคำ PROINVENTIVE ────────────────────────────────────────
            เฉดทองดูดมาจากไฟล์โลโก้จริง img/pilogo.png โดยไล่จากจุดสว่างสุด
            ไปจุดเงาสุดของเหรียญ ตัวอักษรกับเหรียญจึงเป็นทองโทนเดียวกัน
@@ -293,7 +302,6 @@
             </button>
             <button data-view="settings" class="nav-link w-full flex items-center px-4 py-3 rounded-lg transition text-left">
                 <i class="fa-solid fa-gear w-6"></i><span class="font-medium">Settings</span>
-                <span class="ml-auto text-[9px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">SOON</span>
             </button>
             <!-- แอปเสริม (APP_MENUS) · เห็นเฉพาะผู้ดูแลระบบ และผู้ใช้ที่ผู้ดูแลระบบให้สิทธิ์ -->
             <div id="app-links" class="hidden pt-3 mt-3 border-t border-slate-800 space-y-2"></div>
@@ -587,7 +595,19 @@
                     <p class="text-sm text-slate-500">ตั้งค่าบัญชีและข้อมูลในเครื่อง</p>
                 </div>
 
-                <div class="max-w-3xl space-y-6">
+                <!-- ═══ แถบแท็บ Settings (4.8.0 · ลุงพีอนุมัติตัวอย่าง 10 พ.ย. 2569) ═══
+                     แท็บผู้ดูแลระบบขึ้นเฉพาะโหมดคลาวด์ + ผู้ดูแลระบบ · จำแท็บล่าสุด · ลิงก์ตรง #settings/<แท็บ> -->
+                <div id="settings-tabs" role="tablist" class="flex gap-2 overflow-x-auto pb-2 mb-5 border-b border-slate-200">
+                    <button type="button" role="tab" class="stab px-4 py-2.5 rounded-t-lg text-sm font-semibold whitespace-nowrap transition" data-stab="account"><i class="fa-solid fa-user mr-1.5"></i>บัญชี</button>
+                    <button type="button" role="tab" class="stab px-4 py-2.5 rounded-t-lg text-sm font-semibold whitespace-nowrap transition" data-stab="company" data-cloud="1"><i class="fa-solid fa-building mr-1.5"></i>บริษัท</button>
+                    <button type="button" role="tab" class="stab px-4 py-2.5 rounded-t-lg text-sm font-semibold whitespace-nowrap transition" data-stab="access" data-cloud="1" data-admin="1"><i class="fa-solid fa-user-shield mr-1.5"></i>ผู้ใช้และสิทธิ์ <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded ml-1">ADMIN</span></button>
+                    <button type="button" role="tab" class="stab px-4 py-2.5 rounded-t-lg text-sm font-semibold whitespace-nowrap transition" data-stab="devbank" data-cloud="1" data-admin="1"><i class="fa-solid fa-microchip mr-1.5"></i>คลังอุปกรณ์ <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded ml-1">ADMIN</span></button>
+                    <button type="button" role="tab" class="stab px-4 py-2.5 rounded-t-lg text-sm font-semibold whitespace-nowrap transition" data-stab="terms" data-cloud="1" data-admin="1"><i class="fa-solid fa-language mr-1.5"></i>คำศัพท์ ASCS <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded ml-1">ADMIN</span></button>
+                </div>
+
+
+                <!-- ═══ แท็บ บัญชี: บัญชีที่ใช้งาน · ข้อมูลในเครื่อง · ย้ายโครงการขึ้นคลาวด์ · การตั้งค่าอื่น ═══ -->
+                <div class="stab-panel hidden max-w-3xl space-y-6" data-stab="account">
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                         <h3 class="font-bold text-slate-800 mb-4">บัญชีที่ใช้งาน</h3>
                         <dl class="grid sm:grid-cols-2 gap-4 text-sm">
@@ -627,6 +647,41 @@
                         <p class="text-xs text-slate-500 mt-4" id="set-storage"></p>
                     </div>
 
+                    <!-- ═══ ย้ายข้อมูลเดิมขึ้นคลาวด์ (เห็นเฉพาะโหมดคลาวด์ และเมื่อยังมีข้อมูลค้างในเครื่อง) ═══ -->
+                    <div id="migrate-card" class="hidden bg-white rounded-xl border border-amber-200 shadow-sm p-6">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h3 class="font-bold text-slate-800">ย้ายโครงการเดิมขึ้นคลาวด์</h3>
+                            <span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded">ยังไม่ได้ย้าย</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+                            พบโครงการที่ยังเก็บอยู่ในเบราว์เซอร์เครื่องนี้ ซึ่งคนอื่นมองไม่เห็นและจะหายถ้าล้างข้อมูลเบราว์เซอร์<br>
+                            การส่งขึ้นคลาวด์จะ<b>คัดลอก</b>ขึ้นไปเป็นโครงการใหม่ ของเดิมในเครื่องยังอยู่ครบ ตรวจสอบแล้วค่อยลบเองภายหลัง
+                        </p>
+                        <div id="migrate-list" class="space-y-1.5 mb-4 max-h-56 overflow-y-auto text-sm"></div>
+                        <div class="flex flex-wrap gap-3 items-center">
+                            <button id="migrate-btn" onclick="runMigration()" class="px-4 py-2.5 rounded-lg text-sm font-bold bg-amber-600 text-white hover:bg-amber-700 shadow transition">
+                                <i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> ส่งขึ้นคลาวด์ทั้งหมด
+                            </button>
+                            <span id="migrate-status" class="text-xs text-slate-500"></span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 opacity-70">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="font-bold text-slate-800">การตั้งค่าอื่น</h3>
+                            <span class="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded">รอพัฒนา</span>
+                        </div>
+                        <ul class="text-sm text-slate-500 space-y-2 mt-3">
+                            <li><i class="fa-regular fa-square text-slate-300 mr-2"></i>เปลี่ยนรหัสผ่านด้วยตนเอง</li>
+                            <li><i class="fa-regular fa-square text-slate-300 mr-2"></i>ค่ามาตรฐานโครงการ (ยี่ห้อแผง อินเวอร์เตอร์ ค่าไฟฟ้าต่อหน่วย)</li>
+                            <li><i class="fa-regular fa-square text-slate-300 mr-2"></i>โลโก้และหัวกระดาษบนรายงาน</li>
+                            <li><i class="fa-regular fa-square text-slate-300 mr-2"></i>ซิงก์ข้อมูลขึ้นคลาวด์อัตโนมัติ</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ═══ แท็บ บริษัท (โหมดคลาวด์) ═══ -->
+                <div class="stab-panel hidden max-w-3xl space-y-6" data-stab="company">
                     <!-- ═══ ข้อมูลบริษัทผู้เสนอ (โหมดคลาวด์) ═══
                          กรอกครั้งเดียว ใช้ในหัวรายงานและเอกสารข้อเสนอทุกโครงการ -->
                     <div id="company-card" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -730,7 +785,10 @@
                             <span id="co-msg" class="text-xs"></span>
                         </div>
                     </div>
+                </div>
 
+                <!-- ═══ แท็บ ผู้ใช้และสิทธิ์ (ผู้ดูแลระบบ) ═══ -->
+                <div class="stab-panel hidden space-y-6" data-stab="access">
                     <!-- ═══ รายชื่ออีเมลที่อนุมัติ (เห็นเฉพาะผู้ดูแลระบบในโหมดคลาวด์) ═══ -->
                     <div id="allowlist-card" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="px-6 py-5 border-b border-slate-100">
@@ -811,7 +869,10 @@
                             </table>
                         </div>
                     </div>
+                </div>
 
+                <!-- ═══ แท็บ คลังอุปกรณ์ (ผู้ดูแลระบบ) ═══ -->
+                <div class="stab-panel hidden space-y-6" data-stab="devbank">
                     <!-- ═══ คลังสเปกอุปกรณ์ (เห็นเฉพาะผู้ดูแลระบบในโหมดคลาวด์) ═══ -->
                     <div id="devbank-card" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="px-6 py-5 border-b border-slate-100">
@@ -897,39 +958,97 @@
                             </table>
                         </div>
                     </div>
+                </div>
 
-                    <!-- ═══ ย้ายข้อมูลเดิมขึ้นคลาวด์ (เห็นเฉพาะโหมดคลาวด์ และเมื่อยังมีข้อมูลค้างในเครื่อง) ═══ -->
-                    <div id="migrate-card" class="hidden bg-white rounded-xl border border-amber-200 shadow-sm p-6">
-                        <div class="flex items-center gap-2 mb-1">
-                            <h3 class="font-bold text-slate-800">ย้ายโครงการเดิมขึ้นคลาวด์</h3>
-                            <span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded">ยังไม่ได้ย้าย</span>
+                <!-- ═══ แท็บ คำศัพท์ ASCS (ผู้ดูแลระบบ · asc-terms.js · 4.8.0) ═══ -->
+                <div class="stab-panel hidden space-y-4" data-stab="terms">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="px-6 py-5 border-b border-slate-100">
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold text-slate-800">คำศัพท์ที่ใช้ในโปรแกรม ASC Studio</h3>
+                                <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded">ADMIN</span>
+                            </div>
+                            <p class="text-xs text-slate-500 leading-relaxed">
+                                แก้ข้อความ 3 ภาษา (ไทย · ລາວ · English) ที่ ASC Studio แสดงบนหน้าจอ · บันทึกแล้ว ASC Studio ทั้งรุ่นเว็บและรุ่นในเครื่อง (ที่ผูกบัญชีไว้) ดึงไปใช้แทนข้อความในตัวโปรแกรม<br>
+                                ช่องที่เว้นว่าง = ใช้ข้อความเดิมของโปรแกรม · ปุ่ม <i class="fa-solid fa-rotate-left"></i> = คืนค่าเดิม
+                            </p>
                         </div>
-                        <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-                            พบโครงการที่ยังเก็บอยู่ในเบราว์เซอร์เครื่องนี้ ซึ่งคนอื่นมองไม่เห็นและจะหายถ้าล้างข้อมูลเบราว์เซอร์<br>
-                            การส่งขึ้นคลาวด์จะ<b>คัดลอก</b>ขึ้นไปเป็นโครงการใหม่ ของเดิมในเครื่องยังอยู่ครบ ตรวจสอบแล้วค่อยลบเองภายหลัง
-                        </p>
-                        <div id="migrate-list" class="space-y-1.5 mb-4 max-h-56 overflow-y-auto text-sm"></div>
-                        <div class="flex flex-wrap gap-3 items-center">
-                            <button id="migrate-btn" onclick="runMigration()" class="px-4 py-2.5 rounded-lg text-sm font-bold bg-amber-600 text-white hover:bg-amber-700 shadow transition">
-                                <i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> ส่งขึ้นคลาวด์ทั้งหมด
-                            </button>
-                            <span id="migrate-status" class="text-xs text-slate-500"></span>
+
+                        <div class="px-6 py-4 border-b border-slate-100 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div class="rounded-lg border border-slate-200 p-3"><div class="text-[11px] text-slate-500">คำศัพท์ทั้งหมด</div><div class="text-xl font-bold" id="t-total">-</div><div class="text-[10px] text-slate-400">ค่าเริ่มจาก ASCS <span id="t-ver">-</span></div></div>
+                            <button type="button" id="t-card-edited" class="text-left rounded-lg border border-amber-300 bg-amber-50 p-3 hover:bg-amber-100"><div class="text-[11px] text-amber-700">แก้แล้ว (ต่างจากค่าเริ่ม)</div><div class="text-xl font-bold text-amber-700" id="t-edited">-</div><div class="text-[10px] text-amber-600">คลิกเพื่อดูเฉพาะที่แก้</div></button>
+                            <button type="button" id="t-card-stale" class="text-left rounded-lg border border-slate-300 bg-slate-100 p-3 hover:bg-slate-200"><div class="text-[11px] text-slate-600">แก้ไว้แต่โปรแกรมรุ่นนี้ไม่มีคีย์แล้ว</div><div class="text-xl font-bold text-slate-600" id="t-stale">-</div><div class="text-[10px] text-slate-500">ลบทิ้งได้ ไม่มีผลกับโปรแกรม</div></button>
+                            <div class="rounded-lg border border-slate-200 p-3"><div class="text-[11px] text-slate-500">ดึงจากคลาวด์ล่าสุด</div><div class="text-sm font-semibold mt-1" id="t-synced">-</div><div class="text-[10px] text-slate-400">หมวดทั้งหมด <span id="t-groups">-</span></div></div>
+                        </div>
+
+                        <div class="px-6 py-3 border-b border-slate-100 flex flex-wrap gap-2 items-center bg-slate-50">
+                            <div class="relative flex-1 min-w-[200px]"><i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                <input id="t-q" type="search" placeholder="ค้นหาคีย์ หรือคำไทย / ລາວ / English..." class="w-full border border-slate-300 rounded-lg pl-8 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                            <select id="t-prefix" class="border border-slate-300 rounded-lg p-2 text-sm bg-white max-w-[220px]"></select>
+                            <label class="flex items-center gap-1.5 text-sm cursor-pointer px-2"><input id="t-edited-only" type="checkbox" class="w-4 h-4 accent-amber-500"> เฉพาะที่แก้แล้ว</label>
+                            <button type="button" id="t-refresh" class="px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50" title="ดึงจากคลาวด์ใหม่"><i class="fa-solid fa-rotate"></i></button>
+                            <div class="relative">
+                                <button type="button" id="t-export" class="px-3 py-2 rounded-lg text-xs font-semibold text-white bg-slate-700 hover:bg-slate-800"><i class="fa-solid fa-file-csv mr-1"></i> ส่งออก CSV <i class="fa-solid fa-caret-down ml-1"></i></button>
+                                <div id="t-export-menu" class="hidden absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-20 text-sm">
+                                    <button type="button" data-exp="all" class="w-full text-left px-3 py-2 hover:bg-slate-50">ทั้งหมด (<span class="t-n-all"></span> คีย์)</button>
+                                    <button type="button" data-exp="view" class="w-full text-left px-3 py-2 hover:bg-slate-50">ตามที่กรองอยู่ (<span class="t-n-view"></span> คีย์)</button>
+                                    <button type="button" data-exp="edited" class="w-full text-left px-3 py-2 hover:bg-slate-50">เฉพาะที่แก้แล้ว (<span class="t-n-edited"></span> คีย์)</button>
+                                </div>
+                            </div>
+                            <button type="button" id="t-import" class="px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50"><i class="fa-solid fa-file-import mr-1"></i> นำเข้า CSV</button>
+                            <input id="t-import-file" type="file" accept=".csv,text/csv" class="hidden">
+                            <button type="button" id="t-save-all" class="hidden px-4 py-2 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow"><i class="fa-solid fa-floppy-disk mr-1"></i> บันทึก <span id="t-dirty-n">0</span> รายการที่แก้</button>
+                        </div>
+
+                        <div id="t-msg" class="hidden px-6 py-2 text-xs border-b border-slate-100"></div>
+
+                        <div id="t-table-top" class="overflow-x-auto">
+                            <table class="w-full text-sm min-w-[860px]">
+                                <thead class="bg-slate-50">
+                                    <tr class="text-left text-xs text-slate-500">
+                                        <th class="pl-6 pr-2 py-2 font-semibold w-[19%]">คีย์</th>
+                                        <th class="px-2 py-2 font-semibold w-[25%]">ไทย</th>
+                                        <th class="px-2 py-2 font-semibold w-[25%]">ລາວ</th>
+                                        <th class="px-2 py-2 font-semibold w-[25%]">English</th>
+                                        <th class="px-2 py-2 w-[6%]"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="t-body"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="px-6 py-3 border-t border-slate-100 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                            <span id="t-range"></span>
+                            <div class="flex-1"></div>
+                            <div id="t-pager" class="flex flex-wrap gap-1"></div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 opacity-70">
-                        <div class="flex items-center gap-2 mb-2">
-                            <h3 class="font-bold text-slate-800">การตั้งค่าอื่น</h3>
-                            <span class="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded">รอพัฒนา</span>
+                    <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs text-blue-900 leading-relaxed">
+                        <b><i class="fa-solid fa-circle-info mr-1"></i> มีผลเมื่อไร:</b> ASC Studio ดึงคำที่แก้ตอนเปิดโปรแกรม (รุ่นเว็บ: รีเฟรชหน้า studio · รุ่นในเครื่อง: เปิดโปรแกรมใหม่) แล้วเก็บไว้ในเครื่อง ไม่มีเน็ตก็ยังใช้คำล่าสุดได้ ·
+                        ข้อความในรายการวัสดุ (BOM) มีผลรอบเปิดถัดไป · รุ่นในเครื่องที่ยังไม่ผูกบัญชี ASC Cloud ใช้ข้อความเดิมของโปรแกรม ·
+                        คีย์ใหม่ที่ ASCS รุ่นใหม่เพิ่มเข้ามาจะขึ้นในตารางนี้เองเมื่อปล่อย ASCS รุ่นเว็บ (ไม่ต้องรัน SQL เพิ่ม)
+                    </div>
+
+                    <!-- กล่องตรวจก่อนนำเข้า CSV -->
+                    <div id="t-imp-modal" class="hidden fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+                        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden">
+                            <div class="px-6 py-4 border-b border-slate-100 flex items-center"><h3 class="font-bold">ตรวจก่อนนำเข้า CSV</h3><span id="t-imp-file" class="ml-2 text-xs text-slate-500"></span><button type="button" id="t-imp-x" class="ml-auto text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button></div>
+                            <div class="px-6 py-4 grid grid-cols-3 gap-3 text-center">
+                                <div class="rounded-lg bg-blue-50 border border-blue-200 p-3"><div class="text-2xl font-bold text-blue-700" id="t-imp-up">0</div><div class="text-[11px] text-blue-700">จะบันทึกคำใหม่</div></div>
+                                <div class="rounded-lg bg-emerald-50 border border-emerald-200 p-3"><div class="text-2xl font-bold text-emerald-700" id="t-imp-del">0</div><div class="text-[11px] text-emerald-700">เท่าค่าเริ่ม → คืนค่าเดิม</div></div>
+                                <div class="rounded-lg bg-slate-100 border border-slate-200 p-3"><div class="text-2xl font-bold text-slate-600" id="t-imp-unk">0</div><div class="text-[11px] text-slate-600">คีย์ที่โปรแกรมไม่รู้จัก (ข้าม)</div></div>
+                            </div>
+                            <div class="px-6 pb-2 text-xs text-slate-500">แถวที่ไม่ต่างจากที่บันทึกไว้แล้ว: <span id="t-imp-same">0</span> (ข้าม) · ช่องว่างใน CSV = ใช้ค่าเริ่มของช่องนั้น</div>
+                            <div class="px-6 max-h-56 overflow-y-auto"><table class="w-full text-xs"><tbody id="t-imp-list"></tbody></table></div>
+                            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2 mt-3">
+                                <button type="button" id="t-imp-cancel" class="px-4 py-2 rounded-lg text-sm border border-slate-300 bg-white">ยกเลิก</button>
+                                <button type="button" id="t-imp-ok" class="px-4 py-2 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> ยืนยันนำเข้า</button>
+                            </div>
                         </div>
-                        <ul class="text-sm text-slate-500 space-y-2 mt-3">
-                            <li><i class="fa-regular fa-square text-slate-300 mr-2"></i>เปลี่ยนรหัสผ่านด้วยตนเอง</li>
-                            <li><i class="fa-regular fa-square text-slate-300 mr-2"></i>ค่ามาตรฐานโครงการ (ยี่ห้อแผง อินเวอร์เตอร์ ค่าไฟฟ้าต่อหน่วย)</li>
-                            <li><i class="fa-regular fa-square text-slate-300 mr-2"></i>โลโก้และหัวกระดาษบนรายงาน</li>
-                            <li><i class="fa-regular fa-square text-slate-300 mr-2"></i>ซิงก์ข้อมูลขึ้นคลาวด์อัตโนมัติ</li>
-                        </ul>
                     </div>
                 </div>
+
             </section>
 
         </div>
@@ -1371,6 +1490,8 @@ async function enterApp() {
     }
     renderDashboard();
     renderNotifications();
+    // ลิงก์ตรงเข้าแท็บ Settings เช่น index.html#settings/terms (4.8.0)
+    if (/^#settings(\/|$)/.test(location.hash)) switchView('settings');
 }
 
 /* ป้ายบอกว่ากำลังทำงานกับข้อมูลบนคลาวด์ ไม่ใช่ในเครื่อง ผู้ใช้จะได้ไม่สับสน */
@@ -1931,6 +2052,7 @@ function switchView(view) {
 
     if (view === 'analytics') renderAnalytics();
     if (view === 'settings')  renderSettings();
+    else if (/^#settings/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
 }
 
 function setViewMode(mode) {
@@ -2192,6 +2314,48 @@ function renderSettings() {
         }
         renderMigrateCard();
     }
+    initSettingsTabs();
+}
+
+/* ─── แท็บของหน้า Settings (4.8.0 · ลุงพีอนุมัติตัวอย่าง 10 พ.ย. 2569) ─────────
+   การ์ดเดิมทุกใบอยู่ในแผง .stab-panel[data-stab] (id เดิมครบ ฟังก์ชันเดิมใช้ได้ไม่ต้องแก้)
+   data-cloud = ขึ้นเฉพาะโหมดคลาวด์ · data-admin = ขึ้นเฉพาะผู้ดูแลระบบ
+   จำแท็บล่าสุดใน localStorage · ลิงก์ตรง #settings/<แท็บ> */
+const SETTINGS_TAB_KEY = 'asc.settings.tab';
+
+function settingsTabsVisible() {
+    return [...document.querySelectorAll('#settings-tabs .stab')]
+        .filter(b => (!b.dataset.cloud || CLOUD) && (!b.dataset.admin || (SESSION && SESSION.isAdmin)))
+        .map(b => b.dataset.stab);
+}
+
+function switchSettingsTab(tab) {
+    const vis = settingsTabsVisible();
+    if (!vis.includes(tab)) tab = 'account';
+    document.querySelectorAll('#settings-tabs .stab').forEach(b => {
+        const on = b.dataset.stab === tab;
+        b.classList.toggle('hidden', !vis.includes(b.dataset.stab));
+        b.classList.toggle('bg-blue-600', on); b.classList.toggle('text-white', on); b.classList.toggle('shadow-md', on);
+        b.classList.toggle('text-slate-600', !on); b.classList.toggle('hover:bg-slate-100', !on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    document.querySelectorAll('#view-settings .stab-panel').forEach(p => p.classList.toggle('hidden', p.dataset.stab !== tab));
+    try { localStorage.setItem(SETTINGS_TAB_KEY, tab); } catch (e) { /* ปิดไว้ = ไม่จำ */ }
+    if (location.hash !== '#settings/' + tab) history.replaceState(null, '', '#settings/' + tab);
+    if (tab === 'terms' && window.AscTermsUI) AscTermsUI.open();
+}
+
+function initSettingsTabs() {
+    const bar = document.getElementById('settings-tabs');
+    if (!bar) return;
+    if (!bar.dataset.bound) {
+        bar.dataset.bound = '1';
+        bar.addEventListener('click', e => { const b = e.target.closest('.stab'); if (b) switchSettingsTab(b.dataset.stab); });
+    }
+    const fromHash = (location.hash.match(/^#settings\/(\w+)/) || [])[1];
+    let saved = 'account';
+    try { saved = localStorage.getItem(SETTINGS_TAB_KEY) || 'account'; } catch (e) { /* */ }
+    switchSettingsTab(fromHash || saved);
 }
 
 /* ─── จัดการบัญชีตัวเอง (เฉพาะโหมดคลาวด์) ──────────────────────────────── */

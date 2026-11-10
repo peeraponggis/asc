@@ -289,6 +289,7 @@ select public.pi_monitor_text();                                        -- ด�
 | `supabase/presence-ingest.sql` | Pi monitor ขั้น 3: รับสถานะการใช้งาน Pi-System จากอีกโปรเจกต์ (รหัสลับ Vault `pi_ingest_secret`) — ขั้นตอนอยู่ใน `picode\pi-system\README.md` หัวข้อ Pi monitor |
 | `supabase/presence-device.sql` | Pi monitor ขั้น 4: รุ่น desktop (ASCS/ASCA ในเครื่อง) ส่งสถานะผ่านเครื่องที่ผูกกับบัญชีในตาราง `ai_installs` (รหัสเดียวกับติดตั้งผู้ช่วย AI) — รันใน SQL Editor หลัง `ai-install.sql` |
 | `supabase/pi-monitor-telegram.sql` | Pi monitor ขั้น 2: ส่งสรุปเข้ากลุ่ม Telegram ทุก 10 นาที (pg_cron + pg_net · token ใน Vault) — ดูหัวข้อ Pi monitor |
+| `supabase/ascs-terms.sql` | คำศัพท์ ASC Studio ที่ผู้ดูแลระบบแก้ (หน้า Settings › แท็บ คำศัพท์ ASCS · 4.8.0) — ตาราง `ascs_terms` เก็บเฉพาะคีย์ที่แก้ · `ascs_terms_stamp()` ให้ ASCS รุ่นเว็บเช็กว่าเปลี่ยน · `device_terms()` ให้รุ่นในเครื่องที่ผูกบัญชี — รันหลัง `schema.sql` และ `presence-device.sql` · รันซ้ำได้ |
 | `supabase/invite-users.mjs` | นำผู้ใช้เดิมเข้าระบบ รันบนเครื่องเท่านั้น |
 | `supabase/import-devices.mjs` | นำเข้าคลังสเปกอุปกรณ์จากไฟล์ดาต้าชีต รันบนเครื่องเท่านั้น |
 | `docs/supabase-config.js` | ค่าเชื่อมต่อ (แก้ไฟล์นี้ไฟล์เดียว) |
