@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.170.0",
+ "version": "0.171.0",
  "published": "2026-11-10",
  "notes": [
-  "คำศัพท์จาก ASC Enterprise ทับข้อความในโปรแกรม: แอดมินแก้ข้อความ 3 ภาษาที่ ASC Enterprise › Settings › คำศัพท์ ASCS แล้ว ASC Studio รุ่นเว็บและรุ่นในเครื่องที่ผูกบัญชีดึงไปใช้ตอนเปิดโปรแกรม (แคชในเครื่อง …"
+  "สถานีชาร์จ EV เฟส E1: หน้าต่างเครื่องชาร์จ + แอป (แบรนด์ · รุ่น · จำนวน · แอปตั้งค่า · แพลตฟอร์มสั่งการ · คำสั่งที่แอปสั่งเครื่อง) · กฎระบบ R23 เลือกแบรนด์ต้องเลือกแอป + กฎ R24–R27 · แคตตาล็อกแอป/แพลตฟอร์มพร้อมที่มา …"
  ],
  "requirements": "5c56ea9839289d16",
  "package": {
-  "file": "ascs-app-0.170.0.bin",
-  "size": 20430784,
-  "sha256": "2fa08e284660b6c76709b15ebc1770da563a107e68930e7ada9efecdc2661668"
+  "file": "ascs-app-0.171.0.bin",
+  "size": 20445095,
+  "sha256": "2c82355536ba06e9773b09a252330800187ae2c7e9de0acdf52745f93b992587"
  },
  "setup": {
-  "file": "ascs-setup-0.170.0.bin",
-  "size": 44941361,
-  "sha256": "d03ef1d3ab288c098378f5da907c4c82fabf3e3ea6307ab67d31e0e341cc31a4",
-  "name": "ASC-Studio-Setup-0.170.0.exe"
+  "file": "ascs-setup-0.171.0.bin",
+  "size": 44999729,
+  "sha256": "8f3276d2c181f721e5c447368bccf695c4ed91a40c777905bdcdbefb610f76eb",
+  "name": "ASC-Studio-Setup-0.171.0.exe"
  }
 }
