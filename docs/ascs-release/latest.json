@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.180.0",
+ "version": "0.181.0",
  "published": "2026-11-11",
  "notes": [
-  "แก้ผลตรวจโซลาร์ฟาร์ม: จัดสตริงกระจายทุกอินเวอร์เตอร์ · เลิกเตือนแผงค้างเมื่อต่อครบ · เตือนเครื่องที่ไม่มีสตริง · แผ่น DC ข้ามเครื่องว่าง · SHEET n OF N ทั้งชุด"
+  "รายงานวิศวกรรม: บทโซลาร์ฟาร์ม 4 หัวข้อ (ข้อมูลโครงการ+สถานีหม้อแปลง · สาย MV+ร่องสาย · ระบบกราวด์/ล่อฟ้า+ระบบเสริม · รายการแบบ A1)"
  ],
  "requirements": "5c56ea9839289d16",
  "package": {
-  "file": "ascs-app-0.180.0.bin",
-  "size": 21929553,
-  "sha256": "44e1f33ba99ca3ee17aac3a54d4902e9ce1589e2feb5b2b1500a8741bad82b6d"
+  "file": "ascs-app-0.181.0.bin",
+  "size": 21935089,
+  "sha256": "bb2a68795adcce6b514f5782c7fc16eae43e1c841473aa0231d501aea0e2c589"
  },
  "setup": {
-  "file": "ascs-setup-0.180.0.bin",
-  "size": 50081841,
-  "sha256": "2003139a9e35434d12e901974beddaa17e0ea4c62470d6000d5a6dda56388eb7",
-  "name": "ASC-Studio-Setup-0.180.0.exe"
+  "file": "ascs-setup-0.181.0.bin",
+  "size": 50634801,
+  "sha256": "327bb5a21f201d46831fc1fe793438bc020e8c09de9e5f312dc067f215241a86",
+  "name": "ASC-Studio-Setup-0.181.0.exe"
  }
 }
