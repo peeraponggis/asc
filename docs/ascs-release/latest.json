@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.179.0",
+ "version": "0.180.0",
  "published": "2026-11-11",
  "notes": [
-  "คู่มือ: เพิ่มหัวข้อ 1.5 มือใหม่ ทางด่วนถึงรายงาน 5 ประเภทงาน (หลังคาบ้าน/โรงงาน/ฟาร์ม/ลอยน้ำ/EV) ภาพจริงทีละขั้น"
+  "แก้ผลตรวจโซลาร์ฟาร์ม: จัดสตริงกระจายทุกอินเวอร์เตอร์ · เลิกเตือนแผงค้างเมื่อต่อครบ · เตือนเครื่องที่ไม่มีสตริง · แผ่น DC ข้ามเครื่องว่าง · SHEET n OF N ทั้งชุด"
  ],
  "requirements": "5c56ea9839289d16",
  "package": {
-  "file": "ascs-app-0.179.0.bin",
-  "size": 21928830,
-  "sha256": "653aee586b41b0c6df216ccd9b877defa26fb26c1cfb2550d6fc007aa40d4f54"
+  "file": "ascs-app-0.180.0.bin",
+  "size": 21929553,
+  "sha256": "44e1f33ba99ca3ee17aac3a54d4902e9ce1589e2feb5b2b1500a8741bad82b6d"
  },
  "setup": {
-  "file": "ascs-setup-0.179.0.bin",
-  "size": 49827889,
-  "sha256": "4c74a7b3d1e6dbb57d564c663400a1617466ff82fe84f2f21557eb063cf1c368",
-  "name": "ASC-Studio-Setup-0.179.0.exe"
+  "file": "ascs-setup-0.180.0.bin",
+  "size": 50081841,
+  "sha256": "2003139a9e35434d12e901974beddaa17e0ea4c62470d6000d5a6dda56388eb7",
+  "name": "ASC-Studio-Setup-0.180.0.exe"
  }
 }
