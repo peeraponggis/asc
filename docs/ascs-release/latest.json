@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.177.0",
+ "version": "0.179.0",
  "published": "2026-11-11",
  "notes": [
-  "รายงานวิศวกรรม: หัวข้อทางเดินดวงอาทิตย์และสิ่งบังแดด 3 หน้า (แผนภูมิวงกลม · มุมเงย-ทิศ + ตารางรายเดือน · ผังจริง + วิธีใช้ออกแบบ) คำนวณจากพิกัดและวัตถุ 3D จริง"
+  "คู่มือ: เพิ่มหัวข้อ 1.5 มือใหม่ ทางด่วนถึงรายงาน 5 ประเภทงาน (หลังคาบ้าน/โรงงาน/ฟาร์ม/ลอยน้ำ/EV) ภาพจริงทีละขั้น"
  ],
  "requirements": "5c56ea9839289d16",
  "package": {
-  "file": "ascs-app-0.177.0.bin",
-  "size": 20531110,
-  "sha256": "fe7c1c7005c05119e0a8fd66d61590668b266eeb6a0d62e8f313fc7ba9c8eada"
+  "file": "ascs-app-0.179.0.bin",
+  "size": 21928830,
+  "sha256": "653aee586b41b0c6df216ccd9b877defa26fb26c1cfb2550d6fc007aa40d4f54"
  },
  "setup": {
-  "file": "ascs-setup-0.177.0.bin",
-  "size": 46844977,
-  "sha256": "f19214bc290d1c74be8f511b1df3a46dad4eb52cef0edea5556b0e8adaa121fa",
-  "name": "ASC-Studio-Setup-0.177.0.exe"
+  "file": "ascs-setup-0.179.0.bin",
+  "size": 49827889,
+  "sha256": "4c74a7b3d1e6dbb57d564c663400a1617466ff82fe84f2f21557eb063cf1c368",
+  "name": "ASC-Studio-Setup-0.179.0.exe"
  }
 }
