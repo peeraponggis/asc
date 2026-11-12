@@ -197,6 +197,7 @@
         $('t-synced').textContent = S.syncedAt ? S.syncedAt.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : '-';
         const rows = filterRows(allRows(S.defs, S.ovrs), S.defs, S.ovrs, filters());
         const pages = Math.max(1, Math.ceil(rows.length / PAGE));
+        S.pages = pages;
         S.page = Math.min(Math.max(1, S.page), pages);
         const slice = rows.slice((S.page - 1) * PAGE, S.page * PAGE);
         $('t-body').innerHTML = slice.length ? slice.map(r => {
@@ -227,6 +228,7 @@
         let last = 0;
         show.forEach(p => { if (p - last > 1) out.push('<span class="px-1">…</span>'); out.push(b(p, p, p === S.page)); last = p; });
         out.push(b(Math.min(pages, S.page + 1), '›', false));
+        if (pages > 1) out.push(`<span class="inline-flex items-center gap-1 ml-2 text-sm text-slate-500">ไปหน้า<input id="t-goto" type="number" min="1" max="${pages}" value="${S.page}" aria-label="ไปหน้า" class="w-16 px-2 py-1 rounded-md border border-slate-300 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"/><span>/ ${pages.toLocaleString()}</span><button data-goto="1" class="px-2 py-1 rounded-md border bg-white border-slate-300 hover:bg-slate-50">ไป</button></span>`);
         $('t-pager').innerHTML = out.join('');
     }
 
@@ -318,7 +320,12 @@
             const r = await commit(Object.keys(S.dirty));
             msg(`บันทึก ${r.up} รายการ · คืนค่าเดิม ${r.del} รายการ · ASC Studio เห็นตอนเปิดครั้งถัดไป`);
         }));
-        $('t-pager').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (!b) return; S.page = +b.dataset.p; render(); $('t-table-top').scrollIntoView({ block: 'nearest' }); });
+        const goTo = v => { S.page = Math.min(Math.max(1, Math.floor(+v || 1)), S.pages || 1); render(); $('t-table-top').scrollIntoView({ block: 'nearest' }); };
+        $('t-pager').addEventListener('click', e => {
+            if (e.target.closest('[data-goto]')) { goTo($('t-goto').value); return; }
+            const b = e.target.closest('[data-p]'); if (!b) return; S.page = +b.dataset.p; render(); $('t-table-top').scrollIntoView({ block: 'nearest' });
+        });
+        $('t-pager').addEventListener('keydown', e => { if (e.target.id === 't-goto' && e.key === 'Enter') { e.preventDefault(); goTo(e.target.value); } });
         let qT;
         $('t-q').addEventListener('input', () => { clearTimeout(qT); qT = setTimeout(() => { S.page = 1; render(); }, 150); });
         $('t-prefix').addEventListener('change', () => { S.page = 1; render(); });
