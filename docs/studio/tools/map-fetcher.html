@@ -21,6 +21,8 @@ header b{font-size:18px}
 header span{opacity:.85;font-size:13px}
 main{max-width:1180px;margin:16px auto 60px;padding:0 14px;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:14px;align-items:start}
 @media(max-width:980px){main{grid-template-columns:1fr}}
+/* main มี display:grid ซึ่งชนะ [hidden] ของเบราว์เซอร์ → ต้องสั่งซ่อนเอง ไม่งั้นสองแท็บหน้าแสดงพร้อมกัน */
+main[hidden]{display:none}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px}
 .card>h2{margin:0 0 8px;font-size:15px;display:flex;align-items:center;gap:8px}
 .card>h2 i{background:var(--accent);color:var(--accent-ink);font-style:normal;font-size:12px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;flex:none}
@@ -60,6 +62,18 @@ footer{max-width:1180px;margin:0 auto;padding:0 14px 30px;font-size:12px;color:v
 .cropbox { display: flex; gap: 10px; align-items: center; margin-top: 8px; padding: 8px 10px; border: 1px solid #3ddc97; border-radius: 8px; background: rgba(61,220,151,.08); }
 .cropbox canvas { max-width: 160px; max-height: 110px; border: 1px solid var(--line); border-radius: 4px; background: #000; }
 .cropbox #cropMsg { font-size: 13px; line-height: 1.5; }
+/* แท็บหน้า (แผนที่ดาวเทียม / โฉนดที่ดิน) — ลุงพีสั่ง 12 พ.ย. 2569 */
+.pagetabs{max-width:1180px;margin:12px auto 0;padding:0 14px;display:flex;gap:8px;flex-wrap:wrap}
+.pagetabs button{font:inherit;font-weight:600;padding:8px 16px;border:1px solid var(--line);border-bottom:0;background:var(--panel-2);color:var(--ink-2);border-radius:10px 10px 0 0;cursor:pointer}
+.pagetabs button.on{background:var(--panel);color:var(--accent);border-color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
+#deedStage{position:relative;background:#22262a;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;min-height:320px;display:grid;place-items:center}
+#dcv{display:block;max-width:100%;cursor:crosshair;touch-action:none}
+#deedEmpty{color:#9aa3a8;font-size:14px;text-align:center;padding:60px 20px}
+#deedEmpty .small{color:inherit;opacity:.8}
+.shrow{display:grid;grid-template-columns:22px 1fr auto;gap:6px;align-items:start;margin:4px 0;font-size:13px;border-bottom:1px dotted var(--line);padding-bottom:4px}
+.shrow i{font-style:normal;text-align:center;font-weight:600;color:var(--accent)}
+.flist{font-size:13px;margin:4px 0}
+.flist div{display:flex;gap:6px;align-items:center;justify-content:space-between;padding:2px 0}
 </style>
 
 <!-- ธีม ASC ENTERPRISES — ต้องมาหลัง <style> ข้างบนเพื่อให้ค่าโทเคนที่นี่ชนะ
@@ -82,7 +96,12 @@ footer{max-width:1180px;margin:0 auto;padding:0 14px 30px;font-size:12px;color:v
   <span>จับภาพแผนที่ที่เห็นบนจอ → สร้างภาพ + world file ให้นำเข้า ASC ENTERPRISES ได้ทันที</span>
 </header>
 
-<main>
+<nav class="pagetabs" id="pageTabs">
+  <button data-page="map" class="on">🗺️ แผนที่ดาวเทียม + world file</button>
+  <button data-page="deed">🧾 โฉนดที่ดิน (landsmaps)</button>
+</nav>
+
+<main id="mapPage">
 <div>
   <div class="card">
     <h2><i>1</i> รับภาพ</h2>
@@ -182,6 +201,78 @@ footer{max-width:1180px;margin:0 auto;padding:0 14px 30px;font-size:12px;color:v
     </div>
     <div id="saveMsg"></div>
     <div class="small" id="cornerOut"></div>
+  </div>
+</div>
+</main>
+
+<main id="deedPage" hidden>
+<div>
+  <div class="card">
+    <h2><i>1</i> รับภาพแปลงที่ดินจาก landsmaps</h2>
+    <div class="row">
+      <button class="btn primary" id="dOpenLands">🌐 เปิด landsmaps.dol.go.th</button>
+      <label class="btn" style="display:inline-block">📁 เลือกไฟล์ภาพแปลง
+        <input type="file" id="dPick" accept="image/*" style="display:none"></label>
+      <button class="btn" id="dPaste">📋 วางจากคลิปบอร์ด</button>
+    </div>
+    <div class="hint">
+      ที่ <b>landsmaps.dol.go.th</b> ค้นแปลงจากเลขโฉนด/ระวาง → เปิดชั้น "รูปแปลงที่ดิน" ให้เห็น<b>เส้นขอบแปลงสีแดง</b> →
+      บันทึกภาพหน้าจอ (<code>Win+Shift+S</code>) → กลับมากด <b>วางจากคลิปบอร์ด</b> หรือเลือกไฟล์ภาพ<br>
+      ภาพควรเห็นจุดสังเกตร่วมกับภาพดาวเทียม (หัวมุมถนน มุมรั้ว มุมแปลงข้างเคียง) อย่างน้อย 2–3 จุด เพื่อใช้ปักจุดอ้างอิง
+    </div>
+    <div id="dCapMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2><i>2</i> ปักจุดอ้างอิง + วาดแนวเขต</h2>
+    <div class="tools" id="dToolbar">
+      <button class="btn sm on" data-dtool="gcp" title="คลิกจุดบนภาพที่รู้พิกัดจริง แล้วใส่พิกัดในขั้น 3">📍 ปักจุดอ้างอิง</button>
+      <button class="btn sm" data-dtool="poly" title="คลิกมุมแปลงทีละจุดรอบที่ดิน แล้วกด ✓ จบรูปนี้ (หรือดับเบิลคลิก)">⬟ วาดรูปปิด (แปลง)</button>
+      <button class="btn sm" data-dtool="line" title="คลิกตามแนว เช่น แนวถนน แนวลำราง แล้วกด ✓ จบรูปนี้">✏️ วาดเส้น (polyline)</button>
+      <button class="btn sm" data-dtool="pt" title="คลิกครั้งเดียว = หมุดหลักเขต 1 จุด">• จุด (หลักเขต)</button>
+      <button class="btn sm" data-dtool="del" title="คลิกใกล้รูปที่ต้องการลบ">🗑 ลบรูป</button>
+      <span style="flex:1"></span>
+      <button class="btn sm" id="dFinish" disabled>✓ จบรูปนี้ (Enter)</button>
+      <button class="btn sm" id="dUndo" disabled>↶ ถอยจุด</button>
+    </div>
+    <div id="deedStage"><div id="deedEmpty">ยังไม่มีภาพแปลง — รับภาพในขั้น 1<br><span class="small">หน้านี้รับการวาง Ctrl+V ได้ตลอดเวลา</span></div><canvas id="dcv" hidden></canvas></div>
+    <div class="small" id="dToolHelp" style="margin-top:6px"></div>
+  </div>
+</div>
+
+<div>
+  <div class="card">
+    <h2><i>3</i> พิกัดของจุดอ้างอิง</h2>
+    <div class="small">ใส่พิกัดจริงของแต่ละจุด — รับทั้ง <b>lat, lng</b> (เช่น <code>16.4628994, 102.8242508</code>)
+      และ <b>UTM WGS84</b> (เช่น <code>47N 262000 1820000</code> หรือ <code>zone 48 512345 1655000</code>)<br>
+      หาพิกัดได้จาก Google Maps (คลิกขวา → คลิกบรรทัดพิกัดเพื่อคัดลอก) ที่จุดสังเกตเดียวกันกับที่ปักบนภาพโฉนด</div>
+    <div id="dGcpList"></div>
+    <div class="row"><button class="btn sm" id="dClearGcp">ล้างจุดทั้งหมด</button></div>
+    <div id="dRefMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2><i>4</i> สำเนาโฉนด (แนบไปกับงาน)</h2>
+    <div class="row">
+      <label class="btn" style="display:inline-block">📎 แนบไฟล์โฉนด (PDF / JPG)
+        <input type="file" id="dDeedFiles" accept="application/pdf,image/jpeg,image/png" multiple style="display:none"></label>
+      <input type="text" id="dDeedNo" placeholder="เลขโฉนด / ระวาง" style="flex:1">
+    </div>
+    <div class="flist" id="dFileList"></div>
+    <div class="hint">⚠ สำเนาโฉนดเป็น<b>ข้อมูลส่วนบุคคลของลูกค้า</b> — ไฟล์จะถูกเก็บไปกับไฟล์งานของโปรแกรมเท่านั้น
+      ไม่ถูกอัปโหลดไปที่ใด และห้ามนำขึ้น git</div>
+  </div>
+
+  <div class="card">
+    <h2><i>5</i> รูปที่วาด &amp; บันทึก</h2>
+    <div id="dShapes"></div>
+    <div id="dResMsg"></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn primary" id="dSend" hidden disabled>📤 ส่งแนวเขตเข้าผัง</button>
+      <button class="btn" id="dDl" disabled>⬇ บันทึกไฟล์แนวเขต (.ascdeed.json)</button>
+      <button class="btn sm" id="dSelfTest" title="ตรวจสูตรแปลง UTM และการอ้างอิง">🧪 ตรวจสูตร</button>
+    </div>
+    <div id="dSaveMsg"></div>
   </div>
 </div>
 </main>
@@ -975,6 +1066,382 @@ $('bSelfTest').onclick = () => {
 };
 
 setMsg('resMsg', 'warn', 'ยังไม่มีภาพ');
+
+/* =====================================================================
+   แท็บโฉนดที่ดิน (landsmaps.dol.go.th) — ลุงพีสั่ง 12 พ.ย. 2569
+   นำภาพแปลงที่บันทึกไว้มาปักจุดอ้างอิง → วาดแนวเขต (รูปปิด/เส้น/จุด)
+   → ส่งเป็นพิกัด lng/lat ให้ ASC Studio วางทับผังในเมนูวาดอาคาร
+
+   หลักการ: ใช้ตัวแก้สมการ solveFromGcps ตัวเดียวกับโหมด B ของแท็บแผนที่
+   (pixel → normalized Mercator) จะได้ไม่มีสูตรสองชุดที่หลุดจากกันภายหลัง
+   ไม่มีการเดาพิกัด — จุดอ้างอิง < 2 จุด = บอกว่ายังอ้างอิงไม่ได้ และปิดปุ่มส่ง/บันทึก
+   ===================================================================== */
+const DEED_MIN_REF = 2;
+const dd = {
+  bmp: null, W: 0, H: 0, tool: 'gcp',
+  gcps: [],        // [{u,v,lat,lng,from}]
+  shapes: [],      // [{kind:'polygon'|'polyline'|'point', pts:[{u,v}], label}]
+  draft: null,     // {kind, pts:[{u,v}]}
+  files: [],       // [{name,mime,dataUrl}]
+  view: { s: 1 },
+  sol: null,       // ผลแก้สมการ (null = ยังอ้างอิงไม่ได้)
+};
+
+/* ---- UTM WGS84 → lat/lng (สูตรผกผันมาตรฐาน · ใช้กับโฉนดไทยโซน 47–48N) ----
+   รับ "47N 262000 1820000" · "zone 48 512345 1655000"
+   โฉนดเก่าที่อ้าง Indian 1975 จะเคลื่อนจาก WGS84 ราว 300–400 ม. → เตือนผู้ใช้ให้เทียบกับภาพดาวเทียม */
+const UTM_K0 = 0.9996;
+function utmToLatLng(zone, east, north, south) {
+  const a = A_EARTH, e2 = E2;
+  const e1 = (1 - Math.sqrt(1 - e2)) / (1 + Math.sqrt(1 - e2));
+  const x = east - 500000, y = south ? north - 10000000 : north;
+  const M = y / UTM_K0;
+  const mu = M / (a * (1 - e2 / 4 - (3 * e2 * e2) / 64 - (5 * e2 ** 3) / 256));
+  const phi1 = mu + ((3 * e1) / 2 - (27 * e1 ** 3) / 32) * Math.sin(2 * mu)
+    + ((21 * e1 * e1) / 16 - (55 * e1 ** 4) / 32) * Math.sin(4 * mu)
+    + ((151 * e1 ** 3) / 96) * Math.sin(6 * mu) + ((1097 * e1 ** 4) / 512) * Math.sin(8 * mu);
+  const sp = Math.sin(phi1), cp = Math.cos(phi1), tp = Math.tan(phi1);
+  const ep2 = e2 / (1 - e2);
+  const N1 = a / Math.sqrt(1 - e2 * sp * sp);
+  const T1 = tp * tp, C1 = ep2 * cp * cp;
+  const R1 = (a * (1 - e2)) / Math.pow(1 - e2 * sp * sp, 1.5);
+  const D = x / (N1 * UTM_K0);
+  const lat = phi1 - ((N1 * tp) / R1) * ((D * D) / 2
+    - ((5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * ep2) * D ** 4) / 24
+    + ((61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * ep2 - 3 * C1 * C1) * D ** 6) / 720);
+  const lng = (D - ((1 + 2 * T1 + C1) * D ** 3) / 6
+    + ((5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * ep2 + 24 * T1 * T1) * D ** 5) / 120) / cp;
+  return { lat: lat * R2D, lng: (zone * 6 - 183) + lng * R2D };
+}
+/** อ่านพิกัดที่ผู้ใช้พิมพ์ — คืน {lat,lng,from:'latlng'|'utm'} หรือ null */
+function parseDeedLL(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return null;
+  const z = raw.match(/(?:zone\s*|โซน\s*)?\b(4[0-9]|5[0-9]|[1-9])\s*([NnSs])?\b[^0-9-]{0,6}(\d{5,7}(?:\.\d+)?)\s*[,\s]\s*(\d{5,8}(?:\.\d+)?)/);
+  if (z && +z[3] >= 100000 && +z[4] >= 10000) {
+    const r = utmToLatLng(+z[1], +z[3], +z[4], (z[2] || 'N').toUpperCase() === 'S');
+    if (Math.abs(r.lat) <= 90 && Math.abs(r.lng) <= 180) return { lat: +r.lat.toFixed(8), lng: +r.lng.toFixed(8), from: 'utm' };
+  }
+  const ll = parseLL(raw);
+  return ll ? { lat: ll.lat, lng: ll.lng, from: 'latlng' } : null;
+}
+
+/* ---------------- สลับแท็บหน้า ---------------- */
+function setPage(p) {
+  [...document.querySelectorAll('#pageTabs button')].forEach((b) => b.classList.toggle('on', b.dataset.page === p));
+  $('mapPage').hidden = p !== 'map'; $('deedPage').hidden = p !== 'deed';
+  if (p === 'deed' && dd.bmp) { dFit(); dDraw(); }
+}
+$('pageTabs').addEventListener('click', (e) => { const b = e.target.closest('button[data-page]'); if (b) setPage(b.dataset.page); });
+
+$('dOpenLands').onclick = () => window.open('https://landsmaps.dol.go.th/', '_blank', 'noopener');
+
+/* ---------------- ขั้น 1 · รับภาพแปลง ---------------- */
+async function useDeedBitmap(bmp) {
+  dd.bmp = bmp; dd.W = bmp.width; dd.H = bmp.height;
+  dd.gcps = []; dd.shapes = []; dd.draft = null;
+  $('deedEmpty').hidden = true; $('dcv').hidden = false;
+  dFit(); dRenderGcps(); dDraw(); dRecompute();
+  setMsg('dCapMsg', 'ok', 'รับภาพแปลงแล้ว ' + bmp.width + '×' + bmp.height + ' px — ขั้นต่อไป: เลือก 📍 ปักจุดอ้างอิง แล้วคลิกจุดสังเกตบนภาพ');
+}
+$('dPick').onchange = async (e) => { const f = e.target.files[0]; if (f) await useDeedBitmap(await createImageBitmap(f)); e.target.value = ''; };
+$('dPaste').onclick = async () => {
+  try {
+    for (const it of await navigator.clipboard.read()) {
+      const type = it.types.find((x) => x.startsWith('image/'));
+      if (type) { await useDeedBitmap(await createImageBitmap(await it.getType(type))); return; }
+    }
+    setMsg('dCapMsg', 'warn', 'ไม่พบภาพในคลิปบอร์ด — กด Win+Shift+S คัดลอกภาพแปลงก่อน');
+  } catch (err) { setMsg('dCapMsg', 'err', 'อ่านคลิปบอร์ดไม่ได้: ' + (err && err.message ? err.message : err) + ' — ใช้ปุ่มเลือกไฟล์ภาพแทน'); }
+};
+window.addEventListener('paste', async (e) => {
+  if ($('deedPage').hidden) return;
+  const f = [...(e.clipboardData ? e.clipboardData.files : [])][0];
+  if (f && f.type.startsWith('image/')) { e.preventDefault(); e.stopImmediatePropagation(); await useDeedBitmap(await createImageBitmap(f)); }
+}, true);
+
+/* ---------------- ขั้น 2 · ภาพ + เครื่องมือ ---------------- */
+const dcv = $('dcv'), dctx = dcv.getContext('2d');
+function dFit() {
+  const maxW = Math.min(820, ($('deedStage').clientWidth || 820) - 2), maxH = 560;
+  dd.view.s = Math.min(maxW / dd.W, maxH / dd.H, 1);
+  dcv.width = Math.round(dd.W * dd.view.s); dcv.height = Math.round(dd.H * dd.view.s);
+}
+const dToDisp = (u, v) => ({ x: u * dd.view.s, y: v * dd.view.s });
+const dToImg = (ev) => {
+  const r = dcv.getBoundingClientRect();
+  return { u: (ev.clientX - r.left) * (dcv.width / r.width) / dd.view.s,
+           v: (ev.clientY - r.top) * (dcv.height / r.height) / dd.view.s };
+};
+const SH_COL = { polygon: '#c0392b', polyline: '#2e86de', point: '#8e44ad' };
+function dDraw() {
+  if (!dd.bmp) return;
+  dctx.clearRect(0, 0, dcv.width, dcv.height);
+  dctx.drawImage(dd.bmp, 0, 0, dcv.width, dcv.height);
+  const trace = (pts, close) => {
+    dctx.beginPath();
+    pts.forEach((q, i) => { const p = dToDisp(q.u, q.v); if (i) dctx.lineTo(p.x, p.y); else dctx.moveTo(p.x, p.y); });
+    if (close) dctx.closePath();
+  };
+  dd.shapes.forEach((sh) => {
+    if (sh.kind === 'point') {
+      const p = dToDisp(sh.pts[0].u, sh.pts[0].v);
+      dctx.fillStyle = SH_COL.point; dctx.beginPath(); dctx.arc(p.x, p.y, 5, 0, 7); dctx.fill();
+      dctx.strokeStyle = '#fff'; dctx.lineWidth = 1.4; dctx.stroke();
+      return;
+    }
+    dctx.strokeStyle = SH_COL[sh.kind]; dctx.lineWidth = 2.5;
+    if (sh.kind === 'polygon') { trace(sh.pts, true); dctx.fillStyle = 'rgba(192,57,43,.14)'; dctx.fill(); dctx.stroke(); }
+    else { trace(sh.pts, false); dctx.stroke(); }
+    dctx.fillStyle = SH_COL[sh.kind];
+    sh.pts.forEach((q) => { const p = dToDisp(q.u, q.v); dctx.beginPath(); dctx.arc(p.x, p.y, 3.2, 0, 7); dctx.fill(); });
+  });
+  if (dd.draft && dd.draft.pts.length) {
+    dctx.strokeStyle = '#3ddc97'; dctx.lineWidth = 2; dctx.setLineDash([7, 5]);
+    trace(dd.draft.pts, false); dctx.stroke(); dctx.setLineDash([]);
+    dctx.fillStyle = '#3ddc97';
+    dd.draft.pts.forEach((q) => { const p = dToDisp(q.u, q.v); dctx.beginPath(); dctx.arc(p.x, p.y, 4, 0, 7); dctx.fill(); });
+  }
+  dd.gcps.forEach((g, i) => {
+    const p = dToDisp(g.u, g.v);
+    dctx.fillStyle = g.lat == null ? '#ff9f43' : '#3ddc97';
+    dctx.beginPath(); dctx.arc(p.x, p.y, 6, 0, 7); dctx.fill();
+    dctx.strokeStyle = '#000'; dctx.lineWidth = 1; dctx.stroke();
+    dctx.font = 'bold 11px sans-serif';
+    dctx.fillStyle = '#000'; dctx.fillText(String(i + 1), p.x + 8, p.y - 6);
+    dctx.fillStyle = '#fff'; dctx.fillText(String(i + 1), p.x + 9, p.y - 7);
+  });
+}
+const D_TOOL_HELP = {
+  gcp: '📍 <b>ปักจุดอ้างอิง</b>: คลิกจุดบนภาพโฉนดที่รู้พิกัดจริง — มุมแปลง หัวมุมถนน มุมรั้ว ที่เห็นได้ทั้งในภาพโฉนดและใน Google Maps · ต้องอย่างน้อย <b>2 จุด</b> (3 จุดขึ้นไปดีกว่า · 4 จุดขึ้นไปจึงบอกค่าความคลาดได้) แล้วใส่พิกัดในขั้น 3',
+  poly: '⬟ <b>วาดรูปปิด</b>: คลิกมุมแปลงทีละจุดรอบที่ดินตามเส้นขอบแดงในภาพ แล้วกด <b>✓ จบรูปนี้</b> (หรือดับเบิลคลิก / Enter / คลิกทับจุดแรก) — รูปนี้จะกลายเป็นแนวเขตที่ดินบนผัง',
+  line: '✏️ <b>วาดเส้น</b>: คลิกตามแนวที่ต้องการ (แนวถนน ลำราง ท่อ แนวเขตด้านเดียว) แล้วกด <b>✓ จบรูปนี้</b>',
+  pt: '• <b>จุด</b>: คลิกครั้งเดียว = หมุดหลักเขต 1 จุด (ไว้เทียบตำแหน่งบนผัง)',
+  del: '🗑 <b>ลบรูป</b>: คลิกใกล้รูปที่ต้องการลบ — ลบได้ทั้งรูปปิด เส้น และจุด (จุดอ้างอิงลบที่ขั้น 3)',
+};
+function dShowToolHelp() { $('dToolHelp').innerHTML = D_TOOL_HELP[dd.tool] || ''; }
+$('dToolbar').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-dtool]'); if (!b) return;
+  if (dd.draft) dFinishDraft();                       // เปลี่ยนเครื่องมือ = ปิดรูปที่ค้างก่อน (ไม่ทิ้งงานผู้ใช้เงียบ ๆ)
+  dd.tool = b.dataset.dtool;
+  [...document.querySelectorAll('#dToolbar button[data-dtool]')].forEach((x) => x.classList.toggle('on', x === b));
+  dShowToolHelp(); dDraftBtns();
+});
+dShowToolHelp();
+
+function dDraftBtns() {
+  const n = dd.draft ? dd.draft.pts.length : 0;
+  const need = dd.draft && dd.draft.kind === 'polygon' ? 3 : 2;
+  $('dFinish').disabled = n < need; $('dUndo').disabled = !n;
+}
+function dFinishDraft() {
+  const d = dd.draft; if (!d) return;
+  const need = d.kind === 'polygon' ? 3 : 2;
+  if (d.pts.length >= need) { dd.shapes.push({ kind: d.kind, pts: d.pts, label: '' }); setMsg('dResMsg', '', ''); }
+  else if (d.pts.length) setMsg('dResMsg', 'warn', 'รูปนี้มีแค่ ' + d.pts.length + ' จุด — ' + (d.kind === 'polygon' ? 'รูปปิดต้องมีอย่างน้อย 3 จุด' : 'เส้นต้องมีอย่างน้อย 2 จุด') + ' จึงยังไม่บันทึก');
+  dd.draft = null; dDraftBtns(); dDraw(); dRecompute();
+}
+$('dFinish').onclick = dFinishDraft;
+$('dUndo').onclick = () => { if (dd.draft && dd.draft.pts.length) { dd.draft.pts.pop(); if (!dd.draft.pts.length) dd.draft = null; dDraftBtns(); dDraw(); } };
+
+dcv.addEventListener('pointerdown', (e) => {
+  if (!dd.bmp) return;
+  const p = dToImg(e), u = Math.round(p.u * 10) / 10, v = Math.round(p.v * 10) / 10;
+  if (dd.tool === 'gcp') { dd.gcps.push({ u, v, lat: null, lng: null }); dRenderGcps(); dDraw(); dRecompute(); return; }
+  if (dd.tool === 'pt') { dd.shapes.push({ kind: 'point', pts: [{ u, v }], label: '' }); dDraw(); dRecompute(); return; }
+  if (dd.tool === 'del') { dDeleteNear(u, v); return; }
+  const kind = dd.tool === 'poly' ? 'polygon' : 'polyline';
+  if (!dd.draft || dd.draft.kind !== kind) dd.draft = { kind, pts: [] };
+  // คลิกทับจุดแรกอีกครั้ง (รูปปิด) = จบรูป — แบบเดียวกับการวาดอาคารในโปรแกรม
+  const f = dd.draft.pts[0];
+  if (kind === 'polygon' && dd.draft.pts.length >= 3 && f && Math.hypot(f.u - u, f.v - v) * dd.view.s < 10) { dFinishDraft(); return; }
+  dd.draft.pts.push({ u, v });
+  dDraftBtns(); dDraw();
+});
+dcv.addEventListener('dblclick', (e) => { e.preventDefault(); dFinishDraft(); });
+window.addEventListener('keydown', (e) => {
+  if ($('deedPage').hidden) return;
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if (e.key === 'Enter' && dd.draft) { e.preventDefault(); dFinishDraft(); }
+  if (e.key === 'Escape' && dd.draft) { e.preventDefault(); dd.draft = null; dDraftBtns(); dDraw(); }
+});
+function dDeleteNear(u, v) {
+  let best = null, bd = Infinity;
+  dd.shapes.forEach((sh, i) => { sh.pts.forEach((q) => { const d = Math.hypot(q.u - u, q.v - v); if (d < bd) { bd = d; best = i; } }); });
+  if (best == null || bd * dd.view.s > 18) { setMsg('dResMsg', 'warn', 'คลิกให้ใกล้จุดของรูปที่จะลบมากกว่านี้'); return; }
+  dd.shapes.splice(best, 1); setMsg('dResMsg', '', ''); dDraw(); dRecompute();
+}
+
+/* ---------------- ขั้น 3 · พิกัดจุดอ้างอิง ---------------- */
+function dRenderGcps() {
+  $('dGcpList').innerHTML = dd.gcps.map((g, i) =>
+    '<div class="gcp"><b>' + (i + 1) + '</b>' +
+    '<input type="text" data-di="' + i + '" value="' + (g.lat == null ? '' : g.lat + ', ' + g.lng) + '" placeholder="lat, lng หรือ 47N 262000 1820000">' +
+    '<button class="btn sm" data-ddel="' + i + '">✕</button></div>').join('') ||
+    '<div class="small">ยังไม่มีจุด — เลือกเครื่องมือ 📍 แล้วคลิกบนภาพแปลง</div>';
+}
+$('dGcpList').addEventListener('input', (e) => {
+  const i = e.target.dataset.di; if (i == null) return;
+  const r = parseDeedLL(e.target.value);
+  dd.gcps[+i].lat = r ? r.lat : null; dd.gcps[+i].lng = r ? r.lng : null; dd.gcps[+i].from = r ? r.from : null;
+  dDraw(); dRecompute();
+});
+$('dGcpList').addEventListener('click', (e) => {
+  const i = e.target.dataset.ddel; if (i == null) return;
+  dd.gcps.splice(+i, 1); dRenderGcps(); dDraw(); dRecompute();
+});
+$('dClearGcp').onclick = () => { dd.gcps = []; dRenderGcps(); dDraw(); dRecompute(); };
+dRenderGcps();
+
+/* ---------------- ขั้น 4 · สำเนาโฉนด ---------------- */
+const MAX_DEED_FILE = 12 * 1024 * 1024;
+$('dDeedFiles').onchange = async (e) => {
+  for (const f of [...e.target.files]) {
+    if (f.size > MAX_DEED_FILE) { setMsg('dSaveMsg', 'warn', 'ไฟล์ ' + f.name + ' ใหญ่เกิน 12 MB — ย่อก่อนแนบ'); continue; }
+    const dataUrl = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(new Error('อ่านไฟล์ไม่ได้')); fr.readAsDataURL(f); });
+    dd.files.push({ name: f.name, mime: f.type || 'application/octet-stream', dataUrl });
+  }
+  e.target.value = ''; dRenderFiles(); dRecompute();
+};
+function dRenderFiles() {
+  $('dFileList').innerHTML = dd.files.map((f, i) =>
+    '<div><span>📄 ' + f.name + ' <span class="small">(' + (f.dataUrl.length / 1398).toFixed(0) + ' KB)</span></span><button class="btn sm" data-fdel="' + i + '">✕</button></div>').join('') ||
+    '<div class="small">ยังไม่ได้แนบสำเนาโฉนด (ไม่บังคับ)</div>';
+}
+$('dFileList').addEventListener('click', (e) => {
+  const i = e.target.dataset.fdel; if (i == null) return;
+  dd.files.splice(+i, 1); dRenderFiles(); dRecompute();
+});
+dRenderFiles();
+$('dDeedNo').addEventListener('input', dRecompute);
+
+/* ---------------- ขั้น 5 · อ้างอิงพิกัด + ผลลัพธ์ ---------------- */
+let DEED_OUT = null;
+function dRecompute() {
+  DEED_OUT = null; dd.sol = null;
+  $('dSend').disabled = true; $('dDl').disabled = true;
+  if (!dd.bmp) { setMsg('dRefMsg', 'warn', 'ยังไม่มีภาพแปลง'); $('dShapes').innerHTML = ''; return; }
+  const pts = dd.gcps.filter((g) => g.lat != null);
+  if (pts.length < DEED_MIN_REF) {
+    setMsg('dRefMsg', 'warn', '<b>ยังอ้างอิงพิกัดไม่ได้</b> — ปักจุดอ้างอิงแล้วใส่พิกัดจริงให้ครบอย่างน้อย ' + DEED_MIN_REF + ' จุด (ขณะนี้ ' + pts.length + ' จุด) · โปรแกรมไม่เดาตำแหน่งให้ และยังส่งเข้าผังไม่ได้');
+    dRenderShapes(null); return;
+  }
+  let sol;
+  try { sol = solveFromGcps(pts); }
+  catch (err) { setMsg('dRefMsg', 'err', 'อ้างอิงพิกัดไม่ได้: ' + (err && err.message ? err.message : err)); dRenderShapes(null); return; }
+  dd.sol = sol;
+  const toLL = (u, v) => { const q = sol.fn({ x: u, y: v }); return { lat: latOf(q.y), lng: lngOf(q.x) }; };
+  const utm = pts.some((g) => g.from === 'utm');
+  setMsg('dRefMsg', 'ok',
+    'อ้างอิงพิกัดแล้วจาก <b>' + pts.length + ' จุด</b> · วิธี ' + sol.method + ' · ' +
+    (sol.rmse == null
+      ? 'ความคลาด: <b>ประเมินไม่ได้</b> (จำนวนจุดพอดีคำตอบ — ใส่ 4 จุดขึ้นไปจึงบอกค่าได้)'
+      : 'RMSE <b>' + sol.rmse.toFixed(2) + ' ม.</b> (' + sol.residuals.map((r, i) => '#' + (i + 1) + ' ' + r.toFixed(2)).join(' · ') + ')') +
+    (utm ? '<br>⚠ มีจุดที่ใส่เป็น UTM — ถือเป็น <b>UTM WGS84</b> ถ้าโฉนดอ้าง Indian 1975 ค่าจะเคลื่อนราว 300–400 ม. ให้เทียบกับภาพดาวเทียมก่อนใช้' : ''));
+  if (!dd.shapes.length) { dRenderShapes(toLL); setMsg('dResMsg', 'warn', 'ยังไม่ได้วาดรูป — เลือก ⬟ วาดรูปปิด แล้วคลิกมุมแปลงรอบที่ดิน'); return; }
+  const shapes = dd.shapes.map((sh) => ({
+    kind: sh.kind, label: sh.label || '',
+    lnglat: sh.pts.map((q) => { const ll = toLL(q.u, q.v); return [+ll.lng.toFixed(8), +ll.lat.toFixed(8)]; }),
+  }));
+  DEED_OUT = {
+    schema: 'asc-studio/deed-plot/1',
+    deedNo: ($('dDeedNo').value || '').trim() || undefined,
+    ref: { points: pts.length, method: sol.method, rmseM: sol.rmse == null ? undefined : +sol.rmse.toFixed(2) },
+    shapes,
+    files: dd.files.length ? dd.files : undefined,
+  };
+  dRenderShapes(toLL);
+  setMsg('dResMsg', 'ok', 'พร้อมส่ง — ' + shapes.length + ' รูป' + (dd.files.length ? ' · แนบสำเนาโฉนด ' + dd.files.length + ' ไฟล์' : ''));
+  $('dDl').disabled = false; if (EMBEDDED) $('dSend').disabled = false;
+}
+/** พื้นที่/ความยาวจริงบนพื้นดิน (ม.) จาก lng/lat — ใช้รัศมีทรงรีชุดเดียวกับ distM */
+function dGroundMetrics(ll, closed) {
+  if (ll.length < 2) return null;
+  const lat0 = ll.reduce((a, p) => a + p[1], 0) / ll.length;
+  const R = radii(lat0);
+  const xy = ll.map(([lng, lat]) => ({ x: (lng - ll[0][0]) * D2R * R.rn * Math.cos(lat0 * D2R), y: (lat - ll[0][1]) * D2R * R.rm }));
+  let len = 0; for (let i = 1; i < xy.length; i++) len += Math.hypot(xy[i].x - xy[i - 1].x, xy[i].y - xy[i - 1].y);
+  if (!closed) return { len };
+  len += Math.hypot(xy[0].x - xy[xy.length - 1].x, xy[0].y - xy[xy.length - 1].y);
+  const area = Math.abs(xy.reduce((a, p, i) => a + p.x * xy[(i + 1) % xy.length].y - xy[(i + 1) % xy.length].x * p.y, 0)) / 2;
+  return { len, area };
+}
+function dRenderShapes(toLL) {
+  const NAME = { polygon: '⬟ รูปปิด (แปลง)', polyline: '✏️ เส้น', point: '• จุด' };
+  $('dShapes').innerHTML = dd.shapes.map((sh, i) => {
+    let info = sh.pts.length + ' จุด';
+    if (toLL) {
+      const ll = sh.pts.map((q) => { const p = toLL(q.u, q.v); return [p.lng, p.lat]; });
+      if (sh.kind === 'point') info = ll[0][1].toFixed(7) + ', ' + ll[0][0].toFixed(7);
+      else {
+        const m = dGroundMetrics(ll, sh.kind === 'polygon');
+        if (m && sh.kind === 'polygon') info = Math.round(m.area).toLocaleString() + ' ตร.ม. (' + (m.area / 1600).toFixed(2) + ' ไร่) · รอบ ' + m.len.toFixed(1) + ' ม.';
+        else if (m) info = 'ยาว ' + m.len.toFixed(1) + ' ม. · ' + sh.pts.length + ' จุด';
+      }
+    }
+    return '<div class="shrow"><i>' + (i + 1) + '</i><span>' + NAME[sh.kind] + ' — ' + info + '<br>' +
+      '<input type="text" data-slb="' + i + '" value="' + (sh.label || '').replace(/"/g, '&quot;') + '" placeholder="ชื่อกำกับ (ไม่บังคับ) เช่น แปลงโฉนดเลขที่ 12345" style="width:100%;margin-top:3px"></span>' +
+      '<button class="btn sm" data-sdel="' + i + '">✕</button></div>';
+  }).join('') || '<div class="small">ยังไม่มีรูปที่วาด</div>';
+}
+$('dShapes').addEventListener('input', (e) => {
+  const i = e.target.dataset.slb; if (i == null) return;
+  dd.shapes[+i].label = e.target.value;
+  if (DEED_OUT && DEED_OUT.shapes[+i]) DEED_OUT.shapes[+i].label = e.target.value;
+});
+$('dShapes').addEventListener('click', (e) => {
+  const i = e.target.dataset.sdel; if (i == null) return;
+  dd.shapes.splice(+i, 1); dDraw(); dRecompute();
+});
+
+$('dSend').onclick = () => {
+  if (!DEED_OUT || !TARGET) return;
+  TARGET.postMessage({ kind: 'asc.mapfetch.deed', deed: DEED_OUT }, location.origin);
+  setMsg('dSaveMsg', 'ok', 'ส่งแนวเขตโฉนดเข้าผังแล้ว — ดูได้บนผัง (เส้นม่วง) และในผลตรวจ');
+};
+$('dDl').onclick = () => {
+  if (!DEED_OUT) return;
+  const base = String(DEED_OUT.deedNo || 'deed').replace(/[\\/:*?"<>|]/g, '_');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(DEED_OUT, null, 1)], { type: 'application/json' }));
+  a.download = base + '.ascdeed.json';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  setMsg('dSaveMsg', 'ok', 'บันทึก <b>' + a.download + '</b> แล้ว — นำเข้าที่ ASC Studio → เมนู <b>อาคาร</b> → <b>นำเข้าแนวเขตโฉนด</b>' +
+    (dd.files.length ? '<br>⚠ ไฟล์นี้มีสำเนาโฉนดอยู่ข้างใน = ข้อมูลส่วนบุคคลของลูกค้า เก็บไว้กับไฟล์งาน ห้ามนำขึ้น git หรือส่งต่อ' : ''));
+};
+
+$('dSelfTest').onclick = () => {
+  const out = [];
+  const ok = (name, got, want, tol) => { const pass = Math.abs(got - want) <= tol; out.push((pass ? '✅ ' : '❌ ') + name + ': ' + got + ' (คาด ' + want + ' ±' + tol + ')'); };
+  // กึ่งกลางโซน (E = 500000) ต้องได้ลองจิจูดกลางโซนพอดี
+  ok('E=500000 โซน 47 → lng = 99°', utmToLatLng(47, 500000, 1500000, false).lng, 99, 1e-6);
+  ok('E=500000 โซน 48 → lng = 105°', utmToLatLng(48, 500000, 1500000, false).lng, 105, 1e-6);
+  // UTM 47N ย่านขอนแก่น
+  const ll = utmToLatLng(47, 262000, 1820000, false);
+  ok('UTM 47N 262000/1820000 → lat', +ll.lat.toFixed(4), 16.4498, 0.01);
+  ok('UTM 47N 262000/1820000 → lng', +ll.lng.toFixed(4), 96.7709, 0.01);
+  // อ่านข้อความพิกัด
+  const a1 = parseDeedLL('16.4628994, 102.8242508');
+  out.push(a1 && a1.from === 'latlng' && a1.lat === 16.4628994 ? '✅ อ่าน lat,lng ครบทศนิยม' : '❌ อ่าน lat,lng ไม่ได้');
+  const a2 = parseDeedLL('47N 262000 1820000');
+  out.push(a2 && a2.from === 'utm' ? '✅ อ่าน UTM 47N' : '❌ อ่าน UTM ไม่ได้');
+  const a3 = parseDeedLL('zone 48 512345 1655000');
+  out.push(a3 && a3.from === 'utm' && Math.abs(a3.lng - 105.1157) < 0.05 ? '✅ อ่าน UTM แบบ zone 48' : '❌ อ่าน UTM zone 48 ไม่ได้: ' + JSON.stringify(a3));
+  // กติกา: จุดอ้างอิงไม่ถึง 2 จุด = ห้ามออกผล
+  out.push(DEED_MIN_REF >= 2 ? '✅ กติกาจุดอ้างอิงน้อยสุด 2 จุด' : '❌ กติกาจุดอ้างอิงผิด');
+  // พื้นที่: สี่เหลี่ยม 100 × 100 ม. ที่ lat 16 ต้องได้ ~10,000 ตร.ม. · รอบ 400 ม.
+  const lat0 = 16, R = radii(lat0);
+  const dLng = 100 / (D2R * R.rn * Math.cos(lat0 * D2R)), dLat = 100 / (D2R * R.rm);
+  const m = dGroundMetrics([[102, lat0], [102 + dLng, lat0], [102 + dLng, lat0 + dLat], [102, lat0 + dLat]], true);
+  ok('พื้นที่สี่เหลี่ยม 100×100 ม. (ตร.ม.)', Math.round(m.area), 10000, 30);
+  ok('เส้นรอบรูป 100×100 ม. (ม.)', Math.round(m.len), 400, 2);
+  setMsg('dSaveMsg', out.some((x) => x[0] === '❌') ? 'err' : 'ok', out.join('<br>'));
+};
+
+if (EMBEDDED) $('dSend').hidden = false;
+dRecompute();
+try { if (new URLSearchParams(location.search).get('tab') === 'deed') setPage('deed'); } catch (e) { /* ไม่ระบุ = แท็บแผนที่ */ }
 </script>
 </body>
 </html>
