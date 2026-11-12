@@ -1,5 +1,17 @@
-# Changelog — Auto Solar Co-pilot Studio (ASC Studio)
+# Changelog — ASC Enterprise (เว็บ · ชื่อเดิม ASC Cloud)
+> โปรแกรมออกแบบ ASC Studio (ASCS) อยู่คนละ repo คือ `asc_auto` · ที่นี่คือเว็บแอปและรุ่นคลาวด์เท่านั้น
 โดย ลุงพี (Peerapong) · ProInventive
+
+---
+
+## [4.11.2] — 2569-11-12
+### แก้ชื่อที่ค้างจากตอนเปลี่ยนชื่อ ASC Cloud → ASC Enterprise
+โดย ลุงพี
+
+- `VERSION.json` · `CHANGELOG.md` · `README.md` · `STATUS.md` เรียก repo นี้ว่า **ASC Enterprise** ไม่ใช่ ASC Studio (คนละโปรแกรม อยู่ repo `asc_auto`)
+- ข้อความที่ผู้ใช้เห็นซึ่งหมายถึง "แอป" เปลี่ยนเป็น ASC Enterprise: หน้า Settings (รายงาน · กรอบงาน) · เข้าสู่ระบบและหน้าแรกของ ASC Architect · บัญชีในหน้า Dashboard
+- ข้อความที่หมายถึง **ชั้นหลังร้านบน Supabase** ยังใช้ชื่อ ASC Cloud ตามเดิม (`asc-cloud.js` · ข้อความเชื่อมต่อของ Pi monitor) เพราะชื่อนั้นถูกต้องอยู่แล้ว
+- เลื่อน `?v=` ของสคริปต์ในหน้า index เป็น 4.11.2 กันเบราว์เซอร์ใช้ของเก่า
 
 ---
 

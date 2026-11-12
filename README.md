@@ -1,4 +1,6 @@
-# ASC — ProInventive Solar Suite
+# ASC Enterprise — ProInventive Solar Suite
+> ชื่อเดิมคือ ASC Cloud (เปลี่ยนชื่อ 8 พ.ย. 2569) · "ASC Cloud" ที่ยังเห็นในโค้ดหมายถึงชั้นหลังร้านบน Supabase ซึ่งยังใช้ชื่อนี้ถูกต้อง
+> โปรแกรมออกแบบ **ASC Studio (ASCS)** เป็นคนละโปรแกรม โค้ดอยู่ repo `asc_auto` แล้ว build มาวางที่โฟลเดอร์ `docs/studio/`
 
 ระบบออกแบบโซลาร์เซลล์ครบวงจร ใช้งานผ่านเว็บ เก็บข้อมูลบน Supabase
 

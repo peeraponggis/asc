@@ -9,27 +9,27 @@
     <meta name="theme-color" content="#ffffff">
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- ธีมเดียวกับ ASC Studio (Classic · Carbon · Drafting) — ผูกสี Tailwind ทั้งหน้าเข้ากับธีม · 4.9.0 -->
-    <script src="asc-theme.js?v=4.11.1"></script>
+    <script src="asc-theme.js?v=4.11.2"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Noto+Sans+Lao:wght@400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <!-- PDPA Consent Modal — แสดงทุก session ต้องยอมรับก่อนเข้าใช้งาน -->
-    <script src="asc-pdpa.js?v=4.11.1"></script>
+    <script src="asc-pdpa.js?v=4.11.2"></script>
 
     <!-- โหมดคลาวด์ (Supabase) — ถ้ายังไม่ได้ตั้งค่าใน supabase-config.js ระบบจะเก็บในเครื่องแบบเดิม -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
-    <script src="supabase-config.js?v=4.11.1"></script>
-    <script src="asc-cloud.js?v=4.11.1"></script>
+    <script src="supabase-config.js?v=4.11.2"></script>
+    <script src="asc-cloud.js?v=4.11.2"></script>
     <!-- ASC Studio (ascs) ใต้ studio/ — สวิตช์เปิดใช้และกลุ่มผู้ใช้อยู่ใน studio-config.js -->
-    <script src="studio-config.js?v=4.11.1"></script>
+    <script src="studio-config.js?v=4.11.2"></script>
     <!-- คลังสเปกอุปกรณ์ ใช้ในการ์ดผู้ดูแลระบบที่หน้า Settings
          asc-datasheet-parse.js เป็นตัวแยกไฟล์ตัวเดียวกับที่หน้าออกแบบใช้
          จึงมั่นใจได้ว่าไฟล์ที่นำเข้าคลังจะให้ค่าเหมือนกับตอนอัปโหลดตรง ๆ -->
-    <script src="asc-datasheet-parse.js?v=4.11.1"></script>
-    <script src="asc-devices.js?v=4.11.1"></script>
+    <script src="asc-datasheet-parse.js?v=4.11.2"></script>
+    <script src="asc-devices.js?v=4.11.2"></script>
     <!-- แท็บ คำศัพท์ ASCS ในหน้า Settings (4.8.0) -->
-    <script src="asc-terms.js?v=4.11.1"></script>
+    <script src="asc-terms.js?v=4.11.2"></script>
 
     <script>
         /* tailwind.config อยู่ใน asc-theme.js (สี · ฟอนต์ Sarabun · มุม ตามธีม ASC Studio) */
@@ -1081,7 +1081,7 @@
 
                     <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs text-blue-900 leading-relaxed">
                         <b><i class="fa-solid fa-circle-info mr-1"></i> มีผลเมื่อไร:</b> ASC Studio ดึงคำที่แก้ตอนเปิดโปรแกรม (รุ่นเว็บ: รีเฟรชหน้า studio · รุ่นในเครื่อง: เปิดโปรแกรมใหม่) แล้วเก็บไว้ในเครื่อง ไม่มีเน็ตก็ยังใช้คำล่าสุดได้ ·
-                        ข้อความในรายการวัสดุ (BOM) มีผลรอบเปิดถัดไป · รุ่นในเครื่องที่ยังไม่ผูกบัญชี ASC Cloud ใช้ข้อความเดิมของโปรแกรม ·
+                        ข้อความในรายการวัสดุ (BOM) มีผลรอบเปิดถัดไป · รุ่นในเครื่องที่ยังไม่ผูกบัญชี ASC Enterprise ใช้ข้อความเดิมของโปรแกรม ·
                         คีย์ใหม่ที่ ASCS รุ่นใหม่เพิ่มเข้ามาจะขึ้นในตารางนี้เองเมื่อปล่อย ASCS รุ่นเว็บ (ไม่ต้องรัน SQL เพิ่ม)
                     </div>
 

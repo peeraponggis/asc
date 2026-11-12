@@ -1,4 +1,4 @@
-// ASC Architect หน้าเว็บ — รุ่นในเครื่อง (local: เรียก server) และรุ่นออนไลน์ (cloud: ไฟล์คงที่บน ASC Cloud) (โดย ลุงพี)
+// ASC Architect หน้าเว็บ — รุ่นในเครื่อง (local: เรียก server) และรุ่นออนไลน์ (cloud: ไฟล์คงที่บน ASC Enterprise) (โดย ลุงพี)
 (function () {
   "use strict";
   var CLOUD = window.PA_MODE === "cloud";
@@ -205,12 +205,12 @@ document.addEventListener("click", function (e) { var b = e.target.closest && e.
   $("#ver").addEventListener("click", function () { if (!CLOUD) checkUpdate(true); });
 
   function cloudAuth() {
-    // รุ่นออนไลน์วางใต้ ASC Cloud: ใช้ล็อกอินเดียวกับ Dashboard (window.AscCloud) — ไม่มีก็ใช้แบบไม่ล็อกอิน (เครื่องมือคงที่)
+    // รุ่นออนไลน์วางใต้ ASC Enterprise: ใช้ล็อกอินเดียวกับ Dashboard (window.AscCloud) — ไม่มีก็ใช้แบบไม่ล็อกอิน (เครื่องมือคงที่)
     var AC = window.AscCloud;
     if (!AC || !AC.ready) return;
     AC.ready().then(function () {
       var u = AC.currentUser && AC.currentUser();
-      $("#user").textContent = u ? (u.email || u.name || "") : "ยังไม่ได้เข้าสู่ระบบ ASC Cloud";
+      $("#user").textContent = u ? (u.email || u.name || "") : "ยังไม่ได้เข้าสู่ระบบ ASC Enterprise";
     }).catch(function () {});
   }
 

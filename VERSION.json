@@ -1,8 +1,8 @@
 {
-  "product": "Auto Solar Co-pilot Studio",
-  "short": "ASC Studio",
-  "codename": "ASCS",
-  "version": "4.11.1",
+  "product": "ASC Enterprise (ASC Cloud เดิม)",
+  "short": "ASC Enterprise",
+  "codename": "ASCE",
+  "version": "4.11.2",
   "date": "2026-11-12",
   "author": "ลุงพี (Peerapong) · ProInventive",
   "copyright": "Copyright © 2024–2569 ProInventive. All rights reserved.",

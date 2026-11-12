@@ -11,11 +11,11 @@
  *  Author  : Peerapong (Lungpee) -- ProInventive -- giskku@gmail.com
  * ========================================================================== */
 /* ============================================================================
- *  ASC Studio (ascs) ใต้ ASC Cloud — สวิตช์เปิดใช้
+ *  ASC Studio (ascs) ใต้ ASC Enterprise — สวิตช์เปิดใช้
  *  ----------------------------------------------------------------------------
  *  ascs คือโปรแกรมออกแบบ 3D ที่วางไว้ในโฟลเดอร์ studio/ (build จาก repo design-auto
  *  ด้วย  npm run build:cloud  — ดู docs/asc-cloud-merge-plan.md ใน repo นั้น)
- *  ใช้หน้าเข้าสู่ระบบ · Dashboard · สิทธิ์ · การแชร์ ของ ASC Cloud ชุดเดิมทั้งหมด
+ *  ใช้หน้าเข้าสู่ระบบ · Dashboard · สิทธิ์ · การแชร์ ของ ASC Enterprise ชุดเดิมทั้งหมด
  *
  *  enabled : false = ปิด ascs ทั้งระบบ (Dashboard ทำงานแบบเดิมทุกอย่าง)
  *  rollout : 'admin' = เฉพาะผู้ดูแลระบบ + ทีมพัฒนา (ช่วงทดลอง)
