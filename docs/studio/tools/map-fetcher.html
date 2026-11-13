@@ -231,7 +231,12 @@ footer{max-width:1180px;margin:0 auto;padding:0 14px 30px;font-size:12px;color:v
       <button class="btn sm" data-dtool="line" title="คลิกตามแนว เช่น แนวถนน แนวลำราง แล้วกด ✓ จบรูปนี้">✏️ วาดเส้น (polyline)</button>
       <button class="btn sm" data-dtool="pt" title="คลิกครั้งเดียว = หมุดหลักเขต 1 จุด">• จุด (หลักเขต)</button>
       <button class="btn sm" data-dtool="del" title="คลิกใกล้รูปที่ต้องการลบ">🗑 ลบรูป</button>
+      <button class="btn sm" data-dtool="pan" title="ลากเพื่อเลื่อนภาพ (หรือกดปุ่มกลางเมาส์ลากได้ทุกเครื่องมือ)">✋ เลื่อนภาพ</button>
       <span style="flex:1"></span>
+      <button class="btn sm" id="dZoomOut" title="ซูมออก (หรือหมุนล้อเมาส์ลง)">🔍−</button>
+      <span class="small" id="dZoomPct" style="min-width:46px;text-align:center">100%</span>
+      <button class="btn sm" id="dZoomIn" title="ซูมเข้า (หรือหมุนล้อเมาส์ขึ้นที่จุดที่ต้องการ)">🔍+</button>
+      <button class="btn sm" id="dZoomFit" title="ย่อให้เห็นทั้งภาพ">⤢ พอดีจอ</button>
       <button class="btn sm" id="dFinish" disabled>✓ จบรูปนี้ (Enter)</button>
       <button class="btn sm" id="dUndo" disabled>↶ ถอยจุด</button>
     </div>
@@ -1082,8 +1087,9 @@ const dd = {
   gcps: [],        // [{u,v,lat,lng,from}]
   shapes: [],      // [{kind:'polygon'|'polyline'|'point', pts:[{u,v}], label}]
   draft: null,     // {kind, pts:[{u,v}]}
+  pan: null,       // กำลังลากเลื่อนภาพ
   files: [],       // [{name,mime,dataUrl}]
-  view: { s: 1 },
+  view: { s: 1, ox: 0, oy: 0, fit: 1 },   // s = ซูม · ox,oy = มุมซ้ายบนของภาพที่เห็น (พิกเซลภาพ)
   sol: null,       // ผลแก้สมการ (null = ยังอ้างอิงไม่ได้)
 };
 
@@ -1130,7 +1136,7 @@ function parseDeedLL(text) {
 function setPage(p) {
   [...document.querySelectorAll('#pageTabs button')].forEach((b) => b.classList.toggle('on', b.dataset.page === p));
   $('mapPage').hidden = p !== 'map'; $('deedPage').hidden = p !== 'deed';
-  if (p === 'deed' && dd.bmp) { dFit(); dDraw(); }
+  if (p === 'deed' && dd.bmp) { dFit(); dZoomLabel(); dDraw(); }
 }
 $('pageTabs').addEventListener('click', (e) => { const b = e.target.closest('button[data-page]'); if (b) setPage(b.dataset.page); });
 
@@ -1141,7 +1147,7 @@ async function useDeedBitmap(bmp) {
   dd.bmp = bmp; dd.W = bmp.width; dd.H = bmp.height;
   dd.gcps = []; dd.shapes = []; dd.draft = null;
   $('deedEmpty').hidden = true; $('dcv').hidden = false;
-  dFit(); dRenderGcps(); dDraw(); dRecompute();
+  dFit(); dZoomLabel(); dRenderGcps(); dDraw(); dRecompute();
   setMsg('dCapMsg', 'ok', 'รับภาพแปลงแล้ว ' + bmp.width + '×' + bmp.height + ' px — ขั้นต่อไป: เลือก 📍 ปักจุดอ้างอิง แล้วคลิกจุดสังเกตบนภาพ');
 }
 $('dPick').onchange = async (e) => { const f = e.target.files[0]; if (f) await useDeedBitmap(await createImageBitmap(f)); e.target.value = ''; };
@@ -1162,22 +1168,55 @@ window.addEventListener('paste', async (e) => {
 
 /* ---------------- ขั้น 2 · ภาพ + เครื่องมือ ---------------- */
 const dcv = $('dcv'), dctx = dcv.getContext('2d');
+/* ซูมภาพแปลงได้ (ลุงพีสั่ง 13 พ.ย. 2569) — ปักจุดอ้างอิงบนภาพย่อคลาดได้หลายเมตร
+   กรอบ canvas คงขนาดเดิม ส่วนภาพถูกเลื่อน/ย่อขยายด้วย dd.view (s · ox · oy)
+   ล้อเมาส์ = ซูมที่ตำแหน่งเคอร์เซอร์ · ✋ หรือปุ่มกลาง = เลื่อนภาพ */
+const D_ZOOM_MAX = 16;
 function dFit() {
   const maxW = Math.min(820, ($('deedStage').clientWidth || 820) - 2), maxH = 560;
-  dd.view.s = Math.min(maxW / dd.W, maxH / dd.H, 1);
-  dcv.width = Math.round(dd.W * dd.view.s); dcv.height = Math.round(dd.H * dd.view.s);
+  const fit = Math.min(maxW / dd.W, maxH / dd.H, 1);
+  dd.view.fit = fit; dd.view.s = fit; dd.view.ox = 0; dd.view.oy = 0;
+  dcv.width = Math.round(dd.W * fit); dcv.height = Math.round(dd.H * fit);
 }
-const dToDisp = (u, v) => ({ x: u * dd.view.s, y: v * dd.view.s });
+/** จำกัดไม่ให้เลื่อนจนภาพหลุดจอ (เหลืออย่างน้อยครึ่งจอ) — เลื่อนมุมมองเท่านั้น จุดที่ปักไม่ขยับ */
+function dClamp() {
+  const vw = dcv.width / dd.view.s, vh = dcv.height / dd.view.s;
+  dd.view.ox = Math.max(-vw / 2, Math.min(dd.W - vw / 2, dd.view.ox));
+  dd.view.oy = Math.max(-vh / 2, Math.min(dd.H - vh / 2, dd.view.oy));
+}
+/** ซูมโดยตรึงจุดใต้เคอร์เซอร์ (cx,cy = พิกัดในกรอบ canvas) */
+function dZoomAt(cx, cy, ns) {
+  ns = Math.max(dd.view.fit, Math.min(D_ZOOM_MAX, ns));
+  const u = cx / dd.view.s + dd.view.ox, v = cy / dd.view.s + dd.view.oy;
+  dd.view.s = ns; dd.view.ox = u - cx / ns; dd.view.oy = v - cy / ns;
+  dClamp(); dDraw(); dZoomLabel();
+}
+function dZoomLabel() {
+  const el = $('dZoomPct'); if (!el) return;
+  el.textContent = Math.round((dd.view.s / (dd.view.fit || 1)) * 100) + '%';
+  $('dZoomOut').disabled = dd.view.s <= dd.view.fit + 1e-9;
+  $('dZoomIn').disabled = dd.view.s >= D_ZOOM_MAX - 1e-9;
+}
+const dToDisp = (u, v) => ({ x: (u - dd.view.ox) * dd.view.s, y: (v - dd.view.oy) * dd.view.s });
 const dToImg = (ev) => {
-  const r = dcv.getBoundingClientRect();
-  return { u: (ev.clientX - r.left) * (dcv.width / r.width) / dd.view.s,
-           v: (ev.clientY - r.top) * (dcv.height / r.height) / dd.view.s };
+  const r = dcv.getBoundingClientRect(), k = dcv.width / r.width;
+  return { u: (ev.clientX - r.left) * k / dd.view.s + dd.view.ox,
+           v: (ev.clientY - r.top) * k / dd.view.s + dd.view.oy };
+};
+/** พิกัดในกรอบ canvas (สำหรับซูมที่เคอร์เซอร์) */
+const dToCv = (ev) => {
+  const r = dcv.getBoundingClientRect(), k = dcv.width / r.width;
+  return { x: (ev.clientX - r.left) * k, y: (ev.clientY - r.top) * k };
 };
 const SH_COL = { polygon: '#c0392b', polyline: '#2e86de', point: '#8e44ad' };
 function dDraw() {
   if (!dd.bmp) return;
   dctx.clearRect(0, 0, dcv.width, dcv.height);
-  dctx.drawImage(dd.bmp, 0, 0, dcv.width, dcv.height);
+  dctx.save();
+  dctx.imageSmoothingEnabled = dd.view.s < 2;          // ซูมลึก = เห็นพิกเซลจริง ปักจุดได้ตรงกว่า
+  dctx.setTransform(dd.view.s, 0, 0, dd.view.s, -dd.view.ox * dd.view.s, -dd.view.oy * dd.view.s);
+  dctx.drawImage(dd.bmp, 0, 0);
+  dctx.restore();
   const trace = (pts, close) => {
     dctx.beginPath();
     pts.forEach((q, i) => { const p = dToDisp(q.u, q.v); if (i) dctx.lineTo(p.x, p.y); else dctx.moveTo(p.x, p.y); });
@@ -1213,11 +1252,12 @@ function dDraw() {
   });
 }
 const D_TOOL_HELP = {
-  gcp: '📍 <b>ปักจุดอ้างอิง</b>: คลิกจุดบนภาพโฉนดที่รู้พิกัดจริง — มุมแปลง หัวมุมถนน มุมรั้ว ที่เห็นได้ทั้งในภาพโฉนดและใน Google Maps · ต้องอย่างน้อย <b>2 จุด</b> (3 จุดขึ้นไปดีกว่า · 4 จุดขึ้นไปจึงบอกค่าความคลาดได้) แล้วใส่พิกัดในขั้น 3',
+  gcp: '📍 <b>ปักจุดอ้างอิง</b>: คลิกจุดบนภาพโฉนดที่รู้พิกัดจริง — มุมแปลง หัวมุมถนน มุมรั้ว ที่เห็นได้ทั้งในภาพโฉนดและใน Google Maps · ต้องอย่างน้อย <b>2 จุด</b> (3 จุดขึ้นไปดีกว่า · 4 จุดขึ้นไปจึงบอกค่าความคลาดได้) แล้วใส่พิกัดในขั้น 3<br><b>ซูมเข้าไปก่อนปักทุกครั้ง</b> (ล้อเมาส์) — ปักบนภาพย่อคลาดได้หลายเมตรบนพื้นจริง',
   poly: '⬟ <b>วาดรูปปิด</b>: คลิกมุมแปลงทีละจุดรอบที่ดินตามเส้นขอบแดงในภาพ แล้วกด <b>✓ จบรูปนี้</b> (หรือดับเบิลคลิก / Enter / คลิกทับจุดแรก) — รูปนี้จะกลายเป็นแนวเขตที่ดินบนผัง',
   line: '✏️ <b>วาดเส้น</b>: คลิกตามแนวที่ต้องการ (แนวถนน ลำราง ท่อ แนวเขตด้านเดียว) แล้วกด <b>✓ จบรูปนี้</b>',
   pt: '• <b>จุด</b>: คลิกครั้งเดียว = หมุดหลักเขต 1 จุด (ไว้เทียบตำแหน่งบนผัง)',
   del: '🗑 <b>ลบรูป</b>: คลิกใกล้รูปที่ต้องการลบ — ลบได้ทั้งรูปปิด เส้น และจุด (จุดอ้างอิงลบที่ขั้น 3)',
+  pan: '✋ <b>เลื่อนภาพ</b>: ลากเพื่อเลื่อนภาพที่ซูมไว้ · <b>ล้อเมาส์</b> = ซูมเข้า/ออกตรงตำแหน่งเคอร์เซอร์ · <b>ปุ่มกลางเมาส์</b>ลากได้ทุกเครื่องมือโดยไม่ต้องสลับมาที่นี่',
 };
 function dShowToolHelp() { $('dToolHelp').innerHTML = D_TOOL_HELP[dd.tool] || ''; }
 $('dToolbar').addEventListener('click', (e) => {
@@ -1244,8 +1284,39 @@ function dFinishDraft() {
 $('dFinish').onclick = dFinishDraft;
 $('dUndo').onclick = () => { if (dd.draft && dd.draft.pts.length) { dd.draft.pts.pop(); if (!dd.draft.pts.length) dd.draft = null; dDraftBtns(); dDraw(); } };
 
+/* เลื่อนภาพ: เครื่องมือ ✋ หรือปุ่มกลางเมาส์ (ใช้ได้ทุกเครื่องมือ ไม่ต้องสลับ) */
 dcv.addEventListener('pointerdown', (e) => {
   if (!dd.bmp) return;
+  if (dd.tool !== 'pan' && e.button !== 1) return;
+  e.preventDefault();
+  const c = dToCv(e);
+  dd.pan = { cx: c.x, cy: c.y, ox: dd.view.ox, oy: dd.view.oy, id: e.pointerId };
+  dcv.setPointerCapture(e.pointerId);
+}, true);
+dcv.addEventListener('pointermove', (e) => {
+  if (!dd.pan || e.pointerId !== dd.pan.id) return;
+  const c = dToCv(e);
+  dd.view.ox = dd.pan.ox - (c.x - dd.pan.cx) / dd.view.s;
+  dd.view.oy = dd.pan.oy - (c.y - dd.pan.cy) / dd.view.s;
+  dClamp(); dDraw();
+});
+const dEndPan = (e) => { if (dd.pan && e.pointerId === dd.pan.id) dd.pan = null; };
+dcv.addEventListener('pointerup', dEndPan);
+dcv.addEventListener('pointercancel', dEndPan);
+dcv.addEventListener('contextmenu', (e) => { if (dd.tool === 'pan') e.preventDefault(); });
+/* ล้อเมาส์ = ซูมที่เคอร์เซอร์ (touchpad บีบนิ้วส่ง ctrl+wheel มาทางเดียวกัน) */
+dcv.addEventListener('wheel', (e) => {
+  if (!dd.bmp) return;
+  e.preventDefault();
+  const c = dToCv(e), k = Math.pow(1.0015, -e.deltaY * (e.ctrlKey ? 3 : 1));
+  dZoomAt(c.x, c.y, dd.view.s * k);
+}, { passive: false });
+$('dZoomIn').onclick = () => { if (dd.bmp) dZoomAt(dcv.width / 2, dcv.height / 2, dd.view.s * 1.5); };
+$('dZoomOut').onclick = () => { if (dd.bmp) dZoomAt(dcv.width / 2, dcv.height / 2, dd.view.s / 1.5); };
+$('dZoomFit').onclick = () => { if (dd.bmp) { dFit(); dDraw(); dZoomLabel(); } };
+
+dcv.addEventListener('pointerdown', (e) => {
+  if (!dd.bmp || dd.tool === 'pan' || e.button !== 0) return;
   const p = dToImg(e), u = Math.round(p.u * 10) / 10, v = Math.round(p.v * 10) / 10;
   if (dd.tool === 'gcp') { dd.gcps.push({ u, v, lat: null, lng: null }); dRenderGcps(); dDraw(); dRecompute(); return; }
   if (dd.tool === 'pt') { dd.shapes.push({ kind: 'point', pts: [{ u, v }], label: '' }); dDraw(); dRecompute(); return; }
