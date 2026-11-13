@@ -13,12 +13,12 @@
   <!-- หน้านี้แปลเองครบ 3 ภาษา — ห้ามเบราว์เซอร์แปลอัตโนมัติซ้ำ (เคยแปล "Design Auto" เป็น "ออกแบบรถยนต์") -->
   <meta name="google" content="notranslate" />
     <script src="lungpee-pdpa.js"></script>
-  <script type="module" crossorigin src="./assets/main-BHnAd6-u.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/finance-BKMYAtjK.js">
-  <link rel="modulepreload" crossorigin href="./assets/sldSheet-kbwTkN7W.js">
-  <link rel="modulepreload" crossorigin href="./assets/panelDxf-CEZqSUR5.js">
+  <script type="module" crossorigin src="./assets/main-DVNoc1eC.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/finance-D46Vgtlw.js">
+  <link rel="modulepreload" crossorigin href="./assets/sldSheet-C4IdtHNZ.js">
+  <link rel="modulepreload" crossorigin href="./assets/panelDxf-D492lqXu.js">
   <link rel="stylesheet" crossorigin href="./assets/finance-BiU0x1JI.css">
-  <link rel="stylesheet" crossorigin href="./assets/main-DQApkgi3.css">
+  <link rel="stylesheet" crossorigin href="./assets/main-Cf6nPzy5.css">
   <script src="../supabase-config.js"></script>
   <script src="../asc-cloud.js"></script>
 </head>
@@ -53,6 +53,8 @@
       <div id="fpdims" class="fpdims hidden"></div>
       <div id="toast" class="toast hidden"></div>
       <!-- แถบป้ายนับอุปกรณ์ (src/ui/tally.ts · จัดเมนูใหม่ เฟส C): อยู่เหนือปุ่ม 2D/3D · ไม่มีอุปกรณ์ = ซ่อน -->
+      <!-- 0.189.0: แถบล่างซ้อนกันเป็นคอลัมน์เดียว — ป้ายนับอุปกรณ์อยู่เหนือแถบมุมมองเสมอ ไม่ทับกันตอนย่อหน้าต่าง -->
+      <div id="bottomStack">
       <div id="tally" class="tally hidden"></div>
       <div id="viewbar">
         <button data-view="top" data-i18n="view.top"></button>
@@ -64,10 +66,11 @@
         <button id="mountBtn"></button>
         <button id="planesBtn"></button>
         <button id="labelBtn"></button>
-        <label class="op"><input id="labelSize" type="range" min="8" max="40" step="1" value="14" /></label>
+        <label class="op"><span data-i18n="view.labelSizeShort"></span><input id="labelSize" type="number" min="8" max="40" step="1" value="14" inputmode="numeric" /></label>
         <button id="maxBtn"></button>
-        <label class="op"><span data-i18n="f.opacity"></span><input id="opacity" type="range" min="0" max="1" step="0.05" value="1" /></label>
+        <label class="op"><span data-i18n="f.opacity"></span><input id="opacity" type="number" min="0" max="100" step="5" value="100" inputmode="numeric" /><span class="unit">%</span></label>
         <span id="attrib" class="attrib"></span>
+      </div>
       </div>
     </section>
     <aside id="right">
