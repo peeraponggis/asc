@@ -126,7 +126,12 @@ footer{max-width:1180px;margin:0 auto;padding:0 14px 30px;font-size:12px;color:v
       <button class="btn sm on" data-tool="crop" title="ลากกรอบรอบบ้าน/พื้นที่ที่ต้องการ — ภาพที่ส่งเข้าผังหลังคาหรือบันทึกจะเหลือเฉพาะในกรอบ (ไม่ครอบ = ใช้ทั้งภาพ)">✂️ ลากกรอบครอบตัด</button>
       <button class="btn sm" data-tool="scale" title="ลากเส้นทับแถบสเกลของ Google Maps (มุมขวาล่าง เช่น 20 m) จากปลายซ้ายถึงปลายขวา แล้วใส่ค่าบนแถบในขั้น 3 — ใช้หาขนาดจริง (เมตร/พิกเซล) เฉพาะเมื่อ URL ลงท้าย z">📏 ลากทาบสเกลบาร์</button>
       <button class="btn sm" data-tool="gcp" title="คลิกจุดบนภาพที่รู้พิกัดจริง (เช่น มุมรั้ว เสาไฟ) แล้วใส่ lat,lng ในขั้น 3 โหมด B — ใช้กับภาพที่ไม่มี URL (Google Earth / ภาพถ่ายโดรน)">📍 ปักจุดอ้างอิง</button>
+      <button class="btn sm" data-tool="pan" title="ลากเพื่อเลื่อนภาพที่ซูมไว้ (หรือกดปุ่มกลางเมาส์ลากได้ทุกเครื่องมือ)">✋ เลื่อนภาพ</button>
       <button class="btn sm" id="bResetCrop" title="ยกเลิกกรอบครอบตัด ใช้ภาพทั้งหมด">↺ ใช้ทั้งภาพ</button>
+      <span style="flex:1"></span>
+      <button class="btn sm" id="bZoomOut" title="ซูมออก (หรือหมุนล้อเมาส์ลง)">🔍−</button>
+      <span class="small" id="mZoomPct" style="min-width:46px;text-align:center">100%</span>
+      <button class="btn sm" id="bZoomIn" title="ซูมเข้า (หรือหมุนล้อเมาส์ขึ้นที่จุดที่ต้องการ)">🔍+</button>
       <button class="btn sm" id="bZoomFit">⤢ พอดีจอ</button>
     </div>
     <div id="stage"><div id="empty">ยังไม่มีภาพ — เลือกวิธีรับภาพในขั้น 1<br><span class="small">หน้านี้รับการวาง Ctrl+V ได้ตลอดเวลา</span></div><canvas id="cv" hidden></canvas></div>
@@ -377,8 +382,9 @@ const st = {
   sb: null,                   // {x1,y1,x2,y2} พิกัดเฟรมเต็ม
   audit: null, auditAuto: true,   // auditAuto = ค่าในช่องตรวจถูกเติมจากลิงก์ (ยังไม่ได้ตรวจจริง)
   gcps: [],                   // [{u,v,lat,lng}]
-  view: { s: 1, ox: 0, oy: 0 },
+  view: { s: 1, ox: 0, oy: 0, fit: 1 },   // s = ซูม · ox,oy = มุมซ้ายบนของภาพที่เห็น (พิกเซลภาพ)
   drag: null,
+  pan: null,       // กำลังลากเลื่อนภาพ
 };
 const $ = (id) => document.getElementById(id);
 const setMsg = (el, kind, html) => { $(el).innerHTML = html ? `<div class="msg ${kind}">${html}</div>` : ''; };
@@ -390,7 +396,7 @@ async function useBitmap(bmp, fromTab) {
   st.crop = { u0: 0, v0: 0, w: st.W, h: st.H };
   st.sb = null; st.audit = null; st.gcps = [];
   $('empty').hidden = true; $('cv').hidden = false;
-  fitView(); draw(); recompute();
+  fitView(); zoomLabel(); draw(); recompute();
   if (!fromTab) {
     setMode('B');
     setMsg('capMsg', 'warn', 'ภาพนี้ไม่ได้มาจากการจับแท็บ → ใช้ได้เฉพาะ <b>โหมด B (จุดอ้างอิง)</b> ' +
@@ -522,22 +528,52 @@ $('fPick').onchange = async (e) => {
 
 /* ---------------- วาดภาพ + เครื่องมือบนภาพ ---------------- */
 const cv = $('cv'), ctx = cv.getContext('2d');
+/* ซูมภาพได้ (ลุงพีสั่ง 13 พ.ย. 2569 · แบบเดียวกับแท็บโฉนด) — ปักจุดอ้างอิงและลากสเกลบาร์
+   บนภาพย่อคลาดได้หลายเมตร · กรอบ canvas คงขนาด ภาพถูกเลื่อน/ย่อขยายด้วย st.view (s · ox · oy)
+   พิกัดที่เก็บทุกอย่าง (crop · sb · gcps) ยังเป็นพิกเซลของภาพเต็มเหมือนเดิม ไม่กระทบการคำนวณ world file */
+const ZOOM_MAX = 16;
 function fitView() {
   const maxW = Math.min(820, ($('stage').clientWidth || 820) - 2), maxH = 560;
-  st.view.s = Math.min(maxW / st.W, maxH / st.H, 1);
-  cv.width = Math.round(st.W * st.view.s); cv.height = Math.round(st.H * st.view.s);
+  const fit = Math.min(maxW / st.W, maxH / st.H, 1);
+  st.view.fit = fit; st.view.s = fit; st.view.ox = 0; st.view.oy = 0;
+  cv.width = Math.round(st.W * fit); cv.height = Math.round(st.H * fit);
 }
-const toDisp = (u, v) => ({ x: u * st.view.s, y: v * st.view.s });
+function clampView() {
+  const vw = cv.width / st.view.s, vh = cv.height / st.view.s;
+  st.view.ox = Math.max(-vw / 2, Math.min(st.W - vw / 2, st.view.ox));
+  st.view.oy = Math.max(-vh / 2, Math.min(st.H - vh / 2, st.view.oy));
+}
+function zoomAt(cx, cy, ns) {
+  ns = Math.max(st.view.fit, Math.min(ZOOM_MAX, ns));
+  const u = cx / st.view.s + st.view.ox, v = cy / st.view.s + st.view.oy;
+  st.view.s = ns; st.view.ox = u - cx / ns; st.view.oy = v - cy / ns;
+  clampView(); draw(); zoomLabel();
+}
+function zoomLabel() {
+  const el = $('mZoomPct'); if (!el) return;
+  el.textContent = Math.round((st.view.s / (st.view.fit || 1)) * 100) + '%';
+  $('bZoomOut').disabled = st.view.s <= st.view.fit + 1e-9;
+  $('bZoomIn').disabled = st.view.s >= ZOOM_MAX - 1e-9;
+}
+const toDisp = (u, v) => ({ x: (u - st.view.ox) * st.view.s, y: (v - st.view.oy) * st.view.s });
 const toImg = (ev) => {
-  const r = cv.getBoundingClientRect();
-  return { u: (ev.clientX - r.left) * (cv.width / r.width) / st.view.s,
-           v: (ev.clientY - r.top) * (cv.height / r.height) / st.view.s };
+  const r = cv.getBoundingClientRect(), k = cv.width / r.width;
+  return { u: (ev.clientX - r.left) * k / st.view.s + st.view.ox,
+           v: (ev.clientY - r.top) * k / st.view.s + st.view.oy };
+};
+const toCv = (ev) => {
+  const r = cv.getBoundingClientRect(), k = cv.width / r.width;
+  return { x: (ev.clientX - r.left) * k, y: (ev.clientY - r.top) * k };
 };
 
 function draw() {
   if (!st.bmp) return;
   ctx.clearRect(0, 0, cv.width, cv.height);
-  ctx.drawImage(st.bmp, 0, 0, cv.width, cv.height);
+  ctx.save();
+  ctx.imageSmoothingEnabled = st.view.s < 2;          // ซูมลึก = เห็นพิกเซลจริง ลากกรอบ/ปักจุดได้ตรงกว่า
+  ctx.setTransform(st.view.s, 0, 0, st.view.s, -st.view.ox * st.view.s, -st.view.oy * st.view.s);
+  ctx.drawImage(st.bmp, 0, 0);
+  ctx.restore();
   const c = st.crop;
   if (c && (c.u0 || c.v0 || c.w !== st.W || c.h !== st.H)) {
     const p = toDisp(c.u0, c.v0), q = toDisp(c.u0 + c.w, c.v0 + c.h);
@@ -569,8 +605,37 @@ function draw() {
   });
 }
 
+/* เลื่อนภาพ: เครื่องมือ ✋ หรือปุ่มกลางเมาส์ (ใช้ได้ทุกเครื่องมือ) — ต้องมาก่อนตัวจัดการลากกรอบ */
 cv.addEventListener('pointerdown', (e) => {
   if (!st.bmp) return;
+  if (st.tool !== 'pan' && e.button !== 1) return;
+  e.preventDefault();
+  const c = toCv(e);
+  st.pan = { cx: c.x, cy: c.y, ox: st.view.ox, oy: st.view.oy, id: e.pointerId };
+  cv.setPointerCapture(e.pointerId);
+}, true);
+cv.addEventListener('pointermove', (e) => {
+  if (!st.pan || e.pointerId !== st.pan.id) return;
+  const c = toCv(e);
+  st.view.ox = st.pan.ox - (c.x - st.pan.cx) / st.view.s;
+  st.view.oy = st.pan.oy - (c.y - st.pan.cy) / st.view.s;
+  clampView(); draw();
+}, true);
+const endPan = (e) => { if (st.pan && e.pointerId === st.pan.id) st.pan = null; };
+cv.addEventListener('pointerup', endPan, true);
+cv.addEventListener('pointercancel', endPan, true);
+cv.addEventListener('contextmenu', (e) => { if (st.tool === 'pan') e.preventDefault(); });
+cv.addEventListener('wheel', (e) => {
+  if (!st.bmp) return;
+  e.preventDefault();
+  const c = toCv(e), k = Math.pow(1.0015, -e.deltaY * (e.ctrlKey ? 3 : 1));
+  zoomAt(c.x, c.y, st.view.s * k);
+}, { passive: false });
+$('bZoomIn').onclick = () => { if (st.bmp) zoomAt(cv.width / 2, cv.height / 2, st.view.s * 1.5); };
+$('bZoomOut').onclick = () => { if (st.bmp) zoomAt(cv.width / 2, cv.height / 2, st.view.s / 1.5); };
+
+cv.addEventListener('pointerdown', (e) => {
+  if (!st.bmp || st.tool === 'pan' || e.button !== 0) return;
   const p = toImg(e);
   if (st.tool === 'gcp') {
     st.gcps.push({ u: Math.round(p.u), v: Math.round(p.v), lat: null, lng: null });
@@ -580,7 +645,7 @@ cv.addEventListener('pointerdown', (e) => {
   st.drag = { x1: p.u, y1: p.v, x2: p.u, y2: p.v };
 });
 cv.addEventListener('pointermove', (e) => {
-  if (!st.drag) return;
+  if (!st.drag || st.pan) return;
   const p = toImg(e); st.drag.x2 = p.u; st.drag.y2 = p.v;
   if (st.tool === 'crop') st.crop = rectOf(st.drag);
   else st.sb = { x1: st.drag.x1, y1: st.drag.y1, x2: st.drag.x2, y2: st.drag.y2 };
@@ -601,11 +666,12 @@ function rectOf(d) {
   return { u0, v0, w: Math.max(1, u1 - u0), h: Math.max(1, v1 - v0) };
 }
 $('bResetCrop').onclick = () => { if (st.bmp) { st.crop = { u0: 0, v0: 0, w: st.W, h: st.H }; draw(); recompute(); } };
-$('bZoomFit').onclick = () => { if (st.bmp) { fitView(); draw(); } };
+$('bZoomFit').onclick = () => { if (st.bmp) { fitView(); draw(); zoomLabel(); } };
 const TOOL_HELP = {
   crop: '✂️ <b>ครอบตัด</b>: ลากกรอบรอบบ้านที่จะออกแบบ (ให้เผื่อรอบ ๆ เล็กน้อย) — ภาพที่ <b>ส่งเข้าผังหลังคา/บันทึก</b> จะเหลือเฉพาะในกรอบเขียว ภาพเล็กลง โหลดเร็ว · ไม่ลาก = ใช้ทั้งภาพ · ↺ ใช้ทั้งภาพ = ยกเลิกกรอบ',
   scale: '📏 <b>สเกลบาร์</b> = แถบวัดระยะที่มุมขวาล่างของ Google Maps (เช่น ━━ 20 m) · ลากเส้นทับแถบจาก <b>ปลายซ้ายถึงปลายขวาพอดี</b> แล้วใส่ตัวเลขที่เขียนบนแถบในขั้น 3 → โปรแกรมรู้ว่า 1 พิกเซล = กี่เมตร (ใช้ให้ขนาดบ้านบนผังถูกต้อง) · <b>จำเป็นเฉพาะ URL ที่ลงท้าย z</b> (มุมมองแผนที่) · มุมมองดาวเทียม URL ลงท้าย m ไม่ต้องลาก (ลากไว้ = ใช้ตรวจไขว้)',
-  gcp: '📍 <b>จุดอ้างอิง</b>: คลิกจุดบนภาพที่รู้พิกัดจริงอย่างน้อย 2–3 จุดให้ห่างกัน (มุมรั้ว เสาไฟ หัวมุมถนน) แล้วใส่ lat,lng ในขั้น 3 โหมด B — ใช้กับภาพที่ไม่มี URL เช่น Google Earth หรือโดรน',
+  gcp: '📍 <b>จุดอ้างอิง</b>: คลิกจุดบนภาพที่รู้พิกัดจริงอย่างน้อย 2–3 จุดให้ห่างกัน (มุมรั้ว เสาไฟ หัวมุมถนน) แล้วใส่ lat,lng ในขั้น 3 โหมด B — ใช้กับภาพที่ไม่มี URL เช่น Google Earth หรือโดรน<br><b>ซูมเข้าไปก่อนปักทุกครั้ง</b> (ล้อเมาส์) — ปักบนภาพย่อคลาดได้หลายเมตรบนพื้นจริง',
+  pan: '✋ <b>เลื่อนภาพ</b>: ลากเพื่อเลื่อนภาพที่ซูมไว้ · <b>ล้อเมาส์</b> = ซูมเข้า/ออกตรงตำแหน่งเคอร์เซอร์ · <b>ปุ่มกลางเมาส์</b>ลากได้ทุกเครื่องมือโดยไม่ต้องสลับมาที่นี่ · กรอบครอบตัดและสเกลบาร์ที่ลากไว้ไม่ขยับตามการซูม',
 };
 function showToolHelp() { $('toolHelp').innerHTML = TOOL_HELP[st.tool] ?? ''; }
 $('toolbar').addEventListener('click', (e) => {
