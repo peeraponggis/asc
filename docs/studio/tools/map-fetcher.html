@@ -23,6 +23,29 @@ main{max-width:1180px;margin:16px auto 60px;padding:0 14px;display:grid;grid-tem
 @media(max-width:980px){main{grid-template-columns:1fr}}
 /* main มี display:grid ซึ่งชนะ [hidden] ของเบราว์เซอร์ → ต้องสั่งซ่อนเอง ไม่งั้นสองแท็บหน้าแสดงพร้อมกัน */
 main[hidden]{display:none}
+/* หน้าต่างจิ้มจุดอ้างอิงจากภาพดาวเทียม (0.187.0 · ลุงพีสั่ง 13 พ.ย. 2569) */
+.pickwrap{position:fixed;inset:0;background:rgba(10,14,18,.78);display:none;place-items:center;z-index:60}
+.pickwrap.on{display:grid}
+.pickbox{background:var(--panel);width:min(1180px,96vw);height:min(780px,94vh);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
+.pickbox>.head{background:var(--accent);color:var(--accent-ink);padding:9px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pickbox>.head b{font-size:16px}
+.pickbox>.head span{opacity:.88;font-size:13px}
+.panes{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);min-height:0}
+@media(max-width:860px){.panes{grid-template-columns:1fr;grid-template-rows:1fr 1fr}}
+.pane{background:#20242a;display:flex;flex-direction:column;min-width:0;min-height:0}
+.pane .bar{background:var(--panel-2);padding:4px 8px;display:flex;gap:6px;align-items:center;font-size:13px;flex-wrap:wrap}
+.pane .bar b{color:var(--accent)}
+.pane .cvwrap{flex:1;display:grid;place-items:center;overflow:hidden;min-height:0;position:relative}
+.pane canvas{max-width:100%;max-height:100%;cursor:crosshair;touch-action:none;display:block}
+.pane .tag{position:absolute;left:8px;top:8px;background:rgba(0,0,0,.62);color:#fff;font-size:12px;padding:3px 8px;border-radius:6px;pointer-events:none}
+.pickbox>.foot{background:var(--panel);border-top:1px solid var(--line);padding:8px 12px;max-height:40%;overflow:auto}
+.steps{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;margin-bottom:6px}
+.steps span{display:flex;gap:6px;align-items:center}
+.dot{width:18px;height:18px;border-radius:50%;background:var(--ink-3);color:#fff;display:grid;place-items:center;font-size:11px;font-style:normal}
+.dot.on{background:var(--accent)}.dot.done{background:var(--ok)}
+table.pts{width:100%;border-collapse:collapse;font-size:13px}
+table.pts th,table.pts td{text-align:left;padding:3px 6px;border-bottom:1px solid var(--line)}
+table.pts th{color:var(--ink-2);font-weight:600}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px}
 .card>h2{margin:0 0 8px;font-size:15px;display:flex;align-items:center;gap:8px}
 .card>h2 i{background:var(--accent);color:var(--accent-ink);font-style:normal;font-size:12px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;flex:none}
@@ -253,7 +276,12 @@ footer{max-width:1180px;margin:0 auto;padding:0 14px 30px;font-size:12px;color:v
 <div>
   <div class="card">
     <h2><i>3</i> พิกัดของจุดอ้างอิง</h2>
-    <div class="small">ใส่พิกัดจริงของแต่ละจุด — รับทั้ง <b>lat, lng</b> (เช่น <code>16.4628994, 102.8242508</code>)
+    <div class="row">
+      <button class="btn primary" id="dPickOpen">🛰️ จิ้มจุดจากภาพดาวเทียม</button>
+      <span class="small">— ไม่ต้องเปิด Google Maps ไม่ต้องพิมพ์พิกัด</span>
+    </div>
+    <div id="dPickHint" class="hint">คลิกจุดเดียวกันบนภาพโฉนดและภาพดาวเทียมที่มี world file แล้ว โปรแกรมอ่านพิกัดให้เอง</div>
+    <div class="small">หรือพิมพ์พิกัดจริงของแต่ละจุดเอง — รับทั้ง <b>lat, lng</b> (เช่น <code>16.4628994, 102.8242508</code>)
       และ <b>UTM WGS84</b> (เช่น <code>47N 262000 1820000</code> หรือ <code>zone 48 512345 1655000</code>)<br>
       หาพิกัดได้จาก Google Maps (คลิกขวา → คลิกบรรทัดพิกัดเพื่อคัดลอก) ที่จุดสังเกตเดียวกันกับที่ปักบนภาพโฉนด</div>
     <div id="dGcpList"></div>
@@ -286,6 +314,49 @@ footer{max-width:1180px;margin:0 auto;padding:0 14px 30px;font-size:12px;color:v
   </div>
 </div>
 </main>
+
+<div class="pickwrap" id="dPickWrap">
+  <div class="pickbox">
+    <div class="head">
+      <b>🛰️ จิ้มจุดอ้างอิงจากภาพดาวเทียม</b>
+      <span>คลิกจุดเดียวกันทั้งสองฝั่ง · ทำซ้ำ 3–4 จุดให้กระจายทั่วแปลง · ซูมก่อนคลิกจะแม่นกว่ามาก</span>
+    </div>
+    <div class="panes">
+      <div class="pane">
+        <div class="bar"><b>① ภาพโฉนด</b>
+          <span style="flex:1"></span>
+          <button class="btn sm" data-pz="L-">🔍−</button><span class="small" id="pzL" style="min-width:44px;text-align:center">100%</span>
+          <button class="btn sm" data-pz="L+">🔍+</button><button class="btn sm" data-pz="Lf">⤢</button>
+        </div>
+        <div class="cvwrap"><canvas id="pcvL"></canvas><div class="tag" id="ptagL">คลิกจุดสังเกตบนภาพโฉนด</div></div>
+      </div>
+      <div class="pane">
+        <div class="bar"><b>② ภาพดาวเทียม</b> <span class="small" id="pSatNote"></span>
+          <span style="flex:1"></span>
+          <button class="btn sm" data-pz="R-">🔍−</button><span class="small" id="pzR" style="min-width:44px;text-align:center">100%</span>
+          <button class="btn sm" data-pz="R+">🔍+</button><button class="btn sm" data-pz="Rf">⤢</button>
+        </div>
+        <div class="cvwrap"><canvas id="pcvR"></canvas><div class="tag" id="ptagR">รอคลิกฝั่งซ้ายก่อน</div></div>
+      </div>
+    </div>
+    <div class="foot">
+      <div class="steps">
+        <span><i class="dot on" id="pst1">1</i> คลิกบนภาพโฉนด</span>
+        <span><i class="dot" id="pst2">2</i> คลิกจุดเดียวกันบนภาพดาวเทียม</span>
+        <span><i class="dot" id="pst3">3</i> ทำซ้ำให้ครบ 3–4 จุด</span>
+        <span class="small">เลื่อนภาพ: กดปุ่มกลางเมาส์ลาก · ซูม: ล้อเมาส์</span>
+      </div>
+      <table class="pts"><thead><tr><th style="width:26px">#</th><th>พิกเซลบนภาพโฉนด</th><th>พิกัดที่อ่านได้จากภาพดาวเทียม</th><th style="width:34px"></th></tr></thead>
+        <tbody id="pRows"></tbody></table>
+      <div id="pMsg"></div>
+      <div class="row">
+        <button class="btn primary" id="pUse" disabled>✓ ใช้จุดเหล่านี้</button>
+        <button class="btn" id="pUndo" disabled>↶ ลบจุดล่าสุด</button>
+        <button class="btn" id="pClose">ปิด</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <footer>
   ภาพจาก Google Maps / Google Earth อยู่ใต้ข้อกำหนดของ Google ซึ่งจำกัดการนำไปใช้ซ้ำ —
@@ -979,7 +1050,8 @@ function recomputeInner() {
   const isNorthUp = Math.abs(B) < 1e-12 && Math.abs(D) < 1e-12;
   const rot = Math.atan2(D, A) * R2D;
 
-  RESULT = { A, D, B, E, C, F, cor, mpp, gW, gH, note };
+  // toLL = พิกเซลเฟรมเต็มของภาพดาวเทียม → {lng,lat} · แท็บโฉนดใช้ตัวนี้อ่านพิกัดตอนจิ้มจุด (0.187.0)
+  RESULT = { A, D, B, E, C, F, cor, mpp, gW, gH, note, toLL };
 
   $('resTable').innerHTML = [
     ['วิธี', note],
@@ -1578,6 +1650,187 @@ $('dSelfTest').onclick = () => {
 
 if (EMBEDDED) $('dSend').hidden = false;
 dRecompute();
+
+/* =====================================================================
+   จิ้มจุดอ้างอิงจากภาพดาวเทียม (0.187.0 · ลุงพีสั่ง 13 พ.ย. 2569)
+
+   ปัญหา: landsmaps ไม่มีช่องแสดงพิกัดให้คัดลอก (เว็บใช้ CesiumJS รู้พิกัดภายใน
+   แต่ไม่แสดงออกมา) ผู้ใช้จึงต้องไปคลิกขวาใน Google Maps แล้วพิมพ์ตัวเลขกลับมา
+   ซึ่งช้าและเป็นจุดที่คลาดมากที่สุดทั้งกระบวนการ
+
+   วิธีแก้: ภาพดาวเทียมจากแท็บแผนที่มี world file อยู่แล้ว = รู้พิกัดทุกพิกเซล
+   ให้ผู้ใช้คลิกจุดเดียวกันบนสองภาพ แล้วอ่านพิกัดจาก RESULT.toLL ของแท็บแผนที่
+   ไม่มีการพิมพ์ตัวเลข จึงไม่มีโอกาสพิมพ์ผิดหรือสลับ lat กับ lng
+   ===================================================================== */
+const PK = {
+  on: false,
+  pairs: [],                       // [{uL,vL,uR,vR,lat,lng}]
+  pending: null,                   // คลิกฝั่งซ้ายแล้ว รอฝั่งขวา
+  V: { L: { s: 1, ox: 0, oy: 0, fit: 1 }, R: { s: 1, ox: 0, oy: 0, fit: 1 } },
+  pan: null,
+};
+const PCV = { L: $('pcvL'), R: $('pcvR') };
+const pkBmp = (side) => (side === 'L' ? dd.bmp : st.bmp);
+const pkSize = (side) => (side === 'L' ? { W: dd.W, H: dd.H } : { W: st.W, H: st.H });
+
+function pkFit(side) {
+  const cv = PCV[side], wrap = cv.parentElement, { W, H } = pkSize(side);
+  const maxW = Math.max(120, (wrap.clientWidth || 440) - 4), maxH = Math.max(120, (wrap.clientHeight || 330) - 4);
+  const fit = Math.min(maxW / W, maxH / H, 1);
+  const v = PK.V[side];
+  v.fit = fit; v.s = fit; v.ox = 0; v.oy = 0;
+  cv.width = Math.round(W * fit); cv.height = Math.round(H * fit);
+}
+function pkClamp(side) {
+  const cv = PCV[side], v = PK.V[side], { W, H } = pkSize(side);
+  const vw = cv.width / v.s, vh = cv.height / v.s;
+  v.ox = Math.max(-vw / 2, Math.min(W - vw / 2, v.ox));
+  v.oy = Math.max(-vh / 2, Math.min(H - vh / 2, v.oy));
+}
+const pkDisp = (side, u, v2) => { const v = PK.V[side]; return { x: (u - v.ox) * v.s, y: (v2 - v.oy) * v.s }; };
+const pkImg = (side, ev) => {
+  const cv = PCV[side], r = cv.getBoundingClientRect(), k = cv.width / r.width, v = PK.V[side];
+  return { u: (ev.clientX - r.left) * k / v.s + v.ox, v: (ev.clientY - r.top) * k / v.s + v.oy };
+};
+const pkCv = (side, ev) => {
+  const cv = PCV[side], r = cv.getBoundingClientRect(), k = cv.width / r.width;
+  return { x: (ev.clientX - r.left) * k, y: (ev.clientY - r.top) * k };
+};
+function pkZoomAt(side, cx, cy, ns) {
+  const v = PK.V[side];
+  ns = Math.max(v.fit, Math.min(16, ns));
+  const u = cx / v.s + v.ox, p = cy / v.s + v.oy;
+  v.s = ns; v.ox = u - cx / ns; v.oy = p - cy / ns;
+  pkClamp(side); pkDraw(side); pkZoomLabel(side);
+}
+function pkZoomLabel(side) {
+  const v = PK.V[side];
+  $(side === 'L' ? 'pzL' : 'pzR').textContent = Math.round((v.s / (v.fit || 1)) * 100) + '%';
+}
+function pkDraw(side) {
+  const cv = PCV[side], g = cv.getContext('2d'), v = PK.V[side], bmp = pkBmp(side);
+  if (!bmp) return;
+  g.clearRect(0, 0, cv.width, cv.height);
+  g.save();
+  g.imageSmoothingEnabled = v.s < 2;
+  g.setTransform(v.s, 0, 0, v.s, -v.ox * v.s, -v.oy * v.s);
+  g.drawImage(bmp, 0, 0);
+  g.restore();
+  const mark = (d, col, label) => {
+    g.fillStyle = col; g.beginPath(); g.arc(d.x, d.y, 6, 0, 7); g.fill();
+    g.strokeStyle = '#000'; g.lineWidth = 1; g.stroke();
+    if (label == null) return;
+    g.font = 'bold 11px sans-serif';
+    g.fillStyle = '#000'; g.fillText(label, d.x + 8, d.y - 6);
+    g.fillStyle = '#fff'; g.fillText(label, d.x + 9, d.y - 7);
+  };
+  PK.pairs.forEach((p, i) => mark(pkDisp(side, side === 'L' ? p.uL : p.uR, side === 'L' ? p.vL : p.vR), '#3ddc97', String(i + 1)));
+  if (PK.pending && side === 'L') mark(pkDisp('L', PK.pending.uL, PK.pending.vL), '#ff9f43', String(PK.pairs.length + 1));
+}
+function pkStep(n) {
+  [1, 2, 3].forEach((i) => { $('pst' + i).className = 'dot' + (i < n ? ' done' : i === n ? ' on' : ''); });
+}
+function pkTags() {
+  const n = PK.pairs.length + 1;
+  $('ptagL').textContent = PK.pending ? `เลือกจุดที่ ${n} แล้ว — ไปคลิกจุดเดียวกันฝั่งขวา` : 'คลิกจุดสังเกตบนภาพโฉนด';
+  $('ptagR').textContent = PK.pending ? `👉 คลิกจุดเดียวกันตรงนี้ (จุดที่ ${n})` : 'รอคลิกฝั่งซ้ายก่อน';
+}
+function pkRows() {
+  $('pRows').innerHTML = PK.pairs.map((p, i) =>
+    `<tr><td>${i + 1}</td><td>${p.uL}, ${p.vL}</td>` +
+    `<td><b>${p.lat.toFixed(7)}, ${p.lng.toFixed(7)}</b> <span class="small">← อ่านจาก world file</span></td>` +
+    `<td><button class="btn sm" data-pdel="${i}">✕</button></td></tr>`).join('') ||
+    '<tr><td colspan="4" class="small">ยังไม่มีจุด — คลิกจุดสังเกตบนภาพโฉนด (ฝั่งซ้าย) ก่อน</td></tr>';
+  const n = PK.pairs.length;
+  $('pUse').disabled = n < DEED_MIN_REF; $('pUndo').disabled = !n;
+  setMsg('pMsg', n >= 3 ? 'ok' : 'warn',
+    n >= 3 ? `ครบ ${n} จุดแล้ว — กด <b>✓ ใช้จุดเหล่านี้</b> เพื่อส่งกลับไปขั้นที่ 3`
+      : `มี ${n} จุด · ต้องการอย่างน้อย ${DEED_MIN_REF} จุด (3–4 จุดจะได้ Affine ซึ่งแก้ภาพที่ยืดคนละแกนได้ และบอกค่าความคลาด)`);
+}
+
+/* เปิดหน้าต่าง — ต้องมีทั้งภาพโฉนดและภาพดาวเทียมที่อ้างอิงพิกัดแล้ว */
+$('dPickOpen').onclick = () => {
+  if (!dd.bmp) { setMsg('dRefMsg', 'warn', 'ยังไม่มีภาพแปลง — รับภาพจาก landsmaps ในขั้น 1 ก่อน'); return; }
+  if (!st.bmp || !RESULT || typeof RESULT.toLL !== 'function') {
+    setMsg('dRefMsg', 'warn', '<b>ยังไม่มีภาพดาวเทียมที่อ้างอิงพิกัดแล้ว</b> — ไปที่แท็บ <b>🗺️ แผนที่ดาวเทียม + world file</b> ' +
+      'จับภาพบริเวณเดียวกันกับแปลงนี้ แล้วกำหนดพิกัดให้ขึ้นผลลัพธ์ในขั้น 4 ก่อน จากนั้นกลับมากดปุ่มนี้อีกครั้ง');
+    return;
+  }
+  PK.on = true; PK.pairs = []; PK.pending = null;
+  $('dPickWrap').classList.add('on');
+  $('pSatNote').innerHTML = `✓ มี world file — รู้พิกัดทุกพิกเซล · ${st.W}×${st.H} px`;
+  requestAnimationFrame(() => {
+    ['L', 'R'].forEach((s2) => { pkFit(s2); pkDraw(s2); pkZoomLabel(s2); });
+    pkRows(); pkTags(); pkStep(1);
+  });
+};
+$('pClose').onclick = () => { PK.on = false; $('dPickWrap').classList.remove('on'); };
+$('dPickWrap').addEventListener('click', (e) => { if (e.target === $('dPickWrap')) $('pClose').click(); });
+
+['L', 'R'].forEach((side) => {
+  const cv = PCV[side];
+  /* เลื่อนภาพด้วยปุ่มกลางเมาส์ (คลิกซ้ายสงวนไว้ให้การจิ้มจุด) */
+  cv.addEventListener('pointerdown', (e) => {
+    if (e.button !== 1) return;
+    e.preventDefault();
+    const c = pkCv(side, e);
+    PK.pan = { side, cx: c.x, cy: c.y, ox: PK.V[side].ox, oy: PK.V[side].oy, id: e.pointerId };
+    cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener('pointermove', (e) => {
+    if (!PK.pan || PK.pan.side !== side || e.pointerId !== PK.pan.id) return;
+    const c = pkCv(side, e), v = PK.V[side];
+    v.ox = PK.pan.ox - (c.x - PK.pan.cx) / v.s;
+    v.oy = PK.pan.oy - (c.y - PK.pan.cy) / v.s;
+    pkClamp(side); pkDraw(side);
+  });
+  const end = (e) => { if (PK.pan && e.pointerId === PK.pan.id) PK.pan = null; };
+  cv.addEventListener('pointerup', end);
+  cv.addEventListener('pointercancel', end);
+  cv.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const c = pkCv(side, e);
+    pkZoomAt(side, c.x, c.y, PK.V[side].s * Math.pow(1.0015, -e.deltaY * (e.ctrlKey ? 3 : 1)));
+  }, { passive: false });
+  /* คลิกซ้าย = จิ้มจุด */
+  cv.addEventListener('click', (e) => {
+    if (e.button !== 0 || !pkBmp(side)) return;
+    const p = pkImg(side, e), u = Math.round(p.u * 10) / 10, v2 = Math.round(p.v * 10) / 10;
+    if (side === 'L') { PK.pending = { uL: u, vL: v2 }; pkStep(2); }
+    else {
+      if (!PK.pending) { setMsg('pMsg', 'warn', 'คลิกจุดบนภาพโฉนด (ฝั่งซ้าย) ก่อน แล้วค่อยคลิกจุดเดียวกันฝั่งนี้'); return; }
+      const ll = RESULT.toLL(u, v2);                       // ← พิกัดจริงจาก world file ของภาพดาวเทียม
+      if (!ll || !Number.isFinite(ll.lat) || !Number.isFinite(ll.lng)) {
+        setMsg('pMsg', 'err', 'อ่านพิกัดจากภาพดาวเทียมตรงจุดนี้ไม่ได้ — ลองจุดอื่นในภาพ');
+        return;
+      }
+      PK.pairs.push({ ...PK.pending, uR: u, vR: v2, lat: ll.lat, lng: ll.lng });
+      PK.pending = null; pkStep(PK.pairs.length >= 3 ? 3 : 1); pkRows();
+    }
+    pkDraw('L'); pkDraw('R'); pkTags();
+  });
+});
+document.querySelectorAll('[data-pz]').forEach((b) => (b.onclick = () => {
+  const z = b.dataset.pz, side = z[0];
+  if (!pkBmp(side)) return;
+  if (z[1] === 'f') { pkFit(side); pkDraw(side); pkZoomLabel(side); }
+  else pkZoomAt(side, PCV[side].width / 2, PCV[side].height / 2, PK.V[side].s * (z[1] === '+' ? 1.5 : 1 / 1.5));
+}));
+$('pRows').addEventListener('click', (e) => {
+  const i = e.target.dataset.pdel; if (i == null) return;
+  PK.pairs.splice(+i, 1); pkRows(); pkDraw('L'); pkDraw('R');
+});
+$('pUndo').onclick = () => { PK.pairs.pop(); pkRows(); pkDraw('L'); pkDraw('R'); pkTags(); };
+/* ส่งจุดกลับไปขั้นที่ 3 — แทนจุดเดิมทั้งชุด (ไม่ปนกับที่พิมพ์ไว้ก่อน เพื่อไม่ให้ซ้ำซ้อน) */
+$('pUse').onclick = () => {
+  if (PK.pairs.length < DEED_MIN_REF) return;
+  dd.gcps = PK.pairs.map((p) => ({ u: p.uL, v: p.vL, lat: +p.lat.toFixed(8), lng: +p.lng.toFixed(8), from: 'sat' }));
+  PK.on = false; $('dPickWrap').classList.remove('on');
+  dRenderGcps(); dDraw(); dRecompute();
+};
+window.addEventListener('keydown', (e) => { if (PK.on && e.key === 'Escape') { e.preventDefault(); $('pClose').click(); } });
+window.addEventListener('resize', () => { if (PK.on) ['L', 'R'].forEach((s2) => { pkFit(s2); pkDraw(s2); pkZoomLabel(s2); }); });
+
 try { if (new URLSearchParams(location.search).get('tab') === 'deed') setPage('deed'); } catch (e) { /* ไม่ระบุ = แท็บแผนที่ */ }
 </script>
 </body>
