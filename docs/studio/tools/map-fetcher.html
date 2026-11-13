@@ -23,7 +23,7 @@ main{max-width:1180px;margin:16px auto 60px;padding:0 14px;display:grid;grid-tem
 @media(max-width:980px){main{grid-template-columns:1fr}}
 /* main มี display:grid ซึ่งชนะ [hidden] ของเบราว์เซอร์ → ต้องสั่งซ่อนเอง ไม่งั้นสองแท็บหน้าแสดงพร้อมกัน */
 main[hidden]{display:none}
-/* หน้าต่างจิ้มจุดอ้างอิงจากภาพดาวเทียม (0.187.0 · ลุงพีสั่ง 13 พ.ย. 2569) */
+/* หน้าต่างปักจุดอ้างอิงจากภาพดาวเทียม (0.187.0 · ลุงพีสั่ง 13 พ.ย. 2569) */
 .pickwrap{position:fixed;inset:0;background:rgba(10,14,18,.78);display:none;place-items:center;z-index:60}
 .pickwrap.on{display:grid}
 .pickbox{background:var(--panel);width:min(1180px,96vw);height:min(780px,94vh);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
@@ -277,7 +277,7 @@ footer{max-width:1180px;margin:0 auto;padding:0 14px 30px;font-size:12px;color:v
   <div class="card">
     <h2><i>3</i> พิกัดของจุดอ้างอิง</h2>
     <div class="row">
-      <button class="btn primary" id="dPickOpen">🛰️ จิ้มจุดจากภาพดาวเทียม</button>
+      <button class="btn primary" id="dPickOpen">🛰️ ปักจุดจากภาพดาวเทียม</button>
       <span class="small">— ไม่ต้องเปิด Google Maps ไม่ต้องพิมพ์พิกัด</span>
     </div>
     <div id="dPickHint" class="hint">คลิกจุดเดียวกันบนภาพโฉนดและภาพดาวเทียมที่มี world file แล้ว โปรแกรมอ่านพิกัดให้เอง</div>
@@ -320,7 +320,7 @@ footer{max-width:1180px;margin:0 auto;padding:0 14px 30px;font-size:12px;color:v
   <div class="pickbox">
     <div class="head">
       <b>🛰️ เทียบภาพ &amp; วาดแนวเขต</b>
-      <span>วาดบนภาพดาวเทียมได้ตรง ๆ (แม่นที่สุด ไม่ต้องอ้างอิง) · หรือจิ้มจุดคู่เพื่ออ้างอิงภาพโฉนด</span>
+      <span>วาดบนภาพดาวเทียมได้ตรง ๆ (แม่นที่สุด ไม่ต้องอ้างอิง) · หรือปักจุดคู่เพื่ออ้างอิงภาพโฉนด</span>
     </div>
     <div class="panes">
       <div class="pane">
@@ -338,7 +338,7 @@ footer{max-width:1180px;margin:0 auto;padding:0 14px 30px;font-size:12px;color:v
           <button class="btn sm" data-pz="R+">🔍+</button><button class="btn sm" data-pz="Rf">⤢</button>
         </div>
         <div class="bar" id="pDrawBar">
-          <button class="btn sm on" data-ptool="pair" title="จิ้มจุดคู่กับภาพโฉนด (ใช้อ้างอิงภาพโฉนด)">📍 จิ้มจุดคู่</button>
+          <button class="btn sm on" data-ptool="pair" title="ปักจุดคู่กับภาพโฉนด (ใช้อ้างอิงภาพโฉนด)">📍 ปักจุดคู่</button>
           <button class="btn sm" data-ptool="poly" title="วาดรูปปิดบนภาพดาวเทียมโดยตรง — พิกัดมาจาก world file ไม่ต้องอ้างอิง">⬟ รูปปิด</button>
           <button class="btn sm" data-ptool="line" title="วาดเส้นบนภาพดาวเทียมโดยตรง">✏️ เส้น</button>
           <button class="btn sm" data-ptool="pt" title="ปักจุดหลักเขตบนภาพดาวเทียมโดยตรง">• หลักเขต</button>
@@ -1067,7 +1067,7 @@ function recomputeInner() {
   const isNorthUp = Math.abs(B) < 1e-12 && Math.abs(D) < 1e-12;
   const rot = Math.atan2(D, A) * R2D;
 
-  // toLL = พิกเซลเฟรมเต็มของภาพดาวเทียม → {lng,lat} · แท็บโฉนดใช้ตัวนี้อ่านพิกัดตอนจิ้มจุด (0.187.0)
+  // toLL = พิกเซลเฟรมเต็มของภาพดาวเทียม → {lng,lat} · แท็บโฉนดใช้ตัวนี้อ่านพิกัดตอนปักจุด (0.187.0)
   RESULT = { A, D, B, E, C, F, cor, mpp, gW, gH, note, toLL };
 
   $('resTable').innerHTML = [
@@ -1553,7 +1553,11 @@ $('dDeedNo').addEventListener('input', dRecompute);
 let DEED_OUT = null;
 function dRecompute() {
   DEED_OUT = null; dd.sol = null;
-  $('dSend').disabled = true; $('dDl').disabled = true;
+  // มีรูปที่วาดบนภาพดาวเทียมแล้ว = ส่งเข้าผังได้เลย ไม่ต้องรอการอ้างอิงภาพโฉนด (0.188.1)
+  // PK ประกาศด้วย const ทีหลังในไฟล์ → typeof ก็ยังโยน ReferenceError ตอนเรียกครั้งแรก (TDZ) จึงต้อง try
+  let satReady = false;
+  try { satReady = PK.satShapes.length > 0; } catch (e) { /* ยังโหลดส่วนปักจุดไม่ถึง */ }
+  $('dSend').disabled = !satReady; $('dDl').disabled = true;
   if (!dd.bmp) { setMsg('dRefMsg', 'warn', 'ยังไม่มีภาพแปลง'); $('dShapes').innerHTML = ''; return; }
   const pts = dd.gcps.filter((g) => g.lat != null);
   if (pts.length < DEED_MIN_REF) {
@@ -1628,10 +1632,35 @@ $('dShapes').addEventListener('click', (e) => {
   dd.shapes.splice(+i, 1); dDraw(); dRecompute();
 });
 
-$('dSend').onclick = () => {
-  if (!DEED_OUT || !TARGET) return;
-  TARGET.postMessage({ kind: 'asc.mapfetch.deed', deed: DEED_OUT }, location.origin);
-  setMsg('dSaveMsg', 'ok', 'ส่งแนวเขตโฉนดเข้าผังแล้ว — ดูได้บนผัง (เส้นม่วง) และในผลตรวจ');
+/* ปุ่มส่งในขั้นที่ 5 — แนบภาพพื้นไปด้วยเหมือนปุ่มในหน้าต่างเทียบภาพ (0.188.1 · ลุงพีแจ้ง 13 พ.ย. 2569
+   ว่าส่งแล้วไม่มีภาพพื้น เพราะปุ่มนี้ยังส่งเฉพาะเส้น) · รวมรูปที่วาดบนภาพดาวเทียมมาด้วย */
+$('dSend').onclick = async () => {
+  if (!TARGET) return;
+  const shapes = DEED_OUT ? [...DEED_OUT.shapes] : [];
+  try {
+    if (PK.satShapes.length && RESULT) PK.satShapes.forEach((sh) => shapes.push({ kind: sh.kind, label: sh.label || '',
+      lnglat: sh.pts.map((q) => { const p2 = RESULT.toLL(q.u, q.v); return [+p2.lng.toFixed(8), +p2.lat.toFixed(8)]; }) }));
+  } catch (e) { /* ยังไม่เคยเปิดหน้าต่างปักจุด */ }
+  if (!shapes.length) { setMsg('dSaveMsg', 'warn', 'ยังไม่มีรูปที่จะส่ง'); return; }
+  const satOnly = !DEED_OUT;
+  const ref = satOnly
+    ? { points: 0, method: 'วาดบนภาพดาวเทียมโดยตรง (world file)', rmseM: 0, direct: true }
+    : DEED_OUT.ref;
+  const deed = { schema: 'asc-studio/deed-plot/1', deedNo: ($('dDeedNo').value || '').trim() || undefined,
+    ref, shapes, files: dd.files.length ? dd.files : undefined };
+  const withImg = $('dWithImg').checked && RESULT && st.bmp;
+  if (!withImg) {
+    TARGET.postMessage({ kind: 'asc.mapfetch.deed', deed }, location.origin);
+    setMsg('dSaveMsg', 'ok', 'ส่งแนวเขต ' + shapes.length + ' รูปเข้าผังแล้ว (ไม่ได้ส่งภาพพื้น — ติ๊กช่องด้านบนถ้าต้องการให้ส่งภาพไปด้วย)');
+    return;
+  }
+  setMsg('dSaveMsg', 'warn', 'กำลังเตรียมภาพ…');
+  try {
+    const blob = await cropBlob();
+    const dataUrl = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(new Error('อ่านภาพไม่ได้')); fr.readAsDataURL(blob); });
+    TARGET.postMessage({ kind: 'asc.mapfetch.backdrop', name: names().img, wfText: worldFileText(RESULT), dataUrl, deed }, location.origin);
+    setMsg('dSaveMsg', 'ok', 'ส่งภาพพื้น + แนวเขต ' + shapes.length + ' รูปเข้าผังแล้ว — ภาพกับเส้นมาจากภาพเดียวกัน จึงตรงกันเสมอ');
+  } catch (e) { setMsg('dSaveMsg', 'err', 'ส่งไม่สำเร็จ: ' + (e && e.message ? e.message : e)); }
 };
 /* บันทึกไฟล์แนวเขต — ฝังภาพแผนที่ + world file ไปด้วยได้ (0.188.0 · ลุงพีถาม 13 พ.ย. 2569)
    เปิดไฟล์เดียวแล้วได้ทั้งภาพพื้นและแนวเขตที่มาจากภาพเดียวกัน จึงไม่มีทางเหลื่อมกัน */
@@ -1690,7 +1719,7 @@ if (EMBEDDED) $('dSend').hidden = false;
 dRecompute();
 
 /* =====================================================================
-   จิ้มจุดอ้างอิงจากภาพดาวเทียม (0.187.0 · ลุงพีสั่ง 13 พ.ย. 2569)
+   ปักจุดอ้างอิงจากภาพดาวเทียม (0.187.0 · ลุงพีสั่ง 13 พ.ย. 2569)
 
    ปัญหา: landsmaps ไม่มีช่องแสดงพิกัดให้คัดลอก (เว็บใช้ CesiumJS รู้พิกัดภายใน
    แต่ไม่แสดงออกมา) ผู้ใช้จึงต้องไปคลิกขวาใน Google Maps แล้วพิมพ์ตัวเลขกลับมา
@@ -1841,7 +1870,7 @@ $('dPickWrap').addEventListener('click', (e) => { if (e.target === $('dPickWrap'
 
 ['L', 'R'].forEach((side) => {
   const cv = PCV[side];
-  /* เลื่อนภาพด้วยปุ่มกลางเมาส์ (คลิกซ้ายสงวนไว้ให้การจิ้มจุด) */
+  /* เลื่อนภาพด้วยปุ่มกลางเมาส์ (คลิกซ้ายสงวนไว้ให้การปักจุด) */
   cv.addEventListener('pointerdown', (e) => {
     if (e.button !== 1) return;
     e.preventDefault();
@@ -1864,7 +1893,7 @@ $('dPickWrap').addEventListener('click', (e) => { if (e.target === $('dPickWrap'
     const c = pkCv(side, e);
     pkZoomAt(side, c.x, c.y, PK.V[side].s * Math.pow(1.0015, -e.deltaY * (e.ctrlKey ? 3 : 1)));
   }, { passive: false });
-  /* คลิกซ้าย = จิ้มจุด */
+  /* คลิกซ้าย = ปักจุด */
   cv.addEventListener('click', (e) => {
     if (e.button !== 0 || !pkBmp(side)) return;
     const p = pkImg(side, e), u = Math.round(p.u * 10) / 10, v2 = Math.round(p.v * 10) / 10;
@@ -1917,7 +1946,7 @@ $('pUse').onclick = () => {
    ทำไม: การวาดบนภาพโฉนดแล้วอ้างอิงด้วยจุดคู่ มีความคลาดสะสม 2 ชั้น —
    ความคลาดของการคลิกบนภาพที่ถูกย่อ (ภาพ 1900 px ย่อลงเหลือ ~700 px บนจอ
    = 1 พิกเซลจอ ราว 1 เมตรบนพื้นจริง) คูณสองฝั่ง แล้วยังถูกขยายต่อโดยการแก้สมการ
-   ถ้าจิ้มผิดคู่ไปคนละจุด ผลจะเลื่อนทั้งแปลงโดยไม่มีอะไรเตือน
+   ถ้าปักผิดคู่ไปคนละจุด ผลจะเลื่อนทั้งแปลงโดยไม่มีอะไรเตือน
 
    วิธีที่ไม่มีความคลาดชั้นนี้เลย: วาดบนภาพดาวเทียมที่มี world file อยู่แล้ว
    ทุกพิกเซลรู้พิกัดจริงอยู่แล้ว ไม่ต้องแก้สมการ ไม่ต้องอ้างอิง
@@ -1997,6 +2026,7 @@ function pkDelNear(u, v) {
 function pkSatInfo() {
   const n = PK.satShapes.length;
   $('pSend').disabled = !n;
+  if (EMBEDDED && n) $('dSend').disabled = false;          // ส่งจากขั้นที่ 5 ได้ด้วย
   if (!n) { setMsg('pSatMsg', '', ''); return; }
   const parts = PK.satShapes.map((sh, i) => {
     const ll = sh.pts.map((q) => { const p = RESULT.toLL(q.u, q.v); return [p.lng, p.lat]; });
