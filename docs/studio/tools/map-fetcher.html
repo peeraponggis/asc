@@ -305,6 +305,7 @@ footer{max-width:1180px;margin:0 auto;padding:0 14px 30px;font-size:12px;color:v
     <h2><i>5</i> รูปที่วาด &amp; บันทึก</h2>
     <div id="dShapes"></div>
     <div id="dResMsg"></div>
+    <div class="row"><label class="small"><input type="checkbox" id="dWithImg" checked> ฝังภาพดาวเทียม + world file ไว้ในไฟล์ด้วย (เปิดไฟล์แล้วได้ภาพพื้นพร้อมแนวเขต)</label></div>
     <div class="row" style="margin-top:8px">
       <button class="btn primary" id="dSend" hidden disabled>📤 ส่งแนวเขตเข้าผัง</button>
       <button class="btn" id="dDl" disabled>⬇ บันทึกไฟล์แนวเขต (.ascdeed.json)</button>
@@ -318,8 +319,8 @@ footer{max-width:1180px;margin:0 auto;padding:0 14px 30px;font-size:12px;color:v
 <div class="pickwrap" id="dPickWrap">
   <div class="pickbox">
     <div class="head">
-      <b>🛰️ จิ้มจุดอ้างอิงจากภาพดาวเทียม</b>
-      <span>คลิกจุดเดียวกันทั้งสองฝั่ง · ทำซ้ำ 3–4 จุดให้กระจายทั่วแปลง · ซูมก่อนคลิกจะแม่นกว่ามาก</span>
+      <b>🛰️ เทียบภาพ &amp; วาดแนวเขต</b>
+      <span>วาดบนภาพดาวเทียมได้ตรง ๆ (แม่นที่สุด ไม่ต้องอ้างอิง) · หรือจิ้มจุดคู่เพื่ออ้างอิงภาพโฉนด</span>
     </div>
     <div class="panes">
       <div class="pane">
@@ -336,22 +337,38 @@ footer{max-width:1180px;margin:0 auto;padding:0 14px 30px;font-size:12px;color:v
           <button class="btn sm" data-pz="R-">🔍−</button><span class="small" id="pzR" style="min-width:44px;text-align:center">100%</span>
           <button class="btn sm" data-pz="R+">🔍+</button><button class="btn sm" data-pz="Rf">⤢</button>
         </div>
+        <div class="bar" id="pDrawBar">
+          <button class="btn sm on" data-ptool="pair" title="จิ้มจุดคู่กับภาพโฉนด (ใช้อ้างอิงภาพโฉนด)">📍 จิ้มจุดคู่</button>
+          <button class="btn sm" data-ptool="poly" title="วาดรูปปิดบนภาพดาวเทียมโดยตรง — พิกัดมาจาก world file ไม่ต้องอ้างอิง">⬟ รูปปิด</button>
+          <button class="btn sm" data-ptool="line" title="วาดเส้นบนภาพดาวเทียมโดยตรง">✏️ เส้น</button>
+          <button class="btn sm" data-ptool="pt" title="ปักจุดหลักเขตบนภาพดาวเทียมโดยตรง">• หลักเขต</button>
+          <button class="btn sm" data-ptool="del" title="คลิกใกล้รูปที่ต้องการลบ">🗑 ลบรูป</button>
+          <button class="btn sm" id="pFinish" disabled>✓ จบรูปนี้</button>
+          <button class="btn sm" id="pUndoPt" disabled>↶ ถอยจุด</button>
+        </div>
         <div class="cvwrap"><canvas id="pcvR"></canvas><div class="tag" id="ptagR">รอคลิกฝั่งซ้ายก่อน</div></div>
       </div>
     </div>
     <div class="foot">
-      <div class="steps">
-        <span><i class="dot on" id="pst1">1</i> คลิกบนภาพโฉนด</span>
-        <span><i class="dot" id="pst2">2</i> คลิกจุดเดียวกันบนภาพดาวเทียม</span>
-        <span><i class="dot" id="pst3">3</i> ทำซ้ำให้ครบ 3–4 จุด</span>
-        <span class="small">เลื่อนภาพ: กดปุ่มกลางเมาส์ลาก · ซูม: ล้อเมาส์</span>
+      <div class="steps" id="pLayers">
+        <span class="small"><b>แสดง:</b></span>
+        <label class="small"><input type="checkbox" id="pLSat" checked> ⬟ เส้นที่วาดบนภาพดาวเทียม</label>
+        <label class="small"><input type="checkbox" id="pLDeed" checked> ⬟ เส้นที่วาดบนภาพโฉนด</label>
+        <label class="small"><input type="checkbox" id="pLPins" checked> 📍 จุดอ้างอิง</label>
+        <span style="flex:1"></span>
+        <span class="small">เลื่อนภาพ: ปุ่มกลางเมาส์ลาก · ซูม: ล้อเมาส์</span>
       </div>
-      <table class="pts"><thead><tr><th style="width:26px">#</th><th>พิกเซลบนภาพโฉนด</th><th>พิกัดที่อ่านได้จากภาพดาวเทียม</th><th style="width:34px"></th></tr></thead>
+      <div id="pSatMsg"></div>
+      <table class="pts"><thead><tr><th style="width:26px">#</th><th>จุดอ้างอิง — พิกเซลบนภาพโฉนด</th><th>พิกัดที่อ่านได้จากภาพดาวเทียม</th><th style="width:34px"></th></tr></thead>
         <tbody id="pRows"></tbody></table>
       <div id="pMsg"></div>
       <div class="row">
-        <button class="btn primary" id="pUse" disabled>✓ ใช้จุดเหล่านี้</button>
-        <button class="btn" id="pUndo" disabled>↶ ลบจุดล่าสุด</button>
+        <label class="small"><input type="checkbox" id="pWithImg" checked> ส่งภาพดาวเทียมเป็นภาพพื้นไปด้วย (ภาพกับแนวเขตมาจากภาพเดียวกัน จึงตรงกันเสมอ)</label>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="pSend" disabled>📤 ส่งแนวเขตเข้าผัง</button>
+        <button class="btn" id="pUse" disabled>✓ ใช้จุดอ้างอิงนี้ (อ้างอิงภาพโฉนด)</button>
+        <button class="btn" id="pUndo" disabled>↶ ลบจุดอ้างอิงล่าสุด</button>
         <button class="btn" id="pClose">ปิด</button>
       </div>
     </div>
@@ -1616,14 +1633,28 @@ $('dSend').onclick = () => {
   TARGET.postMessage({ kind: 'asc.mapfetch.deed', deed: DEED_OUT }, location.origin);
   setMsg('dSaveMsg', 'ok', 'ส่งแนวเขตโฉนดเข้าผังแล้ว — ดูได้บนผัง (เส้นม่วง) และในผลตรวจ');
 };
-$('dDl').onclick = () => {
+/* บันทึกไฟล์แนวเขต — ฝังภาพแผนที่ + world file ไปด้วยได้ (0.188.0 · ลุงพีถาม 13 พ.ย. 2569)
+   เปิดไฟล์เดียวแล้วได้ทั้งภาพพื้นและแนวเขตที่มาจากภาพเดียวกัน จึงไม่มีทางเหลื่อมกัน */
+$('dDl').onclick = async () => {
   if (!DEED_OUT) return;
-  const base = String(DEED_OUT.deedNo || 'deed').replace(/[\\/:*?"<>|]/g, '_');
+  const out = { ...DEED_OUT };
+  const withImg = $('dWithImg').checked && RESULT && st.bmp;
+  if (withImg) {
+    setMsg('dSaveMsg', 'warn', 'กำลังเตรียมภาพ…');
+    try {
+      const blob = await cropBlob();
+      const dataUrl = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(new Error('อ่านภาพไม่ได้')); fr.readAsDataURL(blob); });
+      out.backdrop = { name: names().img, wfText: worldFileText(RESULT), dataUrl };
+    } catch (e) { setMsg('dSaveMsg', 'err', 'ฝังภาพไม่สำเร็จ: ' + (e && e.message ? e.message : e)); return; }
+  }
+  const base = String(out.deedNo || 'deed').replace(/[\/:*?"<>|]/g, '_');
+  const json = JSON.stringify(out, null, 1);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(DEED_OUT, null, 1)], { type: 'application/json' }));
+  a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
   a.download = base + '.ascdeed.json';
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  setMsg('dSaveMsg', 'ok', 'บันทึก <b>' + a.download + '</b> แล้ว — นำเข้าที่ ASC Studio → เมนู <b>อาคาร</b> → <b>นำเข้าแนวเขตโฉนด</b>' +
+  setMsg('dSaveMsg', 'ok', 'บันทึก <b>' + a.download + '</b> (' + (json.length / 1048576).toFixed(1) + ' MB) แล้ว — นำเข้าที่ ASC Studio → เมนู <b>อาคาร</b> → <b>นำเข้าแนวเขตโฉนด</b>' +
+    (withImg ? '<br>✓ ฝังภาพแผนที่ + world file ไว้ด้วย เปิดไฟล์แล้วได้ภาพพื้นพร้อมแนวเขต' : '') +
     (dd.files.length ? '<br>⚠ ไฟล์นี้มีสำเนาโฉนดอยู่ข้างใน = ข้อมูลส่วนบุคคลของลูกค้า เก็บไว้กับไฟล์งาน ห้ามนำขึ้น git หรือส่งต่อ' : ''));
 };
 
@@ -1731,14 +1762,47 @@ function pkDraw(side) {
     g.fillStyle = '#000'; g.fillText(label, d.x + 8, d.y - 6);
     g.fillStyle = '#fff'; g.fillText(label, d.x + 9, d.y - 7);
   };
-  PK.pairs.forEach((p, i) => mark(pkDisp(side, side === 'L' ? p.uL : p.uR, side === 'L' ? p.vL : p.vR), '#3ddc97', String(i + 1)));
-  if (PK.pending && side === 'L') mark(pkDisp('L', PK.pending.uL, PK.pending.vL), '#ff9f43', String(PK.pairs.length + 1));
+  // รูปแนวเขต: ของฝั่งตัวเอง + ของอีกฝั่งที่แปลงพิกัดมาแล้ว (เลเยอร์เปิด/ปิดได้)
+  const trace = (pts, close) => { g.beginPath();
+    pts.forEach((q, i) => { const d = pkDisp(side, q.u, q.v); if (i) g.lineTo(d.x, d.y); else g.moveTo(d.x, d.y); });
+    if (close) g.closePath(); };
+  for (const sh of pkShapesFor(side)) {
+    const col = PK_COL[sh.src][sh.kind], own = (sh.src === 'sat') === (side === 'R');
+    g.setLineDash(own ? [] : [6, 4]);                    // เส้นประ = มาจากอีกฝั่ง (ผ่านการอ้างอิง)
+    if (sh.kind === 'point') { const d = pkDisp(side, sh.pts[0].u, sh.pts[0].v);
+      g.fillStyle = col; g.beginPath(); g.arc(d.x, d.y, 5, 0, 7); g.fill();
+      g.strokeStyle = '#fff'; g.lineWidth = 1.4; g.stroke(); g.setLineDash([]); continue; }
+    g.strokeStyle = col; g.lineWidth = own ? 2.5 : 2;
+    if (sh.kind === 'polygon') { trace(sh.pts, true); g.fillStyle = col + '22'; g.fill(); g.stroke(); }
+    else { trace(sh.pts, false); g.stroke(); }
+    g.setLineDash([]);
+    g.fillStyle = col;
+    sh.pts.forEach((q) => { const d = pkDisp(side, q.u, q.v); g.beginPath(); g.arc(d.x, d.y, 3, 0, 7); g.fill(); });
+  }
+  if (PK.draft && PK.draft.pts.length && side === 'R') {
+    g.strokeStyle = '#3ddc97'; g.lineWidth = 2; g.setLineDash([7, 5]);
+    trace(PK.draft.pts, false); g.stroke(); g.setLineDash([]);
+    g.fillStyle = '#3ddc97';
+    PK.draft.pts.forEach((q) => { const d = pkDisp('R', q.u, q.v); g.beginPath(); g.arc(d.x, d.y, 4, 0, 7); g.fill(); });
+  }
+  if (PK.layers.pins) {
+    PK.pairs.forEach((p, i) => mark(pkDisp(side, side === 'L' ? p.uL : p.uR, side === 'L' ? p.vL : p.vR), '#3ddc97', String(i + 1)));
+    if (PK.pending && side === 'L') mark(pkDisp('L', PK.pending.uL, PK.pending.vL), '#ff9f43', String(PK.pairs.length + 1));
+  }
 }
 function pkStep(n) {
-  [1, 2, 3].forEach((i) => { $('pst' + i).className = 'dot' + (i < n ? ' done' : i === n ? ' on' : ''); });
+  // ตัวบอกขั้นตอน 1-2-3 มีเฉพาะบางเลย์เอาต์ — ไม่มีก็ข้าม (ป้ายบนภาพบอกขั้นตอนอยู่แล้ว)
+  [1, 2, 3].forEach((i) => { const el = $('pst' + i); if (el) el.className = 'dot' + (i < n ? ' done' : i === n ? ' on' : ''); });
 }
 function pkTags() {
   const n = PK.pairs.length + 1;
+  const T = { poly: '⬟ คลิกมุมแปลงรอบที่ดิน แล้วกด ✓ จบรูปนี้', line: '✏️ คลิกตามแนว แล้วกด ✓ จบรูปนี้',
+    pt: '• คลิกครั้งเดียว = หมุดหลักเขต', del: '🗑 คลิกใกล้รูปที่จะลบ' };
+  if (PK.tool !== 'pair') {
+    $('ptagL').textContent = 'ภาพโฉนด — ใช้ดูเส้นขอบแดงเป็นไกด์';
+    $('ptagR').textContent = (T[PK.tool] || '') + ' · พิกัดมาจาก world file ไม่ต้องอ้างอิง';
+    return;
+  }
   $('ptagL').textContent = PK.pending ? `เลือกจุดที่ ${n} แล้ว — ไปคลิกจุดเดียวกันฝั่งขวา` : 'คลิกจุดสังเกตบนภาพโฉนด';
   $('ptagR').textContent = PK.pending ? `👉 คลิกจุดเดียวกันตรงนี้ (จุดที่ ${n})` : 'รอคลิกฝั่งซ้ายก่อน';
 }
@@ -1763,12 +1827,13 @@ $('dPickOpen').onclick = () => {
       'จับภาพบริเวณเดียวกันกับแปลงนี้ แล้วกำหนดพิกัดให้ขึ้นผลลัพธ์ในขั้น 4 ก่อน จากนั้นกลับมากดปุ่มนี้อีกครั้ง');
     return;
   }
-  PK.on = true; PK.pairs = []; PK.pending = null;
+  PK.on = true; PK.pairs = []; PK.pending = null; PK.draft = null; PK.satShapes = PK.satShapes || [];
+  PK.tool = 'pair'; [...document.querySelectorAll('#pDrawBar button[data-ptool]')].forEach((x) => x.classList.toggle('on', x.dataset.ptool === 'pair'));
   $('dPickWrap').classList.add('on');
   $('pSatNote').innerHTML = `✓ มี world file — รู้พิกัดทุกพิกเซล · ${st.W}×${st.H} px`;
   requestAnimationFrame(() => {
     ['L', 'R'].forEach((s2) => { pkFit(s2); pkDraw(s2); pkZoomLabel(s2); });
-    pkRows(); pkTags(); pkStep(1);
+    pkRows(); pkTags(); pkStep(1); pkDraftBtns(); pkSatInfo();
   });
 };
 $('pClose').onclick = () => { PK.on = false; $('dPickWrap').classList.remove('on'); };
@@ -1803,6 +1868,16 @@ $('dPickWrap').addEventListener('click', (e) => { if (e.target === $('dPickWrap'
   cv.addEventListener('click', (e) => {
     if (e.button !== 0 || !pkBmp(side)) return;
     const p = pkImg(side, e), u = Math.round(p.u * 10) / 10, v2 = Math.round(p.v * 10) / 10;
+    if (side === 'R' && PK.tool !== 'pair') {
+      if (PK.tool === 'pt') { PK.satShapes.push({ kind: 'point', pts: [{ u, v: v2 }], label: '' }); pkDraw('L'); pkDraw('R'); pkSatInfo(); return; }
+      if (PK.tool === 'del') { pkDelNear(u, v2); return; }
+      const kind = PK.tool === 'poly' ? 'polygon' : 'polyline';
+      if (!PK.draft || PK.draft.kind !== kind) PK.draft = { kind, pts: [] };
+      const f0 = PK.draft.pts[0];
+      if (kind === 'polygon' && PK.draft.pts.length >= 3 && f0 && Math.hypot(f0.u - u, f0.v - v2) * PK.V.R.s < 10) { pkFinishDraft(); return; }
+      PK.draft.pts.push({ u, v: v2 });
+      pkDraftBtns(); pkDraw('R'); pkDraw('L'); return;
+    }
     if (side === 'L') { PK.pending = { uL: u, vL: v2 }; pkStep(2); }
     else {
       if (!PK.pending) { setMsg('pMsg', 'warn', 'คลิกจุดบนภาพโฉนด (ฝั่งซ้าย) ก่อน แล้วค่อยคลิกจุดเดียวกันฝั่งนี้'); return; }
@@ -1835,6 +1910,135 @@ $('pUse').onclick = () => {
   PK.on = false; $('dPickWrap').classList.remove('on');
   dRenderGcps(); dDraw(); dRecompute();
 };
+
+/* =====================================================================
+   วาดแนวเขตบนภาพดาวเทียมโดยตรง + แสดงเส้นข้ามฝั่ง (0.188.0 · ลุงพีสั่ง 13 พ.ย. 2569)
+
+   ทำไม: การวาดบนภาพโฉนดแล้วอ้างอิงด้วยจุดคู่ มีความคลาดสะสม 2 ชั้น —
+   ความคลาดของการคลิกบนภาพที่ถูกย่อ (ภาพ 1900 px ย่อลงเหลือ ~700 px บนจอ
+   = 1 พิกเซลจอ ราว 1 เมตรบนพื้นจริง) คูณสองฝั่ง แล้วยังถูกขยายต่อโดยการแก้สมการ
+   ถ้าจิ้มผิดคู่ไปคนละจุด ผลจะเลื่อนทั้งแปลงโดยไม่มีอะไรเตือน
+
+   วิธีที่ไม่มีความคลาดชั้นนี้เลย: วาดบนภาพดาวเทียมที่มี world file อยู่แล้ว
+   ทุกพิกเซลรู้พิกัดจริงอยู่แล้ว ไม่ต้องแก้สมการ ไม่ต้องอ้างอิง
+   ภาพโฉนดฝั่งซ้ายใช้เป็นไกด์ดูเส้นขอบแดง และเปิด/ปิดชั้นเส้นเพื่อเทียบได้
+   ===================================================================== */
+PK.satShapes = [];        // รูปที่วาดบนภาพดาวเทียม [{kind,pts:[{u,v}],label}] — u,v = พิกเซลภาพดาวเทียม
+PK.draft = null;          // รูปที่กำลังวาดบนภาพดาวเทียม
+PK.tool = 'pair';         // pair | poly | line | pt | del
+PK.layers = { sat: true, deed: true, pins: true };
+
+/* ---- แปลงพิกัดข้ามฝั่ง (ผ่าน normalized Mercator ซึ่งเป็นแกนกลางของทั้งสองฝั่ง) ---- */
+const pkSatXY = (u, v) => { const ll = RESULT.toLL(u, v); return { x: xnOf(ll.lng), y: ynOf(ll.lat) }; };
+function pkSatInv() {                       // XY → พิกเซลภาพดาวเทียม (toLL เป็น affine ในระนาบนี้)
+  const o = pkSatXY(0, 0), ex = pkSatXY(1, 0), ey = pkSatXY(0, 1);
+  const a = ex.x - o.x, b = ey.x - o.x, c = ex.y - o.y, d = ey.y - o.y, det = a * d - b * c;
+  if (!det) return null;
+  return (X, Y) => { const dx = X - o.x, dy = Y - o.y; return { u: (d * dx - b * dy) / det, v: (-c * dx + a * dy) / det }; };
+}
+function pkDeedInv() {                      // XY → พิกเซลภาพโฉนด (ต้องอ้างอิงภาพโฉนดแล้ว)
+  if (!dd.sol) return null;
+  const f = dd.sol.fn, o = f({ x: 0, y: 0 }), ex = f({ x: 1, y: 0 }), ey = f({ x: 0, y: 1 });
+  const a = ex.x - o.x, b = ey.x - o.x, c = ex.y - o.y, d = ey.y - o.y, det = a * d - b * c;
+  if (!det) return null;
+  return (X, Y) => { const dx = X - o.x, dy = Y - o.y; return { u: (d * dx - b * dy) / det, v: (-c * dx + a * dy) / det }; };
+}
+/** รูปที่จะวาดบนแต่ละฝั่ง: ของฝั่งตัวเอง + ของอีกฝั่งที่แปลงพิกัดมาแล้ว (ถ้าแปลงได้) */
+function pkShapesFor(side) {
+  const out = [];
+  if (PK.layers.sat) {
+    if (side === 'R') PK.satShapes.forEach((sh) => out.push({ ...sh, src: 'sat' }));
+    else { const inv = pkDeedInv();
+      if (inv) PK.satShapes.forEach((sh) => out.push({ ...sh, src: 'sat', pts: sh.pts.map((q) => { const p = pkSatXY(q.u, q.v); return inv(p.x, p.y); }) })); }
+  }
+  if (PK.layers.deed && dd.shapes.length) {
+    if (side === 'L') dd.shapes.forEach((sh) => out.push({ ...sh, src: 'deed' }));
+    else if (dd.sol) { const inv = pkSatInv();
+      if (inv) dd.shapes.forEach((sh) => out.push({ ...sh, src: 'deed', pts: sh.pts.map((q) => { const p = dd.sol.fn({ x: q.u, y: q.v }); return inv(p.x, p.y); }) })); }
+  }
+  return out;
+}
+const PK_COL = { sat: { polygon: '#ffd166', polyline: '#4fc3f7', point: '#ba68c8' },
+                 deed: { polygon: '#ff5d5d', polyline: '#2e86de', point: '#8e44ad' } };
+
+/* ---- เครื่องมือวาดฝั่งภาพดาวเทียม ---- */
+function pkDraftBtns() {
+  const n = PK.draft ? PK.draft.pts.length : 0;
+  const need = PK.draft && PK.draft.kind === 'polygon' ? 3 : 2;
+  $('pFinish').disabled = n < need; $('pUndoPt').disabled = !n;
+}
+function pkFinishDraft() {
+  const d = PK.draft; if (!d) return;
+  const need = d.kind === 'polygon' ? 3 : 2;
+  if (d.pts.length >= need) { PK.satShapes.push({ kind: d.kind, pts: d.pts, label: '' }); setMsg('pSatMsg', '', ''); }
+  else if (d.pts.length) setMsg('pSatMsg', 'warn', 'รูปนี้มีแค่ ' + d.pts.length + ' จุด — ' + (d.kind === 'polygon' ? 'รูปปิดต้องมีอย่างน้อย 3 จุด' : 'เส้นต้องมีอย่างน้อย 2 จุด'));
+  PK.draft = null; pkDraftBtns(); pkDraw('L'); pkDraw('R'); pkSatInfo();
+}
+$('pFinish').onclick = pkFinishDraft;
+$('pUndoPt').onclick = () => { if (PK.draft && PK.draft.pts.length) { PK.draft.pts.pop(); if (!PK.draft.pts.length) PK.draft = null; pkDraftBtns(); pkDraw('R'); pkDraw('L'); } };
+$('pDrawBar').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-ptool]'); if (!b) return;
+  if (PK.draft) pkFinishDraft();
+  PK.tool = b.dataset.ptool;
+  [...document.querySelectorAll('#pDrawBar button[data-ptool]')].forEach((x) => x.classList.toggle('on', x === b));
+  pkTags(); pkDraftBtns();
+});
+['pLSat', 'pLDeed', 'pLPins'].forEach((id) => ($(id).onchange = () => {
+  PK.layers = { sat: $('pLSat').checked, deed: $('pLDeed').checked, pins: $('pLPins').checked };
+  pkDraw('L'); pkDraw('R');
+}));
+function pkDelNear(u, v) {
+  let best = -1, bd = Infinity;
+  PK.satShapes.forEach((sh, i) => sh.pts.forEach((q) => { const d = Math.hypot(q.u - u, q.v - v); if (d < bd) { bd = d; best = i; } }));
+  if (best < 0 || bd * PK.V.R.s > 18) { setMsg('pSatMsg', 'warn', 'คลิกให้ใกล้จุดของรูปที่จะลบมากกว่านี้'); return; }
+  PK.satShapes.splice(best, 1); setMsg('pSatMsg', '', ''); pkDraw('L'); pkDraw('R'); pkSatInfo();
+}
+/** พื้นที่/ความยาวจริงของรูปที่วาดบนภาพดาวเทียม (คำนวณจาก world file ตรง ๆ) */
+function pkSatInfo() {
+  const n = PK.satShapes.length;
+  $('pSend').disabled = !n;
+  if (!n) { setMsg('pSatMsg', '', ''); return; }
+  const parts = PK.satShapes.map((sh, i) => {
+    const ll = sh.pts.map((q) => { const p = RESULT.toLL(q.u, q.v); return [p.lng, p.lat]; });
+    if (sh.kind === 'point') return `#${i + 1} • จุด ${ll[0][1].toFixed(7)}, ${ll[0][0].toFixed(7)}`;
+    const m = dGroundMetrics(ll, sh.kind === 'polygon');
+    return sh.kind === 'polygon'
+      ? `#${i + 1} ⬟ ${Math.round(m.area).toLocaleString()} ตร.ม. (${(m.area / 1600).toFixed(2)} ไร่) · รอบ ${m.len.toFixed(1)} ม.`
+      : `#${i + 1} ✏️ ยาว ${m.len.toFixed(1)} ม.`;
+  });
+  setMsg('pSatMsg', 'ok', `<b>วาดบนภาพดาวเทียม ${n} รูป</b> (พิกัดจาก world file โดยตรง ไม่ผ่านการอ้างอิง)<br>${parts.join(' · ')}`);
+}
+
+/* ---- ส่งแนวเขตเข้าผังจากหน้านี้ (รวมทั้งที่วาดบนภาพดาวเทียมและบนภาพโฉนด) ---- */
+$('pSend').onclick = () => {
+  const shapes = [];
+  PK.satShapes.forEach((sh) => shapes.push({ kind: sh.kind, label: sh.label || '',
+    lnglat: sh.pts.map((q) => { const p = RESULT.toLL(q.u, q.v); return [+p.lng.toFixed(8), +p.lat.toFixed(8)]; }) }));
+  if (dd.sol) dd.shapes.forEach((sh) => shapes.push({ kind: sh.kind, label: sh.label || '',
+    lnglat: sh.pts.map((q) => { const p = dd.sol.fn({ x: q.u, y: q.v }); return [+lngOf(p.x).toFixed(8), +latOf(p.y).toFixed(8)]; }) }));
+  if (!shapes.length) { setMsg('pSatMsg', 'warn', 'ยังไม่มีรูปที่จะส่ง'); return; }
+  if (!TARGET) { setMsg('pSatMsg', 'warn', 'หน้านี้ไม่ได้เปิดจากในโปรแกรม — ใช้ปุ่มบันทึกไฟล์ในขั้นที่ 5 แทน'); return; }
+  const withImg = $('pWithImg').checked && RESULT;
+  const ref = dd.sol && dd.gcps.filter((g) => g.lat != null).length >= DEED_MIN_REF
+    ? { points: dd.gcps.filter((g) => g.lat != null).length, method: dd.sol.method, rmseM: dd.sol.rmse == null ? undefined : +dd.sol.rmse.toFixed(2) }
+    : { points: 0, method: 'วาดบนภาพดาวเทียมโดยตรง (world file)', rmseM: 0, direct: true };
+  const deed = { schema: 'asc-studio/deed-plot/1', deedNo: ($('dDeedNo').value || '').trim() || undefined,
+    ref, shapes, files: dd.files.length ? dd.files : undefined };
+  if (!withImg) {
+    TARGET.postMessage({ kind: 'asc.mapfetch.deed', deed }, location.origin);
+    setMsg('pSatMsg', 'ok', `ส่งแนวเขต ${shapes.length} รูปเข้าผังแล้ว (ไม่ได้ส่งภาพพื้น)`);
+    return;
+  }
+  // ส่งภาพพื้น + แนวเขตในข้อความเดียว — ภาพกับเส้นมาจากภาพเดียวกัน จึงไม่มีทางเหลื่อมกัน
+  setMsg('pSatMsg', 'warn', 'กำลังเตรียมภาพ…');
+  cropBlob().then((blob) => new Promise((res, rej) => {
+    const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(new Error('อ่านภาพไม่ได้')); fr.readAsDataURL(blob);
+  })).then((dataUrl) => {
+    TARGET.postMessage({ kind: 'asc.mapfetch.backdrop', name: names().img, wfText: worldFileText(RESULT), dataUrl, deed }, location.origin);
+    setMsg('pSatMsg', 'ok', `ส่งภาพพื้น + แนวเขต ${shapes.length} รูปเข้าผังแล้ว`);
+  }).catch((e) => setMsg('pSatMsg', 'err', 'ส่งไม่สำเร็จ: ' + (e && e.message ? e.message : e)));
+};
+
 window.addEventListener('keydown', (e) => { if (PK.on && e.key === 'Escape') { e.preventDefault(); $('pClose').click(); } });
 window.addEventListener('resize', () => { if (PK.on) ['L', 'R'].forEach((s2) => { pkFit(s2); pkDraw(s2); pkZoomLabel(s2); }); });
 
