@@ -1277,6 +1277,13 @@ function setPage(p) {
   if (p === 'deed' && dd.bmp) { dFit(); dZoomLabel(); dDraw(); }
 }
 $('pageTabs').addEventListener('click', (e) => { const b = e.target.closest('button[data-page]'); if (b) setPage(b.dataset.page); });
+/* หน้าแม่ (ปุ่ม "โฉนดที่ดิน & Land maps" ในแอป) สั่งสลับแท็บได้โดยไม่ต้องโหลดหน้าใหม่
+   — โหลดใหม่ = ภาพดาวเทียมและ world file ที่ทำไว้หายหมด (0.187.1) */
+window.addEventListener('message', (e) => {
+  if (e.origin !== location.origin) return;
+  const d = e.data;
+  if (d && d.kind === 'asc.mapfetch.tab' && (d.tab === 'map' || d.tab === 'deed')) setPage(d.tab);
+});
 
 $('dOpenLands').onclick = () => window.open('https://landsmaps.dol.go.th/', '_blank', 'noopener');
 

@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.187.0",
+ "version": "0.187.1",
  "published": "2026-11-13",
  "notes": [
-  "แท็บโฉนดที่ดิน: จิ้มจุดอ้างอิงจากภาพดาวเทียมได้ — คลิกจุดเดียวกันบนภาพโฉนดและภาพดาวเทียมที่มี world file โปรแกรมอ่านพิกัดให้เอง ไม่ต้องเปิด Google Maps ไม่ต้องพิมพ์พิกัด (landsmaps ไม่มีช่องแสดงพิกัด)"
+  "แก้ปุ่ม 'โฉนดที่ดิน & Land maps' ในหน้าต่าง Map Fetcher ล้างภาพดาวเทียมและ world file ทิ้ง ทำให้จิ้มจุดจากภาพดาวเทียมใช้ไม่ได้ — เปลี่ยนไปสลับแท็บด้วย postMessage แทนการโหลดหน้าใหม่"
  ],
  "requirements": "5c56ea9839289d16",
  "package": {
-  "file": "ascs-app-0.187.0.bin",
-  "size": 22110633,
-  "sha256": "acd445595ddd9ff426c6d1d232f2e95e83a417f32e6416371fedae37bb54a717"
+  "file": "ascs-app-0.187.1.bin",
+  "size": 22111008,
+  "sha256": "8e1cbf20c41c8c82984de5cc57f141926c612f5a5a92677175339ad9e681e45c"
  },
  "setup": {
-  "file": "ascs-setup-0.187.0.bin",
-  "size": 51618353,
-  "sha256": "e1069bb02ae6169ce03409b13067c26aae5c98f5758246544857e527d72578eb",
-  "name": "ASC-Studio-Setup-0.187.0.exe"
+  "file": "ascs-setup-0.187.1.bin",
+  "size": 51619377,
+  "sha256": "b21b6758aee703839650ac2e9ca573f4bec233115cbd76dbfee84a00d7220834",
+  "name": "ASC-Studio-Setup-0.187.1.exe"
  }
 }
