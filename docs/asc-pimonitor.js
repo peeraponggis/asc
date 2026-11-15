@@ -71,6 +71,13 @@
         return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' }) + ' น.';
     }
 
+    /* วันเวลาไทยเต็ม "15 พ.ย. 2569 21:12 น." (พ.ศ. · Asia/Bangkok) — ใช้กับยอดสะสมที่ข้ามวัน */
+    function dateTimeTh(iso) {
+        const d = new Date(iso);
+        if (isNaN(d)) return '—';
+        return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Bangkok' }) + ' ' + timeTh(iso);
+    }
+
     /* ตรวจค่าตั้งก่อนบันทึก (ช่วงเดียวกับ check ในตาราง monitor_settings) · คืนข้อความผิด หรือ '' */
     function checkSettings(s) {
         const n = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
@@ -86,7 +93,7 @@
         return Object.keys(APP_LABEL).sort().map(code => ({ code, label: APP_LABEL[code] }));
     }
 
-    const api = { APP_LABEL, PLATFORM_LABEL, STATUS_LABEL, summarize, filterRows, sortRows, ago, timeTh, checkSettings, setAppLabels };
+    const api = { APP_LABEL, PLATFORM_LABEL, STATUS_LABEL, summarize, filterRows, sortRows, ago, timeTh, dateTimeTh, checkSettings, setAppLabels };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     else root.AscPiMonitor = api;
 })(typeof window !== 'undefined' ? window : globalThis);

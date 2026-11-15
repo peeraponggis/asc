@@ -166,4 +166,36 @@ t('asc-cloud.js: ไม่มีพิกัด/IP · ออกจากระ�
   assert.match(src, /await presenceSend\(true\);\s+\/\/ แจ้งออกจากระบบ/);
 });
 
+const guests = readFileSync(new URL('../supabase/presence-users.sql', import.meta.url), 'utf8');
+t('presence-users.sql: นับผู้ใช้ภายนอก เข้า-ออก = 1 ครั้ง · ยอดสะสมไม่ถูกล้าง · อ่านได้เฉพาะผู้ดูแล', () => {
+  assert.match(guests, /create table if not exists public\.guest_presence/);
+  assert.match(guests, /create table if not exists public\.presence_user_stats/);
+  assert.match(guests, /visits\s+= u\.visits \+ case when v_new then 1 else 0 end/);   // แท็บเดิม ping ซ้ำ ไม่เพิ่มครั้ง
+  assert.match(guests, /last_minutes\s+= greatest\(0, floor\(extract\(epoch from now\(\) - coalesce\(v_from/);
+  assert.match(guests, /v_team := mail like '%@' \|\| coalesce\(domain, 'proinventive\.co\.th'\)/);
+  assert.match(guests, /if v_team then\s+insert into public\.app_presence/);            // ทีมงาน = พฤติกรรมเดิม
+  assert.match(guests, /else\s+insert into public\.guest_presence/);                    // คนนอก = ไม่แตะตารางสด
+  assert.match(guests, /return case when v_team then 'ok' else 'guest' end;/);
+  for (const tb of ['guest_presence', 'presence_user_stats'])
+    assert.match(guests, new RegExp(`create policy ${tb}_select on public\\.${tb}\\s+for select to authenticated using \\(public\\.is_admin\\(\\)\\)`));
+  assert.match(guests, /delete from public\.guest_presence g/);                          // ล้างแท็บเก่าของคนนอก
+  assert.doesNotMatch(guests, /delete from public\.presence_user_stats/);                // ยอดสะสมห้ามลบ
+  const tbl = guests.match(/create table if not exists public\.guest_presence[\s\S]*?\);/)[0];
+  assert.doesNotMatch(tbl, /^\s+(page|ip|lat|lng|lon|location)\s/m);                                       // ไม่เก็บ IP/ที่ตั้ง/ชื่อหน้าของคนนอก
+});
+
+t('Pi monitor: ทนช่วง deploy · ตารางผู้ใช้ภายนอก', () => {
+  const page = readFileSync(new URL('../docs/pi-monitor.html', import.meta.url), 'utf8');
+  for (const f of ['asc-theme.js', 'supabase-config.js', 'asc-cloud.js', 'asc-pimonitor.js'])
+    assert.match(page, new RegExp(`src="${f.replace('.', '\\.')}\\?v=\\d+\\.\\d+\\.\\d+"`));  // กันแคชช่วง deploy
+  assert.doesNotMatch(page, /const AC = window\.AscCloud/);                              // ห้ามอ่านค่าตอน parse
+  assert.match(page, /need\('AscPiMonitor', 'asc-pimonitor\.js\?v=/);                   // รอ/โหลดซ้ำถ้าสคริปต์ยังไม่มา
+  assert.match(page, /ยังไม่ได้รัน supabase\/presence\.sql/);                            // ข้อความผิดพลาดเฉพาะกรณีที่ตารางหาย
+  assert.match(page, /from\('presence_guests'\)/);
+  assert.match(page, /dateTimeTh\(r\.last_seen\)/);                                      // ยอดสะสมข้ามวัน ต้องเห็นวันเดือนปี
+  assert.equal(PM.dateTimeTh('2026-11-15T14:12:00Z'), '15 พ.ย. 2569 21:12 น.');
+  assert.equal(PM.dateTimeTh('ไม่ใช่เวลา'), '—');
+  assert.match(page, /ยังไม่ได้รัน supabase\/presence-users\.sql/);
+});
+
 console.log(`\nผ่าน ${n} ข้อ`);

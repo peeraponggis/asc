@@ -6,13 +6,15 @@
   · เฉพาะผู้ดูแลระบบ (ด่านจริงคือ RLS ของมุมมอง presence_status — ผู้ใช้ทั่วไปเห็นแค่ของตัวเอง)
   · รีเฟรชเองตามรอบที่เลือก (จำในเครื่อง) · กรองตามโปรแกรม/สถานะ/ช่องทาง/ค้นหา
   · ตั้งค่ารายงาน Telegram (ตาราง monitor_settings) ได้ในหน้านี้
+  · 4.12.0: ตารางผู้ใช้ภายนอก (ไม่ใช่ทีมงาน) จากมุมมอง presence_guests — ต้องรัน supabase/presence-users.sql ก่อน
+  · 4.12.0: ทนช่วง deploy — สคริปต์ในเครื่องมี ?v= · รอ/โหลดซ้ำถ้ายังไม่มา · ข้อความผิดพลาดตรงตามเหตุ
   ตรรกะอยู่ใน asc-pimonitor.js (ทดสอบด้วย node tests/presence.mjs)
 -->
 <html lang="th">
 <head>
 <meta charset="UTF-8">
     <!-- ธีมเดียวกับ ASC Studio (Classic · Carbon · Drafting · ASC Enterprise 4.10.0) -->
-    <script src="asc-theme.js"></script>
+    <script src="asc-theme.js?v=4.12.0"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Noto+Sans+Lao:wght@400;600&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
@@ -21,9 +23,9 @@
 <link rel="icon" href="img/pilogo.png?v=2" type="image/png">
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
-<script src="supabase-config.js"></script>
-<script src="asc-cloud.js"></script>
-<script src="asc-pimonitor.js"></script>
+<script src="supabase-config.js?v=4.12.0"></script>
+<script src="asc-cloud.js?v=4.12.0"></script>
+<script src="asc-pimonitor.js?v=4.12.0"></script>
 <style>
   :root { --bg:var(--panel2, #f1f5f9); --card:var(--panel, #fff); --ink:var(--ink, #0f172a); --mute:var(--ink2, #64748b); --line:var(--line, #e2e8f0); --brand:var(--ok, #0f766e);
           --g:#16a34a; --y:#ca8a04; --k:#475569; }
@@ -58,6 +60,7 @@
   .grid label.chk { flex-direction:row; align-items:center; gap:8px; color:var(--ink); }
   .note { font-size:12px; color:var(--mute); margin-top:8px; }
   #err { color:var(--fail, #b91c1c); font-size:13px; }
+  h2.h2 { font-size:16px; font-weight:600; margin:22px 0 4px; }
 </style>
 </head>
 <body>
@@ -83,6 +86,7 @@
       <div class="card"><b id="c-idle">0</b><span>🟡 เปิดทิ้งไว้ (คน)</span></div>
       <div class="card"><b id="c-offline">0</b><span>⚫ ออฟไลน์ · ใช้ใน 24 ชม. (คน)</span></div>
       <div class="card"><b id="c-people">0</b><span>ผู้ใช้ทั้งหมดใน 24 ชม.</span></div>
+      <div class="card"><b id="c-guest">0</b><span>👤 ผู้ใช้ภายนอก (สะสม)</span></div>
     </div>
 
     <div class="filters">
@@ -99,6 +103,17 @@
       </table>
       <div id="empty" class="empty" hidden>ไม่มีรายการตามที่กรอง</div>
     </div>
+
+    <h2 class="h2">👤 ผู้ใช้ภายนอก (ไม่ใช่ทีมงาน)</h2>
+    <p class="note">เข้า-ออก 1 รอบ = 1 ครั้ง · ยอดสะสมถึงปัจจุบัน (ไม่ถูกลบตามอายุข้อมูล) · ไม่เข้าตารางสดด้านบนและไม่แจ้งในกลุ่ม Telegram</p>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>ผู้ใช้</th><th>จำนวนครั้ง</th><th>ใช้ครั้งล่าสุด</th><th>ครั้งล่าสุดใช้ (นาที)</th><th>โปรแกรม</th><th>ช่องทาง</th><th>ครั้งแรก</th></tr></thead>
+        <tbody id="g-rows"></tbody>
+      </table>
+      <div id="g-empty" class="empty" hidden>ยังไม่มีผู้ใช้ภายนอกเข้ามาใช้งาน</div>
+    </div>
+    <p id="g-err" class="note"></p>
 
     <details class="settings">
       <summary>⚙️ ตั้งค่ารายงาน (กลุ่ม Telegram "Pi monitor")</summary>
@@ -119,7 +134,7 @@
 <script>
 (function () {
     'use strict';
-    const AC = window.AscCloud, M = window.AscPiMonitor;
+    let AC = null, M = null;                                      // 4.12.0: รอสคริปต์จริง ไม่อ่านค่าตอน parse
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     let rows = [], timer = 0;
@@ -158,15 +173,63 @@
             $('updated').textContent = 'อัปเดต ' + M.timeTh(new Date().toISOString());
             render();
         } catch (e) {
-            $('err').textContent = 'อ่านข้อมูลไม่สำเร็จ: ' + (e.message || e) + ' (ตรวจว่ารัน supabase/presence.sql แล้ว)';
+            const m = String(e && e.message || e);
+            const missing = /presence_status|does not exist|schema cache|relation/i.test(m);
+            $('err').textContent = 'อ่านข้อมูลไม่สำเร็จ: ' + m + (missing ? ' — ยังไม่ได้รัน supabase/presence.sql' : '');
         }
+    }
+
+    /* ผู้ใช้ภายนอก: ยอดสะสมจากมุมมอง presence_guests (ผู้ดูแลระบบเท่านั้น) */
+    async function loadGuests() {
+        const { data, error } = await AC.client.from('presence_guests').select('*').limit(500);
+        if (error) {
+            const m = String(error.message || error);
+            $('g-err').textContent = /presence_guests|does not exist|schema cache|relation/i.test(m)
+                ? 'ยังไม่ได้รัน supabase/presence-users.sql — ตารางผู้ใช้ภายนอกจึงยังไม่มี'
+                : 'อ่านผู้ใช้ภายนอกไม่สำเร็จ: ' + m;
+            return;
+        }
+        $('g-err').textContent = '';
+        const list = data || [];
+        $('c-guest').textContent = list.length;
+        $('g-rows').innerHTML = list.map(r => `
+          <tr>
+            <td>${esc(r.email)}</td>
+            <td>${esc(r.visits)}</td>
+            <td title="${esc(M.ago(r.last_seen))}">${esc(M.dateTimeTh(r.last_seen))}</td>
+            <td>${esc(r.last_minutes)} นาที</td>
+            <td>${esc(M.APP_LABEL[r.last_app] || r.last_app || '—')}</td>
+            <td>${esc(M.PLATFORM_LABEL[r.last_platform] || r.last_platform || '—')}</td>
+            <td>${esc(M.dateTimeTh(r.first_seen))}</td>
+          </tr>`).join('');
+        $('g-empty').hidden = list.length > 0;
+    }
+
+    const reload = () => Promise.all([load(), loadGuests()]);
+
+    /* ทนช่วง deploy: สคริปต์อาจมาไม่ครบ/ช้า → รอ แล้วลองโหลดใหม่อีกครั้งพร้อมกันแคช */
+    function need(name, src) {
+        return new Promise((resolve) => {
+            let tries = 0;
+            (function tick() {
+                if (window[name]) return resolve(window[name]);
+                if (tries === 8) {                                    // ~2 วินาที = ขอไฟล์ใหม่
+                    const el = document.createElement('script');
+                    el.src = src + (src.indexOf('?') < 0 ? '?' : '&') + 'r=' + Date.now();
+                    el.onerror = () => { /* รอบถัดไปจะหมดเวลาเอง */ };
+                    document.head.appendChild(el);
+                }
+                if (tries++ > 40) return resolve(null);               // ~10 วินาทีแล้วยอมแพ้
+                setTimeout(tick, 250);
+            })();
+        });
     }
 
     function schedule() {
         clearInterval(timer);
         const sec = Number($('every').value) || 60;
         try { localStorage.setItem('asc_pimonitor_every', String(sec)); } catch (e) { /* ไม่มีที่เก็บ = ใช้ค่าเริ่มต้น */ }
-        timer = setInterval(() => { if (!document.hidden) load(); }, sec * 1000);
+        timer = setInterval(() => { if (!document.hidden) reload(); }, sec * 1000);
     }
 
     /* ตัวกรอง "ทุกโปรแกรม" จากทะเบียน presence_apps · ยังไม่ได้รัน presence-apps.sql = ใช้รายการในหน้าเดิม */
@@ -201,7 +264,14 @@
     }
 
     async function start() {
-        if (!AC || !AC.enabled) { gate('ยังเชื่อมต่อ ASC Cloud ไม่ได้ — ' + esc(AC ? AC.disabledReason : 'โหลด asc-cloud.js ไม่สำเร็จ')); return; }
+        gate('กำลังโหลดส่วนประกอบ…');
+        [AC, M] = await Promise.all([need('AscCloud', 'asc-cloud.js?v=4.12.0'), need('AscPiMonitor', 'asc-pimonitor.js?v=4.12.0')]);
+        if (!AC || !M) {
+            gate('โหลดสคริปต์ของหน้านี้ไม่สำเร็จ (เว็บอาจกำลังอัปเดตอยู่) — <button id="g-retry" type="button">ลองใหม่</button>');
+            const b = $('g-retry'); if (b) b.addEventListener('click', () => location.reload());
+            return;
+        }
+        if (!AC.enabled) { gate('ยังเชื่อมต่อ ASC Cloud ไม่ได้ — ' + esc(AC.disabledReason || '')); return; }
         const user = await AC.ready();
         if (!user) { gate('ต้องเข้าสู่ระบบก่อน — <a href="index.html">ไปหน้าเข้าสู่ระบบ ASC Enterprise</a> แล้วเปิดหน้านี้อีกครั้ง'); return; }
         if (!user.isAdmin) { gate('หน้านี้สำหรับผู้ดูแลระบบเท่านั้น'); return; }
@@ -210,11 +280,11 @@
         ['f-app', 'f-status', 'f-platform'].forEach(id => $(id).addEventListener('change', render));
         $('f-q').addEventListener('input', render);
         $('every').addEventListener('change', schedule);
-        $('refresh').addEventListener('click', load);
+        $('refresh').addEventListener('click', reload);
         $('s-save').addEventListener('click', saveSettings);
-        document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) reload(); });
         setInterval(render, 30000);                                   // "x นาทีที่แล้ว" เดินเองระหว่างรอบ
-        await Promise.all([load(), loadSettings(), loadApps()]);
+        await Promise.all([load(), loadGuests(), loadSettings(), loadApps()]);
         schedule();
     }
 

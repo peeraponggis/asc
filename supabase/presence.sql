@@ -64,6 +64,8 @@ grant select on public.app_presence to authenticated;
 
 -- ── ส่งสถานะ ───────────────────────────────────────────────────────────────
 --  คืน 'ok' · 'skip' (อีเมลนอกโดเมนที่ติดตาม) · error ถ้าไม่ได้ล็อกอิน
+-- หมายเหตุ (4.12.0): รันไฟล์นี้ซ้ำจะทับ presence_ping ด้วยฉบับที่ "ไม่เก็บผู้ใช้ภายนอก"
+--                   ถ้าใช้ตารางผู้ใช้ภายนอกอยู่ ให้รัน supabase/presence-users.sql ตามหลังทุกครั้ง
 create or replace function public.presence_ping(
     p_session  text,
     p_app      text,
