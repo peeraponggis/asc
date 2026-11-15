@@ -29,17 +29,17 @@ create table if not exists public.access_packages (
     duration_days int         not null default 30 check (duration_days between 1 and 3650),
     max_kwp       numeric     check (max_kwp is null or max_kwp > 0),   -- รวมทุกโครงการ · null = ไม่ระบุเพดาน
     max_devices   int         not null default 1 check (max_devices between 1 and 100),
-    features      jsonb       not null default '{}'::jsonb,  -- ascs check report proposal engineering submission asca sld_dxf logo team_share watermark
+    features      jsonb       not null default '{}'::jsonb,  -- ascs asca project_plan check report proposal engineering submission sld_dxf logo team_share watermark
     note          text        not null default '',
     updated_at    timestamptz not null default now()
 );
 
 insert into public.access_packages (code, name, sort, price_baht, duration_days, max_kwp, max_devices, features, note) values
- ('trial',    'ทดลอง 7 วัน', 10, 0,    7,  50,   1, '{"ascs":true,"check":true,"report":true,"watermark":true}', 'ใช้งาน ASCS ออกแบบ · ตรวจ วสท. · รายงาน · PDF มีลายน้ำ'),
- ('training', 'Training',    20, 2980, 30, 1000, 1, '{"ascs":true,"check":true,"report":true,"proposal":true,"engineering":true,"submission":true,"logo":true}', 'ค่าอบรม 2,980 บาท รวม VAT 7 % · หมดแล้วเลือกแพ็กเกจต่อได้ทันที'),
- ('starter',  'Starter',     30, 1980, 30, 500,  1, '{"ascs":true,"check":true,"report":true,"proposal":true,"engineering":true,"submission":true,"logo":true}', 'ASCS + โลโก้บริษัท + รายงานข้อเสนอลูกค้า/วิศวกรรม/ชุดยื่นการไฟฟ้า'),
- ('pro',      'Pro',         40, 2980, 30, 1000, 2, '{"ascs":true,"asca":true,"check":true,"report":true,"proposal":true,"engineering":true,"submission":true,"sld_dxf":true,"logo":true}', 'ASCS + ASCA + SLD/DXF + โลโก้บริษัท + รายงานครบ'),
- ('company',  'Company',     50, 2980, 30, null, 5, '{"ascs":true,"asca":true,"check":true,"report":true,"proposal":true,"engineering":true,"submission":true,"sld_dxf":true,"logo":true,"team_share":true}', 'Pro + แชร์งานในทีม (เดิมชื่อ Team)')
+ ('trial',    'ทดลอง 7 วัน', 10, 0,    7,  50,   1, '{"ascs":true,"project_plan":true,"check":true,"report":true,"watermark":true}', 'ใช้งาน ASCS ออกแบบ · Project plan · ตรวจ วสท. · รายงาน · PDF มีลายน้ำ'),
+ ('training', 'Training',    20, 2980, 30, 1000, 1, '{"ascs":true,"asca":true,"project_plan":true,"check":true,"report":true,"proposal":true,"engineering":true,"submission":true,"logo":true,"team_share":true}', 'ค่าอบรม 2,980 บาท รวม VAT 7 % · หมดแล้วเลือกแพ็กเกจต่อได้ทันที'),
+ ('starter',  'Starter',     30, 1980, 30, 500,  1, '{"ascs":true,"project_plan":true,"check":true,"report":true,"proposal":true,"engineering":true,"submission":true,"logo":true}', 'ASCS + โลโก้บริษัท + รายงานข้อเสนอลูกค้า/วิศวกรรม/ชุดยื่นการไฟฟ้า'),
+ ('pro',      'Pro',         40, 2980, 30, 1000, 2, '{"ascs":true,"asca":true,"project_plan":true,"check":true,"report":true,"proposal":true,"engineering":true,"submission":true,"sld_dxf":true,"logo":true}', 'ASCS + ASCA + SLD/DXF + โลโก้บริษัท + รายงานครบ'),
+ ('company',  'Company',     50, 2980, 30, null, 5, '{"ascs":true,"asca":true,"project_plan":true,"check":true,"report":true,"proposal":true,"engineering":true,"submission":true,"sld_dxf":true,"logo":true,"team_share":true}', 'Pro + แชร์งานในทีม (เดิมชื่อ Team)')
 on conflict (code) do nothing;
 
 alter table public.access_packages enable row level security;
@@ -122,7 +122,7 @@ begin
 
     if coalesce(p_admin, false) or mail like '%@' || dom then
         return jsonb_build_object('ok', true, 'state', 'exempt', 'exempt', true, 'email', mail,
-                                  'features', '{"ascs":true,"asca":true,"check":true,"report":true,"proposal":true,"engineering":true,"submission":true,"sld_dxf":true,"logo":true,"team_share":true}'::jsonb,
+                                  'features', '{"ascs":true,"asca":true,"project_plan":true,"check":true,"report":true,"proposal":true,"engineering":true,"submission":true,"sld_dxf":true,"logo":true,"team_share":true}'::jsonb,
                                   'maxKwp', null, 'maxDevices', null, 'package', null);
     end if;
 
