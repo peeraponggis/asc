@@ -1881,8 +1881,7 @@ async function createNewProject() {
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> กำลังสร้าง...'; }
         try {
             const id = await AscCloud.createProject(name, loc, note);
-            // โครงการใหม่เปิดด้วย ASC Studio เมื่อเปิดใช้ให้ผู้ใช้คนนี้แล้ว (studio-config.js) · ไม่งั้นหน้าออกแบบเดิม
-            window.location.href = studioAllowed() ? studioUrl(id) : `master_shell.html?id=${id}`;
+            window.location.href = studioUrl(id);
         } catch (e2) {
             err.innerText = 'สร้างโครงการไม่สำเร็จ : ' + e2.message;
             err.classList.remove('hidden');
@@ -1910,13 +1909,11 @@ async function createNewProject() {
     };
     saveDB(db);
 
-    window.location.href = `master_shell.html?id=${newId}`;
+    window.location.href = studioUrl(newId);
 }
 
-/* งาน ascs เปิดใน studio/ · งานเดิมเปิดด้วยหน้าออกแบบเดิม */
 function openProject(id) {
-    const p = CLOUD ? CLOUD_PROJECTS.find(x => x.id === id) : null;
-    window.location.href = isStudioProject(p) ? studioUrl(id) : `master_shell.html?id=${id}`;
+    window.location.href = studioUrl(id);
 }
 
 /* ─────────────────────────────────────────────
