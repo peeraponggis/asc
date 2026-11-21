@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.194.0",
- "published": "2026-11-19",
+ "version": "0.195.0",
+ "published": "2026-11-21",
  "notes": [
-  "ย้ายทางเข้าแบบตู้ไฟ: ปุ่ม 🗄️ ตู้ไฟ ที่หัวข้อ SLD และ BOM ในหน้ารายงาน · หน้าแบบจำลองระบบเหลือการไหลพลังงานอย่างเดียว (ไม่มีแท็บ) · ตู้ไฟเปิดด้วย ?v=panel"
+  "แผ่นผังระบบยึด 2 มิติต่อจาก PV Layout (แกนเสา · ระยะเป็น มม. ทุกด้าน · ราง · ตัวยึด · แป · บล็อกสตริง INV/MPPT) + โปรแกรมกำหนดความสูงเสา/ระยะเสา/ระยะแปเองตามวัสดุและขนาดอาคาร"
  ],
  "requirements": "5c56ea9839289d16",
  "package": {
-  "file": "ascs-app-0.194.0.bin",
-  "size": 22133693,
-  "sha256": "4ca254eec4c51cc445c25f46af0bdd2a52e7c8aded149e4ef114d4aed2e0bf1f"
+  "file": "ascs-app-0.195.0.bin",
+  "size": 22137836,
+  "sha256": "f2243bf500c6dbf7bcce2c0afa80b58e6e91c5aa3ab75c2d679f80d170e6ded8"
  },
  "setup": {
-  "file": "ascs-setup-0.194.0.bin",
-  "size": 52108849,
-  "sha256": "74ce7bda3bd9430801051767bfda52dc86d1ee6a639450ac9324befbdd3551bd",
-  "name": "ASC-Studio-Setup-0.194.0.exe"
+  "file": "ascs-setup-0.195.0.bin",
+  "size": 52124721,
+  "sha256": "1874d10150638768f8a37e086a1265f86860c492a9d3abd7b4174c73d33ca198",
+  "name": "ASC-Studio-Setup-0.195.0.exe"
  }
 }
