@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.195.0",
+ "version": "0.195.1",
  "published": "2026-11-21",
  "notes": [
-  "แผ่นผังระบบยึด 2 มิติต่อจาก PV Layout (แกนเสา · ระยะเป็น มม. ทุกด้าน · ราง · ตัวยึด · แป · บล็อกสตริง INV/MPPT) + โปรแกรมกำหนดความสูงเสา/ระยะเสา/ระยะแปเองตามวัสดุและขนาดอาคาร"
+  "ผังระบบยึด: หมุนผังให้ขนานกรอบกระดาษพร้อมหมุนลูกศรทิศเหนือตามทิศจริง · ลบเส้นทแยงพาดบล็อกแผง · หน้า PV Layout เพิ่มเส้นขอบล่างชนกรอบทั้งสองข้าง"
  ],
  "requirements": "5c56ea9839289d16",
  "package": {
-  "file": "ascs-app-0.195.0.bin",
-  "size": 22137836,
-  "sha256": "f2243bf500c6dbf7bcce2c0afa80b58e6e91c5aa3ab75c2d679f80d170e6ded8"
+  "file": "ascs-app-0.195.1.bin",
+  "size": 22138205,
+  "sha256": "4faffe49a10a4d7715e662526771aa670cd7e1d91f80bfc97d5d006a80bd7bde"
  },
  "setup": {
-  "file": "ascs-setup-0.195.0.bin",
-  "size": 52124721,
-  "sha256": "1874d10150638768f8a37e086a1265f86860c492a9d3abd7b4174c73d33ca198",
-  "name": "ASC-Studio-Setup-0.195.0.exe"
+  "file": "ascs-setup-0.195.1.bin",
+  "size": 52125745,
+  "sha256": "491d5150ec6a8fba3af1ffe6d86bacd87efc96143fb7582195683c7e421431df",
+  "name": "ASC-Studio-Setup-0.195.1.exe"
  }
 }
