@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.195.1",
+ "version": "0.195.2",
  "published": "2026-11-21",
  "notes": [
-  "ผังระบบยึด: หมุนผังให้ขนานกรอบกระดาษพร้อมหมุนลูกศรทิศเหนือตามทิศจริง · ลบเส้นทแยงพาดบล็อกแผง · หน้า PV Layout เพิ่มเส้นขอบล่างชนกรอบทั้งสองข้าง"
+  "รุ่นเว็บ: แสดงปุ่ม 🗄️ ตู้ไฟ ที่หัวข้อ SLD/BOM ในหน้ารายงานด้วย (เดิมขึ้นเฉพาะรุ่นติดตั้งในเครื่อง)"
  ],
  "requirements": "5c56ea9839289d16",
  "package": {
-  "file": "ascs-app-0.195.1.bin",
-  "size": 22138205,
-  "sha256": "4faffe49a10a4d7715e662526771aa670cd7e1d91f80bfc97d5d006a80bd7bde"
+  "file": "ascs-app-0.195.2.bin",
+  "size": 22138201,
+  "sha256": "7c2e3d239a540d8df4358f1927b23dbcabcc6b778684fd0fbd1905b96c624d35"
  },
  "setup": {
-  "file": "ascs-setup-0.195.1.bin",
+  "file": "ascs-setup-0.195.2.bin",
   "size": 52125745,
-  "sha256": "491d5150ec6a8fba3af1ffe6d86bacd87efc96143fb7582195683c7e421431df",
-  "name": "ASC-Studio-Setup-0.195.1.exe"
+  "sha256": "502830d5202d4f326bbd64e39d5a4a08453ae5ab2a9cb0de2d608ae7ef166396",
+  "name": "ASC-Studio-Setup-0.195.2.exe"
  }
 }
