@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.197.2",
+ "version": "0.198.0",
  "published": "2026-11-22",
  "notes": [
-  "เพิ่มไฟล์ช่วยแก้เครื่องรุ่นเก่า installer/fix-update-cryptography.bat (ดับเบิลคลิกแล้วติดตั้งแพ็กเกจ cryptography ลง .venv ของ ASC Studio ให้เอง) สำหรับเครื่องที่ติดตั้งก่อน 0.197.1"
+  "ป้ายระยะไม่แย่งคลิกจุดจับแล้ว: จุดจับชนะป้ายเสมอ (pickRank) · ป้ายของช่วงสั้นกว่า 1 ม. ยกขึ้นพ้นลูกกลมและสลับความสูงไม่ให้ทับกันเอง · คลิกป้ายตรงที่ไม่มีจุดจับยังพิมพ์ความยาวได้เหมือนเดิม"
  ],
  "requirements": "34d4814d0ea7239a",
  "package": {
-  "file": "ascs-app-0.197.2.bin",
-  "size": 22142851,
-  "sha256": "dcb59340328aadc04ec3292f61841c2b4df3187a93c84314d7f79683dc785778"
+  "file": "ascs-app-0.198.0.bin",
+  "size": 22143258,
+  "sha256": "0c604684d47eea29de129ca3488a97e9e6d5acad2518417982a79a5071bafd5b"
  },
  "setup": {
-  "file": "ascs-setup-0.197.2.bin",
-  "size": 52142129,
-  "sha256": "2469e81b941d5e16b0ea3e60521ab72d2862719dc230500bf60f7b04977c545a",
-  "name": "ASC-Studio-Setup-0.197.2.exe"
+  "file": "ascs-setup-0.198.0.bin",
+  "size": 52145201,
+  "sha256": "d15e78176891463cf6bbc7ada4f4ab63611baac22e635a874527a2f9963643fe",
+  "name": "ASC-Studio-Setup-0.198.0.exe"
  }
 }
