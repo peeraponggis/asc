@@ -963,6 +963,22 @@
             return r.data;
         },
 
+        /* เครื่องที่ผูกกับบัญชี (ผู้ดูแลระบบ · supabase/ai-install-admin.sql · ลุงพีสั่ง 22 พ.ย. 2569)
+           ยังไม่รัน SQL = โยน error ให้หน้าเว็บบอกผู้ดูแลว่าต้องรันไฟล์ไหนก่อน */
+        async adminDeviceList(email) {
+            need();
+            const r = await withSession(() => sb.rpc('admin_device_list', { p_email: String(email || '').trim().toLowerCase() }));
+            if (r.error) throw fail(r.error);
+            return r.data || [];
+        },
+        async adminRevokeDevice(id) {
+            need();
+            const r = await withSession(() => sb.rpc('admin_revoke_device', { p_id: id }));
+            if (r.error) throw fail(r.error);
+            if (r.data && r.data.ok === false) throw new Error(r.data.error || 'ถอดเครื่องไม่สำเร็จ');
+            return true;
+        },
+
         async removeAllowedEmail(email) {
             need();
             const mail = String(email || '').trim().toLowerCase();

@@ -2878,12 +2878,71 @@ function accessCell(x) {
 }
 function accessRowButtons(x) {
     if (!ACCESS_READY) return '';
+    const m = esc(x.email);
+    // เครื่องที่ผูกกับบัญชี (ดู/ถอดได้ · supabase/ai-install-admin.sql) — มีให้ทุกบัญชี รวมทีมงาน
+    const dev = '<button onclick="devicesOpen(\'' + m + '\')" class="text-[11px] px-2 py-0.5 rounded border border-slate-300 text-slate-600 hover:border-indigo-400 hover:text-indigo-600 mr-1" title="เครื่องที่ผูกกับบัญชีนี้"><i class="fa-solid fa-laptop mr-1"></i>เครื่อง</button>';
     const r = ACCESS[String(x.email).toLowerCase()];
-    if (!r || !r.access || r.access.state === 'exempt') return '';
-    const m = esc(x.email), susp = r.access.state === 'suspended';
-    return '<button onclick="accessEditOpen(\'' + m + '\')" class="text-[11px] px-2 py-0.5 rounded border border-slate-300 text-slate-600 hover:border-blue-400 hover:text-blue-600 mr-1">แก้สิทธิ์</button>'
+    if (!r || !r.access || r.access.state === 'exempt') return dev;
+    const susp = r.access.state === 'suspended';
+    return dev + '<button onclick="accessEditOpen(\'' + m + '\')" class="text-[11px] px-2 py-0.5 rounded border border-slate-300 text-slate-600 hover:border-blue-400 hover:text-blue-600 mr-1">แก้สิทธิ์</button>'
         + '<button onclick="accessToggleSuspend(\'' + m + '\',' + (susp ? 'false' : 'true') + ')" class="text-[11px] px-2 py-0.5 rounded border mr-2 '
         + (susp ? 'bg-emerald-600 text-white border-emerald-600' : 'border-amber-400 text-amber-700 hover:bg-amber-50') + '">' + (susp ? '▶ เปิดสิทธิ์' : '⏸ พัก') + '</button>';
+}
+
+/* ─── เครื่องที่ผูกกับบัญชี (ผู้ดูแลระบบ · ลุงพีสั่ง 22 พ.ย. 2569) ──────────────────
+   ดูว่าบัญชีหนึ่งผูกเครื่องอะไรไว้บ้าง และถอดให้ได้ (เครื่องเสีย · พนักงานลาออก · ย้ายเครื่อง)
+   เดิมถอดได้เฉพาะเจ้าของบัญชีเองในหน้า ASC Studio · ยังไม่รัน SQL = บอกให้รันไฟล์ก่อน */
+function devAgo(t) {
+    if (!t) return '—';
+    const d = Math.floor((Date.now() - new Date(t).getTime()) / 86400000);
+    if (d <= 0) return 'วันนี้';
+    if (d === 1) return 'เมื่อวาน';
+    return d < 30 ? d + ' วันก่อน' : accFmtDate(t);
+}
+async function devicesOpen(email) {
+    const m = accModal('<h3 class="font-bold text-slate-800 mb-1">เครื่องที่ผูกกับบัญชีนี้</h3>'
+        + '<p class="text-xs text-slate-500 mb-4 break-all">' + esc(email) + '</p>'
+        + '<div id="dv-body" class="text-sm text-slate-500">กำลังอ่าน…</div>'
+        + '<div class="flex justify-end mt-4"><button class="px-4 py-2 rounded-lg text-sm border border-slate-300" onclick="document.getElementById(\'ac-modal\').remove()">ปิด</button></div>');
+    await devicesRender(email);
+    return m;
+}
+async function devicesRender(email) {
+    const box = document.getElementById('dv-body');
+    if (!box) return;
+    let rows;
+    try {
+        rows = await AscCloud.adminDeviceList(email);
+    } catch (e) {
+        box.innerHTML = '<div class="text-amber-600 text-xs">อ่านรายการเครื่องไม่ได้ — รัน <b>supabase/ai-install-admin.sql</b> ก่อน'
+            + '<div class="text-slate-500 mt-1 break-all">' + esc(e.message || e) + '</div></div>';
+        return;
+    }
+    if (!rows.length) {
+        box.innerHTML = '<div class="text-slate-500 text-sm">บัญชีนี้ยังไม่ได้ผูกเครื่องใดไว้</div>';
+        return;
+    }
+    box.innerHTML = '<table class="w-full text-sm"><thead><tr class="text-left text-slate-500 text-xs border-b border-slate-200">'
+        + '<th class="py-1.5">เครื่อง</th><th class="py-1.5">ผูกเมื่อ</th><th class="py-1.5">ใช้ล่าสุด</th><th class="py-1.5"></th></tr></thead><tbody>'
+        + rows.map(r => {
+            const off = !!r.revokedAt;
+            return '<tr class="border-b border-slate-100' + (off ? ' opacity-50' : '') + '">'
+                + '<td class="py-2"><div class="font-semibold text-slate-800">' + esc(r.name || 'ไม่ทราบชื่อเครื่อง') + '</div>'
+                + '<div class="text-[11px] text-slate-400">' + esc(r.hash8 || '') + '…' + (off ? ' · ถอดแล้ว ' + esc(devAgo(r.revokedAt)) : '') + '</div></td>'
+                + '<td class="py-2 text-slate-600">' + esc(devAgo(r.installedAt)) + '</td>'
+                + '<td class="py-2 text-slate-600">' + esc(devAgo(r.lastSeen)) + '</td>'
+                + '<td class="py-2 text-right">' + (off ? '' : '<button onclick="devicesRevoke(\'' + esc(email) + '\',\'' + esc(r.id) + '\',\'' + esc(r.name || '') + '\')" '
+                    + 'class="text-[11px] px-2 py-0.5 rounded border border-red-300 text-red-600 hover:bg-red-50">ถอดเครื่อง</button>') + '</td></tr>';
+        }).join('') + '</tbody></table>'
+        + '<p class="text-[11px] text-slate-500 mt-3">ถอดแล้วเครื่องนั้นจะใช้งานไม่ได้ในการตรวจสิทธิ์รอบถัดไป · ผูกใหม่ได้ด้วยรหัสติดตั้งใหม่ · งานและข้อมูลในเครื่องไม่ถูกลบ</p>';
+}
+async function devicesRevoke(email, id, name) {
+    if (!confirm('ถอดเครื่อง "' + (name || 'ไม่ทราบชื่อ') + '" ออกจาก ' + email + ' หรือไม่?\n\nเครื่องนั้นจะใช้งานไม่ได้จนกว่าจะผูกใหม่ · งานและข้อมูลในเครื่องไม่ถูกลบ')) return;
+    try {
+        await AscCloud.adminRevokeDevice(id);
+        await devicesRender(email);
+        allowMsg('ถอดเครื่องออกจาก ' + email + ' แล้ว', true);
+    } catch (e) { allowMsg(e.message, false); }
 }
 
 async function accessToggleSuspend(email, on) {
