@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.197.1",
+ "version": "0.197.2",
  "published": "2026-11-22",
  "notes": [
-  "แก้อัปเดตในเครื่องล้มเหลว No module named cryptography — ใส่ cryptography ใน requirements และติดตั้งให้เองก่อนถอดรหัสชุดอัปเดต · เวลาเริ่มใช้อ่านจาก installedAt ของชุดติดตั้งด้วย"
+  "เพิ่มไฟล์ช่วยแก้เครื่องรุ่นเก่า installer/fix-update-cryptography.bat (ดับเบิลคลิกแล้วติดตั้งแพ็กเกจ cryptography ลง .venv ของ ASC Studio ให้เอง) สำหรับเครื่องที่ติดตั้งก่อน 0.197.1"
  ],
  "requirements": "34d4814d0ea7239a",
  "package": {
-  "file": "ascs-app-0.197.1.bin",
-  "size": 22142796,
-  "sha256": "4068fea3217c7baecd6a3331b4efbc2f461b5b76d4ddab5d21db86a828c1659d"
+  "file": "ascs-app-0.197.2.bin",
+  "size": 22142851,
+  "sha256": "dcb59340328aadc04ec3292f61841c2b4df3187a93c84314d7f79683dc785778"
  },
  "setup": {
-  "file": "ascs-setup-0.197.1.bin",
-  "size": 52140593,
-  "sha256": "c60ff2a5da8d4840efbadf93455122705e6a5d6bb6a48264cd612823e8120849",
-  "name": "ASC-Studio-Setup-0.197.1.exe"
+  "file": "ascs-setup-0.197.2.bin",
+  "size": 52142129,
+  "sha256": "2469e81b941d5e16b0ea3e60521ab72d2862719dc230500bf60f7b04977c545a",
+  "name": "ASC-Studio-Setup-0.197.2.exe"
  }
 }
