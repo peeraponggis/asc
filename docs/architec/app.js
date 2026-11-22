@@ -110,17 +110,95 @@ document.addEventListener("click", function (e) { var b = e.target.closest && e.
       presenceBadge(s);
       if (s.linked) presenceStart();
     }).catch(function () { /* server รุ่นเก่า = ไม่มีป้าย */ });
-    $("#presence").addEventListener("click", function () {
-      var code = prompt("ผูกเครื่องนี้กับบัญชี ASC (รายงานการใช้งาน Pi monitor)\n" +
-        "รหัส: เปิด https://peeraponggis.github.io/asc/studio/ (ล็อกอินเมลบริษัท) → ปุ่ม ผู้ช่วย AI แถบบน → ติดตั้งในเครื่องนี้ → สร้างรหัสติดตั้ง → คัดลอก\n\nใส่รหัส ASC-XXXX-XXXX");
+    $("#presence").addEventListener("click", devicesDialog);
+  }
+
+  // ---------------------------------------------------------------- บัญชีและเครื่อง (ลุงพีสั่ง 22 พ.ย. 2569 · งาน G)
+  // เดิมคลิกป้ายแล้วได้แค่ prompt ใส่รหัส · ตอนนี้เห็นเครื่องทั้งหมดของบัญชี ปลดเครื่องที่ไม่ใช้แล้วได้เอง
+  // (เช่น แพ็กเกจผูกได้ 1 เครื่องแต่เปลี่ยนเครื่องใหม่) · ปลดเครื่องนี้เอง = เลิกผูกในเครื่องด้วย
+  function devAgo(t) {
+    if (!t) return "—";
+    var d = Math.floor((Date.now() - new Date(t).getTime()) / 86400000);
+    return d <= 0 ? "วันนี้" : d === 1 ? "เมื่อวาน" : d < 30 ? d + " วันก่อน" : new Date(t).toLocaleDateString("th-TH");
+  }
+  function devicesDialog() {
+    var old = document.getElementById("asca-dev");
+    if (old) old.remove();
+    var box = document.createElement("div");
+    box.id = "asca-dev";
+    box.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(10,20,35,.55);display:flex;align-items:center;justify-content:center;padding:20px";
+    box.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:620px;width:100%;max-height:88vh;overflow:auto;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.3)">'
+      + '<h2 style="margin:0 0 2px;font-size:19px">บัญชีและเครื่อง</h2>'
+      + '<p id="dv-who" style="margin:0 0 14px;color:#555;font-size:13px">กำลังอ่าน…</p>'
+      + '<div id="dv-list" style="font-size:14px"></div>'
+      + '<div style="margin-top:16px;border-top:1px solid #e6e9ee;padding-top:14px">'
+      + '<div style="font-size:13px;color:#555;margin-bottom:6px">ผูกเครื่องนี้กับบัญชี (หรือเปลี่ยนเป็นบัญชีอื่น) — สร้างรหัสที่ '
+      + '<a href="https://peeraponggis.github.io/asc/studio/" target="_blank" rel="noopener">ASC Studio</a> › ผู้ช่วย AI › ติดตั้งในเครื่องนี้</div>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap"><input id="dv-code" placeholder="ASC-XXXX-XXXX" style="font:inherit;padding:8px 12px;border:1px solid #c7d0dd;border-radius:9px;width:190px;text-align:center">'
+      + '<button class="primary" id="dv-link">ผูกเครื่อง</button></div>'
+      + '<p id="dv-msg" style="margin:10px 0 0;font-size:13px;min-height:18px"></p></div>'
+      + '<div style="margin-top:14px;text-align:right"><button class="btn" id="dv-close">ปิด</button></div></div>';
+    document.body.appendChild(box);
+    box.addEventListener("click", function (e) { if (e.target === box) box.remove(); });
+    $("#dv-close").onclick = function () { box.remove(); };
+    $("#dv-link").onclick = function () {
+      var code = $("#dv-code").value;
       if (!code) return;
+      $("#dv-msg").style.color = "#555";
+      $("#dv-msg").textContent = "กำลังผูกเครื่อง…";
       api("/api/presence/link", { code: code }).then(function (r) {
-        if (!r.ok) { toast(r.error || "ผูกเครื่องไม่สำเร็จ", true); return; }
-        toast("ผูกเครื่องนี้กับบัญชี " + (r.email || "") + " แล้ว");
+        if (!r.ok) { $("#dv-msg").style.color = "#c00"; $("#dv-msg").textContent = r.error || "ผูกเครื่องไม่สำเร็จ"; return; }
+        $("#dv-msg").style.color = "#0a7";
+        $("#dv-msg").textContent = "ผูกกับบัญชี " + (r.email || "") + " แล้ว";
+        $("#dv-code").value = "";
         presenceBadge({ linked: true, email: r.email });
         presenceStart();
-      }).catch(function (e) { toast(e.message, true); });
-    });
+        devicesLoad();
+      }).catch(function (e) { $("#dv-msg").style.color = "#c00"; $("#dv-msg").textContent = e.message; });
+    };
+    devicesLoad();
+  }
+  function devicesLoad() {
+    var who = $("#dv-who"), list = $("#dv-list");
+    if (!who) return;
+    api("/api/presence/devices").then(function (r) {
+      if (!r.ok) {
+        who.textContent = r.reason === "unlinked" ? "เครื่องนี้ยังไม่ได้ผูกกับบัญชี ASC" : (r.error || "อ่านรายการเครื่องไม่ได้");
+        list.innerHTML = "";
+        return;
+      }
+      who.innerHTML = "บัญชี <b>" + esc(r.email || "") + "</b>";
+      var rows = (r.devices || []).map(function (d) {
+        var off = !!d.revokedAt;
+        return '<tr style="border-bottom:1px solid #eef1f5' + (off ? ';opacity:.5' : '') + '">'
+          + '<td style="padding:8px 4px"><b>' + esc(d.name || "ไม่ทราบชื่อเครื่อง") + "</b>"
+          + (d.thisOne ? ' <span style="font-size:11px;background:#e7f1ff;color:#1b5fb4;padding:1px 7px;border-radius:9px">เครื่องนี้</span>' : "")
+          + '<div style="font-size:11px;color:#8a93a0">' + esc(d.hash8 || "") + "…" + (off ? " · ปลดแล้ว " + esc(devAgo(d.revokedAt)) : "") + "</div></td>"
+          + '<td style="padding:8px 4px;color:#555">' + esc(devAgo(d.installedAt)) + "</td>"
+          + '<td style="padding:8px 4px;text-align:right">'
+          + (off ? "" : '<button class="btn small" data-rev="' + esc(d.id) + '" data-name="' + esc(d.name || "") + '" data-self="' + (d.thisOne ? "1" : "") + '">ปลดเครื่อง</button>')
+          + "</td></tr>";
+      }).join("");
+      list.innerHTML = rows
+        ? '<table style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left;color:#8a93a0;font-size:12px;border-bottom:1px solid #e6e9ee">'
+          + '<th style="padding:4px">เครื่อง</th><th style="padding:4px">ผูกเมื่อ</th><th></th></tr></thead><tbody>' + rows + "</tbody></table>"
+          + '<p style="font-size:12px;color:#8a93a0;margin:10px 0 0">ปลดแล้วเครื่องนั้นใช้งานไม่ได้จนกว่าจะผูกใหม่ · งานและข้อมูลในเครื่องไม่ถูกลบ</p>'
+        : '<p style="color:#555">บัญชีนี้ยังไม่มีเครื่องที่ผูกไว้</p>';
+      $$("#dv-list [data-rev]").forEach(function (b) {
+        b.onclick = function () { devicesRevoke(b.dataset.rev, b.dataset.name, !!b.dataset.self); };
+      });
+    }).catch(function (e) { who.textContent = "อ่านรายการเครื่องไม่ได้: " + e.message; });
+  }
+  function devicesRevoke(id, name, self) {
+    if (!confirm('ปลดเครื่อง "' + (name || "ไม่ทราบชื่อ") + '" ออกจากบัญชีหรือไม่?'
+      + (self ? "\n\nเครื่องนี้จะเลิกผูกกับบัญชีทันที และใช้โปรแกรมต่อไม่ได้จนกว่าจะผูกใหม่" : "")
+      + "\n\nงานและข้อมูลในเครื่องไม่ถูกลบ")) return;
+    api("/api/presence/devices/revoke", { id: id }).then(function (r) {
+      if (!r.ok) { toast(r.error || "ปลดเครื่องไม่สำเร็จ", true); return; }
+      toast(r.self ? "เลิกผูกเครื่องนี้แล้ว" : "ปลดเครื่องแล้ว");
+      if (r.self) { presenceBadge({ linked: false }); location.reload(); return; }
+      devicesLoad();
+    }).catch(function (e) { toast(e.message, true); });
   }
 
   // ---------------------------------------------------------------- โหมดปรับปรุง (ลุงพีสั่ง 8 พ.ย. 2569)
