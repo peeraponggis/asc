@@ -7,6 +7,8 @@
  *  ไม่พึ่ง CDN ภายนอก — ทำงานได้แบบ standalone
  *
  *  ใช้งาน: เพิ่ม <script src="path/to/lungpee-pdpa.js"></script> ใน <head>
+ *          ชื่อโปรแกรม: ตั้ง window.LP_PDPA_APP = 'ชื่อ' ก่อนโหลดไฟล์นี้ (ไม่ตั้ง = เดาจาก <title>)
+ *          เปิดอ่านซ้ำ: ปุ่ม/ลิงก์ที่มี data-lp-pdpa หรือเรียก window.LP_PDPA.open()
  *  Debug:  window.LP_PDPA.reset()    → รีเซ็ต consent (reload)
  *          window.LP_PDPA.isOk()     → true/false
  * ========================================================================== */
@@ -17,7 +19,8 @@
     /* ─── config ─────────────────────────────────────────────── */
     var KEY  = 'lp_pdpa_v1';
     var VER  = '2569-10-30';  /* เปลี่ยนเมื่ออัปเดตเนื้อหา PDPA */
-    var APP_NAME = (document.title || 'ProInventive').replace(/[—–·|:].*/,'').trim() ||
+    var APP_NAME = (typeof window.LP_PDPA_APP === 'string' ? window.LP_PDPA_APP : '').trim() ||
+                  (document.title || 'ProInventive').replace(/[—–·|:].*/,'').trim() ||
                   'ProInventive App';
 
     /* ─── text 3 ภาษา ─────────────────────────────────────────── */
@@ -117,7 +120,9 @@
 
     /* ─── helpers ─────────────────────────────────────────────── */
     function injectStyle() {
+        if (document.getElementById('lp-pdpa-css')) return;
         var s = document.createElement('style');
+        s.id = 'lp-pdpa-css';
         s.textContent = CSS;
         document.head.appendChild(s);
     }
@@ -173,9 +178,9 @@
         overlay.querySelector('#lp-btn').disabled = true;
     }
 
-    /* ─── init ────────────────────────────────────────────────── */
-    function init() {
-        if (!needsConsent()) return;
+    /* ─── แสดงหน้าต่าง (ตอนเข้าโปรแกรม หรือกดเปิดอ่านซ้ำ) ──────── */
+    function show() {
+        if (document.getElementById('lp-pdpa')) return;
 
         injectStyle();
 
@@ -204,6 +209,14 @@
         });
     }
 
+    /* ─── init ────────────────────────────────────────────────── */
+    function init() {
+        document.querySelectorAll('[data-lp-pdpa]').forEach(function(el) {
+            el.addEventListener('click', function(e) { e.preventDefault(); show(); });
+        });
+        if (needsConsent()) show();
+    }
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
@@ -211,6 +224,7 @@
     }
 
     window.LP_PDPA = {
+        open:  function() { show(); },
         reset: function() { try { sessionStorage.removeItem(KEY); } catch(e){} location.reload(); },
         isOk:  function() { return !needsConsent(); }
     };
