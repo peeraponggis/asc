@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.195.2",
- "published": "2026-11-21",
+ "version": "0.196.0",
+ "published": "2026-11-22",
  "notes": [
-  "รุ่นเว็บ: แสดงปุ่ม 🗄️ ตู้ไฟ ที่หัวข้อ SLD/BOM ในหน้ารายงานด้วย (เดิมขึ้นเฉพาะรุ่นติดตั้งในเครื่อง)"
+  "ดึงคลังอุปกรณ์ของบริษัทจาก ASC Cloud เข้าคลังในเครื่องเอง (ออปติไมเซอร์/EV ที่แคตตาล็อกในตัวไม่มี) · อัตโนมัติตอนเปิดรุ่นเว็บ + ปุ่ม ☁ ดึงคลังจากคลาวด์ · ข้ามรายการที่ติ๊กซ่อนใน ASCS"
  ],
  "requirements": "5c56ea9839289d16",
  "package": {
-  "file": "ascs-app-0.195.2.bin",
-  "size": 22138201,
-  "sha256": "7c2e3d239a540d8df4358f1927b23dbcabcc6b778684fd0fbd1905b96c624d35"
+  "file": "ascs-app-0.196.0.bin",
+  "size": 22139234,
+  "sha256": "bfb13d2c2cefb486d4297a110f43d2223beafb9ff828a9bb72552b436407810a"
  },
  "setup": {
-  "file": "ascs-setup-0.195.2.bin",
-  "size": 52125745,
-  "sha256": "502830d5202d4f326bbd64e39d5a4a08453ae5ab2a9cb0de2d608ae7ef166396",
-  "name": "ASC-Studio-Setup-0.195.2.exe"
+  "file": "ascs-setup-0.196.0.bin",
+  "size": 52131889,
+  "sha256": "4b9813a926c1bd9dd9bb9ecaca58882348e2d8ed37c301f9145806ee39c336da",
+  "name": "ASC-Studio-Setup-0.196.0.exe"
  }
 }
