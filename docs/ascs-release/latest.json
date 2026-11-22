@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.197.0",
+ "version": "0.197.1",
  "published": "2026-11-22",
  "notes": [
-  "เครื่องที่ยังไม่ผูกสิทธิ์: ใช้ได้ 1 วัน (แถบเตือนนับถอยหลัง + รายงานติดลายน้ำ) ครบกำหนดขึ้นหน้าจอกั้นพร้อมช่องใส่รหัสติดตั้งให้ผูกแล้วใช้ต่อได้ทันที · เวลาเริ่มใช้เก็บ 2 ที่ ลบไฟล์เดียวไม่ได้วันใหม่"
+  "แก้อัปเดตในเครื่องล้มเหลว No module named cryptography — ใส่ cryptography ใน requirements และติดตั้งให้เองก่อนถอดรหัสชุดอัปเดต · เวลาเริ่มใช้อ่านจาก installedAt ของชุดติดตั้งด้วย"
  ],
- "requirements": "5c56ea9839289d16",
+ "requirements": "34d4814d0ea7239a",
  "package": {
-  "file": "ascs-app-0.197.0.bin",
-  "size": 22142168,
-  "sha256": "1d8cf72fb2cbff471b4bb6bcc5acfc50553fc510cb61dc825b06f545c3385619"
+  "file": "ascs-app-0.197.1.bin",
+  "size": 22142796,
+  "sha256": "4068fea3217c7baecd6a3331b4efbc2f461b5b76d4ddab5d21db86a828c1659d"
  },
  "setup": {
-  "file": "ascs-setup-0.197.0.bin",
-  "size": 52139569,
-  "sha256": "f14729d64759f3c64058a3a684e5b00d13d82359662f62aa3b3e94e4fb7e9289",
-  "name": "ASC-Studio-Setup-0.197.0.exe"
+  "file": "ascs-setup-0.197.1.bin",
+  "size": 52140593,
+  "sha256": "c60ff2a5da8d4840efbadf93455122705e6a5d6bb6a48264cd612823e8120849",
+  "name": "ASC-Studio-Setup-0.197.1.exe"
  }
 }
