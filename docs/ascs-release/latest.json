@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.207.4",
+ "version": "0.208.0",
  "published": "2026-11-23",
  "notes": [
-  "ซูมเข้าหาสายได้ใกล้ถึง 1 ซม. และล้อเมาส์เข้าไวขึ้น"
+  "แยกหน้า พลังงานรายเดือน + P50–P95 (ต่อ) พร้อมตารางความเชื่อมั่น สรุปสำหรับสถาบันการเงิน และอธิบายศัพท์ · ชนิดสายมีค่าปริยาย AC = THW · DC ของแผง = PV1-F"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.207.4.bin",
-  "size": 22176139,
-  "sha256": "21f99a997c413759f5fff2a6e3821db29ca77865387bc430d45ece88327a473b"
+  "file": "ascs-app-0.208.0.bin",
+  "size": 22177549,
+  "sha256": "c0c4ed56aee110e42eada306b4e314ea2da3f72bb134a758669aa7777c4362af"
  },
  "setup": {
-  "file": "ascs-setup-0.207.4.bin",
-  "size": 52257841,
-  "sha256": "2344352c2a35732240a85b5993916f7519d4f9ceaa74f28451654c853fedde02",
-  "name": "ASC-Studio-Setup-0.207.4.exe"
+  "file": "ascs-setup-0.208.0.bin",
+  "size": 52261937,
+  "sha256": "8937b0549cb4c0439b35e77da8a9c68ba21583f71a04d86a954308655d1c966c",
+  "name": "ASC-Studio-Setup-0.208.0.exe"
  }
 }
