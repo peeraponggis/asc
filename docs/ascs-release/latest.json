@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.205.1",
+ "version": "0.205.2",
  "published": "2026-11-23",
  "notes": [
-  "PDF ของหน้าค่าไฟฟ้า: หน้าแรกเป็นกราฟโหลด 24 ชม. พร้อมคำอธิบาย แยกคนละหน้ากับผลวิเคราะห์ก่อน/หลัง"
+  "กันงานหาย: หน้ารายงานที่ยังไม่มีงานจะไม่ยิงงานเปล่าทับงานที่เปิดอยู่ · รุ่นเว็บเปิดลิงก์ไม่มีรหัสโครงการแล้วไม่ล้างงานค้างทิ้ง"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.205.1.bin",
-  "size": 22169774,
-  "sha256": "b38aeaebe98716bf2f5f0ad75e0949f04018cee34f4f8c997ac33f14210e8dc3"
+  "file": "ascs-app-0.205.2.bin",
+  "size": 22170372,
+  "sha256": "1e165b35ae588dfb9b6d312d5c24f07179f0bf24edfcff435af730e4a4ab05ba"
  },
  "setup": {
-  "file": "ascs-setup-0.205.1.bin",
-  "size": 52224049,
-  "sha256": "b64ef34098099f26a81e213a9d5f97678c52d98fb2e65999de69018e280889b8",
-  "name": "ASC-Studio-Setup-0.205.1.exe"
+  "file": "ascs-setup-0.205.2.bin",
+  "size": 52227633,
+  "sha256": "a4366f2dfe609d4d261a5e8533dd2f0658d1dc81456da5f77b34affe261cac94",
+  "name": "ASC-Studio-Setup-0.205.2.exe"
  }
 }
