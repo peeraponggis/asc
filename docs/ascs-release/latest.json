@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.207.2",
+ "version": "0.207.4",
  "published": "2026-11-23",
  "notes": [
-  "สายที่พาดเสาวิ่งเข้าลูกถ้วยบนแร็กแรงต่ำจริงทุกเส้น (เดิมลอยผ่านแกนเสา) · หน้าพลังงานรายเดือนแนบกราฟความน่าจะเป็น P50/P75/P90/P95 ต่อท้าย"
+  "ซูมเข้าหาสายได้ใกล้ถึง 1 ซม. และล้อเมาส์เข้าไวขึ้น"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.207.2.bin",
-  "size": 22176115,
-  "sha256": "5c354fe8370a84a92bc1d0506f1c38fe7dc7c5205dd5fe2718be829ee24d2f79"
+  "file": "ascs-app-0.207.4.bin",
+  "size": 22176139,
+  "sha256": "21f99a997c413759f5fff2a6e3821db29ca77865387bc430d45ece88327a473b"
  },
  "setup": {
-  "file": "ascs-setup-0.207.2.bin",
-  "size": 52255793,
-  "sha256": "7283b1b455ba394aad564c62d2f6bea07cd8ba6c80b24adcc1b492f1d91e918a",
-  "name": "ASC-Studio-Setup-0.207.2.exe"
+  "file": "ascs-setup-0.207.4.bin",
+  "size": 52257841,
+  "sha256": "2344352c2a35732240a85b5993916f7519d4f9ceaa74f28451654c853fedde02",
+  "name": "ASC-Studio-Setup-0.207.4.exe"
  }
 }
