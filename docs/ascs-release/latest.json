@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.207.0",
+ "version": "0.207.1",
  "published": "2026-11-23",
  "notes": [
-  "วาดสายไฟ AC เลือกตัวนำแยกเส้นได้: 1 เฟส 2 เส้น · 3 เฟส 4 เส้น · 3 เฟส + ไฟสาธารณะ 5 เส้น สีตาม IEC แก้ทีหลังได้ในรายละเอียดของสาย"
+  "ตัวนำที่พาดแร็กแรงต่ำเรียงซ้อนแนวตั้งแบบ กฟภ. (N A B C L บนลงล่าง) · แก้บั๊ก เปลี่ยนงานเป็น 3 เฟสแล้วสายเมนอัตโนมัติไม่สร้างใหม่ให้ครบเส้น"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.207.0.bin",
-  "size": 22175121,
-  "sha256": "ef1483fa114f45ac3111d546381bcd870698a303e6c8eda859fee868d4677a9c"
+  "file": "ascs-app-0.207.1.bin",
+  "size": 22175990,
+  "sha256": "e7a255972fd2bd10c843bd084bd7f163f7b328d7881e177aa1ca66de6e0ae7f5"
  },
  "setup": {
-  "file": "ascs-setup-0.207.0.bin",
-  "size": 52250673,
-  "sha256": "42db9e74a3a3d6bc84e8c8be287b064b8cf928cd44b9ca222e4cfb5bfefbe79c",
-  "name": "ASC-Studio-Setup-0.207.0.exe"
+  "file": "ascs-setup-0.207.1.bin",
+  "size": 52254257,
+  "sha256": "39ec99bb4405021cbf8f9e8e2d30ebcb4e199a415c9fcc169217e5c478803488",
+  "name": "ASC-Studio-Setup-0.207.1.exe"
  }
 }
