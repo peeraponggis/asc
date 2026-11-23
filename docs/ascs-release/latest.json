@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.203.0",
+ "version": "0.204.0",
  "published": "2026-11-23",
  "notes": [
-  "ปุ่มดึงข้อมูลภูมิอากาศบอกสถานะในหน้าต่าง (กำลังดึง/สำเร็จ/ผิดพลาด) · รุ่นเว็บดึง NASA POWER ตรงได้ · จิ้มมุมหลังคา/วาดหลังคา auto คงตำแหน่งซูมเหมือนวาดอาคาร"
+  "④ เทียบ 3 ขนาด + บันทึก PDF · บันทึก/นำเข้าค่าไฟเป็น JSON · หน้ารายงานเตือนเมื่อยังไม่ได้รับงาน · กรอบพื้นที่บนพื้นคลิกเลือก/ลบได้"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.203.0.bin",
-  "size": 22163550,
-  "sha256": "6f6c6be94005ddfd765789617c6cdd9e796b96f937073bca0491d43b0ad8b87d"
+  "file": "ascs-app-0.204.0.bin",
+  "size": 22167902,
+  "sha256": "a86baed3e093270b28b5cecd1b33432b6547678c261526d803e86681a698617d"
  },
  "setup": {
-  "file": "ascs-setup-0.203.0.bin",
-  "size": 52202545,
-  "sha256": "2d09768c8c8b113e5456c6e9a845344d969eb28f3c939dfab79aa8161c7b39be",
-  "name": "ASC-Studio-Setup-0.203.0.exe"
+  "file": "ascs-setup-0.204.0.bin",
+  "size": 52217905,
+  "sha256": "6b3cd8830af687d57d76a53112a99cae94ba648546f71f3e566391c5455bd13f",
+  "name": "ASC-Studio-Setup-0.204.0.exe"
  }
 }
