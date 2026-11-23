@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.205.0",
+ "version": "0.205.1",
  "published": "2026-11-23",
  "notes": [
-  "รวมตารางค่าไฟเข้าตารางเทียบ 3 ขนาด (เพิ่มคอลัมน์ก่อนติดตั้ง · เอาแถว KPI ออก) · ปกภาพ 3D ใหญ่เต็มหน้า ตัดขอบพื้นให้เอง · ไม่มีหน้าแทบว่าง · จุดบนผังเล็กลง"
+  "PDF ของหน้าค่าไฟฟ้า: หน้าแรกเป็นกราฟโหลด 24 ชม. พร้อมคำอธิบาย แยกคนละหน้ากับผลวิเคราะห์ก่อน/หลัง"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.205.0.bin",
-  "size": 22168776,
-  "sha256": "b91f635f9fa61264c08b69c9d9c89a9b14f1349bba5757204f988a2240115c0f"
+  "file": "ascs-app-0.205.1.bin",
+  "size": 22169774,
+  "sha256": "b38aeaebe98716bf2f5f0ad75e0949f04018cee34f4f8c997ac33f14210e8dc3"
  },
  "setup": {
-  "file": "ascs-setup-0.205.0.bin",
-  "size": 52222001,
-  "sha256": "5e43b43e4b51d9a42d5c8e5d47e44a1147d95a1a7deb87e2be308c3d1a23e69b",
-  "name": "ASC-Studio-Setup-0.205.0.exe"
+  "file": "ascs-setup-0.205.1.bin",
+  "size": 52224049,
+  "sha256": "b64ef34098099f26a81e213a9d5f97678c52d98fb2e65999de69018e280889b8",
+  "name": "ASC-Studio-Setup-0.205.1.exe"
  }
 }
