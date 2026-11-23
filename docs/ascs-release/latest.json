@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.202.2",
+ "version": "0.202.3",
  "published": "2026-11-23",
  "notes": [
-  "เทสต์กฎกั้นสิทธิ์: แยกไฟล์ installed.json ไปโฟลเดอร์ชั่วคราว เลิกตกเพราะไฟล์ค้างในเครื่อง"
+  "หลังคาวาดเอง: เปลี่ยนความสูงชายคา/จำนวนชั้นแล้วหลังคายกขึ้นลงตามทั้งผืน (เดิมค้างที่ความสูงเดิม) · รูปทรงและความชันคงเดิม"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.202.2.bin",
-  "size": 22161945,
-  "sha256": "16ac96135611f40b1fb63a60cb1ea845e535f07cf4be9c3340316f831401bfee"
+  "file": "ascs-app-0.202.3.bin",
+  "size": 22162199,
+  "sha256": "96c25902e929015baa9938a55a055d1547c8b51ce3547510b09c58864cb91ab9"
  },
  "setup": {
-  "file": "ascs-setup-0.202.2.bin",
-  "size": 52194353,
-  "sha256": "bb35aed986c83ea860583bc233c384589f6cd5c6805d920c43f88c43d46f41f1",
-  "name": "ASC-Studio-Setup-0.202.2.exe"
+  "file": "ascs-setup-0.202.3.bin",
+  "size": 52196913,
+  "sha256": "60d392e2e696240edcabd9a02df122132b2a38f4032c2e04d4808b3c741e756f",
+  "name": "ASC-Studio-Setup-0.202.3.exe"
  }
 }
