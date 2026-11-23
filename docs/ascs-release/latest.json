@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.202.1",
+ "version": "0.202.2",
  "published": "2026-11-23",
  "notes": [
-  "แก้ปุ่มอัปเดตของเครื่องที่ติดตั้งจากชุดติดตั้ง: updater.py รันเป็นสคริปต์ตรง ๆ ไม่ได้ (ModuleNotFoundError: core) ทำให้ ASC Studio Update.bat อัปเดตไม่ได้เลย"
+  "เทสต์กฎกั้นสิทธิ์: แยกไฟล์ installed.json ไปโฟลเดอร์ชั่วคราว เลิกตกเพราะไฟล์ค้างในเครื่อง"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.202.1.bin",
-  "size": 22161889,
-  "sha256": "ca47af9b9f6575e1fbe9066e550b965fa1e148ae18aaff07bcb3b61f1fe57b66"
+  "file": "ascs-app-0.202.2.bin",
+  "size": 22161945,
+  "sha256": "16ac96135611f40b1fb63a60cb1ea845e535f07cf4be9c3340316f831401bfee"
  },
  "setup": {
-  "file": "ascs-setup-0.202.1.bin",
+  "file": "ascs-setup-0.202.2.bin",
   "size": 52194353,
-  "sha256": "02c6038a973b5044e3140a1443e3e580cfcbaac3e05b5d6e8fb2fdde4c554ce8",
-  "name": "ASC-Studio-Setup-0.202.1.exe"
+  "sha256": "bb35aed986c83ea860583bc233c384589f6cd5c6805d920c43f88c43d46f41f1",
+  "name": "ASC-Studio-Setup-0.202.2.exe"
  }
 }
