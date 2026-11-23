@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.199.2",
+ "version": "0.200.0",
  "published": "2026-11-23",
  "notes": [
-  "เครื่องที่ติดตั้งไว้: ไม่มีเสียงบรรยาย (edge-tts) และสั่ง PDF ไม่ได้ (Chromium ไม่ตรงรุ่น) — โปรแกรมติดตั้งให้เองแล้ว + ไฟล์ซ่อมแซมแบบดับเบิลคลิก"
+  "เสารับสาย: เลือกแบบโครงสร้างได้ตามการไฟฟ้า (SP · DP · DE · DDE · BA) · ไม่เลือก = คิดจากแนวสายจริง · ปักเสาเพิ่มแล้วสายต่อเข้าเสาใหม่เอง"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.199.2.bin",
-  "size": 22150489,
-  "sha256": "a6f5d8582b2af1f23976776464c1ef72dfabba1d66da3397fde908f18a0ab4cc"
+  "file": "ascs-app-0.200.0.bin",
+  "size": 22152470,
+  "sha256": "22b38a61ed8f0131c6ced43dde7e3f1ba16ba0552b56c290972864a88fab9e74"
  },
  "setup": {
-  "file": "ascs-setup-0.199.2.bin",
-  "size": 52157489,
-  "sha256": "61a564e085240266c294bc76b96535725f0ea52520f22114b8853a6e4f0d1367",
-  "name": "ASC-Studio-Setup-0.199.2.exe"
+  "file": "ascs-setup-0.200.0.bin",
+  "size": 52165169,
+  "sha256": "c459670ca51b01256d746b66a8c0db3a1f186604e5e350ea5ee507201a2d323f",
+  "name": "ASC-Studio-Setup-0.200.0.exe"
  }
 }
