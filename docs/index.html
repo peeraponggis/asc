@@ -1003,6 +1003,7 @@
                                         <th class="px-3 py-2 font-semibold">ยี่ห้อ</th>
                                         <th class="px-3 py-2 font-semibold">รุ่น</th>
                                         <th class="px-3 py-2 font-semibold hidden sm:table-cell">สรุป</th>
+                                        <th class="px-3 py-2 font-semibold whitespace-nowrap" title="วันที่นำเข้า/แก้ไขข้อมูลรุ่นนี้ล่าสุด">อัปเดตล่าสุด</th>
                                         <th class="px-3 py-2 font-semibold text-center whitespace-nowrap" title="ติ๊ก = รายการนี้ยังอยู่ในคลัง แต่หน้าออกแบบและ ASC Studio ไม่แสดงให้เลือก">ซ่อนใน ASCS</th>
                                         <th class="px-3 py-2"></th>
                                     </tr>
@@ -3149,6 +3150,15 @@ async function accessToggleAdmin(userId) {
    เพราะการเขียนทับรุ่นที่มีอยู่แล้วย้อนกลับไม่ได้ */
 
 let DEVBANK  = [];    // รายการในคลังที่โหลดมาแสดง
+
+/* วันที่อัปเดตล่าสุดของรุ่นนั้น (ลุงพีสั่ง 23 พ.ย. 2569) — วัน เดือน ปี พ.ศ. + เวลา · ยังไม่มีข้อมูล = — */
+function devFmtUpdated(iso) {
+    if (!iso) return '—';
+    const t = new Date(iso);
+    if (isNaN(t)) return String(iso);
+    return t.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' }) +
+           ' ' + t.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+}
 let DEVSTAGE = [];    // ไฟล์ที่อ่านแล้วรอยืนยัน
 
 function devMsg(text, ok) {
@@ -3170,7 +3180,7 @@ async function loadDevBank(force) {
         if (force && window.AscDevices) { try { await AscDevices.refresh(); } catch (e) {} }
         renderDevBank();
     } catch (e) {
-        body.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-sm text-red-600">โหลดคลังไม่สำเร็จ : ' + esc(e.message) + '</td></tr>';
+        body.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-sm text-red-600">โหลดคลังไม่สำเร็จ : ' + esc(e.message) + '</td></tr>';
     }
 }
 
@@ -3210,6 +3220,7 @@ function renderDevBank() {
             '<td class="px-3 py-2 font-medium text-slate-700">' + esc(r.brand) + '</td>' +
             '<td class="px-3 py-2 text-slate-700">' + esc(r.model) + sub + warn + '</td>' +
             '<td class="px-3 py-2 text-xs text-slate-400 hidden sm:table-cell">' + esc(r.source_file || '') + '</td>' +
+            '<td class="px-3 py-2 text-xs text-slate-500 whitespace-nowrap" title="' + esc(r.updated_at || '') + '">' + esc(devFmtUpdated(r.updated_at)) + '</td>' +
             '<td class="px-3 py-2 text-center whitespace-nowrap">' +
                 '<label class="inline-flex items-center gap-1 cursor-pointer" title="ซ่อนใน ASCS — ยังอยู่ในคลัง ไม่ลบ">' +
                 '<input type="checkbox" ' + (r.hidden_in_ascs ? 'checked ' : '') + 'onchange="devBankHide(\'' + r.id + '\', this.checked)" class="w-4 h-4 accent-amber-600">' +
