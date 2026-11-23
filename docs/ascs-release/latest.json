@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.207.1",
+ "version": "0.207.2",
  "published": "2026-11-23",
  "notes": [
-  "ตัวนำที่พาดแร็กแรงต่ำเรียงซ้อนแนวตั้งแบบ กฟภ. (N A B C L บนลงล่าง) · แก้บั๊ก เปลี่ยนงานเป็น 3 เฟสแล้วสายเมนอัตโนมัติไม่สร้างใหม่ให้ครบเส้น"
+  "สายที่พาดเสาวิ่งเข้าลูกถ้วยบนแร็กแรงต่ำจริงทุกเส้น (เดิมลอยผ่านแกนเสา) · หน้าพลังงานรายเดือนแนบกราฟความน่าจะเป็น P50/P75/P90/P95 ต่อท้าย"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.207.1.bin",
-  "size": 22175990,
-  "sha256": "e7a255972fd2bd10c843bd084bd7f163f7b328d7881e177aa1ca66de6e0ae7f5"
+  "file": "ascs-app-0.207.2.bin",
+  "size": 22176115,
+  "sha256": "5c354fe8370a84a92bc1d0506f1c38fe7dc7c5205dd5fe2718be829ee24d2f79"
  },
  "setup": {
-  "file": "ascs-setup-0.207.1.bin",
-  "size": 52254257,
-  "sha256": "39ec99bb4405021cbf8f9e8e2d30ebcb4e199a415c9fcc169217e5c478803488",
-  "name": "ASC-Studio-Setup-0.207.1.exe"
+  "file": "ascs-setup-0.207.2.bin",
+  "size": 52255793,
+  "sha256": "7283b1b455ba394aad564c62d2f6bea07cd8ba6c80b24adcc1b492f1d91e918a",
+  "name": "ASC-Studio-Setup-0.207.2.exe"
  }
 }
