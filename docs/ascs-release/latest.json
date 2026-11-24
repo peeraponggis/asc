@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.208.0",
- "published": "2026-11-23",
+ "version": "0.208.1",
+ "published": "2026-11-24",
  "notes": [
-  "แยกหน้า พลังงานรายเดือน + P50–P95 (ต่อ) พร้อมตารางความเชื่อมั่น สรุปสำหรับสถาบันการเงิน และอธิบายศัพท์ · ชนิดสายมีค่าปริยาย AC = THW · DC ของแผง = PV1-F"
+  "แก้ส่งออกทั้งหมดแล้วไม่บันทึก: ถามโฟลเดอร์ตอนกดตกลง (เบราว์เซอร์ให้สิทธิ์เฉพาะตอนเพิ่งกดปุ่ม) · คำสั่งที่ล้มเหลวขึ้นข้อความบนหน้าจอ ไม่เงียบ"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.208.0.bin",
-  "size": 22177549,
-  "sha256": "c0c4ed56aee110e42eada306b4e314ea2da3f72bb134a758669aa7777c4362af"
+  "file": "ascs-app-0.208.1.bin",
+  "size": 22177935,
+  "sha256": "a5032ff5580cbb41526a8005e5a14d6157519b489287add5b5053621893c2cd9"
  },
  "setup": {
-  "file": "ascs-setup-0.208.0.bin",
-  "size": 52261937,
-  "sha256": "8937b0549cb4c0439b35e77da8a9c68ba21583f71a04d86a954308655d1c966c",
-  "name": "ASC-Studio-Setup-0.208.0.exe"
+  "file": "ascs-setup-0.208.1.bin",
+  "size": 52265009,
+  "sha256": "4226e7dabadaecd025f38a5f9c3e0be6e5ac1b3c7b311c4b1e214588258d8c6b",
+  "name": "ASC-Studio-Setup-0.208.1.exe"
  }
 }
