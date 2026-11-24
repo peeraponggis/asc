@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.209.2",
+ "version": "0.210.0",
  "published": "2026-11-24",
  "notes": [
-  "รุ่นเว็บไม่เรียกผู้ช่วย AI ในเครื่อง (127.0.0.1) เองตอนเปิดหน้า — แก้ Chrome เด้งกล่อง Access other apps and services on this device จนใช้งานต่อไม่ได้ · เปิดใช้เองที่หน้าต่างผู้ช่วย AI ในเครื่องนี้"
+  "ส่งออกทั้งหมดรุ่นเว็บ: .zip ไฟล์เดียวเป็นค่าเริ่ม ไม่ต้องขอสิทธิ์โฟลเดอร์ ใช้ได้ทั้ง Chrome และ Edge · ตรวจแตกกลับก่อนส่ง · เปิดงานจาก .zip ได้ตรง ๆ · เลือกโฟลเดอร์: อ่านกลับตรวจขนาดทุกไฟล์ เขียนไฟล์งานก่อน"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.209.2.bin",
-  "size": 22186997,
-  "sha256": "78a4328857bf7032bb3dff2f09acd8f536a911ff1c441ed0a17d0fe95a5536d8"
+  "file": "ascs-app-0.210.0.bin",
+  "size": 22194748,
+  "sha256": "b96d231a34eee7126bb1525b95a80e55643e04421e815ec50c5d664830833c84"
  },
  "setup": {
-  "file": "ascs-setup-0.209.2.bin",
-  "size": 52292657,
-  "sha256": "374fada228fb094ea889c8549227b528f36e2f996599b8ebf2360020831ffb2b",
-  "name": "ASC-Studio-Setup-0.209.2.exe"
+  "file": "ascs-setup-0.210.0.bin",
+  "size": 52303921,
+  "sha256": "a76085212b2d0ce5b4feb9bbe234b7217c00d22cded105ff1701469092d3770c",
+  "name": "ASC-Studio-Setup-0.210.0.exe"
  }
 }
