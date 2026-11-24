@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.209.1",
+ "version": "0.209.2",
  "published": "2026-11-24",
  "notes": [
-  "ส่งออกทั้งหมด: ไม่มีช่วงเงียบ — แจ้งเมื่อยกเลิก/ไม่ได้สิทธิ์เขียน/เขียนไม่ได้ · สถานะกำลังสร้าง/เขียนไฟล์ i/n · ไฟล์เดียวพลาดไฟล์อื่นยังได้ · ปุ่มดาวน์โหลดแทน"
+  "รุ่นเว็บไม่เรียกผู้ช่วย AI ในเครื่อง (127.0.0.1) เองตอนเปิดหน้า — แก้ Chrome เด้งกล่อง Access other apps and services on this device จนใช้งานต่อไม่ได้ · เปิดใช้เองที่หน้าต่างผู้ช่วย AI ในเครื่องนี้"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.209.1.bin",
-  "size": 22186811,
-  "sha256": "74bbc5a8e940a57393640867e9065c2d68a18309cd89bbf002ffb28f7dbbaaed"
+  "file": "ascs-app-0.209.2.bin",
+  "size": 22186997,
+  "sha256": "78a4328857bf7032bb3dff2f09acd8f536a911ff1c441ed0a17d0fe95a5536d8"
  },
  "setup": {
-  "file": "ascs-setup-0.209.1.bin",
-  "size": 52290097,
-  "sha256": "0ed63e4e1ea57708a841cd78b4ca942b2b74540e8d48dc7ca7882d50521293a9",
-  "name": "ASC-Studio-Setup-0.209.1.exe"
+  "file": "ascs-setup-0.209.2.bin",
+  "size": 52292657,
+  "sha256": "374fada228fb094ea889c8549227b528f36e2f996599b8ebf2360020831ffb2b",
+  "name": "ASC-Studio-Setup-0.209.2.exe"
  }
 }
