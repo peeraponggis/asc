@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.210.0",
+ "version": "0.210.1",
  "published": "2026-11-24",
  "notes": [
-  "ส่งออกทั้งหมดรุ่นเว็บ: .zip ไฟล์เดียวเป็นค่าเริ่ม ไม่ต้องขอสิทธิ์โฟลเดอร์ ใช้ได้ทั้ง Chrome และ Edge · ตรวจแตกกลับก่อนส่ง · เปิดงานจาก .zip ได้ตรง ๆ · เลือกโฟลเดอร์: อ่านกลับตรวจขนาดทุกไฟล์ เขียนไฟล์งานก่อน"
+  "แก้ส่งออกไม่ได้ (ZIP_VERIFY) งานหลายโรงจอดรถ/โครงสร้าง: ไฟล์ DXF ชื่อซ้ำกัน · ชื่อไฟล์บอกอาคาร + กันชื่อซ้ำทุกไฟล์ในชุด (ส่งลงโฟลเดอร์ก็ไม่ทับกันอีก)"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.210.0.bin",
-  "size": 22194748,
-  "sha256": "b96d231a34eee7126bb1525b95a80e55643e04421e815ec50c5d664830833c84"
+  "file": "ascs-app-0.210.1.bin",
+  "size": 22194859,
+  "sha256": "74d30d5815cbdaa2664a5859c2fe258ec9bd33c1c7d605718fed8c70cb098dfa"
  },
  "setup": {
-  "file": "ascs-setup-0.210.0.bin",
-  "size": 52303921,
-  "sha256": "a76085212b2d0ce5b4feb9bbe234b7217c00d22cded105ff1701469092d3770c",
-  "name": "ASC-Studio-Setup-0.210.0.exe"
+  "file": "ascs-setup-0.210.1.bin",
+  "size": 52305457,
+  "sha256": "c5746bee3b57d02bd7fe3fbfdb9edecac838aef413f2be13cb6c5a6b1c6d33e1",
+  "name": "ASC-Studio-Setup-0.210.1.exe"
  }
 }
