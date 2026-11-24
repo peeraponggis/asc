@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.210.1",
+ "version": "0.211.0",
  "published": "2026-11-24",
  "notes": [
-  "แก้ส่งออกไม่ได้ (ZIP_VERIFY) งานหลายโรงจอดรถ/โครงสร้าง: ไฟล์ DXF ชื่อซ้ำกัน · ชื่อไฟล์บอกอาคาร + กันชื่อซ้ำทุกไฟล์ในชุด (ส่งลงโฟลเดอร์ก็ไม่ทับกันอีก)"
+  "ข้อมูลบริษัท · วิศวกร รุ่นเดสก์ท็อป = บัญชีเดียวกับรุ่นเว็บ (อ่าน/บันทึกที่บัญชี ASC Enterprise · เปิดหน้าตั้งค่า/รายงานดึงค่าใหม่ทันที · ป้ายบอกที่มา เขียว=ตรงกับบัญชี แดง=อยู่ในเครื่องเท่านั้นพร้อมเหตุผล · …"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.210.1.bin",
-  "size": 22194859,
-  "sha256": "74d30d5815cbdaa2664a5859c2fe258ec9bd33c1c7d605718fed8c70cb098dfa"
+  "file": "ascs-app-0.211.0.bin",
+  "size": 22199395,
+  "sha256": "faeb11d1d8a641e58b5af731d7a84c432d4158ffad8804eee9298ac180dddf59"
  },
  "setup": {
-  "file": "ascs-setup-0.210.1.bin",
-  "size": 52305457,
-  "sha256": "c5746bee3b57d02bd7fe3fbfdb9edecac838aef413f2be13cb6c5a6b1c6d33e1",
-  "name": "ASC-Studio-Setup-0.210.1.exe"
+  "file": "ascs-setup-0.211.0.bin",
+  "size": 52315697,
+  "sha256": "7c991597db2deb3f184ea85837b1f936eb5f50c893bd50e71d19a1990eeb3f14",
+  "name": "ASC-Studio-Setup-0.211.0.exe"
  }
 }
