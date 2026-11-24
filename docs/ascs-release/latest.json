@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.220.0",
+ "version": "0.221.0",
  "published": "2026-11-24",
  "notes": [
-  "รายงานวิศวกรรม: แยก SLD กับตู้ SMDB — หัวข้อ SLD มีแค่ SLD · หน้าตู้ SMDB/ตู้ไฟ ย้ายไปอยู่กับรายการวัสดุ (BOM) ต่อท้ายรายการวัสดุ · ชุดยื่นการไฟฟ้ายังมี SLD + ตู้ครบเหมือนเดิม"
+  "ส่งออก PDF (หน้ารายงาน + หน้าค่าไฟฟ้า): ถามโฟลเดอร์ที่จะบันทึกก่อน (เปิดที่โฟลเดอร์ครั้งก่อน · ยกเลิกได้) · บันทึกแล้วบอกที่อยู่ไฟล์เต็มค้างบนจอ พร้อมปุ่มเปิดไฟล์ PDF / เปิดโฟลเดอร์ และเปิด PDF ให้อัตโนมัติ"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.220.0.bin",
-  "size": 22218003,
-  "sha256": "dbcec32d5e148c4d5bd6719917afb49646eacd67b46fb23fe5b554487b25cb55"
+  "file": "ascs-app-0.221.0.bin",
+  "size": 22218754,
+  "sha256": "916ca0c73715312d368e4aa57857f6683de4f83ae47cacce745695e5d637004b"
  },
  "setup": {
-  "file": "ascs-setup-0.220.0.bin",
-  "size": 52375601,
-  "sha256": "4ad8e6f0baea0b34e572eb5b400843fa62873e47fd16a208760f95c065ad1e30",
-  "name": "ASC-Studio-Setup-0.220.0.exe"
+  "file": "ascs-setup-0.221.0.bin",
+  "size": 52377649,
+  "sha256": "3dc6a86e4b219383a2bf44a263edf22c41eb19f17b46be069e52b4d052d03ff6",
+  "name": "ASC-Studio-Setup-0.221.0.exe"
  }
 }
