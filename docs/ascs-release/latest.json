@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.222.2",
+ "version": "0.222.3",
  "published": "2026-11-25",
  "notes": [
-  "ตรวจระบบ ASCS Projects บนเครื่องที่ติดตั้ง: ใช้ไฟล์ตัวอย่างใน dist/examples (เครื่องติดตั้งไม่มี public/) → ผ่านครบทุกข้อแม้ยังไม่มีงาน"
+  "ASCS Projects: ไม่มี Node.js 20+ = ถามแล้วติดตั้ง Node.js LTS แบบพกพาที่ server\\data\\node (ตรวจ SHA-256 · ไม่ต้องใช้ admin) ทั้งตอนติดตั้งและตอนเปิด ASCS Projects หลังอัปเดต"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.222.2.bin",
-  "size": 25337426,
-  "sha256": "d8994d0c636aa2db97803f57740ac3291b936187e5dbf7479a95af51ba2715ff"
+  "file": "ascs-app-0.222.3.bin",
+  "size": 25343106,
+  "sha256": "fc68570f2d540e65d5f5144fb1b3cc105a21b5734ff1e6bcc153bc4ee680815a"
  },
  "setup": {
-  "file": "ascs-setup-0.222.2.bin",
-  "size": 57889329,
-  "sha256": "1ff51d4c5fdc2c7e4e3dfe0cecaac72b8d19c390c293c29e6ea58714b4b0869b",
-  "name": "ASC-Studio-Setup-0.222.2.exe"
+  "file": "ascs-setup-0.222.3.bin",
+  "size": 57895473,
+  "sha256": "75fc9f92583c15db9aca0dfcea82ed89f1f831b2ab0c52a08956e4a4e3c3acb3",
+  "name": "ASC-Studio-Setup-0.222.3.exe"
  }
 }
