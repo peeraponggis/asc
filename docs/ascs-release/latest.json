@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.222.4",
+ "version": "0.222.5",
  "published": "2026-11-25",
  "notes": [
-  "ระยะถึงแนวเขตที่ดิน: เส้น+ป้ายทุกด้าน เลือกแสดงได้ · ย้ายช่องระยะร่นไปข้อมูลโครงการ · คลิกกลางด้านแนวเขตไม่เพิ่มจุด · ป้ายระยะเป็นสีส้มวางก่อนป้ายอื่น"
+  "ป้ายแผงใน 3D ขึ้นชื่ออาคารตามข้อมูล (หลายอาคาร · ชื่อที่แก้ตามไปด้วย) · บันทึกขึ้น ASC Enterprise ส่งข้อมูลโครงการ (db1.project) ค่าไฟ (db0) การเงิน (db3) และสถานที่ (location) ครบ — Dashboard นับ Load Data/Completed ได้"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.222.4.bin",
-  "size": 25343503,
-  "sha256": "011e60c3a7d2bea6be8a2109d96ec1a5983f345c276c0559ad54cf08490b74c0"
+  "file": "ascs-app-0.222.5.bin",
+  "size": 25343728,
+  "sha256": "4aa3f541d60fe5a57252bb54a57e9b093379077ec8871273ca36e79224aba355"
  },
  "setup": {
-  "file": "ascs-setup-0.222.4.bin",
-  "size": 57900593,
-  "sha256": "b240fbb2e1abd4bfac8e19cba33afe48ebf19c63fdcd4ca09aab36a9d037df95",
-  "name": "ASC-Studio-Setup-0.222.4.exe"
+  "file": "ascs-setup-0.222.5.bin",
+  "size": 57902129,
+  "sha256": "a042be00f4caeb318071c4c2b2708ec096dca84e208d7d557aa17a8d33450f41",
+  "name": "ASC-Studio-Setup-0.222.5.exe"
  }
 }

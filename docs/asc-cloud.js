@@ -1188,6 +1188,8 @@
 
             const patch = { data: split.data };
             if (payload.name != null) patch.name = String(payload.name).trim();
+            // ASC Studio 0.222.5: สถานที่จากแบบ (ส่งมาเฉพาะเมื่อมีค่า — ไม่ส่ง = คงค่าที่กรอกบน Dashboard)
+            if (payload.location != null && String(payload.location).trim()) patch.location = String(payload.location).trim();
 
             // ต้องขอแถวที่ถูกแก้กลับมาด้วย เพื่อรู้ว่าเขียนสำเร็จจริงหรือไม่
             //
