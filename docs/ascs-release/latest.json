@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.222.7",
+ "version": "0.222.8",
  "published": "2026-11-26",
  "notes": [
-  "ชุดติดตั้งผู้ช่วย AI ในเครื่อง (ASC-AI-Setup.zip) รุ่นใหม่ — เครื่อง RAM 12 GB ขึ้นไปดาวน์โหลด bge-m3 ค้นคลังแบบความหมาย · แก้ npm run ai:zip ล้มใน Git Bash และไม่ลบไฟล์เดิมก่อนสร้างสำเร็จ"
+  "SQL คลังความรู้รุ่นเว็บแบ่งหลายไฟล์ (npm run kb:sql → out/cloud/kb-data/ · ไฟล์เดียวใหญ่เกิน SQL Editor) · ไฟล์ 01 สร้างตาราง kb_store ให้เองถ้ายังไม่มี · ไฟล์สุดท้ายตรวจครบก่อนแทนคลัง · รุ่นเว็บอ่านเฉพาะแถว main"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.222.7.bin",
-  "size": 25646023,
-  "sha256": "4bd09bda340ede9c72b0be26b47223f538b33a31d97f0d4d4278d1f4294352a7"
+  "file": "ascs-app-0.222.8.bin",
+  "size": 25648385,
+  "sha256": "50941bd018bec695d997de1470495699888eef15dbc018d62f42f50bb5f199ac"
  },
  "setup": {
-  "file": "ascs-setup-0.222.7.bin",
-  "size": 58515505,
-  "sha256": "54b5825a77ae71e0416204ef6b4ce611e84432708115cbe19b54ee71c548f077",
-  "name": "ASC-Studio-Setup-0.222.7.exe"
+  "file": "ascs-setup-0.222.8.bin",
+  "size": 58519601,
+  "sha256": "28bfa023cba2f2dacf8e00a1dff46227ed81e09c4aed70912279495b837cf1bb",
+  "name": "ASC-Studio-Setup-0.222.8.exe"
  }
 }
