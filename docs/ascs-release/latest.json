@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.222.5",
- "published": "2026-11-25",
+ "version": "0.222.6",
+ "published": "2026-11-26",
  "notes": [
-  "ป้ายแผงใน 3D ขึ้นชื่ออาคารตามข้อมูล (หลายอาคาร · ชื่อที่แก้ตามไปด้วย) · บันทึกขึ้น ASC Enterprise ส่งข้อมูลโครงการ (db1.project) ค่าไฟ (db0) การเงิน (db3) และสถานที่ (location) ครบ — Dashboard นับ Load Data/Completed ได้"
+  "Map Fetcher เป็นหน้าต่างลอย (ย่อ · ขยายเต็มจอ · ลากมุมปรับขนาด · แถบซูม −/+ 50–200% · จำขนาด/ซูม) · คู่มือหัวข้อ 18 ของใหม่ v0.183–v0.222.6 + คลังความรู้ถึงรุ่นปัจจุบัน · ผู้ช่วย AI ตอบลึกจากคลัง (R0–R5: …"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.222.5.bin",
-  "size": 25343728,
-  "sha256": "4aa3f541d60fe5a57252bb54a57e9b093379077ec8871273ca36e79224aba355"
+  "file": "ascs-app-0.222.6.bin",
+  "size": 25644980,
+  "sha256": "0264cfe4705409e87244b08156368b1a8f36b5c066b44c695d32e2fdf620291f"
  },
  "setup": {
-  "file": "ascs-setup-0.222.5.bin",
-  "size": 57902129,
-  "sha256": "a042be00f4caeb318071c4c2b2708ec096dca84e208d7d557aa17a8d33450f41",
-  "name": "ASC-Studio-Setup-0.222.5.exe"
+  "file": "ascs-setup-0.222.6.bin",
+  "size": 58513969,
+  "sha256": "54708649589331a206ed40699e41b9e428a1cda0c39a0fa1d57631cc47ddd36f",
+  "name": "ASC-Studio-Setup-0.222.6.exe"
  }
 }
