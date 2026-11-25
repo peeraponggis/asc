@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.222.1",
+ "version": "0.222.2",
  "published": "2026-11-25",
  "notes": [
-  "แก้ตรวจระบบ ASCS Projects บนเครื่องที่ติดตั้งใหม่: ใส่เซิร์ฟเวอร์ MCP (dist-mcp) ในชุดติดตั้ง/ชุดอัปเดต · build เป็นไฟล์เดียวไม่พึ่ง node_modules · เครื่องที่ยังไม่มีงานใช้ไฟล์ตัวอย่างตรวจแทน"
+  "ตรวจระบบ ASCS Projects บนเครื่องที่ติดตั้ง: ใช้ไฟล์ตัวอย่างใน dist/examples (เครื่องติดตั้งไม่มี public/) → ผ่านครบทุกข้อแม้ยังไม่มีงาน"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.222.1.bin",
-  "size": 25337335,
-  "sha256": "94a913c1e73c8871c176b76ba742dc6daf8a789f29066677e8c0facf41b6de4c"
+  "file": "ascs-app-0.222.2.bin",
+  "size": 25337426,
+  "sha256": "d8994d0c636aa2db97803f57740ac3291b936187e5dbf7479a95af51ba2715ff"
  },
  "setup": {
-  "file": "ascs-setup-0.222.1.bin",
+  "file": "ascs-setup-0.222.2.bin",
   "size": 57889329,
-  "sha256": "76e407d57d58d46af004d241e842974ccec483b86bee24f7a091b0a2ac2e578b",
-  "name": "ASC-Studio-Setup-0.222.1.exe"
+  "sha256": "1ff51d4c5fdc2c7e4e3dfe0cecaac72b8d19c390c293c29e6ea58714b4b0869b",
+  "name": "ASC-Studio-Setup-0.222.2.exe"
  }
 }
