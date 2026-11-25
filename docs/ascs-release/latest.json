@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.222.0",
+ "version": "0.222.1",
  "published": "2026-11-25",
  "notes": [
-  "เล่มแบบก่อสร้าง (For Construct) A3 รวมแบบทุกชนิด ติ๊กเลือกแผ่นที่ส่งออก PDF · แบบโครงสร้างภาคพื้นดิน/โรงจอดรถ 5 แผ่น (ผังเสา รูปตัด รูปด้าน ฐานราก/งานขุด ตารางเหล็ก) · ตู้ฟิวส์ DC ตามจำนวนสตริง · ตู้ Zero Export …"
+  "แก้ตรวจระบบ ASCS Projects บนเครื่องที่ติดตั้งใหม่: ใส่เซิร์ฟเวอร์ MCP (dist-mcp) ในชุดติดตั้ง/ชุดอัปเดต · build เป็นไฟล์เดียวไม่พึ่ง node_modules · เครื่องที่ยังไม่มีงานใช้ไฟล์ตัวอย่างตรวจแทน"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.222.0.bin",
-  "size": 24554647,
-  "sha256": "72f9564d2a59f47fc8fe41991ae99cc39cf57ab3acc3d173e3874e5bcb308fa4"
+  "file": "ascs-app-0.222.1.bin",
+  "size": 25337335,
+  "sha256": "94a913c1e73c8871c176b76ba742dc6daf8a789f29066677e8c0facf41b6de4c"
  },
  "setup": {
-  "file": "ascs-setup-0.222.0.bin",
-  "size": 57096753,
-  "sha256": "578c280ed43e86db2655957f66c03268438e0443ab1cf3a42c947175d6371915",
-  "name": "ASC-Studio-Setup-0.222.0.exe"
+  "file": "ascs-setup-0.222.1.bin",
+  "size": 57889329,
+  "sha256": "76e407d57d58d46af004d241e842974ccec483b86bee24f7a091b0a2ac2e578b",
+  "name": "ASC-Studio-Setup-0.222.1.exe"
  }
 }
