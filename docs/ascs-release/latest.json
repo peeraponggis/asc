@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.222.3",
+ "version": "0.222.4",
  "published": "2026-11-25",
  "notes": [
-  "ASCS Projects: ไม่มี Node.js 20+ = ถามแล้วติดตั้ง Node.js LTS แบบพกพาที่ server\\data\\node (ตรวจ SHA-256 · ไม่ต้องใช้ admin) ทั้งตอนติดตั้งและตอนเปิด ASCS Projects หลังอัปเดต"
+  "ระยะถึงแนวเขตที่ดิน: เส้น+ป้ายทุกด้าน เลือกแสดงได้ · ย้ายช่องระยะร่นไปข้อมูลโครงการ · คลิกกลางด้านแนวเขตไม่เพิ่มจุด · ป้ายระยะเป็นสีส้มวางก่อนป้ายอื่น"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.222.3.bin",
-  "size": 25343106,
-  "sha256": "fc68570f2d540e65d5f5144fb1b3cc105a21b5734ff1e6bcc153bc4ee680815a"
+  "file": "ascs-app-0.222.4.bin",
+  "size": 25343503,
+  "sha256": "011e60c3a7d2bea6be8a2109d96ec1a5983f345c276c0559ad54cf08490b74c0"
  },
  "setup": {
-  "file": "ascs-setup-0.222.3.bin",
-  "size": 57895473,
-  "sha256": "75fc9f92583c15db9aca0dfcea82ed89f1f831b2ab0c52a08956e4a4e3c3acb3",
-  "name": "ASC-Studio-Setup-0.222.3.exe"
+  "file": "ascs-setup-0.222.4.bin",
+  "size": 57900593,
+  "sha256": "b240fbb2e1abd4bfac8e19cba33afe48ebf19c63fdcd4ca09aab36a9d037df95",
+  "name": "ASC-Studio-Setup-0.222.4.exe"
  }
 }
