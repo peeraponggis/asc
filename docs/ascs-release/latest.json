@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.222.6",
+ "version": "0.222.7",
  "published": "2026-11-26",
  "notes": [
-  "Map Fetcher เป็นหน้าต่างลอย (ย่อ · ขยายเต็มจอ · ลากมุมปรับขนาด · แถบซูม −/+ 50–200% · จำขนาด/ซูม) · คู่มือหัวข้อ 18 ของใหม่ v0.183–v0.222.6 + คลังความรู้ถึงรุ่นปัจจุบัน · ผู้ช่วย AI ตอบลึกจากคลัง (R0–R5: …"
+  "ชุดติดตั้งผู้ช่วย AI ในเครื่อง (ASC-AI-Setup.zip) รุ่นใหม่ — เครื่อง RAM 12 GB ขึ้นไปดาวน์โหลด bge-m3 ค้นคลังแบบความหมาย · แก้ npm run ai:zip ล้มใน Git Bash และไม่ลบไฟล์เดิมก่อนสร้างสำเร็จ"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.222.6.bin",
-  "size": 25644980,
-  "sha256": "0264cfe4705409e87244b08156368b1a8f36b5c066b44c695d32e2fdf620291f"
+  "file": "ascs-app-0.222.7.bin",
+  "size": 25646023,
+  "sha256": "4bd09bda340ede9c72b0be26b47223f538b33a31d97f0d4d4278d1f4294352a7"
  },
  "setup": {
-  "file": "ascs-setup-0.222.6.bin",
-  "size": 58513969,
-  "sha256": "54708649589331a206ed40699e41b9e428a1cda0c39a0fa1d57631cc47ddd36f",
-  "name": "ASC-Studio-Setup-0.222.6.exe"
+  "file": "ascs-setup-0.222.7.bin",
+  "size": 58515505,
+  "sha256": "54b5825a77ae71e0416204ef6b4ce611e84432708115cbe19b54ee71c548f077",
+  "name": "ASC-Studio-Setup-0.222.7.exe"
  }
 }
