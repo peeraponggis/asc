@@ -133,7 +133,7 @@ document.addEventListener("click", function (e) { var b = e.target.closest && e.
       + '<div id="dv-list" style="font-size:14px"></div>'
       + '<div style="margin-top:16px;border-top:1px solid #e6e9ee;padding-top:14px">'
       + '<div style="font-size:13px;color:#555;margin-bottom:6px">ผูกเครื่องนี้กับบัญชี (หรือเปลี่ยนเป็นบัญชีอื่น) — สร้างรหัสที่ '
-      + '<a href="https://peeraponggis.github.io/asc/studio/" target="_blank" rel="noopener">ASC Studio</a> › ผู้ช่วย AI › ติดตั้งในเครื่องนี้</div>'
+      + '<a href="https://aisolar.dev/studio/" target="_blank" rel="noopener">ASC Studio</a> › ผู้ช่วย AI › ติดตั้งในเครื่องนี้</div>'
       + '<div style="display:flex;gap:8px;flex-wrap:wrap"><input id="dv-code" placeholder="ASC-XXXX-XXXX" style="font:inherit;padding:8px 12px;border:1px solid #c7d0dd;border-radius:9px;width:190px;text-align:center">'
       + '<button class="primary" id="dv-link">ผูกเครื่อง</button></div>'
       + '<p id="dv-msg" style="margin:10px 0 0;font-size:13px;min-height:18px"></p></div>'

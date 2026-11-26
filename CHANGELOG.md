@@ -1,3 +1,8 @@
+## 4.12.2 — 2026-11-27 โดย ลุงพี
+- ตั้งโดเมน aisolar.dev เป็นโดเมนหลัก แทน peeraponggis.github.io/asc
+- เพิ่ม DOMAIN.md บันทึกการตั้งค่า DNS/HTTPS
+- แก้ลิงก์ในข้อมูลช่วยเหลือให้ชี้ไป aisolar.dev
+
 # Changelog — ASC Enterprise (เว็บ · ชื่อเดิม ASC Cloud)
 > โปรแกรมออกแบบ ASC Studio (ASCS) อยู่คนละ repo คือ `asc_auto` · ที่นี่คือเว็บแอปและรุ่นคลาวด์เท่านั้น
 โดย ลุงพี (Peerapong) · ProInventive
