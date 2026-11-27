@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>อัตราค่าไฟ — ผู้ดูแลระบบ</title>
+  <!-- tariff-admin.html — ชุดอัตราค่าไฟ กฟภ./กฟน. + งวด Ft ที่แอดมินดูแล (0.223.0 · ลุงพีอนุมัติหน้าตัวอย่าง 27 พ.ย. 2569)
+       เปิดจาก ASC Enterprise › ตั้งค่า › อัตราค่าไฟ (กรอบในหน้า) · ใช้ตัวตรวจอัตรา/ผู้ช่วย AI ชุดเดียวกับ ASC Studio -->
+  <style>
+    :root { --bg:#f4f6f5; --panel:#fff; --panel2:#f4f5f1; --line:#d9dcd3; --ink:#1d2220; --ink2:#5b635f; --acc:#146b4a; --warn:#855c00; --warnbg:#fbf0d5; --okbg:#dff0e5; --fail:#b3261e; --failbg:#fbe3e1; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#151917; --panel:#1e2421; --panel2:#262d29; --line:#39423d; --ink:#e8ece9; --ink2:#aab3ae; --acc:#4fb383; --warn:#e8c35a; --warnbg:#3d3218; --okbg:#183a28; --fail:#f28b82; --failbg:#3f1e1c; } }
+    * { box-sizing: border-box } body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 'Sarabun','Leelawadee UI','Segoe UI',sans-serif; }
+    #app { max-width: 1180px; margin: 0 auto; padding: 14px 16px 60px; display: grid; gap: 14px; }
+    h1 { font-size: 18px; margin: 0 } h2 { font-size: 15.5px; margin: 0 0 8px } p { margin: 4px 0 }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px 16px; }
+    .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:6px 0 }
+    .small { font-size:12.5px; color:var(--ink2) }
+    .tabs { display:flex; gap:6px; flex-wrap:wrap } .tabs button { border:1px solid var(--line); background:var(--panel); color:var(--ink); padding:6px 13px; border-radius:999px; cursor:pointer; font:inherit }
+    .tabs button.on { background:var(--acc); border-color:var(--acc); color:#fff }
+    button.b { border:1px solid var(--line); background:var(--panel2); color:var(--ink); border-radius:5px; padding:5px 11px; cursor:pointer; font:inherit }
+    button.b.pri { background:var(--acc); border-color:var(--acc); color:#fff } button.b.del { color:var(--fail) } button.b:disabled { opacity:.5; cursor:not-allowed }
+    input, select, textarea { font:inherit; padding:4px 7px; border:1px solid var(--line); border-radius:5px; background:var(--panel); color:var(--ink) }
+    label.f { display:grid; gap:2px; font-size:12.5px; color:var(--ink2) }
+    .wrap { overflow-x:auto } table { border-collapse:collapse; width:100%; font-size:13px }
+    th, td { border:1px solid var(--line); padding:4px 7px; text-align:left; vertical-align:middle } th { background:var(--panel2); position:sticky; top:0 }
+    td.n { text-align:right; font-variant-numeric:tabular-nums } td input.n { width:96px; text-align:right }
+    tr.chg td { background:var(--warnbg) } tr.chg td.n.new { color:var(--fail); font-weight:600 }
+    .pill { border-radius:999px; padding:1px 9px; font-size:12px; border:1px solid var(--line); white-space:nowrap }
+    .pill.published { background:var(--okbg); border-color:transparent } .pill.draft { background:var(--warnbg); color:var(--warn); border-color:transparent } .pill.retired { color:var(--ink2); text-decoration:line-through }
+    .msg { border-radius:6px; padding:8px 12px; font-size:13px } .msg.ok { background:var(--okbg) } .msg.warn { background:var(--warnbg); color:var(--warn) } .msg.err { background:var(--failbg); color:var(--fail) }
+    .scroll { max-height: 520px; overflow:auto; border:1px solid var(--line); border-radius:6px }
+    [hidden] { display:none !important }
+  </style>
+  <script type="module" crossorigin src="./assets/tariffadmin-DzXUs1kF.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/tariffSets-Xyt6TBdG.js">
+  <link rel="modulepreload" crossorigin href="./assets/providers-BTcoOWkx.js">
+  <script src="../supabase-config.js"></script>
+  <script src="../asc-cloud.js"></script>
+</head>
+<body>
+  <div id="app"><div class="card">กำลังโหลด…</div></div>
+</body>
+</html>

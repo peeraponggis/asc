@@ -629,6 +629,7 @@
                     <button type="button" role="tab" class="stab px-4 py-2.5 rounded-t-lg text-sm font-semibold whitespace-nowrap transition" data-stab="access" data-cloud="1" data-admin="1"><i class="fa-solid fa-user-shield mr-1.5"></i>ผู้ใช้และสิทธิ์ <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded ml-1">ADMIN</span></button>
                     <button type="button" role="tab" class="stab px-4 py-2.5 rounded-t-lg text-sm font-semibold whitespace-nowrap transition" data-stab="devbank" data-cloud="1" data-admin="1"><i class="fa-solid fa-microchip mr-1.5"></i>คลังอุปกรณ์ <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded ml-1">ADMIN</span></button>
                     <button type="button" role="tab" class="stab px-4 py-2.5 rounded-t-lg text-sm font-semibold whitespace-nowrap transition" data-stab="terms" data-cloud="1" data-admin="1"><i class="fa-solid fa-language mr-1.5"></i>คำศัพท์ ASCS <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded ml-1">ADMIN</span></button>
+                    <button type="button" role="tab" class="stab px-4 py-2.5 rounded-t-lg text-sm font-semibold whitespace-nowrap transition" data-stab="tariffs" data-cloud="1" data-admin="1"><i class="fa-solid fa-bolt mr-1.5"></i>อัตราค่าไฟ <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded ml-1">ADMIN</span></button>
                 </div>
 
 
@@ -1103,6 +1104,11 @@
                             </div>
                         </div>
                     </div>
+                </div>
+                <!-- อัตราค่าไฟ กฟภ./กฟน. + งวด Ft (ASC Studio 0.223.0 · ลุงพีอนุมัติ 27 พ.ย. 2569) — หน้าจริงอยู่ที่ studio/tariff-admin.html
+                     ใช้ตัวตรวจอัตรา/ผู้ช่วย AI ชุดเดียวกับ ASC Studio · โหลดกรอบเมื่อเปิดแท็บครั้งแรก -->
+                <div class="stab-panel hidden space-y-4" data-stab="tariffs">
+                    <iframe id="tariff-frame" title="อัตราค่าไฟ" class="w-full bg-white rounded-xl border border-slate-200 shadow-sm" style="height:calc(100vh - 220px);min-height:640px"></iframe>
                 </div>
 
             </section>
@@ -2402,6 +2408,7 @@ function switchSettingsTab(tab) {
     try { localStorage.setItem(SETTINGS_TAB_KEY, tab); } catch (e) { /* ปิดไว้ = ไม่จำ */ }
     if (location.hash !== '#settings/' + tab) history.replaceState(null, '', '#settings/' + tab);
     if (tab === 'terms' && window.AscTermsUI) AscTermsUI.open();
+    if (tab === 'tariffs') { const f = document.getElementById('tariff-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'studio/tariff-admin.html'); }
 }
 
 function initSettingsTabs() {
