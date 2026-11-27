@@ -3,7 +3,7 @@
 --  ----------------------------------------------------------------------------
 --  ตามที่ลุงพีสรุป (docs/mockup-access-control.html ของ design-auto):
 --   1) แพ็กเกจ 5 ชนิด ปรับตัวเลข/ราคา/ความสามารถได้ที่ตาราง access_packages (ไม่ต้องแก้โค้ด)
---        trial (ทดลอง 7 วัน ≤ 50 kWp) · training (ค่าอบรม 2,980 ≤ 1 MW) · starter (1,980 ≤ 500 kWp)
+--        trial (ทดลอง 7 วัน นับจากเข้าใช้ครั้งแรก ≤ 50 kWp) · training (ค่าอบรม 2,980 ≤ 1 MW) · starter (1,980 ≤ 500 kWp)
 --        pro (2,980 ≤ 1 MW) · company (2,980 ไม่ระบุเพดาน แชร์งานในทีม)
 --   2) ต่ออีเมลในรายชื่อ: ติ๊ก "ใช้สิทธิ์ตามแพ็กเกจที่ซื้อ" + แพ็กเกจ + วันเริ่ม/หมด (ตาราง account_access)
 --   3) บัญชีเดิม: ใช้ได้อีก 1 เดือน นับจากวันที่ผู้ดูแลกด "อนุมัติบัญชีเดิม" (access_approve_legacy)
@@ -139,8 +139,9 @@ begin
         select * into pk from public.access_packages where code = 'pro';
         ends := a.grace_until;
     else
-        -- ทดลอง: นับจากวันสมัคร (ยังไม่สมัคร = นับจากวันนี้)
-        select created_at into reg from public.profiles where lower(email) = mail limit 1;
+        -- ทดลอง: นับจากเข้าใช้ครั้งแรก = วันยืนยันอีเมล (27 พ.ย. 2569 · เดิมนับจากวันสร้างบัญชี)
+        --        ยังไม่ยืนยัน/ยังไม่เข้าใช้ = นับจากวันนี้ (ได้ครบวันเมื่อเข้าใช้จริง)
+        select coalesce(u.email_confirmed_at, u.last_sign_in_at) into reg from auth.users u where lower(u.email) = mail limit 1;
         ends := (coalesce(reg, now())::date + coalesce(tr.duration_days, 7));
         if current_date <= ends then
             st := 'trial'; pk := tr;
@@ -160,7 +161,8 @@ begin
         'maxKwp', kwp, 'maxDevices', dev,
         'validFrom', a.valid_from, 'validTo', case when st = 'active' then a.valid_to else ends end,
         'graceUntil', a.grace_until, 'status', coalesce(a.status, 'active'), 'suspendReason', coalesce(a.suspend_reason, ''),
-        'source', coalesce(a.source, ''), 'lastActive', a.last_active_at);
+        'source', coalesce(a.source, ''), 'lastActive', a.last_active_at,
+        'trialStarted', case when st = 'trial' then reg is not null else null end);   -- ทดลอง: false = ยังไม่เข้าใช้ (ยังไม่เริ่มนับ)
 end;
 $$;
 revoke all on function public._access_core(text, boolean) from public, anon, authenticated;
