@@ -1,20 +1,20 @@
 {
  "app": "ASC Studio",
- "version": "0.222.8",
- "published": "2026-11-26",
+ "version": "0.222.9",
+ "published": "2026-11-27",
  "notes": [
-  "SQL คลังความรู้รุ่นเว็บแบ่งหลายไฟล์ (npm run kb:sql → out/cloud/kb-data/ · ไฟล์เดียวใหญ่เกิน SQL Editor) · ไฟล์ 01 สร้างตาราง kb_store ให้เองถ้ายังไม่มี · ไฟล์สุดท้ายตรวจครบก่อนแทนคลัง · รุ่นเว็บอ่านเฉพาะแถว main"
+  "จุดสถานะ server 11437 ค้างสีส้มทั้งที่ server ทำงาน (เปิดเครื่องใหม่ server ตอบช้าตอนเปิดหน้า) — ไม่พบ = ตรวจซ้ำเองทุก 5 วิ/30 วิ จนเจอ แล้วเปิดความสามารถที่ใช้ server ให้ครบ · คลิกจุด = ตรวจใหม่ทันที"
  ],
  "requirements": "5f5cf1c500ceec77",
  "package": {
-  "file": "ascs-app-0.222.8.bin",
-  "size": 25648385,
-  "sha256": "50941bd018bec695d997de1470495699888eef15dbc018d62f42f50bb5f199ac"
+  "file": "ascs-app-0.222.9.bin",
+  "size": 25648647,
+  "sha256": "b4d1ea89da720f34360409c6eb8a834ff1df7e702c1d73a1bbf59b3c58619261"
  },
  "setup": {
-  "file": "ascs-setup-0.222.8.bin",
-  "size": 58519601,
-  "sha256": "28bfa023cba2f2dacf8e00a1dff46227ed81e09c4aed70912279495b837cf1bb",
-  "name": "ASC-Studio-Setup-0.222.8.exe"
+  "file": "ascs-setup-0.222.9.bin",
+  "size": 58520625,
+  "sha256": "2559313b1b2ff25b0b23b3556f6484273049cc78b735342731c41ef35358a7a7",
+  "name": "ASC-Studio-Setup-0.222.9.exe"
  }
 }
