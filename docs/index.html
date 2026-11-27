@@ -229,19 +229,23 @@
                     <i class="fa-solid fa-arrow-right-to-bracket"></i> เข้าสู่ระบบ
                 </button>
             </form>
+            <!-- เข้าด้วยลิงก์ทางอีเมล (trial-requests · 27 พ.ย. 2569 · 4.13.1 ย้ายมาใต้ปุ่มเข้าสู่ระบบ) — แสดงเฉพาะโหมดคลาวด์ -->
+            <div id="otp-box" class="hidden mt-3">
+                <div class="flex items-center gap-3 text-[11px] text-slate-400 my-3"><span class="flex-1 border-t border-slate-200"></span>หรือ<span class="flex-1 border-t border-slate-200"></span></div>
+                <button type="button" id="otp-open" class="w-full rounded-lg border-2 border-blue-600 text-blue-700 bg-white hover:bg-blue-50 font-bold py-2.5 transition">
+                    ✉️ เข้าด้วยลิงก์ทางอีเมล
+                    <span class="block text-[11px] font-normal text-slate-500">ผู้ทดลองใช้ / ไม่มีรหัสผ่าน กดที่นี่ — ไม่ต้องกรอกช่องรหัสผ่าน</span>
+                </button>
+                <form id="otp-form" class="hidden mt-2 flex gap-2" novalidate>
+                    <input id="otp-email" type="email" autocomplete="email" placeholder="อีเมลที่ได้รับอนุมัติ" class="flex-1 min-w-0 border border-slate-300 rounded-lg p-2.5 text-sm">
+                    <button type="submit" id="otp-send" class="px-4 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 whitespace-nowrap">ส่งลิงก์</button>
+                </form>
+                <div id="otp-msg" class="mt-2 text-xs text-center"></div>
+            </div>
 
             <div id="userdb-warning" class="hidden mt-6 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-800 leading-relaxed"></div>
 
             <p id="login-hint" class="text-xs text-slate-400 mt-8 text-center">ลืมรหัสผ่าน? ติดต่อผู้ดูแลระบบเพื่อออกรหัสใหม่</p>
-            <!-- เข้าด้วยลิงก์ทางอีเมล (trial-requests · 27 พ.ย. 2569) — แสดงเฉพาะโหมดคลาวด์ พร้อม signup-hint -->
-            <div id="otp-box" class="hidden mt-3 text-center text-xs">
-                <a href="#" id="otp-open" class="text-blue-600 hover:underline font-semibold">✉️ เข้าด้วยลิงก์ทางอีเมล (ไม่ต้องใช้รหัสผ่าน)</a>
-                <form id="otp-form" class="hidden mt-2 flex gap-2" novalidate>
-                    <input id="otp-email" type="email" autocomplete="email" placeholder="อีเมลของคุณ" class="flex-1 min-w-0 border border-slate-300 rounded-lg p-2 text-sm">
-                    <button type="submit" id="otp-send" class="px-3 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 whitespace-nowrap">ส่งลิงก์</button>
-                </form>
-                <div id="otp-msg" class="mt-2"></div>
-            </div>
 
             <!-- ทางเข้าหน้าสมัคร แสดงเฉพาะโหมดคลาวด์ -->
             <p id="signup-hint" class="hidden text-xs text-slate-500 mt-3 text-center">
@@ -3299,6 +3303,25 @@ async function openMyPackages() {
     document.body.appendChild(m);
 }
 
+/* แนะนำตั้งรหัสผ่านให้ผู้ทดลองจากเว็บ (เข้าด้วยลิงก์อีเมล) — ผลแสดงในป้ายเอง ไม่เงียบ */
+function trialPwKey() { const u = window.AscCloud && AscCloud.currentUser ? AscCloud.currentUser() : null; return 'asc_pw_hint_off_' + String((u && (u.email || u.username)) || ''); }
+function trialPwHintOff() { try { return localStorage.getItem(trialPwKey()) === '1'; } catch (e) { return false; } }
+function trialPwHintDismiss() { try { localStorage.setItem(trialPwKey(), '1'); } catch (e) { /* จำไม่ได้ = ขึ้นอีกครั้งรอบหน้า */ } const h = document.getElementById('pw-hint'); if (h) h.remove(); }
+async function trialSetPassword() {
+    const msg = t => { const m = document.getElementById('pw-hint-msg'); if (m) m.innerHTML = t; };
+    const p1 = prompt('ตั้งรหัสผ่าน (อย่างน้อย 8 ตัวอักษร)');
+    if (p1 === null) return;
+    if (String(p1).length < 8) { msg('<span class="text-red-600 font-semibold">รหัสผ่านสั้นเกินไป ต้องมีอย่างน้อย 8 ตัวอักษร</span>'); return; }
+    const p2 = prompt('พิมพ์รหัสผ่านอีกครั้งเพื่อยืนยัน');
+    if (p2 === null) return;
+    if (p1 !== p2) { msg('<span class="text-red-600 font-semibold">รหัสผ่านสองครั้งไม่ตรงกัน ลองใหม่</span>'); return; }
+    try {
+        await AscCloud.setPassword(p1);
+        try { localStorage.setItem(trialPwKey(), '1'); } catch (e) { /* */ }
+        msg('<span class="text-emerald-700 font-semibold">✓ ตั้งรหัสผ่านแล้ว ครั้งต่อไปเข้าด้วยอีเมล + รหัสผ่านได้เลย (ลิงก์ทางอีเมลยังใช้ได้)</span>');
+    } catch (e) { msg('<span class="text-red-600 font-semibold">ตั้งไม่สำเร็จ : ' + esc(e.message || e) + '</span>'); }
+}
+
 /* การ์ด "สิทธิ์การใช้งานของฉัน" บน Dashboard — ข้อมูลจาก my_access() (ยังไม่รัน SQL = ไม่แสดง) */
 function renderMyAccess() {
     const box = document.getElementById('my-access-card');
@@ -3318,13 +3341,21 @@ function renderMyAccess() {
         + '<span class="text-sm">🎁 <b>ทดลองใช้</b> เหลือ <b>' + esc(daysLeft === null ? '-' : daysLeft) + ' วัน</b> (ถึง ' + esc(accFmtDate(a.validTo)) + ')'
         + (daysLeft !== null && daysLeft <= 2 ? ' · ใกล้หมดแล้ว เลือกแพ็กเกจเพื่อใช้งานต่อ งานทั้งหมดยังอยู่ครบ' : '') + '</span>'
         + '<button type="button" onclick="openMyPackages()" class="ml-auto px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700">ดูแพ็กเกจ</button></div>';
+    // ผู้ทดลองจากเว็บเข้าด้วยลิงก์อีเมล (ไม่มีรหัสผ่าน) → แนะนำตั้งรหัส · ปิดได้ (จำในเครื่อง) · 4.13.1
+    const pwHint = (a.state === 'trial' && /ขอทดลองจากเว็บ/.test(a.source || '') && !trialPwHintOff())
+        ? '<div id="pw-hint" class="flex flex-wrap items-center gap-2 rounded-lg px-4 py-2.5 mb-3 border bg-blue-50 border-blue-200 text-blue-800">'
+          + '<span class="text-sm">🔑 <b>ตั้งรหัสผ่านไว้ไหม?</b> จะได้เข้าด้วยอีเมล + รหัสผ่านได้ทันที ไม่ต้องรอลิงก์ทางอีเมลทุกครั้ง</span>'
+          + '<span class="ml-auto flex gap-2"><button type="button" onclick="trialSetPassword()" class="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700">ตั้งรหัสผ่าน</button>'
+          + '<button type="button" onclick="trialPwHintDismiss()" class="px-3 py-1.5 rounded-lg text-xs font-bold border border-blue-300 bg-white hover:bg-blue-50">ไม่ต้อง ใช้ลิงก์ต่อ</button></span>'
+          + '<span id="pw-hint-msg" class="w-full text-xs"></span></div>'
+        : '';
     const kwpUsed = (typeof visibleProjects === 'function') ? visibleProjects().reduce((s, p) => s + (typeof kwpOf === 'function' ? kwpOf(p) : 0), 0) : 0;
     const cap = a.maxKwp ? Number(a.maxKwp) : null;
     const pct = cap ? Math.min(100, Math.round(kwpUsed / cap * 100)) : 0;
     const title = a.state === 'exempt' ? 'ผู้ดูแลระบบ / ทีมงาน' : (a.package ? 'แพ็กเกจ ' + a.package.name : (a.state === 'trial' ? 'ทดลองใช้งาน' : 'สิทธิ์การใช้งาน'));
     box.classList.remove('hidden');
     box.innerHTML = '<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">'
-        + trialBar
+        + trialBar + pwHint
         + '<div class="flex flex-wrap items-center gap-2 mb-1"><i class="fa-solid fa-id-badge text-blue-600"></i><h3 class="font-bold text-slate-800">สิทธิ์การใช้งานของฉัน</h3>' + accStateChip(a) + '</div>'
         + '<p class="text-sm text-slate-700 mb-3"><b>' + esc(title) + '</b>'
         + (a.state === 'exempt' ? ' · ใช้งานได้ทุกอย่าง ไม่จำกัดเพดาน kWp และจำนวนเครื่อง' : '') + '</p>'
@@ -4000,7 +4031,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Login
     document.getElementById('login-form').addEventListener('submit', doLogin);
     { const o = document.getElementById('otp-open'), f = document.getElementById('otp-form');
-      if (o && f) { o.addEventListener('click', e => { e.preventDefault(); f.classList.remove('hidden'); document.getElementById('otp-email').focus(); });
+      if (o && f) { o.addEventListener('click', e => { e.preventDefault(); f.classList.remove('hidden');
+                    const em = document.getElementById('otp-email'), u = document.getElementById('login-user');
+                    if (!em.value && u && /@/.test(u.value)) em.value = u.value.trim(); em.focus(); });
                     f.addEventListener('submit', sendLoginLink); } }
     // ปุ่มรูปตาทุกช่องรหัสผ่าน (เข้าสู่ระบบ · สมัครใช้งาน 2 ช่อง) — data-for = id ของช่อง
     document.querySelectorAll('.pw-eye').forEach(btn => btn.addEventListener('click', function () {
